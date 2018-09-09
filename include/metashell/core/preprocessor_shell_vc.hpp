@@ -23,16 +23,19 @@
 
 namespace metashell
 {
-  class preprocessor_shell_vc : public iface::preprocessor_shell
+  namespace core
   {
-  public:
-    explicit preprocessor_shell_vc(vc_binary vc_binary_);
+    class preprocessor_shell_vc : public iface::preprocessor_shell
+    {
+    public:
+      explicit preprocessor_shell_vc(vc_binary vc_binary_);
 
-    virtual data::result precompile(const data::cpp_code& exp_) override;
+      virtual data::result precompile(const data::cpp_code& exp_) override;
 
-  private:
-    vc_binary _vc_binary;
-  };
+    private:
+      vc_binary _vc_binary;
+    };
+  }
 }
 
 #endif

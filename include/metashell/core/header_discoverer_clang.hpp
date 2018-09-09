@@ -26,21 +26,24 @@
 
 namespace metashell
 {
-  class header_discoverer_clang : public iface::header_discoverer
+  namespace core
   {
-  public:
-    explicit header_discoverer_clang(clang_binary clang_binary_);
+    class header_discoverer_clang : public iface::header_discoverer
+    {
+    public:
+      explicit header_discoverer_clang(clang_binary clang_binary_);
 
-    virtual std::vector<boost::filesystem::path>
-    include_path(data::include_type type_) override;
+      virtual std::vector<boost::filesystem::path>
+      include_path(data::include_type type_) override;
 
-    virtual std::set<boost::filesystem::path>
-    files_included_by(const data::cpp_code& exp_) override;
+      virtual std::set<boost::filesystem::path>
+      files_included_by(const data::cpp_code& exp_) override;
 
-  private:
-    clang_binary _clang_binary;
-    cached<data::includes> _includes;
-  };
+    private:
+      clang_binary _clang_binary;
+      cached<data::includes> _includes;
+    };
+  }
 }
 
 #endif

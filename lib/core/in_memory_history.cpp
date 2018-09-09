@@ -16,11 +16,18 @@
 
 #include <metashell/core/in_memory_history.hpp>
 
-using namespace metashell;
-
-void in_memory_history::add(const std::string& cmd_) { _cmds.push_back(cmd_); }
-
-const std::vector<std::string>& in_memory_history::commands() const
+namespace metashell
 {
-  return _cmds;
+  namespace core
+  {
+    void in_memory_history::add(const std::string& cmd_)
+    {
+      _cmds.push_back(cmd_);
+    }
+
+    const std::vector<std::string>& in_memory_history::commands() const
+    {
+      return _cmds;
+    }
+  }
 }

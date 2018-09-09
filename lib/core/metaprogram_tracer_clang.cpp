@@ -23,62 +23,66 @@
 
 namespace metashell
 {
-  namespace
+  namespace core
   {
-    data::type_or_code_or_error type_or_code_or_error_from_result(
-        const data::result& res_,
-        const boost::optional<data::cpp_code>& expression_)
+    namespace
     {
-      if (res_.successful)
+      data::type_or_code_or_error type_or_code_or_error_from_result(
+          const data::result& res_,
+          const boost::optional<data::cpp_code>& expression_)
       {
-        return expression_ ? data::type_or_code_or_error::make_type(
-                                 data::type(res_.output)) :
-                             data::type_or_code_or_error::make_none();
+        if (res_.successful)
+        {
+          return expression_ ? data::type_or_code_or_error::make_type(
+                                   data::type(res_.output)) :
+                               data::type_or_code_or_error::make_none();
+        }
+        else
+        {
+          return data::type_or_code_or_error::make_error(res_.error);
+        }
+      }
+    }
+
+    metaprogram_tracer_clang::metaprogram_tracer_clang(
+        clang_binary clang_binary_)
+      : _clang_binary(clang_binary_)
+    {
+    }
+
+    std::unique_ptr<iface::event_data_sequence> metaprogram_tracer_clang::eval(
+        iface::environment& env_,
+        const boost::filesystem::path&,
+        const boost::optional<data::cpp_code>& expression_,
+        data::metaprogram_mode mode_,
+        iface::displayer& displayer_)
+    {
+      const auto out = eval_with_templight_dump_on_stdout(
+          env_, expression_, boost::none, _clang_binary);
+
+      const data::result& res = std::get<0>(out);
+      const std::string& trace = std::get<1>(out);
+
+      if (!res.info.empty())
+      {
+        displayer_.show_raw_text(res.info);
+      }
+
+      if (trace.empty())
+      {
+        throw exception(res.successful ? "Failed to get template trace" :
+                                         res.error);
       }
       else
       {
-        return data::type_or_code_or_error::make_error(res_.error);
+        return filter_events(
+            yaml_trace(
+                trace, type_or_code_or_error_from_result(res, expression_),
+                expression_ ? *expression_ : data::cpp_code("<environment>"),
+                mode_),
+            determine_from_line(
+                env_.get(), expression_, data::stdin_name_in_clang()));
       }
-    }
-  }
-
-  metaprogram_tracer_clang::metaprogram_tracer_clang(clang_binary clang_binary_)
-    : _clang_binary(clang_binary_)
-  {
-  }
-
-  std::unique_ptr<iface::event_data_sequence> metaprogram_tracer_clang::eval(
-      iface::environment& env_,
-      const boost::filesystem::path&,
-      const boost::optional<data::cpp_code>& expression_,
-      data::metaprogram_mode mode_,
-      iface::displayer& displayer_)
-  {
-    const auto out = eval_with_templight_dump_on_stdout(
-        env_, expression_, boost::none, _clang_binary);
-
-    const data::result& res = std::get<0>(out);
-    const std::string& trace = std::get<1>(out);
-
-    if (!res.info.empty())
-    {
-      displayer_.show_raw_text(res.info);
-    }
-
-    if (trace.empty())
-    {
-      throw exception(res.successful ? "Failed to get template trace" :
-                                       res.error);
-    }
-    else
-    {
-      return filter_events(
-          yaml_trace(
-              trace, type_or_code_or_error_from_result(res, expression_),
-              expression_ ? *expression_ : data::cpp_code("<environment>"),
-              mode_),
-          determine_from_line(
-              env_.get(), expression_, data::stdin_name_in_clang()));
     }
   }
 }

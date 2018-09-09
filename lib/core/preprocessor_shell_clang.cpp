@@ -18,13 +18,18 @@
 
 namespace metashell
 {
-  preprocessor_shell_clang::preprocessor_shell_clang(clang_binary clang_binary_)
-    : _clang_binary(clang_binary_)
+  namespace core
   {
-  }
+    preprocessor_shell_clang::preprocessor_shell_clang(
+        clang_binary clang_binary_)
+      : _clang_binary(clang_binary_)
+    {
+    }
 
-  data::result preprocessor_shell_clang::precompile(const data::cpp_code& exp_)
-  {
-    return _clang_binary.precompile({}, exp_);
+    data::result
+    preprocessor_shell_clang::precompile(const data::cpp_code& exp_)
+    {
+      return _clang_binary.precompile({}, exp_);
+    }
   }
 }

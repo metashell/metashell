@@ -29,67 +29,70 @@
 
 namespace metashell
 {
-  template <class Events>
-  class filter_merge_repeated_events_t
+  namespace core
   {
-  public:
-    explicit filter_merge_repeated_events_t(Events&& events_)
-      : _events(std::move(events_))
+    template <class Events>
+    class filter_merge_repeated_events_t
     {
-    }
-
-    boost::optional<data::event_data> next()
-    {
-      while (boost::optional<data::event_data> event = _events.next())
+    public:
+      explicit filter_merge_repeated_events_t(Events&& events_)
+        : _events(std::move(events_))
       {
-        switch (relative_depth_of(*event))
+      }
+
+      boost::optional<data::event_data> next()
+      {
+        while (boost::optional<data::event_data> event = _events.next())
         {
-        case data::relative_depth::open:
-          _last_open.back() = event;
-          _last_open.emplace_back(boost::none);
-          return event;
-        case data::relative_depth::flat:
-          return event;
-        case data::relative_depth::close:
-        case data::relative_depth::end:
-          _last_open.pop_back();
-          if (boost::optional<data::event_data> ahead = _events.next())
+          switch (relative_depth_of(*event))
           {
-            if (what(*ahead) == what(*_last_open.back()))
+          case data::relative_depth::open:
+            _last_open.back() = event;
+            _last_open.emplace_back(boost::none);
+            return event;
+          case data::relative_depth::flat:
+            return event;
+          case data::relative_depth::close:
+          case data::relative_depth::end:
+            _last_open.pop_back();
+            if (boost::optional<data::event_data> ahead = _events.next())
             {
-              _last_open.emplace_back(boost::none);
+              if (what(*ahead) == what(*_last_open.back()))
+              {
+                _last_open.emplace_back(boost::none);
+              }
+              else
+              {
+                _events.queue(std::move(*ahead));
+                return event;
+              }
             }
             else
             {
-              _events.queue(std::move(*ahead));
               return event;
             }
+            break;
           }
-          else
-          {
-            return event;
-          }
-          break;
         }
+        return boost::none;
       }
-      return boost::none;
+
+      data::cpp_code root_name() const { return _events.root_name(); }
+
+      data::metaprogram_mode mode() const { return _events.mode(); }
+
+    private:
+      filter_with_queue<Events> _events;
+
+      std::vector<boost::optional<data::event_data>> _last_open{boost::none};
+    };
+
+    template <class Events>
+    filter_merge_repeated_events_t<Events>
+    filter_merge_repeated_events(Events&& events_)
+    {
+      return filter_merge_repeated_events_t<Events>(std::move(events_));
     }
-
-    data::cpp_code root_name() const { return _events.root_name(); }
-
-    data::metaprogram_mode mode() const { return _events.mode(); }
-
-  private:
-    filter_with_queue<Events> _events;
-
-    std::vector<boost::optional<data::event_data>> _last_open{boost::none};
-  };
-
-  template <class Events>
-  filter_merge_repeated_events_t<Events>
-  filter_merge_repeated_events(Events&& events_)
-  {
-    return filter_merge_repeated_events_t<Events>(std::move(events_));
   }
 }
 

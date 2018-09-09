@@ -23,43 +23,47 @@
 
 namespace metashell
 {
-  pragma_config_show::pragma_config_show(shell& shell_) : _shell(shell_) {}
-
-  iface::pragma_handler* pragma_config_show::clone() const
+  namespace core
   {
-    return new pragma_config_show(_shell);
-  }
+    pragma_config_show::pragma_config_show(shell& shell_) : _shell(shell_) {}
 
-  std::string pragma_config_show::arguments() const { return "<name>"; }
-
-  std::string pragma_config_show::description() const
-  {
-    return "Shows the details of a config.";
-  }
-
-  void pragma_config_show::run(const data::command::iterator&,
-                               const data::command::iterator&,
-                               const data::command::iterator& args_begin_,
-                               const data::command::iterator& args_end_,
-                               iface::displayer& displayer_) const
-  {
-    const data::shell_config_name name = data::shell_config_name(
-        tokens_to_string(args_begin_, args_end_).value());
-
-    const auto& configs = _shell.get_config().shell_configs();
-
-    const auto cfg = std::find_if(
-        configs.begin(), configs.end(),
-        [&name](const data::shell_config& cfg_) { return cfg_.name == name; });
-
-    if (cfg == configs.end())
+    iface::pragma_handler* pragma_config_show::clone() const
     {
-      throw exception("Config " + name + " not found.");
+      return new pragma_config_show(_shell);
     }
-    else
+
+    std::string pragma_config_show::arguments() const { return "<name>"; }
+
+    std::string pragma_config_show::description() const
     {
-      comment_json_writer w(displayer_);
-      display(w, *cfg);
+      return "Shows the details of a config.";
+    }
+
+    void pragma_config_show::run(const data::command::iterator&,
+                                 const data::command::iterator&,
+                                 const data::command::iterator& args_begin_,
+                                 const data::command::iterator& args_end_,
+                                 iface::displayer& displayer_) const
+    {
+      const data::shell_config_name name = data::shell_config_name(
+          tokens_to_string(args_begin_, args_end_).value());
+
+      const auto& configs = _shell.get_config().shell_configs();
+
+      const auto cfg = std::find_if(configs.begin(), configs.end(),
+                                    [&name](const data::shell_config& cfg_) {
+                                      return cfg_.name == name;
+                                    });
+
+      if (cfg == configs.end())
+      {
+        throw exception("Config " + name + " not found.");
+      }
+      else
+      {
+        comment_json_writer w(displayer_);
+        display(w, *cfg);
+      }
     }
   }
 }

@@ -27,27 +27,30 @@
 
 namespace metashell
 {
-  class source_position : boost::equality_comparable<source_position>
+  namespace core
   {
-  public:
-    source_position();
-    source_position(line_number line_, column column_);
+    class source_position : boost::equality_comparable<source_position>
+    {
+    public:
+      source_position();
+      source_position(line_number line_, column column_);
 
-    line_number line() const;
-    column col() const;
+      line_number line() const;
+      column col() const;
 
-  private:
-    line_number _line;
-    column _column;
-  };
+    private:
+      line_number _line;
+      column _column;
+    };
 
-  std::string to_string(const source_position& p_);
+    std::string to_string(const source_position& p_);
 
-  std::ostream& operator<<(std::ostream& out_, const source_position& p_);
+    std::ostream& operator<<(std::ostream& out_, const source_position& p_);
 
-  bool operator==(const source_position& a_, const source_position& b_);
+    bool operator==(const source_position& a_, const source_position& b_);
 
-  source_position source_position_of(const std::string& s_);
+    source_position source_position_of(const std::string& s_);
+  }
 }
 
 #endif

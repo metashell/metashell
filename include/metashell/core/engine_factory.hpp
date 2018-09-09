@@ -32,15 +32,18 @@
 
 namespace metashell
 {
-  typedef std::function<std::unique_ptr<iface::engine>(
-      const data::config&,
-      const boost::filesystem::path&,
-      const boost::filesystem::path&,
-      const boost::filesystem::path&,
-      iface::environment_detector&,
-      iface::displayer&,
-      logger*)>
-      engine_factory;
+  namespace core
+  {
+    typedef std::function<std::unique_ptr<iface::engine>(
+        const data::config&,
+        const boost::filesystem::path&,
+        const boost::filesystem::path&,
+        const boost::filesystem::path&,
+        iface::environment_detector&,
+        iface::displayer&,
+        logger*)>
+        engine_factory;
+  }
 }
 
 #endif

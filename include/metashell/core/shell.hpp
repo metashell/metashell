@@ -40,117 +40,120 @@
 
 namespace metashell
 {
-  class shell : public iface::command_processor
+  namespace core
   {
-  public:
-    shell(const data::config& config_,
-          const boost::filesystem::path& internal_dir_,
-          const boost::filesystem::path& env_filename_,
-          const boost::filesystem::path& mdb_temp_dir_,
-          std::function<std::unique_ptr<iface::engine>(const data::config&)>
-              engine_builder_,
-          logger* logger_ = nullptr);
+    class shell : public iface::command_processor
+    {
+    public:
+      shell(const data::config& config_,
+            const boost::filesystem::path& internal_dir_,
+            const boost::filesystem::path& env_filename_,
+            const boost::filesystem::path& mdb_temp_dir_,
+            std::function<std::unique_ptr<iface::engine>(const data::config&)>
+                engine_builder_,
+            logger* logger_ = nullptr);
 
-    shell(const data::config& config_,
-          command_processor_queue& cpq_,
-          const boost::filesystem::path& internal_dir_,
-          const boost::filesystem::path& env_filename_,
-          const boost::filesystem::path& mdb_temp_dir_,
-          std::function<std::unique_ptr<iface::engine>(const data::config&)>
-              engine_builder_,
-          logger* logger_ = nullptr);
+      shell(const data::config& config_,
+            command_processor_queue& cpq_,
+            const boost::filesystem::path& internal_dir_,
+            const boost::filesystem::path& env_filename_,
+            const boost::filesystem::path& mdb_temp_dir_,
+            std::function<std::unique_ptr<iface::engine>(const data::config&)>
+                engine_builder_,
+            logger* logger_ = nullptr);
 
-    shell(const data::config& config_,
-          std::unique_ptr<iface::environment> env_,
-          command_processor_queue& cpq_,
-          const boost::filesystem::path& internal_dir_,
-          const boost::filesystem::path& env_filename_,
-          const boost::filesystem::path& mdb_temp_dir_,
-          std::function<std::unique_ptr<iface::engine>(const data::config&)>
-              engine_builder_,
-          logger* logger_ = nullptr);
+      shell(const data::config& config_,
+            std::unique_ptr<iface::environment> env_,
+            command_processor_queue& cpq_,
+            const boost::filesystem::path& internal_dir_,
+            const boost::filesystem::path& env_filename_,
+            const boost::filesystem::path& mdb_temp_dir_,
+            std::function<std::unique_ptr<iface::engine>(const data::config&)>
+                engine_builder_,
+            logger* logger_ = nullptr);
 
-    void display_splash(
-        iface::displayer& displayer_,
-        const std::map<std::string, std::string>& dependency_versions_);
-    virtual void line_available(const std::string& s_,
-                                iface::displayer& displayer_,
-                                iface::history& history_) override;
-    void line_available(const std::string& s_, iface::displayer& displayer_);
-    virtual std::string prompt() const override;
+      void display_splash(
+          iface::displayer& displayer_,
+          const std::map<std::string, std::string>& dependency_versions_);
+      virtual void line_available(const std::string& s_,
+                                  iface::displayer& displayer_,
+                                  iface::history& history_) override;
+      void line_available(const std::string& s_, iface::displayer& displayer_);
+      virtual std::string prompt() const override;
 
-    virtual void cancel_operation() override;
+      virtual void cancel_operation() override;
 
-    bool store_in_buffer(const data::cpp_code& s_,
-                         iface::displayer& displayer_);
-    void run_metaprogram(const data::cpp_code& s_,
-                         iface::displayer& displayer_);
+      bool store_in_buffer(const data::cpp_code& s_,
+                           iface::displayer& displayer_);
+      void run_metaprogram(const data::cpp_code& s_,
+                           iface::displayer& displayer_);
 
-    virtual void code_complete(const std::string& s_,
-                               std::set<std::string>& out_) override;
+      virtual void code_complete(const std::string& s_,
+                                 std::set<std::string>& out_) override;
 
-    const pragma_handler_map& pragma_handlers() const;
+      const pragma_handler_map& pragma_handlers() const;
 
-    void verbose(bool enabled_);
-    bool verbose() const;
+      void verbose(bool enabled_);
+      bool verbose() const;
 
-    virtual bool stopped() const override;
-    void stop();
+      virtual bool stopped() const override;
+      void stop();
 
-    void using_precompiled_headers(bool enabled_);
-    bool using_precompiled_headers() const;
+      void using_precompiled_headers(bool enabled_);
+      bool using_precompiled_headers() const;
 
-    const iface::environment& env() const;
-    iface::environment& env();
+      const iface::environment& env() const;
+      iface::environment& env();
 
-    void reset_environment();
-    void push_environment();
-    void pop_environment();
-    void display_environment_stack_size(iface::displayer& displayer_);
-    void rebuild_environment();
+      void reset_environment();
+      void push_environment();
+      void pop_environment();
+      void display_environment_stack_size(iface::displayer& displayer_);
+      void rebuild_environment();
 
-    const data::config& get_config() const;
-    data::config& get_config();
+      const data::config& get_config() const;
+      data::config& get_config();
 
-    iface::engine& engine();
+      iface::engine& engine();
 
-    boost::filesystem::path env_path() const;
+      boost::filesystem::path env_path() const;
 
-    bool preprocess(iface::displayer& displayer_,
-                    const data::cpp_code& exp_,
-                    bool process_directives_);
+      bool preprocess(iface::displayer& displayer_,
+                      const data::cpp_code& exp_,
+                      bool process_directives_);
 
-    void echo(bool enabled_);
-    bool echo() const;
+      void echo(bool enabled_);
+      bool echo() const;
 
-    void show_cpp_errors(bool enabled_);
-    bool show_cpp_errors() const;
+      void show_cpp_errors(bool enabled_);
+      bool show_cpp_errors() const;
 
-    void evaluate_metaprograms(bool enabled_);
-    bool evaluate_metaprograms() const;
+      void evaluate_metaprograms(bool enabled_);
+      bool evaluate_metaprograms() const;
 
-  private:
-    boost::filesystem::path _internal_dir;
-    boost::filesystem::path _env_filename;
-    std::string _line_prefix;
-    std::unique_ptr<iface::environment> _env;
-    data::config _config;
-    std::string _prev_line;
-    pragma_handler_map _pragma_handlers;
-    bool _stopped;
-    std::stack<data::cpp_code> _environment_stack;
-    logger* _logger;
-    std::function<std::unique_ptr<iface::engine>(const data::config&)>
-        _engine_builder;
-    std::map<std::string, std::unique_ptr<iface::engine>> _engines;
-    bool _echo = false;
-    bool _show_cpp_errors = true;
-    bool _evaluate_metaprograms = true;
+    private:
+      boost::filesystem::path _internal_dir;
+      boost::filesystem::path _env_filename;
+      std::string _line_prefix;
+      std::unique_ptr<iface::environment> _env;
+      data::config _config;
+      std::string _prev_line;
+      pragma_handler_map _pragma_handlers;
+      bool _stopped;
+      std::stack<data::cpp_code> _environment_stack;
+      logger* _logger;
+      std::function<std::unique_ptr<iface::engine>(const data::config&)>
+          _engine_builder;
+      std::map<std::string, std::unique_ptr<iface::engine>> _engines;
+      bool _echo = false;
+      bool _show_cpp_errors = true;
+      bool _evaluate_metaprograms = true;
 
-    void init(command_processor_queue* cpq_,
-              const boost::filesystem::path& mdb_temp_dir_);
-    void rebuild_environment(const data::cpp_code& content_);
-  };
+      void init(command_processor_queue* cpq_,
+                const boost::filesystem::path& mdb_temp_dir_);
+      void rebuild_environment(const data::cpp_code& content_);
+    };
+  }
 }
 
 #endif

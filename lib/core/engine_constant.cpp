@@ -25,85 +25,91 @@
 #include <metashell/core/preprocessor_tracer_constant.hpp>
 #include <metashell/core/type_shell_constant.hpp>
 
-using namespace metashell;
-
-namespace
+namespace metashell
 {
-  std::vector<data::feature> supported_features()
+  namespace core
   {
-    return {data::feature::type_shell(),
-            data::feature::preprocessor_shell(),
-            data::feature::code_completer(),
-            data::feature::header_discoverer(),
-            data::feature::metaprogram_tracer(),
-            data::feature::cpp_validator(),
-            data::feature::macro_discovery(),
-            data::feature::preprocessor_tracer()};
-  }
-
-  header_discoverer_constant create_header_discoverer_with_include_path(
-      data::include_type type_, std::vector<boost::filesystem::path> path_)
-  {
-    const std::vector<boost::filesystem::path> empty;
-
-    switch (type_)
+    namespace
     {
-    case data::include_type::sys:
-      return header_discoverer_constant(move(path_), empty);
-    case data::include_type::quote:
-      return header_discoverer_constant(empty, move(path_));
+      std::vector<data::feature> supported_features()
+      {
+        return {data::feature::type_shell(),
+                data::feature::preprocessor_shell(),
+                data::feature::code_completer(),
+                data::feature::header_discoverer(),
+                data::feature::metaprogram_tracer(),
+                data::feature::cpp_validator(),
+                data::feature::macro_discovery(),
+                data::feature::preprocessor_tracer()};
+      }
+
+      header_discoverer_constant create_header_discoverer_with_include_path(
+          data::include_type type_, std::vector<boost::filesystem::path> path_)
+      {
+        const std::vector<boost::filesystem::path> empty;
+
+        switch (type_)
+        {
+        case data::include_type::sys:
+          return header_discoverer_constant(move(path_), empty);
+        case data::include_type::quote:
+          return header_discoverer_constant(empty, move(path_));
+        }
+        // avoid control reaches end of non-void function warnings on
+        // some compilers
+        return header_discoverer_constant(empty, empty);
+      }
     }
-    // avoid control reaches end of non-void function warnings on
-    // some compilers
-    return header_discoverer_constant(empty, empty);
+
+    std::function<std::unique_ptr<iface::engine>(const data::config&)>
+    create_failing_engine()
+    {
+      return [](const data::config&) {
+        const data::result result(false, "", "Using failing engine", "");
+        const std::vector<boost::filesystem::path> empty;
+
+        return make_engine(
+            "failing", type_shell_constant(result),
+            preprocessor_shell_constant(result), code_completer_constant(),
+            header_discoverer_constant(empty, empty),
+            metaprogram_tracer_constant(), cpp_validator_constant(result),
+            macro_discovery_constant(), preprocessor_tracer_constant(),
+            supported_features());
+      };
+    }
+
+    std::function<std::unique_ptr<iface::engine>(const data::config&)>
+    create_engine_returning_type(const std::string& type_)
+    {
+      return [type_](const data::config&) {
+        const data::result result(true, type_, "", "");
+        const std::vector<boost::filesystem::path> empty;
+
+        return make_engine(
+            "type_returning", type_shell_constant(result),
+            preprocessor_shell_constant(result), code_completer_constant(),
+            header_discoverer_constant(empty, empty),
+            metaprogram_tracer_constant(), cpp_validator_constant(result),
+            macro_discovery_constant(), preprocessor_tracer_constant(),
+            supported_features());
+      };
+    }
+
+    std::function<std::unique_ptr<iface::engine>(const data::config&)>
+    create_engine_with_include_path(data::include_type type_,
+                                    std::vector<boost::filesystem::path> path_)
+    {
+      return [type_, path_](const data::config&) {
+        const data::result result(true, "int", "", "");
+
+        return make_engine(
+            "engine_with_include_path", type_shell_constant(result),
+            preprocessor_shell_constant(result), code_completer_constant(),
+            create_header_discoverer_with_include_path(type_, path_),
+            metaprogram_tracer_constant(), cpp_validator_constant(result),
+            macro_discovery_constant(), preprocessor_tracer_constant(),
+            supported_features());
+      };
+    }
   }
-}
-
-std::function<std::unique_ptr<iface::engine>(const data::config&)>
-metashell::create_failing_engine()
-{
-  return [](const data::config&) {
-    const data::result result(false, "", "Using failing engine", "");
-    const std::vector<boost::filesystem::path> empty;
-
-    return make_engine(
-        "failing", type_shell_constant(result),
-        preprocessor_shell_constant(result), code_completer_constant(),
-        header_discoverer_constant(empty, empty), metaprogram_tracer_constant(),
-        cpp_validator_constant(result), macro_discovery_constant(),
-        preprocessor_tracer_constant(), supported_features());
-  };
-}
-
-std::function<std::unique_ptr<iface::engine>(const data::config&)>
-metashell::create_engine_returning_type(const std::string& type_)
-{
-  return [type_](const data::config&) {
-    const data::result result(true, type_, "", "");
-    const std::vector<boost::filesystem::path> empty;
-
-    return make_engine(
-        "type_returning", type_shell_constant(result),
-        preprocessor_shell_constant(result), code_completer_constant(),
-        header_discoverer_constant(empty, empty), metaprogram_tracer_constant(),
-        cpp_validator_constant(result), macro_discovery_constant(),
-        preprocessor_tracer_constant(), supported_features());
-  };
-}
-
-std::function<std::unique_ptr<iface::engine>(const data::config&)>
-metashell::create_engine_with_include_path(
-    data::include_type type_, std::vector<boost::filesystem::path> path_)
-{
-  return [type_, path_](const data::config&) {
-    const data::result result(true, "int", "", "");
-
-    return make_engine(
-        "engine_with_include_path", type_shell_constant(result),
-        preprocessor_shell_constant(result), code_completer_constant(),
-        create_header_discoverer_with_include_path(type_, path_),
-        metaprogram_tracer_constant(), cpp_validator_constant(result),
-        macro_discovery_constant(), preprocessor_tracer_constant(),
-        supported_features());
-  };
 }

@@ -23,31 +23,34 @@
 
 namespace metashell
 {
-  template <class ValueType>
-  class cached
+  namespace core
   {
-  public:
-    cached() {}
-
-    explicit cached(std::function<ValueType()> getter_)
-      : _getter(std::move(getter_))
+    template <class ValueType>
+    class cached
     {
-    }
+    public:
+      cached() {}
 
-    const ValueType& operator*()
-    {
-      if (!_value)
+      explicit cached(std::function<ValueType()> getter_)
+        : _getter(std::move(getter_))
       {
-        _value = _getter();
       }
-      return *_value;
-    }
 
-    const ValueType* operator->() { return &**this; }
-  private:
-    boost::optional<ValueType> _value;
-    std::function<ValueType()> _getter;
-  };
+      const ValueType& operator*()
+      {
+        if (!_value)
+        {
+          _value = _getter();
+        }
+        return *_value;
+      }
+
+      const ValueType* operator->() { return &**this; }
+    private:
+      boost::optional<ValueType> _value;
+      std::function<ValueType()> _getter;
+    };
+  }
 }
 
 #endif

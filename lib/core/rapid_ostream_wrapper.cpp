@@ -19,42 +19,48 @@
 #include <cassert>
 #include <ostream>
 
-using namespace metashell;
-
-rapid_ostream_wrapper::rapid_ostream_wrapper(std::ostream& os_) : _os(os_) {}
-
-void rapid_ostream_wrapper::Put(Ch c_) { _os.put(c_); }
-
-void rapid_ostream_wrapper::Flush() { _os.flush(); }
-
-rapid_ostream_wrapper::Ch rapid_ostream_wrapper::Peek() const
+namespace metashell
 {
-  assert(false);
-  return '\0';
-}
+  namespace core
+  {
+    rapid_ostream_wrapper::rapid_ostream_wrapper(std::ostream& os_) : _os(os_)
+    {
+    }
 
-rapid_ostream_wrapper::Ch rapid_ostream_wrapper::Take()
-{
-  assert(false);
-  return '\0';
-}
+    void rapid_ostream_wrapper::Put(Ch c_) { _os.put(c_); }
 
-size_t rapid_ostream_wrapper::Tell() const
-{
-  assert(false);
-  return 0;
-}
+    void rapid_ostream_wrapper::Flush() { _os.flush(); }
 
-rapid_ostream_wrapper::Ch* rapid_ostream_wrapper::PutBegin()
-{
-  assert(false);
-  return nullptr;
-}
+    rapid_ostream_wrapper::Ch rapid_ostream_wrapper::Peek() const
+    {
+      assert(false);
+      return '\0';
+    }
 
-size_t rapid_ostream_wrapper::PutEnd(Ch*)
-{
-  assert(false);
-  return 0;
-}
+    rapid_ostream_wrapper::Ch rapid_ostream_wrapper::Take()
+    {
+      assert(false);
+      return '\0';
+    }
 
-void rapid_ostream_wrapper::new_line() { _os << std::endl; }
+    size_t rapid_ostream_wrapper::Tell() const
+    {
+      assert(false);
+      return 0;
+    }
+
+    rapid_ostream_wrapper::Ch* rapid_ostream_wrapper::PutBegin()
+    {
+      assert(false);
+      return nullptr;
+    }
+
+    size_t rapid_ostream_wrapper::PutEnd(Ch*)
+    {
+      assert(false);
+      return 0;
+    }
+
+    void rapid_ostream_wrapper::new_line() { _os << std::endl; }
+  }
+}

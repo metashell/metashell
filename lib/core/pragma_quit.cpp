@@ -17,15 +17,22 @@
 #include <metashell/core/pragma_quit.hpp>
 #include <metashell/core/shell.hpp>
 
-using namespace metashell;
-
-pragma_quit::pragma_quit(shell& shell_) : _shell(shell_) {}
-
-iface::pragma_handler* pragma_quit::clone() const
+namespace metashell
 {
-  return new pragma_quit(_shell);
+  namespace core
+  {
+    pragma_quit::pragma_quit(shell& shell_) : _shell(shell_) {}
+
+    iface::pragma_handler* pragma_quit::clone() const
+    {
+      return new pragma_quit(_shell);
+    }
+
+    std::string pragma_quit::description() const
+    {
+      return "Terminates the shell.";
+    }
+
+    void pragma_quit::run(iface::displayer&) const { _shell.stop(); }
+  }
 }
-
-std::string pragma_quit::description() const { return "Terminates the shell."; }
-
-void pragma_quit::run(iface::displayer&) const { _shell.stop(); }

@@ -21,9 +21,9 @@
 
 namespace metashell
 {
-  namespace data
+  namespace core
   {
-    void generate(const unsaved_file& f_);
+    void generate(const data::unsaved_file& f_);
   }
 }
 

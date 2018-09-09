@@ -21,19 +21,22 @@
 
 namespace metashell
 {
-  class cpp_validator_constant : public iface::cpp_validator
+  namespace core
   {
-  public:
-    explicit cpp_validator_constant(data::result result_);
+    class cpp_validator_constant : public iface::cpp_validator
+    {
+    public:
+      explicit cpp_validator_constant(data::result result_);
 
-    virtual data::result validate_code(const data::cpp_code&,
-                                       const data::config&,
-                                       const iface::environment&,
-                                       bool) override;
+      virtual data::result validate_code(const data::cpp_code&,
+                                         const data::config&,
+                                         const iface::environment&,
+                                         bool) override;
 
-  private:
-    data::result _result;
-  };
+    private:
+      data::result _result;
+    };
+  }
 }
 
 #endif

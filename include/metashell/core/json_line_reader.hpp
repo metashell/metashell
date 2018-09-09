@@ -25,11 +25,14 @@
 
 namespace metashell
 {
-  line_reader
-  build_json_line_reader(const line_reader& line_reader_,
-                         iface::displayer& displayer_,
-                         iface::json_writer& json_writer_,
-                         command_processor_queue& command_processor_queue_);
+  namespace core
+  {
+    line_reader
+    build_json_line_reader(const line_reader& line_reader_,
+                           iface::displayer& displayer_,
+                           iface::json_writer& json_writer_,
+                           command_processor_queue& command_processor_queue_);
+  }
 }
 
 #endif

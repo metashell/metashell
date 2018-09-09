@@ -29,46 +29,49 @@
 
 namespace metashell
 {
-  class forward_trace_iterator
-      : public boost::forward_iterator_helper<forward_trace_iterator,
-                                              const data::call_graph_node>
+  namespace core
   {
-  public:
-    forward_trace_iterator();
+    class forward_trace_iterator
+        : public boost::forward_iterator_helper<forward_trace_iterator,
+                                                const data::call_graph_node>
+    {
+    public:
+      forward_trace_iterator();
 
-    forward_trace_iterator(metaprogram::iterator begin_,
-                           metaprogram::iterator end_,
-                           const boost::optional<int>& max_depth_);
+      forward_trace_iterator(metaprogram::iterator begin_,
+                             metaprogram::iterator end_,
+                             const boost::optional<int>& max_depth_);
 
-    forward_trace_iterator& operator++();
+      forward_trace_iterator& operator++();
 
-    bool operator==(const forward_trace_iterator& i_) const;
+      bool operator==(const forward_trace_iterator& i_) const;
 
-    const data::call_graph_node& operator*() const;
+      const data::call_graph_node& operator*() const;
 
-  private:
-    boost::optional<std::pair<metaprogram::iterator, metaprogram::iterator>>
-        _at_end;
-    data::call_graph_node _current;
+    private:
+      boost::optional<std::pair<metaprogram::iterator, metaprogram::iterator>>
+          _at_end;
+      data::call_graph_node _current;
 
-    boost::optional<int> _max_depth;
-    int _depth = 0;
+      boost::optional<int> _max_depth;
+      int _depth = 0;
 
-    void cache_current();
+      void cache_current();
 
-    void step_from(const data::debugger_event&);
-    void step_from(const data::frame&);
-    void step_from(const data::pop_frame&);
+      void step_from(const data::debugger_event&);
+      void step_from(const data::frame&);
+      void step_from(const data::pop_frame&);
 
-    bool step_to(const data::debugger_event&);
-    bool step_to(const data::frame& frame_);
-    bool step_to(const data::pop_frame& frame_);
+      bool step_to(const data::debugger_event&);
+      bool step_to(const data::frame& frame_);
+      bool step_to(const data::pop_frame& frame_);
 
-    bool finished() const;
-    const metaprogram::iterator& at() const;
-    metaprogram::iterator& at();
-    const metaprogram::iterator& end() const;
-  };
+      bool finished() const;
+      const metaprogram::iterator& at() const;
+      metaprogram::iterator& at();
+      const metaprogram::iterator& end() const;
+    };
+  }
 }
 
 #endif

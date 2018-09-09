@@ -22,22 +22,25 @@
 
 namespace metashell
 {
-  class header_discoverer_constant : public iface::header_discoverer
+  namespace core
   {
-  public:
-    header_discoverer_constant(
-        std::vector<boost::filesystem::path> sysincludes_,
-        std::vector<boost::filesystem::path> quoteincludes_);
+    class header_discoverer_constant : public iface::header_discoverer
+    {
+    public:
+      header_discoverer_constant(
+          std::vector<boost::filesystem::path> sysincludes_,
+          std::vector<boost::filesystem::path> quoteincludes_);
 
-    virtual std::vector<boost::filesystem::path>
-    include_path(data::include_type type_) override;
+      virtual std::vector<boost::filesystem::path>
+      include_path(data::include_type type_) override;
 
-    virtual std::set<boost::filesystem::path>
-    files_included_by(const data::cpp_code&) override;
+      virtual std::set<boost::filesystem::path>
+      files_included_by(const data::cpp_code&) override;
 
-  private:
-    data::includes _includes;
-  };
+    private:
+      data::includes _includes;
+    };
+  }
 }
 
 #endif

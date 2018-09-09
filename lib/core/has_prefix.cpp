@@ -20,25 +20,21 @@
 
 #include <algorithm>
 
-using namespace metashell;
-
-namespace
+namespace metashell
 {
-  bool has_prefix(const std::string& arg_,
-                  const std::vector<std::string>& prefixes_)
+  namespace core
   {
-    return std::any_of(prefixes_.begin(), prefixes_.end(),
-                       [&arg_](const std::string& prefix_) {
-                         return boost::algorithm::starts_with(arg_, prefix_);
-                       });
+    bool has_prefix(const std::vector<std::string>& args_,
+                    const std::vector<std::string>& prefixes_)
+    {
+      return std::any_of(
+          args_.begin(), args_.end(), [&prefixes_](const std::string& arg_) {
+            return std::any_of(prefixes_.begin(), prefixes_.end(),
+                               [&arg_](const std::string& prefix_) {
+                                 return boost::algorithm::starts_with(
+                                     arg_, prefix_);
+                               });
+          });
+    }
   }
-}
-
-bool metashell::has_prefix(const std::vector<std::string>& args_,
-                           const std::vector<std::string>& prefixes_)
-{
-  return std::any_of(
-      args_.begin(), args_.end(), [&prefixes_](const std::string& arg_) {
-        return ::has_prefix(arg_, prefixes_);
-      });
 }

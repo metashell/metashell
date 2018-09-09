@@ -23,16 +23,19 @@
 
 namespace metashell
 {
-  class preprocessor_shell_wave : public iface::preprocessor_shell
+  namespace core
   {
-  public:
-    explicit preprocessor_shell_wave(data::wave_config config_);
+    class preprocessor_shell_wave : public iface::preprocessor_shell
+    {
+    public:
+      explicit preprocessor_shell_wave(data::wave_config config_);
 
-    virtual data::result precompile(const data::cpp_code& exp_) override;
+      virtual data::result precompile(const data::cpp_code& exp_) override;
 
-  private:
-    data::wave_config _config;
-  };
+    private:
+      data::wave_config _config;
+    };
+  }
 }
 
 #endif

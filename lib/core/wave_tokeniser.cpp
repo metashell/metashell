@@ -32,125 +32,131 @@
 #include <iterator>
 #include <vector>
 
-using namespace metashell;
-
-namespace
+namespace metashell
 {
-  template <char C>
-  std::string remove(const std::string& s_)
+  namespace core
   {
-    std::vector<char> v;
-    v.reserve(s_.size());
-    std::copy_if(s_.begin(), s_.end(), std::back_inserter(v),
-                 [](char c_) { return c_ != C; });
-    return std::string(v.begin(), v.end());
+    namespace
+    {
+      template <char C>
+      std::string remove(const std::string& s_)
+      {
+        std::vector<char> v;
+        v.reserve(s_.size());
+        std::copy_if(s_.begin(), s_.end(), std::back_inserter(v),
+                     [](char c_) { return c_ != C; });
+        return std::string(v.begin(), v.end());
+      }
+
+      class wave_tokeniser : public iface::tokeniser
+      {
+      public:
+        typedef boost::wave::cpplexer::lex_iterator<
+            boost::wave::cpplexer::lex_token<>>
+            token_iterator;
+
+        data::cpp_code src;
+        std::string input_filename;
+        // Wave's operator!= doesn't seem to accept const object as argument
+        mutable token_iterator it;
+        mutable bool error_flag; // has_further_tokens might set it
+        data::token current_tok;
+
+        wave_tokeniser(data::cpp_code src_, std::string input_filename_)
+          : src(std::move(src_)),
+            input_filename(std::move(input_filename_)),
+            it(),
+            error_flag(false)
+        {
+          try
+          {
+            it = token_iterator(src.begin(), src.end(),
+                                token_iterator::value_type::position_type(
+                                    input_filename.c_str()),
+                                boost::wave::language_support(
+                                    boost::wave::support_cpp |
+                                    boost::wave::support_option_long_long));
+            update_current_token();
+          }
+          catch (const boost::wave::cpplexer::lexing_exception&)
+          {
+            error_flag = true;
+            it = token_iterator();
+          }
+        }
+
+        virtual bool has_further_tokens() const override
+        {
+          try
+          {
+            if (it != token_iterator())
+            {
+              const bool b = *it != boost::wave::T_EOF;
+              return b;
+            }
+            else
+            {
+              return false;
+            }
+          }
+          catch (const boost::wave::cpplexer::lexing_exception&)
+          {
+            error_flag = true;
+            it = token_iterator();
+            return false;
+          }
+        }
+
+        virtual data::token current_token() const override
+        {
+          return current_tok;
+        }
+
+        virtual void move_to_next_token() override
+        {
+          try
+          {
+            // has_further_tokens seems to return different results when called
+            // twice in some situations for invalid code
+            if (has_further_tokens())
+            {
+              ++it;
+              update_current_token();
+            }
+          }
+          catch (const boost::wave::cpplexer::lexing_exception&)
+          {
+            error_flag = true;
+            it = token_iterator();
+          }
+        }
+
+        virtual bool was_error() const override { return error_flag; }
+
+        void update_current_token()
+        {
+          if (has_further_tokens())
+          {
+            current_tok = token_from_wave_token(*it);
+          }
+        }
+      };
+    }
+
+    std::unique_ptr<iface::tokeniser>
+    create_wave_tokeniser(data::cpp_code src_, std::string input_filename_)
+    {
+      return core::make_unique<wave_tokeniser>(
+          std::move(src_), std::move(input_filename_));
+    }
+
+    std::string wave_version()
+    {
+      return remove<'"'>(
+          boost::wave::context<
+              const char*,
+              boost::wave::cpplexer::lex_iterator<
+                  boost::wave::cpplexer::lex_token<>>>::get_version_string());
+    }
   }
-
-  class wave_tokeniser : public iface::tokeniser
-  {
-  public:
-    typedef boost::wave::cpplexer::lex_iterator<
-        boost::wave::cpplexer::lex_token<>>
-        token_iterator;
-
-    data::cpp_code src;
-    std::string input_filename;
-    // Wave's operator!= doesn't seem to accept const object as argument
-    mutable token_iterator it;
-    mutable bool error_flag; // has_further_tokens might set it
-    data::token current_tok;
-
-    wave_tokeniser(data::cpp_code src_, std::string input_filename_)
-      : src(std::move(src_)),
-        input_filename(std::move(input_filename_)),
-        it(),
-        error_flag(false)
-    {
-      try
-      {
-        it = token_iterator(
-            src.begin(), src.end(),
-            token_iterator::value_type::position_type(input_filename.c_str()),
-            boost::wave::language_support(
-                boost::wave::support_cpp |
-                boost::wave::support_option_long_long));
-        update_current_token();
-      }
-      catch (const boost::wave::cpplexer::lexing_exception&)
-      {
-        error_flag = true;
-        it = token_iterator();
-      }
-    }
-
-    virtual bool has_further_tokens() const override
-    {
-      try
-      {
-        if (it != token_iterator())
-        {
-          const bool b = *it != boost::wave::T_EOF;
-          return b;
-        }
-        else
-        {
-          return false;
-        }
-      }
-      catch (const boost::wave::cpplexer::lexing_exception&)
-      {
-        error_flag = true;
-        it = token_iterator();
-        return false;
-      }
-    }
-
-    virtual data::token current_token() const override { return current_tok; }
-
-    virtual void move_to_next_token() override
-    {
-      try
-      {
-        // has_further_tokens seems to return different results when called
-        // twice in some situations for invalid code
-        if (has_further_tokens())
-        {
-          ++it;
-          update_current_token();
-        }
-      }
-      catch (const boost::wave::cpplexer::lexing_exception&)
-      {
-        error_flag = true;
-        it = token_iterator();
-      }
-    }
-
-    virtual bool was_error() const override { return error_flag; }
-
-    void update_current_token()
-    {
-      if (has_further_tokens())
-      {
-        current_tok = token_from_wave_token(*it);
-      }
-    }
-  };
-}
-
-std::unique_ptr<iface::tokeniser>
-metashell::create_wave_tokeniser(data::cpp_code src_,
-                                 std::string input_filename_)
-{
-  return metashell::make_unique<wave_tokeniser>(
-      std::move(src_), std::move(input_filename_));
-}
-
-std::string metashell::wave_version()
-{
-  return remove<'"'>(
-      boost::wave::context<
-          const char*,
-          boost::wave::cpplexer::lex_iterator<
-              boost::wave::cpplexer::lex_token<>>>::get_version_string());
 }

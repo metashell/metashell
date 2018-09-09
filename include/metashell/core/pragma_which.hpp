@@ -26,44 +26,47 @@
 
 namespace metashell
 {
-  class shell;
-
-  class pragma_which : public iface::pragma_handler
+  namespace core
   {
-  public:
-    struct parsed_arguments : boost::equality_comparable<parsed_arguments>
+    class shell;
+
+    class pragma_which : public iface::pragma_handler
     {
-      parsed_arguments(const data::include_argument& header_, bool all_);
-      data::include_argument header;
-      bool all;
+    public:
+      struct parsed_arguments : boost::equality_comparable<parsed_arguments>
+      {
+        parsed_arguments(const data::include_argument& header_, bool all_);
+        data::include_argument header;
+        bool all;
+      };
+
+      explicit pragma_which(shell& shell_);
+
+      virtual iface::pragma_handler* clone() const override;
+
+      virtual std::string arguments() const override;
+      virtual std::string description() const override;
+
+      virtual void run(const data::command::iterator& name_begin_,
+                       const data::command::iterator& name_end_,
+                       const data::command::iterator& args_begin_,
+                       const data::command::iterator& args_end_,
+                       iface::displayer& displayer_) const override;
+
+      static parsed_arguments
+      parse_arguments(const std::string& name_,
+                      const data::command::iterator& args_begin_,
+                      const data::command::iterator& args_end_);
+
+    private:
+      shell& _shell;
     };
 
-    explicit pragma_which(shell& shell_);
-
-    virtual iface::pragma_handler* clone() const override;
-
-    virtual std::string arguments() const override;
-    virtual std::string description() const override;
-
-    virtual void run(const data::command::iterator& name_begin_,
-                     const data::command::iterator& name_end_,
-                     const data::command::iterator& args_begin_,
-                     const data::command::iterator& args_end_,
-                     iface::displayer& displayer_) const override;
-
-    static parsed_arguments
-    parse_arguments(const std::string& name_,
-                    const data::command::iterator& args_begin_,
-                    const data::command::iterator& args_end_);
-
-  private:
-    shell& _shell;
-  };
-
-  std::ostream& operator<<(std::ostream& out_,
-                           const pragma_which::parsed_arguments& args_);
-  bool operator==(const pragma_which::parsed_arguments& a_,
-                  const pragma_which::parsed_arguments& b_);
+    std::ostream& operator<<(std::ostream& out_,
+                             const pragma_which::parsed_arguments& args_);
+    bool operator==(const pragma_which::parsed_arguments& a_,
+                    const pragma_which::parsed_arguments& b_);
+  }
 }
 
 #endif

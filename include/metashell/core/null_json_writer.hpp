@@ -21,23 +21,26 @@
 
 namespace metashell
 {
-  class null_json_writer : public iface::json_writer
+  namespace core
   {
-  public:
-    virtual void string(const std::string& value_) override;
-    virtual void int_(int value_) override;
-    virtual void double_(double value) override;
-    virtual void bool_(bool value) override;
+    class null_json_writer : public iface::json_writer
+    {
+    public:
+      virtual void string(const std::string& value_) override;
+      virtual void int_(int value_) override;
+      virtual void double_(double value) override;
+      virtual void bool_(bool value) override;
 
-    virtual void start_object() override;
-    virtual void key(const std::string& key_) override;
-    virtual void end_object() override;
+      virtual void start_object() override;
+      virtual void key(const std::string& key_) override;
+      virtual void end_object() override;
 
-    virtual void start_array() override;
-    virtual void end_array() override;
+      virtual void start_array() override;
+      virtual void end_array() override;
 
-    virtual void end_document() override;
-  };
+      virtual void end_document() override;
+    };
+  }
 }
 
 #endif

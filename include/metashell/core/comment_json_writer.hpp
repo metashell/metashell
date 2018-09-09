@@ -26,33 +26,36 @@
 
 namespace metashell
 {
-  class comment_json_writer : public iface::json_writer
+  namespace core
   {
-  public:
-    explicit comment_json_writer(iface::displayer& displayer_);
+    class comment_json_writer : public iface::json_writer
+    {
+    public:
+      explicit comment_json_writer(iface::displayer& displayer_);
 
-    virtual ~comment_json_writer() override;
+      virtual ~comment_json_writer() override;
 
-    virtual void string(const std::string& value_) override;
-    virtual void int_(int value_) override;
-    virtual void double_(double value_) override;
-    virtual void bool_(bool value_) override;
+      virtual void string(const std::string& value_) override;
+      virtual void int_(int value_) override;
+      virtual void double_(double value_) override;
+      virtual void bool_(bool value_) override;
 
-    virtual void start_object() override;
-    virtual void key(const std::string& key_) override;
-    virtual void end_object() override;
+      virtual void start_object() override;
+      virtual void key(const std::string& key_) override;
+      virtual void end_object() override;
 
-    virtual void start_array() override;
-    virtual void end_array() override;
+      virtual void start_array() override;
+      virtual void end_array() override;
 
-    virtual void end_document() override;
+      virtual void end_document() override;
 
-  private:
-    iface::displayer& _displayer;
+    private:
+      iface::displayer& _displayer;
 
-    std::ostringstream _buff;
-    rapid_json_writer _writer;
-  };
+      std::ostringstream _buff;
+      rapid_json_writer _writer;
+    };
+  }
 }
 
 #endif

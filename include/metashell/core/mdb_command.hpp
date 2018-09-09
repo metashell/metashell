@@ -25,47 +25,49 @@
 
 namespace metashell
 {
-
-  class mdb_shell;
-
-  enum class repeatable_t
+  namespace core
   {
-    repeatable,
-    non_repeatable
-  };
+    class mdb_shell;
 
-  class mdb_command
-  {
-  public:
-    typedef std::vector<std::string> keys_t;
-    typedef std::function<void(
-        mdb_shell&, const std::string&, iface::displayer&)>
-        function;
+    enum class repeatable_t
+    {
+      repeatable,
+      non_repeatable
+    };
 
-    mdb_command() = default;
-    mdb_command(const keys_t& key,
-                repeatable_t rep,
-                function func,
-                const std::string& usage,
-                const std::string& short_description,
-                const std::string& long_description);
+    class mdb_command
+    {
+    public:
+      typedef std::vector<std::string> keys_t;
+      typedef std::function<void(
+          mdb_shell&, const std::string&, iface::displayer&)>
+          function;
 
-    const keys_t& get_keys() const;
-    bool is_repeatable() const;
-    function get_func() const;
-    const std::string& get_usage() const;
-    const std::string& get_short_description() const;
-    const std::string& get_long_description() const;
-    std::string get_full_description() const;
+      mdb_command() = default;
+      mdb_command(const keys_t& key,
+                  repeatable_t rep,
+                  function func,
+                  const std::string& usage,
+                  const std::string& short_description,
+                  const std::string& long_description);
 
-  private:
-    keys_t keys;
-    repeatable_t rep;
-    function func;
-    std::string usage;
-    std::string short_description;
-    std::string long_description;
-  };
+      const keys_t& get_keys() const;
+      bool is_repeatable() const;
+      function get_func() const;
+      const std::string& get_usage() const;
+      const std::string& get_short_description() const;
+      const std::string& get_long_description() const;
+      std::string get_full_description() const;
+
+    private:
+      keys_t keys;
+      repeatable_t rep;
+      function func;
+      std::string usage;
+      std::string short_description;
+      std::string long_description;
+    };
+  }
 }
 
 #endif

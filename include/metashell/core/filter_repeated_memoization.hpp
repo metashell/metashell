@@ -30,98 +30,101 @@
 
 namespace metashell
 {
-  template <class Events>
-  class filter_repeated_memoization_t
+  namespace core
   {
-  public:
-    explicit filter_repeated_memoization_t(Events&& events_)
-      : _events(std::move(events_))
+    template <class Events>
+    class filter_repeated_memoization_t
     {
-    }
-
-    boost::optional<data::event_data> next()
-    {
-      while (boost::optional<data::event_data> event = _events.next())
+    public:
+      explicit filter_repeated_memoization_t(Events&& events_)
+        : _events(std::move(events_))
       {
-        const auto inst = _instantiations.size() - 1;
+      }
 
-        switch (relative_depth_of(*event))
+      boost::optional<data::event_data> next()
+      {
+        while (boost::optional<data::event_data> event = _events.next())
         {
-        case data::relative_depth::open:
-          _instantiations.push_back({});
-          break;
-        case data::relative_depth::flat:
-          break;
-        case data::relative_depth::close:
-        case data::relative_depth::end:
-          _instantiations.pop_back();
-          break;
-        }
+          const auto inst = _instantiations.size() - 1;
 
-        switch (kind_of(*event))
-        {
-        case data::event_kind::template_instantiation:
-          if (_events.mode() == data::metaprogram_mode::full)
+          switch (relative_depth_of(*event))
           {
-            _instantiations[inst].insert(
-                mpark::get<data::event_details<
-                    data::event_kind::template_instantiation>>(*event)
-                    .what);
+          case data::relative_depth::open:
+            _instantiations.push_back({});
+            break;
+          case data::relative_depth::flat:
+            break;
+          case data::relative_depth::close:
+          case data::relative_depth::end:
+            _instantiations.pop_back();
+            break;
           }
-          return event;
-        case data::event_kind::memoization:
-        {
-          auto mem_as_inst = data::timeless_event_details<
-              data::event_kind::template_instantiation>(
-              mpark::get<data::event_details<data::event_kind::memoization>>(
-                  *event)
-                  .what);
 
-          if (_instantiations[inst].find(mem_as_inst) ==
-              _instantiations[inst].end())
+          switch (kind_of(*event))
           {
-            _instantiations[inst].insert(std::move(mem_as_inst));
-            return event;
-          }
-          else
-          {
-            event = _events.next();
-            if (event && kind_of(*event) == data::event_kind::template_end)
+          case data::event_kind::template_instantiation:
+            if (_events.mode() == data::metaprogram_mode::full)
             {
-              _instantiations.pop_back();
+              _instantiations[inst].insert(
+                  mpark::get<data::event_details<
+                      data::event_kind::template_instantiation>>(*event)
+                      .what);
+            }
+            return event;
+          case data::event_kind::memoization:
+          {
+            auto mem_as_inst = data::timeless_event_details<
+                data::event_kind::template_instantiation>(
+                mpark::get<data::event_details<data::event_kind::memoization>>(
+                    *event)
+                    .what);
+
+            if (_instantiations[inst].find(mem_as_inst) ==
+                _instantiations[inst].end())
+            {
+              _instantiations[inst].insert(std::move(mem_as_inst));
+              return event;
             }
             else
             {
-              throw exception(
-                  "Missing template end event after memoization event.");
+              event = _events.next();
+              if (event && kind_of(*event) == data::event_kind::template_end)
+              {
+                _instantiations.pop_back();
+              }
+              else
+              {
+                throw exception(
+                    "Missing template end event after memoization event.");
+              }
             }
           }
+          break;
+          default:
+            return event;
+          }
         }
-        break;
-        default:
-          return event;
-        }
+
+        return boost::none;
       }
 
-      return boost::none;
+      data::cpp_code root_name() const { return _events.root_name(); }
+
+      data::metaprogram_mode mode() const { return _events.mode(); }
+
+    private:
+      Events _events;
+      std::vector<std::set<data::timeless_event_details<
+          data::event_kind::template_instantiation>>>
+          _instantiations{{}};
+    };
+
+    template <class Events>
+    filter_repeated_memoization_t<Events>
+    filter_repeated_memoization(Events&& events_)
+    {
+      return filter_repeated_memoization_t<Events>(std::move(events_));
     }
-
-    data::cpp_code root_name() const { return _events.root_name(); }
-
-    data::metaprogram_mode mode() const { return _events.mode(); }
-
-  private:
-    Events _events;
-    std::vector<std::set<
-        data::timeless_event_details<data::event_kind::template_instantiation>>>
-        _instantiations{{}};
-  };
-
-  template <class Events>
-  filter_repeated_memoization_t<Events>
-  filter_repeated_memoization(Events&& events_)
-  {
-    return filter_repeated_memoization_t<Events>(std::move(events_));
   }
 }
 

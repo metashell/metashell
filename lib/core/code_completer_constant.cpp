@@ -18,11 +18,14 @@
 
 namespace metashell
 {
-  void code_completer_constant::code_complete(const iface::environment&,
-                                              const std::string&,
-                                              std::set<std::string>&,
-                                              bool)
+  namespace core
   {
-    // ignore
+    void code_completer_constant::code_complete(const iface::environment&,
+                                                const std::string&,
+                                                std::set<std::string>&,
+                                                bool)
+    {
+      // ignore
+    }
   }
 }

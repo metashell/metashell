@@ -32,7 +32,7 @@ TEST(pager, one_line)
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(100));
 
-  pager p(c);
+  core::pager p(c);
 
   {
     ::testing::InSequence s;
@@ -53,7 +53,7 @@ TEST(pager, non_full_page)
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(5));
 
-  pager p(c);
+  core::pager p(c);
 
   {
     ::testing::InSequence s;
@@ -96,7 +96,7 @@ TEST(pager, almost_full_page)
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(4));
 
-  pager p(c);
+  core::pager p(c);
 
   EXPECT_CALL(c, show(data::colored_string("first")));
   p.show("first");
@@ -123,7 +123,7 @@ TEST(pager, full_page_by_one_line)
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(4));
 
-  pager p(c);
+  core::pager p(c);
 
   EXPECT_CALL(c, show(data::colored_string("first")));
   p.show("first");
@@ -155,7 +155,7 @@ TEST(pager, multi_page_next_page_answer)
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(3));
 
-  pager p(c);
+  core::pager p(c);
 
   EXPECT_CALL(c, show(data::colored_string("first")));
   p.show("first");
@@ -194,7 +194,7 @@ TEST(pager, multi_page_multiline_shows)
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(3));
 
-  pager p(c);
+  core::pager p(c);
 
   EXPECT_CALL(c, show(data::colored_string("first\nsecond")));
   p.show("first\nsecond");
@@ -223,7 +223,7 @@ TEST(pager, multi_page_narrow_terminal)
   ON_CALL(c, width()).WillByDefault(Return(5));
   ON_CALL(c, height()).WillByDefault(Return(3));
 
-  pager p(c);
+  core::pager p(c);
 
   EXPECT_CALL(c, show(data::colored_string("firstsecond")));
   p.show("first" /*\n*/ "second");
@@ -252,7 +252,7 @@ TEST(pager, multi_page_show_all_answer)
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(3));
 
-  pager p(c);
+  core::pager p(c);
 
   EXPECT_CALL(c, show(data::colored_string("first")));
   p.show("first");
@@ -289,7 +289,7 @@ TEST(pager, quit_answer)
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(3));
 
-  pager p(c);
+  core::pager p(c);
 
   EXPECT_CALL(c, show(data::colored_string("first")));
   p.show("first");

@@ -28,84 +28,87 @@
 
 namespace metashell
 {
-  template <class Events>
-  class filter_enable_reachable_t
+  namespace core
   {
-  public:
-    explicit filter_enable_reachable_t(
-        Events&& events_, boost::optional<data::file_location> from_)
-      : _events(std::move(events_)), _from(std::move(from_))
+    template <class Events>
+    class filter_enable_reachable_t
     {
-    }
-
-    boost::optional<data::event_data> next()
-    {
-      while (boost::optional<data::event_data> event = _events.next())
+    public:
+      explicit filter_enable_reachable_t(
+          Events&& events_, boost::optional<data::file_location> from_)
+        : _events(std::move(events_)), _from(std::move(from_))
       {
-        const data::event_kind kind = kind_of(*event);
-
-        switch (relative_depth_of(kind))
-        {
-        case data::relative_depth::open:
-          _depth_enabled.push_back(
-              enabled(kind) &&
-              (_depth_enabled.back() ||
-               (from_here(*event) && !is_remove_ptr(*event) &&
-                (kind != data::event_kind::memoization ||
-                 !trim_wrap_type(mpark::get<data::event_details<
-                                     data::event_kind::memoization>>(*event)
-                                     .what.full_name)))));
-          if (_depth_enabled.back())
-          {
-            return event;
-          }
-          break;
-        case data::relative_depth::flat:
-          if (enabled(kind) && (_depth_enabled.back() || from_here(*event)))
-          {
-            return event;
-          }
-          break;
-        case data::relative_depth::close:
-        {
-          const bool keep = _depth_enabled.back();
-          _depth_enabled.pop_back();
-          if (keep)
-          {
-            return event;
-          }
-          break;
-        }
-        case data::relative_depth::end:
-          return event;
-        }
       }
 
-      return boost::none;
-    }
+      boost::optional<data::event_data> next()
+      {
+        while (boost::optional<data::event_data> event = _events.next())
+        {
+          const data::event_kind kind = kind_of(*event);
 
-    data::cpp_code root_name() const { return _events.root_name(); }
+          switch (relative_depth_of(kind))
+          {
+          case data::relative_depth::open:
+            _depth_enabled.push_back(
+                enabled(kind) &&
+                (_depth_enabled.back() ||
+                 (from_here(*event) && !is_remove_ptr(*event) &&
+                  (kind != data::event_kind::memoization ||
+                   !trim_wrap_type(mpark::get<data::event_details<
+                                       data::event_kind::memoization>>(*event)
+                                       .what.full_name)))));
+            if (_depth_enabled.back())
+            {
+              return event;
+            }
+            break;
+          case data::relative_depth::flat:
+            if (enabled(kind) && (_depth_enabled.back() || from_here(*event)))
+            {
+              return event;
+            }
+            break;
+          case data::relative_depth::close:
+          {
+            const bool keep = _depth_enabled.back();
+            _depth_enabled.pop_back();
+            if (keep)
+            {
+              return event;
+            }
+            break;
+          }
+          case data::relative_depth::end:
+            return event;
+          }
+        }
 
-    data::metaprogram_mode mode() const { return _events.mode(); }
+        return boost::none;
+      }
 
-  private:
-    Events _events;
-    boost::optional<data::file_location> _from;
-    std::vector<bool> _depth_enabled{false};
+      data::cpp_code root_name() const { return _events.root_name(); }
 
-    bool from_here(const data::event_data& event_) const
+      data::metaprogram_mode mode() const { return _events.mode(); }
+
+    private:
+      Events _events;
+      boost::optional<data::file_location> _from;
+      std::vector<bool> _depth_enabled{false};
+
+      bool from_here(const data::event_data& event_) const
+      {
+        return !_from || from_line(event_, *_from);
+      }
+    };
+
+    template <class Events>
+    filter_enable_reachable_t<Events>
+    filter_enable_reachable(Events&& events_,
+                            boost::optional<data::file_location> from_)
     {
-      return !_from || from_line(event_, *_from);
+      return filter_enable_reachable_t<Events>(
+          std::move(events_), std::move(from_));
     }
-  };
-
-  template <class Events>
-  filter_enable_reachable_t<Events>
-  filter_enable_reachable(Events&& events_,
-                          boost::optional<data::file_location> from_)
-  {
-    return filter_enable_reachable_t<Events>(
-        std::move(events_), std::move(from_));
   }
 }
 

@@ -29,60 +29,65 @@
 
 namespace metashell
 {
-  typedef boost::wave::context<
-      std::string::const_iterator,
-      boost::wave::cpplexer::lex_iterator<wave_token>,
-      boost::wave::iteration_context_policies::load_file_to_string,
-      wave_hooks>
-      wave_context;
-
-  void apply(wave_context& ctx_, const data::wave_config& cfg_);
-
-  void preprocess(wave_context& ctx_);
-
-  template <class TokenIterator>
-  bool display_step(std::ostream& out_,
-                    TokenIterator& begin_,
-                    const TokenIterator& end_,
-                    bool ignore_macro_redefinition_)
+  namespace core
   {
-    try
+    typedef boost::wave::context<
+        std::string::const_iterator,
+        boost::wave::cpplexer::lex_iterator<wave_token>,
+        boost::wave::iteration_context_policies::load_file_to_string,
+        wave_hooks>
+        wave_context;
+
+    void apply(wave_context& ctx_, const data::wave_config& cfg_);
+
+    void preprocess(wave_context& ctx_);
+
+    template <class TokenIterator>
+    bool display_step(std::ostream& out_,
+                      TokenIterator& begin_,
+                      const TokenIterator& end_,
+                      bool ignore_macro_redefinition_)
     {
-      if (begin_ == end_)
+      try
       {
-        return false;
+        if (begin_ == end_)
+        {
+          return false;
+        }
+        else
+        {
+          out_ << begin_->get_value();
+          ++begin_;
+        }
       }
-      else
+      catch (const boost::wave::preprocess_exception& e_)
       {
-        out_ << begin_->get_value();
-        ++begin_;
+        typedef boost::wave::preprocess_exception::error_code error_code;
+
+        const auto ec = e_.get_errorcode();
+        if (ec != error_code::last_line_not_terminated &&
+            (!ignore_macro_redefinition_ ||
+             ec != error_code::macro_redefinition))
+        {
+          throw;
+        }
       }
+      return true;
     }
-    catch (const boost::wave::preprocess_exception& e_)
+
+    template <class Tokens>
+    void display(std::ostream& out_,
+                 Tokens& tokens_,
+                 bool ignore_macro_redefinition_)
     {
-      typedef boost::wave::preprocess_exception::error_code error_code;
-
-      const auto ec = e_.get_errorcode();
-      if (ec != error_code::last_line_not_terminated &&
-          (!ignore_macro_redefinition_ || ec != error_code::macro_redefinition))
-      {
-        throw;
-      }
+      const auto e = tokens_.end();
+      auto i = tokens_.begin();
+      while (display_step(out_, i, e, ignore_macro_redefinition_))
+        ;
     }
-    return true;
-  }
 
-  template <class Tokens>
-  void
-  display(std::ostream& out_, Tokens& tokens_, bool ignore_macro_redefinition_)
-  {
-    const auto e = tokens_.end();
-    auto i = tokens_.begin();
-    while (display_step(out_, i, e, ignore_macro_redefinition_))
-      ;
+    std::string to_string(const boost::wave::cpp_exception& error_);
   }
-
-  std::string to_string(const boost::wave::cpp_exception& error_);
 }
 
 #endif

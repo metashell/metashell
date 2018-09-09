@@ -21,11 +21,14 @@
 
 namespace metashell
 {
-  class null_history : public iface::history
+  namespace core
   {
-  public:
-    virtual void add(const std::string& cmd_) override;
-  };
+    class null_history : public iface::history
+    {
+    public:
+      virtual void add(const std::string& cmd_) override;
+    };
+  }
 }
 
 #endif

@@ -23,16 +23,19 @@
 
 namespace metashell
 {
-  class macro_discovery_clang : public iface::macro_discovery
+  namespace core
   {
-  public:
-    explicit macro_discovery_clang(clang_binary clang_binary_);
+    class macro_discovery_clang : public iface::macro_discovery
+    {
+    public:
+      explicit macro_discovery_clang(clang_binary clang_binary_);
 
-    virtual data::cpp_code macros(const iface::environment& env_) override;
+      virtual data::cpp_code macros(const iface::environment& env_) override;
 
-  private:
-    clang_binary _clang_binary;
-  };
+    private:
+      clang_binary _clang_binary;
+    };
+  }
 }
 
 #endif

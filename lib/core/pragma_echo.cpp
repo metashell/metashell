@@ -16,23 +16,30 @@
 
 #include <metashell/core/pragma_echo.hpp>
 
-using namespace metashell;
-
-iface::pragma_handler* pragma_echo::clone() const { return new pragma_echo(); }
-
-std::string pragma_echo::arguments() const { return "<text>"; }
-
-std::string pragma_echo::description() const
+namespace metashell
 {
-  return "Display a comment containing <text>.";
-}
+  namespace core
+  {
+    iface::pragma_handler* pragma_echo::clone() const
+    {
+      return new pragma_echo();
+    }
 
-void pragma_echo::run(const data::command::iterator&,
-                      const data::command::iterator&,
-                      const data::command::iterator& args_begin_,
-                      const data::command::iterator& args_end_,
-                      iface::displayer& displayer_) const
-{
-  displayer_.show_comment(
-      data::text(data::tokens_to_string(args_begin_, args_end_).value()));
+    std::string pragma_echo::arguments() const { return "<text>"; }
+
+    std::string pragma_echo::description() const
+    {
+      return "Display a comment containing <text>.";
+    }
+
+    void pragma_echo::run(const data::command::iterator&,
+                          const data::command::iterator&,
+                          const data::command::iterator& args_begin_,
+                          const data::command::iterator& args_end_,
+                          iface::displayer& displayer_) const
+    {
+      displayer_.show_comment(
+          data::text(data::tokens_to_string(args_begin_, args_end_).value()));
+    }
+  }
 }

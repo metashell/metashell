@@ -24,13 +24,13 @@ using namespace metashell;
 
 TEST(mdb_command_handler_map, command_selection_1)
 {
-  mdb_command_handler_map::commands_t commands = {
-      {{{"asd"}}, repeatable_t::non_repeatable, nullptr, "", "", ""},
-      {{{"efg"}}, repeatable_t::non_repeatable, nullptr, "", "", ""}};
+  core::mdb_command_handler_map::commands_t commands = {
+      {{{"asd"}}, core::repeatable_t::non_repeatable, nullptr, "", "", ""},
+      {{{"efg"}}, core::repeatable_t::non_repeatable, nullptr, "", "", ""}};
 
-  mdb_command_handler_map map(commands);
+  core::mdb_command_handler_map map(commands);
 
-  mdb_command command;
+  core::mdb_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, {"asd"});
@@ -56,13 +56,13 @@ TEST(mdb_command_handler_map, command_selection_1)
 
 TEST(mdb_command_handler_map, command_selection_2)
 {
-  mdb_command_handler_map::commands_t commands = {
-      {{"asd"}, repeatable_t::non_repeatable, nullptr, "", "", ""},
-      {{"afg"}, repeatable_t::non_repeatable, nullptr, "", "", ""}};
+  core::mdb_command_handler_map::commands_t commands = {
+      {{"asd"}, core::repeatable_t::non_repeatable, nullptr, "", "", ""},
+      {{"afg"}, core::repeatable_t::non_repeatable, nullptr, "", "", ""}};
 
-  mdb_command_handler_map map(commands);
+  core::mdb_command_handler_map map(commands);
 
-  mdb_command command;
+  core::mdb_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, "as");
@@ -78,13 +78,13 @@ TEST(mdb_command_handler_map, command_selection_2)
 
 TEST(mdb_command_handler_map, command_selection_3)
 {
-  mdb_command_handler_map::commands_t commands = {
-      {{"asd"}, repeatable_t::non_repeatable, nullptr, "", "", ""},
-      {{"a"}, repeatable_t::non_repeatable, nullptr, "", "", ""}};
+  core::mdb_command_handler_map::commands_t commands = {
+      {{"asd"}, core::repeatable_t::non_repeatable, nullptr, "", "", ""},
+      {{"a"}, core::repeatable_t::non_repeatable, nullptr, "", "", ""}};
 
-  mdb_command_handler_map map(commands);
+  core::mdb_command_handler_map map(commands);
 
-  mdb_command command;
+  core::mdb_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, "as");
@@ -100,11 +100,11 @@ TEST(mdb_command_handler_map, command_selection_3)
 
 TEST(mdb_command_handler_map, command_selection_4)
 {
-  mdb_command_handler_map::commands_t commands = {
-      {{"asd"}, repeatable_t::non_repeatable, nullptr, "", "", ""},
-      {{"asf"}, repeatable_t::non_repeatable, nullptr, "", "", ""}};
+  core::mdb_command_handler_map::commands_t commands = {
+      {{"asd"}, core::repeatable_t::non_repeatable, nullptr, "", "", ""},
+      {{"asf"}, core::repeatable_t::non_repeatable, nullptr, "", "", ""}};
 
-  mdb_command_handler_map map(commands);
+  core::mdb_command_handler_map map(commands);
 
   ASSERT_FALSE(map.get_command_for_line(""));
   ASSERT_FALSE(map.get_command_for_line("a"));
@@ -113,13 +113,13 @@ TEST(mdb_command_handler_map, command_selection_4)
 
 TEST(mdb_command_handler_map, command_selection_5)
 {
-  mdb_command_handler_map::commands_t commands = {
-      {{"asd", "xyz"}, repeatable_t::non_repeatable, nullptr, "", "", ""},
-      {{"asf"}, repeatable_t::non_repeatable, nullptr, "", "", ""}};
+  core::mdb_command_handler_map::commands_t commands = {
+      {{"asd", "xyz"}, core::repeatable_t::non_repeatable, nullptr, "", "", ""},
+      {{"asf"}, core::repeatable_t::non_repeatable, nullptr, "", "", ""}};
 
-  mdb_command_handler_map map(commands);
+  core::mdb_command_handler_map map(commands);
 
-  mdb_command command;
+  core::mdb_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, "asd");
@@ -140,18 +140,18 @@ TEST(mdb_command_handler_map, command_selection_5)
 
 TEST(mdb_command_handler_map, command_selection_6)
 {
-  mdb_command_handler_map::commands_t commands = {
+  core::mdb_command_handler_map::commands_t commands = {
       {{"ft", "forwardtrace"},
-       repeatable_t::non_repeatable,
+       core::repeatable_t::non_repeatable,
        nullptr,
        "",
        "",
        ""},
-      {{"asf"}, repeatable_t::non_repeatable, nullptr, "", "", ""}};
+      {{"asf"}, core::repeatable_t::non_repeatable, nullptr, "", "", ""}};
 
-  mdb_command_handler_map map(commands);
+  core::mdb_command_handler_map map(commands);
 
-  mdb_command command;
+  core::mdb_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, "f");
@@ -163,18 +163,18 @@ TEST(mdb_command_handler_map, command_selection_6)
 
 TEST(mdb_command_handler_map, command_selection_7)
 {
-  mdb_command_handler_map::commands_t commands = {
+  core::mdb_command_handler_map::commands_t commands = {
       {{"ft", "forwardtrace", "fff"},
-       repeatable_t::non_repeatable,
+       core::repeatable_t::non_repeatable,
        nullptr,
        "",
        "",
        ""},
-      {{"asf"}, repeatable_t::non_repeatable, nullptr, "", "", ""}};
+      {{"asf"}, core::repeatable_t::non_repeatable, nullptr, "", "", ""}};
 
-  mdb_command_handler_map map(commands);
+  core::mdb_command_handler_map map(commands);
 
-  mdb_command command;
+  core::mdb_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, "f");
@@ -186,28 +186,28 @@ TEST(mdb_command_handler_map, command_selection_7)
 
 TEST(mdb_command_handler_map, command_selection_8)
 {
-  mdb_command_handler_map::commands_t commands = {
+  core::mdb_command_handler_map::commands_t commands = {
       {{"ft", "forwardtrace"},
-       repeatable_t::non_repeatable,
+       core::repeatable_t::non_repeatable,
        nullptr,
        "",
        "",
        ""},
-      {{"fff"}, repeatable_t::non_repeatable, nullptr, "", "", ""}};
+      {{"fff"}, core::repeatable_t::non_repeatable, nullptr, "", "", ""}};
 
-  mdb_command_handler_map map(commands);
+  core::mdb_command_handler_map map(commands);
 
   ASSERT_FALSE(map.get_command_for_line("f"));
 }
 
 TEST(mdb_command_handler_map, argument_passing)
 {
-  mdb_command_handler_map::commands_t commands = {
-      {{"asf"}, repeatable_t::non_repeatable, nullptr, "", "", ""}};
+  core::mdb_command_handler_map::commands_t commands = {
+      {{"asf"}, core::repeatable_t::non_repeatable, nullptr, "", "", ""}};
 
-  mdb_command_handler_map map(commands);
+  core::mdb_command_handler_map map(commands);
 
-  mdb_command command;
+  core::mdb_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, "a abc");

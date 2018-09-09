@@ -22,31 +22,34 @@
 
 namespace metashell
 {
-  pragma_config::pragma_config(shell& shell_) : _shell(shell_) {}
-
-  iface::pragma_handler* pragma_config::clone() const
+  namespace core
   {
-    return new pragma_config(_shell);
-  }
+    pragma_config::pragma_config(shell& shell_) : _shell(shell_) {}
 
-  std::string pragma_config::description() const
-  {
-    return "Lists all available configs.";
-  }
+    iface::pragma_handler* pragma_config::clone() const
+    {
+      return new pragma_config(_shell);
+    }
 
-  void pragma_config::run(iface::displayer& displayer_) const
-  {
-    using boost::algorithm::join;
-    using boost::adaptors::transformed;
+    std::string pragma_config::description() const
+    {
+      return "Lists all available configs.";
+    }
 
-    const data::config& cfg = _shell.get_config();
-    const data::shell_config* active = &cfg.active_shell_config();
+    void pragma_config::run(iface::displayer& displayer_) const
+    {
+      using boost::algorithm::join;
+      using boost::adaptors::transformed;
 
-    displayer_.show_comment(data::text(
-        join(cfg.shell_configs() |
-                 transformed([active](const data::shell_config& cfg_) {
-                   return (&cfg_ == active ? " * " : "   ") + cfg_.name;
-                 }),
-             "\n")));
+      const data::config& cfg = _shell.get_config();
+      const data::shell_config* active = &cfg.active_shell_config();
+
+      displayer_.show_comment(data::text(
+          join(cfg.shell_configs() |
+                   transformed([active](const data::shell_config& cfg_) {
+                     return (&cfg_ == active ? " * " : "   ") + cfg_.name;
+                   }),
+               "\n")));
+    }
   }
 }

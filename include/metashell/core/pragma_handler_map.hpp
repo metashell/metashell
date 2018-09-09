@@ -32,84 +32,88 @@
 
 namespace metashell
 {
-  class shell;
-
-  class pragma_handler_map
+  namespace core
   {
-  public:
-    template <class Handler>
-    // requires: Handler implements iface::pragma_handler
-    pragma_handler_map& add(const std::string& name_, Handler handler_)
+    class shell;
+
+    class pragma_handler_map
     {
-      add(std::vector<std::string>(1, name_), handler_);
-      return *this;
-    }
+    public:
+      template <class Handler>
+      // requires: Handler implements iface::pragma_handler
+      pragma_handler_map& add(const std::string& name_, Handler handler_)
+      {
+        add(std::vector<std::string>(1, name_), handler_);
+        return *this;
+      }
 
-    template <class Handler>
-    // requires: Handler implements iface::pragma_handler
-    pragma_handler_map&
-    add(const std::string& name1_, const std::string& name2_, Handler handler_)
-    {
-      std::vector<std::string> params;
-      params.reserve(2);
+      template <class Handler>
+      // requires: Handler implements iface::pragma_handler
+      pragma_handler_map& add(const std::string& name1_,
+                              const std::string& name2_,
+                              Handler handler_)
+      {
+        std::vector<std::string> params;
+        params.reserve(2);
 
-      params.push_back(name1_);
-      params.push_back(name2_);
+        params.push_back(name1_);
+        params.push_back(name2_);
 
-      add(params, handler_);
-      return *this;
-    }
+        add(params, handler_);
+        return *this;
+      }
 
-    template <class Handler>
-    // requires: Handler implements iface::pragma_handler
-    pragma_handler_map& add(const std::string& name1_,
-                            const std::string& name2_,
-                            const std::string& name3_,
-                            Handler handler_)
-    {
-      std::vector<std::string> params;
-      params.reserve(3);
+      template <class Handler>
+      // requires: Handler implements iface::pragma_handler
+      pragma_handler_map& add(const std::string& name1_,
+                              const std::string& name2_,
+                              const std::string& name3_,
+                              Handler handler_)
+      {
+        std::vector<std::string> params;
+        params.reserve(3);
 
-      params.push_back(name1_);
-      params.push_back(name2_);
-      params.push_back(name3_);
+        params.push_back(name1_);
+        params.push_back(name2_);
+        params.push_back(name3_);
 
-      add(params, handler_);
-      return *this;
-    }
+        add(params, handler_);
+        return *this;
+      }
 
-    template <class Handler>
-    // requires: Handler implements iface::pragma_handler
-    pragma_handler_map& add(const std::vector<std::string>& names_,
-                            Handler handler_)
-    {
-      assert(!names_.empty());
+      template <class Handler>
+      // requires: Handler implements iface::pragma_handler
+      pragma_handler_map& add(const std::vector<std::string>& names_,
+                              Handler handler_)
+      {
+        assert(!names_.empty());
 
-      _handlers.insert(std::make_pair(names_, pragma_handler(handler_)));
-      return *this;
-    }
+        _handlers.insert(std::make_pair(names_, pragma_handler(handler_)));
+        return *this;
+      }
 
-    void process(const data::command::iterator& p_,
-                 const data::command::iterator& end_,
-                 iface::displayer& displayer_) const;
+      void process(const data::command::iterator& p_,
+                   const data::command::iterator& end_,
+                   iface::displayer& displayer_) const;
 
-    typedef std::map<std::vector<std::string>, pragma_handler>::const_iterator
-        iterator;
-    typedef iterator const_iterator;
+      typedef std::map<std::vector<std::string>, pragma_handler>::const_iterator
+          iterator;
+      typedef iterator const_iterator;
 
-    iterator begin() const;
-    iterator end() const;
-    iterator find(const std::vector<std::string>& p_) const;
+      iterator begin() const;
+      iterator end() const;
+      iterator find(const std::vector<std::string>& p_) const;
 
-    static pragma_handler_map
-    build_default(shell& shell_,
-                  command_processor_queue* cpq_,
-                  const boost::filesystem::path& mdb_temp_dir_,
-                  logger* logger_);
+      static pragma_handler_map
+      build_default(shell& shell_,
+                    command_processor_queue* cpq_,
+                    const boost::filesystem::path& mdb_temp_dir_,
+                    logger* logger_);
 
-  private:
-    std::map<std::vector<std::string>, pragma_handler> _handlers;
-  };
+    private:
+      std::map<std::vector<std::string>, pragma_handler> _handlers;
+    };
+  }
 }
 
 #endif

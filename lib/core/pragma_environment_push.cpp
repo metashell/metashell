@@ -17,24 +17,29 @@
 #include <metashell/core/pragma_environment_push.hpp>
 #include <metashell/core/shell.hpp>
 
-using namespace metashell;
-
-pragma_environment_push::pragma_environment_push(shell& shell_) : _shell(shell_)
+namespace metashell
 {
-}
+  namespace core
+  {
+    pragma_environment_push::pragma_environment_push(shell& shell_)
+      : _shell(shell_)
+    {
+    }
 
-iface::pragma_handler* pragma_environment_push::clone() const
-{
-  return new pragma_environment_push(_shell);
-}
+    iface::pragma_handler* pragma_environment_push::clone() const
+    {
+      return new pragma_environment_push(_shell);
+    }
 
-std::string pragma_environment_push::description() const
-{
-  return "Pushes the current environment to the environment stack.";
-}
+    std::string pragma_environment_push::description() const
+    {
+      return "Pushes the current environment to the environment stack.";
+    }
 
-void pragma_environment_push::run(iface::displayer& displayer_) const
-{
-  _shell.push_environment();
-  _shell.display_environment_stack_size(displayer_);
+    void pragma_environment_push::run(iface::displayer& displayer_) const
+    {
+      _shell.push_environment();
+      _shell.display_environment_stack_size(displayer_);
+    }
+  }
 }

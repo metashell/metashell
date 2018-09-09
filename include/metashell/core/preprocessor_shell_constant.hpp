@@ -23,16 +23,19 @@
 
 namespace metashell
 {
-  class preprocessor_shell_constant : public iface::preprocessor_shell
+  namespace core
   {
-  public:
-    explicit preprocessor_shell_constant(data::result result_);
+    class preprocessor_shell_constant : public iface::preprocessor_shell
+    {
+    public:
+      explicit preprocessor_shell_constant(data::result result_);
 
-    virtual data::result precompile(const data::cpp_code&) override;
+      virtual data::result precompile(const data::cpp_code&) override;
 
-  private:
-    data::result _result;
-  };
+    private:
+      data::result _result;
+    };
+  }
 }
 
 #endif

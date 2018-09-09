@@ -23,19 +23,22 @@
 
 namespace metashell
 {
-  class preprocessor_tracer_wave : public iface::preprocessor_tracer
+  namespace core
   {
-  public:
-    explicit preprocessor_tracer_wave(data::wave_config config_);
+    class preprocessor_tracer_wave : public iface::preprocessor_tracer
+    {
+    public:
+      explicit preprocessor_tracer_wave(data::wave_config config_);
 
-    virtual std::unique_ptr<iface::event_data_sequence>
-    eval(iface::environment&,
-         const boost::optional<data::cpp_code>&,
-         data::metaprogram_mode) override;
+      virtual std::unique_ptr<iface::event_data_sequence>
+      eval(iface::environment&,
+           const boost::optional<data::cpp_code>&,
+           data::metaprogram_mode) override;
 
-  private:
-    data::wave_config _config;
-  };
+    private:
+      data::wave_config _config;
+    };
+  }
 }
 
 #endif

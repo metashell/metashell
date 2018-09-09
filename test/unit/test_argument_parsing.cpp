@@ -30,9 +30,10 @@ using ::testing::Return;
 
 namespace
 {
-  parse_config_result parse_config(std::initializer_list<const char*> args_,
-                                   std::ostringstream* out_ = nullptr,
-                                   std::ostringstream* err_ = nullptr)
+  core::parse_config_result
+  parse_config(std::initializer_list<const char*> args_,
+               std::ostringstream* out_ = nullptr,
+               std::ostringstream* err_ = nullptr)
   {
     std::vector<const char*> args{"metashell"};
     args.insert(args.end(), args_.begin(), args_.end());
@@ -41,17 +42,17 @@ namespace
     ON_CALL(env_detector, on_windows()).WillByDefault(Return(false));
     ON_CALL(env_detector, on_osx()).WillByDefault(Return(false));
 
-    return metashell::parse_config(args.size(), args.data(),
-                                   std::map<std::string, engine_entry>(),
-                                   env_detector, out_, err_);
+    return core::parse_config(args.size(), args.data(),
+                              std::map<std::string, core::engine_entry>(),
+                              env_detector, out_, err_);
   }
 
   bool fails_and_displays_error(std::initializer_list<const char*> args_)
   {
     std::ostringstream err;
-    const parse_config_result r = parse_config(args_, nullptr, &err);
+    const core::parse_config_result r = parse_config(args_, nullptr, &err);
 
-    return parse_config_result::action_t::exit_with_error == r.action &&
+    return core::parse_config_result::action_t::exit_with_error == r.action &&
            !err.str().empty();
   }
 }
@@ -150,7 +151,8 @@ TEST(argument_parsing, logging_to_file)
 
 TEST(argument_parsing, it_is_an_error_to_specify_log_twice)
 {
-  const parse_config_result r = parse_config({"--log", "-", "--log", "-"});
+  const core::parse_config_result r =
+      parse_config({"--log", "-", "--log", "-"});
 
   ASSERT_FALSE(r.should_run_shell());
   ASSERT_TRUE(r.should_error_at_exit());
@@ -189,9 +191,9 @@ TEST(argument_parsing, metashell_path_is_filled)
   ON_CALL(env_detector, on_osx()).WillByDefault(Return(false));
 
   const metashell::data::config cfg =
-      metashell::parse_config(args.size(), args.data(),
-                              std::map<std::string, engine_entry>(),
-                              env_detector, nullptr, nullptr)
+      core::parse_config(args.size(), args.data(),
+                         std::map<std::string, core::engine_entry>(),
+                         env_detector, nullptr, nullptr)
           .cfg;
 
   ASSERT_EQ("the_path", cfg.metashell_binary);

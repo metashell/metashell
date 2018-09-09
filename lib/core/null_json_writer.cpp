@@ -16,54 +16,58 @@
 
 #include <metashell/core/null_json_writer.hpp>
 
-using namespace metashell;
-
-void null_json_writer::string(const std::string&)
+namespace metashell
 {
-  // throw away
-}
+  namespace core
+  {
+    void null_json_writer::string(const std::string&)
+    {
+      // throw away
+    }
 
-void null_json_writer::int_(int)
-{
-  // throw away
-}
+    void null_json_writer::int_(int)
+    {
+      // throw away
+    }
 
-void null_json_writer::double_(double)
-{
-  // throw away
-}
+    void null_json_writer::double_(double)
+    {
+      // throw away
+    }
 
-void null_json_writer::bool_(bool)
-{
-  // throw away
-}
+    void null_json_writer::bool_(bool)
+    {
+      // throw away
+    }
 
-void null_json_writer::start_object()
-{
-  // throw away
-}
+    void null_json_writer::start_object()
+    {
+      // throw away
+    }
 
-void null_json_writer::key(const std::string&)
-{
-  // throw away
-}
+    void null_json_writer::key(const std::string&)
+    {
+      // throw away
+    }
 
-void null_json_writer::end_object()
-{
-  // throw away
-}
+    void null_json_writer::end_object()
+    {
+      // throw away
+    }
 
-void null_json_writer::start_array()
-{
-  // throw away
-}
+    void null_json_writer::start_array()
+    {
+      // throw away
+    }
 
-void null_json_writer::end_array()
-{
-  // throw away
-}
+    void null_json_writer::end_array()
+    {
+      // throw away
+    }
 
-void null_json_writer::end_document()
-{
-  // throw away
+    void null_json_writer::end_document()
+    {
+      // throw away
+    }
+  }
 }

@@ -21,12 +21,15 @@
 
 namespace metashell
 {
-  std::unique_ptr<iface::event_data_sequence>
-  preprocessor_tracer_constant::eval(iface::environment&,
-                                     const boost::optional<data::cpp_code>&,
-                                     data::metaprogram_mode mode_)
+  namespace core
   {
-    return make_event_data_sequence_ptr(
-        data::in_memory_event_data_sequence{data::cpp_code{}, mode_, {}});
+    std::unique_ptr<iface::event_data_sequence>
+    preprocessor_tracer_constant::eval(iface::environment&,
+                                       const boost::optional<data::cpp_code>&,
+                                       data::metaprogram_mode mode_)
+    {
+      return make_event_data_sequence_ptr(
+          data::in_memory_event_data_sequence{data::cpp_code{}, mode_, {}});
+    }
   }
 }

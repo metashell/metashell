@@ -23,22 +23,25 @@
 
 namespace metashell
 {
-  class shell;
-
-  class pragma_environment_push : public pragma_without_arguments
+  namespace core
   {
-  public:
-    explicit pragma_environment_push(shell& shell_);
+    class shell;
 
-    virtual iface::pragma_handler* clone() const override;
+    class pragma_environment_push : public pragma_without_arguments
+    {
+    public:
+      explicit pragma_environment_push(shell& shell_);
 
-    virtual std::string description() const override;
+      virtual iface::pragma_handler* clone() const override;
 
-    virtual void run(iface::displayer& displayer_) const override;
+      virtual std::string description() const override;
 
-  private:
-    shell& _shell;
-  };
+      virtual void run(iface::displayer& displayer_) const override;
+
+    private:
+      shell& _shell;
+    };
+  }
 }
 
 #endif

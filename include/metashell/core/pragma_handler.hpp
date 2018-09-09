@@ -28,37 +28,40 @@
 
 namespace metashell
 {
-  class pragma_handler
+  namespace core
   {
-  public:
-    template <class Impl>
-    pragma_handler(Impl impl_) : _body(make_unique<Impl>(impl_))
+    class pragma_handler
     {
-      static_assert(
-          std::is_base_of<iface::pragma_handler, Impl>::value, "Invalid impl");
-    }
+    public:
+      template <class Impl>
+      pragma_handler(Impl impl_) : _body(core::make_unique<Impl>(impl_))
+      {
+        static_assert(std::is_base_of<iface::pragma_handler, Impl>::value,
+                      "Invalid impl");
+      }
 
-    pragma_handler(const pragma_handler& h_);
-    pragma_handler& operator=(pragma_handler h_);
+      pragma_handler(const pragma_handler& h_);
+      pragma_handler& operator=(pragma_handler h_);
 
-    void swap(pragma_handler& h_);
+      void swap(pragma_handler& h_);
 
-    std::string arguments() const;
-    std::string description() const;
+      std::string arguments() const;
+      std::string description() const;
 
-    void run(const data::command::iterator& name_begin_,
-             const data::command::iterator& name_end_,
-             const data::command::iterator& args_begin_,
-             const data::command::iterator& args_end_,
-             iface::displayer& displayer_) const;
+      void run(const data::command::iterator& name_begin_,
+               const data::command::iterator& name_end_,
+               const data::command::iterator& args_begin_,
+               const data::command::iterator& args_end_,
+               iface::displayer& displayer_) const;
 
-  private:
-    std::unique_ptr<iface::pragma_handler> _body;
-  };
+    private:
+      std::unique_ptr<iface::pragma_handler> _body;
+    };
 
-  void run(const iface::pragma_handler& handler_,
-           const data::cpp_code& args_,
-           iface::displayer& displayer_);
+    void run(const iface::pragma_handler& handler_,
+             const data::cpp_code& args_,
+             iface::displayer& displayer_);
+  }
 }
 
 #endif

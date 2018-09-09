@@ -29,25 +29,26 @@
 
 namespace metashell
 {
-
-  class breakpoint
+  namespace core
   {
-  public:
-    explicit breakpoint(int id, const boost::regex& name_regex);
+    class breakpoint
+    {
+    public:
+      explicit breakpoint(int id, const boost::regex& name_regex);
 
-    bool match(const data::metaprogram_node& node) const;
+      bool match(const data::metaprogram_node& node) const;
 
-    int get_id() const;
+      int get_id() const;
 
-    std::string to_string() const;
+      std::string to_string() const;
 
-  private:
-    int id;
-    boost::optional<boost::regex> name_regex;
-  };
+    private:
+      int id;
+      boost::optional<boost::regex> name_regex;
+    };
 
-  using breakpoints_t = std::vector<breakpoint>;
-
-} // namespace metashell
+    using breakpoints_t = std::vector<breakpoint>;
+  }
+} // namespace metashell { namespace core
 
 #endif

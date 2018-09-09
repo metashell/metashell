@@ -18,16 +18,19 @@
 
 namespace metashell
 {
-  cpp_validator_wave::cpp_validator_wave(data::wave_config config_)
-    : _preprocessor(std::move(config_))
+  namespace core
   {
-  }
+    cpp_validator_wave::cpp_validator_wave(data::wave_config config_)
+      : _preprocessor(std::move(config_))
+    {
+    }
 
-  data::result cpp_validator_wave::validate_code(const data::cpp_code& src_,
-                                                 const data::config&,
-                                                 const iface::environment&,
-                                                 bool)
-  {
-    return _preprocessor.precompile(src_);
+    data::result cpp_validator_wave::validate_code(const data::cpp_code& src_,
+                                                   const data::config&,
+                                                   const iface::environment&,
+                                                   bool)
+    {
+      return _preprocessor.precompile(src_);
+    }
   }
 }

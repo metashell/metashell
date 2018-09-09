@@ -34,8 +34,8 @@ using namespace metashell;
 #endif
 #define CHECK_IF_DISPLAYS_ERROR(command_, error_message_)                      \
   {                                                                            \
-    in_memory_displayer d;                                                     \
-    shell sh(test_config(), "", "", "", create_failing_engine());              \
+    core::in_memory_displayer d;                                               \
+    core::shell sh(test_config(), "", "", "", core::create_failing_engine());  \
     sh.line_available((command_), d);                                          \
                                                                                \
     ASSERT_EQ(std::vector<std::string>{(error_message_)}, d.errors());         \
@@ -43,21 +43,22 @@ using namespace metashell;
 
 namespace
 {
-  pragma_which::parsed_arguments parse_arguments(const std::string& arguments_)
+  core::pragma_which::parsed_arguments
+  parse_arguments(const std::string& arguments_)
   {
     const data::command arguments{data::cpp_code(arguments_)};
-    return pragma_which::parse_arguments(
+    return core::pragma_which::parse_arguments(
         "which", arguments.begin(), arguments.end());
   }
 
-  pragma_which::parsed_arguments sys(const boost::filesystem::path& path_,
-                                     bool all_)
+  core::pragma_which::parsed_arguments sys(const boost::filesystem::path& path_,
+                                           bool all_)
   {
     return {data::include_argument(data::include_type::sys, path_), all_};
   }
 
-  pragma_which::parsed_arguments quote(const boost::filesystem::path& path_,
-                                       bool all_)
+  core::pragma_which::parsed_arguments
+  quote(const boost::filesystem::path& path_, bool all_)
   {
     return {data::include_argument(data::include_type::quote, path_), all_};
   }

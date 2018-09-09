@@ -18,8 +18,11 @@
 
 namespace metashell
 {
-  data::cpp_code macro_discovery_constant::macros(const iface::environment&)
+  namespace core
   {
-    return data::cpp_code();
+    data::cpp_code macro_discovery_constant::macros(const iface::environment&)
+    {
+      return data::cpp_code();
+    }
   }
 }

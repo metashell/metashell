@@ -21,29 +21,32 @@
 
 namespace metashell
 {
-  // Based on RapidJSON's documentation
-  // http://miloyip.github.io/rapidjson/md_doc_stream.html#CustomStream
-  class rapid_ostream_wrapper
+  namespace core
   {
-  public:
-    typedef char Ch;
+    // Based on RapidJSON's documentation
+    // http://miloyip.github.io/rapidjson/md_doc_stream.html#CustomStream
+    class rapid_ostream_wrapper
+    {
+    public:
+      typedef char Ch;
 
-    rapid_ostream_wrapper(std::ostream& os_);
+      rapid_ostream_wrapper(std::ostream& os_);
 
-    void Put(Ch c_);
-    void Flush();
+      void Put(Ch c_);
+      void Flush();
 
-    void new_line();
+      void new_line();
 
-    Ch Peek() const;
-    Ch Take();
-    size_t Tell() const;
-    Ch* PutBegin();
-    size_t PutEnd(Ch*);
+      Ch Peek() const;
+      Ch Take();
+      size_t Tell() const;
+      Ch* PutBegin();
+      size_t PutEnd(Ch*);
 
-  private:
-    std::ostream& _os;
-  };
+    private:
+      std::ostream& _os;
+    };
+  }
 }
 
 #endif

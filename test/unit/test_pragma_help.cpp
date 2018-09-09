@@ -50,9 +50,9 @@ namespace
 
 TEST(pragma_help, no_arguments)
 {
-  in_memory_displayer d;
-  metashell::shell sh(
-      metashell::test_config(), "", "", "", metashell::create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(
+      metashell::test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("#pragma metashell help", d);
 
   ASSERT_FALSE(d.comments().empty());
@@ -61,9 +61,9 @@ TEST(pragma_help, no_arguments)
 
 TEST(pragma_help, non_existing_pragma_argument)
 {
-  in_memory_displayer d;
-  metashell::shell sh(
-      metashell::test_config(), "", "", "", metashell::create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(
+      metashell::test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("#pragma metashell help foo", d);
 
   ASSERT_EQ(empty_container, d.comments());
@@ -72,9 +72,9 @@ TEST(pragma_help, non_existing_pragma_argument)
 
 TEST(pragma_help, non_existing_pragma_argument_2)
 {
-  in_memory_displayer d;
-  metashell::shell sh(
-      metashell::test_config(), "", "", "", metashell::create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(
+      metashell::test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("#pragma metashell help foo bar", d);
 
   ASSERT_EQ(empty_container, d.comments());
@@ -83,9 +83,9 @@ TEST(pragma_help, non_existing_pragma_argument_2)
 
 TEST(pragma_help, for_a_pragma)
 {
-  in_memory_displayer d;
-  metashell::shell sh(
-      metashell::test_config(), "", "", "", metashell::create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(
+      metashell::test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("#pragma metashell help help", d);
 
   ASSERT_FALSE(d.comments().empty());
@@ -94,9 +94,9 @@ TEST(pragma_help, for_a_pragma)
 
 TEST(pragma_help, for_a_pragma_which_is_also_the_prefix_of_other_pragmas)
 {
-  in_memory_displayer d;
-  metashell::shell sh(
-      metashell::test_config(), "", "", "", metashell::create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(
+      metashell::test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("#msh help environment", d);
 
   ASSERT_EQ(1u, d.comments().size());

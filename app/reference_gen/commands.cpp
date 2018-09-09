@@ -33,7 +33,7 @@
 namespace
 {
   void show_markdown(const std::vector<std::string>& name_,
-                     const metashell::pragma_handler& h_,
+                     const metashell::core::pragma_handler& h_,
                      std::ostream& out_)
   {
     using boost::algorithm::join;
@@ -50,13 +50,13 @@ namespace
     metashell::data::config cfg{};
     cfg.push_back(metashell::data::shell_config());
 
-    metashell::command_processor_queue cpq;
+    metashell::core::command_processor_queue cpq;
     const std::string internal_dir;
     const boost::filesystem::path mdb_temp_dir;
-    metashell::shell sh(cfg, cpq, internal_dir, "", mdb_temp_dir,
-                        metashell::create_failing_engine());
-    const metashell::pragma_handler_map m =
-        metashell::pragma_handler_map::build_default(
+    metashell::core::shell sh(cfg, cpq, internal_dir, "", mdb_temp_dir,
+                              metashell::core::create_failing_engine());
+    const metashell::core::pragma_handler_map m =
+        metashell::core::pragma_handler_map::build_default(
             sh, &cpq, mdb_temp_dir, nullptr);
 
     for (const auto& p : m)
@@ -71,11 +71,11 @@ namespace
     using boost::algorithm::join;
     using boost::algorithm::replace_all_copy;
 
-    metashell::mdb_command_handler_map::commands_t commands =
-        metashell::mdb_shell::build_command_handler(Preprocessor)
+    metashell::core::mdb_command_handler_map::commands_t commands =
+        metashell::core::mdb_shell::build_command_handler(Preprocessor)
             .get_commands();
 
-    for (const metashell::mdb_command& cmd : commands)
+    for (const metashell::core::mdb_command& cmd : commands)
     {
       out_ << "* __`" << join(cmd.get_keys(), "|") << " " << cmd.get_usage()
            << "`__ <br />\n"
@@ -91,7 +91,7 @@ namespace
 
   void show_engine_help(std::ostream& out_)
   {
-    const auto engines = metashell::available_engines();
+    const auto engines = metashell::core::available_engines();
 
     for (const auto& engine : engines)
     {
@@ -110,7 +110,7 @@ namespace
 
   void show_engine_features(std::ostream& out_)
   {
-    const auto engines = metashell::available_engines();
+    const auto engines = metashell::core::available_engines();
     const auto features = metashell::data::feature::all();
 
     std::vector<metashell::data::markdown_string> header{

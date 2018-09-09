@@ -21,8 +21,11 @@
 
 namespace metashell
 {
-  engine_entry get_engine_templight_entry();
-  engine_entry get_internal_templight_entry();
+  namespace core
+  {
+    engine_entry get_engine_templight_entry();
+    engine_entry get_internal_templight_entry();
+  }
 }
 
 #endif

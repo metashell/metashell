@@ -32,27 +32,30 @@
 
 namespace metashell
 {
-  class protobuf_trace
+  namespace core
   {
-  public:
-    protobuf_trace(const boost::filesystem::path& src,
-                   data::type_or_code_or_error evaluation_result,
-                   data::cpp_code root_name_,
-                   data::metaprogram_mode mode_);
+    class protobuf_trace
+    {
+    public:
+      protobuf_trace(const boost::filesystem::path& src,
+                     data::type_or_code_or_error evaluation_result,
+                     data::cpp_code root_name_,
+                     data::metaprogram_mode mode_);
 
-    boost::optional<data::event_data> next();
+      boost::optional<data::event_data> next();
 
-    const data::cpp_code& root_name() const;
+      const data::cpp_code& root_name() const;
 
-    data::metaprogram_mode mode() const;
+      data::metaprogram_mode mode() const;
 
-  private:
-    std::unique_ptr<std::istream> _src;
-    templight::ProtobufReader _reader;
-    boost::optional<data::event_data> _evaluation_result;
-    data::cpp_code _root_name;
-    data::metaprogram_mode _mode;
-  };
+    private:
+      std::unique_ptr<std::istream> _src;
+      templight::ProtobufReader _reader;
+      boost::optional<data::event_data> _evaluation_result;
+      data::cpp_code _root_name;
+      data::metaprogram_mode _mode;
+    };
+  }
 }
 
 #endif

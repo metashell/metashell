@@ -25,11 +25,14 @@
 
 namespace metashell
 {
-  struct some_feature_not_supported : exception
+  namespace core
   {
-    some_feature_not_supported(const std::string& engine_name_,
-                               const data::feature& feature_);
-  };
+    struct some_feature_not_supported : exception
+    {
+      some_feature_not_supported(const std::string& engine_name_,
+                                 const data::feature& feature_);
+    };
+  }
 }
 
 #endif

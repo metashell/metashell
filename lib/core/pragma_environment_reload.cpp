@@ -17,24 +17,28 @@
 #include <metashell/core/pragma_environment_reload.hpp>
 #include <metashell/core/shell.hpp>
 
-using namespace metashell;
-
-pragma_environment_reload::pragma_environment_reload(shell& shell_)
-  : _shell(shell_)
+namespace metashell
 {
-}
+  namespace core
+  {
+    pragma_environment_reload::pragma_environment_reload(shell& shell_)
+      : _shell(shell_)
+    {
+    }
 
-iface::pragma_handler* pragma_environment_reload::clone() const
-{
-  return new pragma_environment_reload(_shell);
-}
+    iface::pragma_handler* pragma_environment_reload::clone() const
+    {
+      return new pragma_environment_reload(_shell);
+    }
 
-std::string pragma_environment_reload::description() const
-{
-  return "Re-reads the included header files from disc.";
-}
+    std::string pragma_environment_reload::description() const
+    {
+      return "Re-reads the included header files from disc.";
+    }
 
-void pragma_environment_reload::run(iface::displayer&) const
-{
-  _shell.rebuild_environment();
+    void pragma_environment_reload::run(iface::displayer&) const
+    {
+      _shell.rebuild_environment();
+    }
+  }
 }

@@ -16,21 +16,28 @@
 
 #include <metashell/core/pragma_environment.hpp>
 
-using namespace metashell;
-
-pragma_environment::pragma_environment(iface::environment& env_) : _env(env_) {}
-
-iface::pragma_handler* pragma_environment::clone() const
+namespace metashell
 {
-  return new pragma_environment(_env);
-}
+  namespace core
+  {
+    pragma_environment::pragma_environment(iface::environment& env_)
+      : _env(env_)
+    {
+    }
 
-std::string pragma_environment::description() const
-{
-  return "Displays the entire content of the environment.";
-}
+    iface::pragma_handler* pragma_environment::clone() const
+    {
+      return new pragma_environment(_env);
+    }
 
-void pragma_environment::run(iface::displayer& displayer_) const
-{
-  displayer_.show_cpp_code(_env.get_all());
+    std::string pragma_environment::description() const
+    {
+      return "Displays the entire content of the environment.";
+    }
+
+    void pragma_environment::run(iface::displayer& displayer_) const
+    {
+      displayer_.show_cpp_code(_env.get_all());
+    }
+  }
 }

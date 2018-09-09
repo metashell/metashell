@@ -18,13 +18,17 @@
 
 namespace metashell
 {
-  preprocessor_shell_constant::preprocessor_shell_constant(data::result result_)
-    : _result(std::move(result_))
+  namespace core
   {
-  }
+    preprocessor_shell_constant::preprocessor_shell_constant(
+        data::result result_)
+      : _result(std::move(result_))
+    {
+    }
 
-  data::result preprocessor_shell_constant::precompile(const data::cpp_code&)
-  {
-    return _result;
+    data::result preprocessor_shell_constant::precompile(const data::cpp_code&)
+    {
+      return _result;
+    }
   }
 }

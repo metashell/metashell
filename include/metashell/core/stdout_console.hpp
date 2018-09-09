@@ -21,17 +21,20 @@
 
 namespace metashell
 {
-  class stdout_console : public iface::console
+  namespace core
   {
-  public:
-    virtual void show(const data::colored_string& s_) override;
-    virtual void new_line() override;
+    class stdout_console : public iface::console
+    {
+    public:
+      virtual void show(const data::colored_string& s_) override;
+      virtual void new_line() override;
 
-    virtual user_answer ask_for_continuation() override;
+      virtual user_answer ask_for_continuation() override;
 
-    virtual int width() const override;
-    virtual int height() const override;
-  };
+      virtual int width() const override;
+      virtual int height() const override;
+    };
+  }
 }
 
 #endif

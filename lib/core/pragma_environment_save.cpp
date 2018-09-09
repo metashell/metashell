@@ -21,57 +21,65 @@
 
 #include <fstream>
 
-using namespace metashell;
-
-pragma_environment_save::pragma_environment_save(const data::config& config_,
-                                                 const iface::environment& env_)
-  : _config(config_), _env(env_)
+namespace metashell
 {
-}
-
-iface::pragma_handler* pragma_environment_save::clone() const
-{
-  return new pragma_environment_save(_config, _env);
-}
-
-std::string pragma_environment_save::arguments() const { return "<path>"; }
-
-std::string pragma_environment_save::description() const
-{
-  return "Saves the environment into a file. This is disabled by default. It "
-         "can be"
-         " enabled using the --enable_saving command line argument.";
-}
-
-void pragma_environment_save::run(const data::command::iterator&,
-                                  const data::command::iterator&,
-                                  const data::command::iterator& args_begin_,
-                                  const data::command::iterator& args_end_,
-                                  iface::displayer& displayer_) const
-{
-  if (_config.saving_enabled)
+  namespace core
   {
-    const std::string fn =
-        boost::trim_copy(tokens_to_string(args_begin_, args_end_)).value();
-
-    if (fn.empty())
+    pragma_environment_save::pragma_environment_save(
+        const data::config& config_, const iface::environment& env_)
+      : _config(config_), _env(env_)
     {
-      displayer_.show_error(
-          "Filename to save the environment into is missing.");
     }
-    else
+
+    iface::pragma_handler* pragma_environment_save::clone() const
     {
-      std::ofstream f(fn.c_str());
-      f << _env.get_all() << std::endl;
-      if (f.fail() || f.bad())
+      return new pragma_environment_save(_config, _env);
+    }
+
+    std::string pragma_environment_save::arguments() const { return "<path>"; }
+
+    std::string pragma_environment_save::description() const
+    {
+      return "Saves the environment into a file. This is disabled by default. "
+             "It "
+             "can be"
+             " enabled using the --enable_saving command line argument.";
+    }
+
+    void
+    pragma_environment_save::run(const data::command::iterator&,
+                                 const data::command::iterator&,
+                                 const data::command::iterator& args_begin_,
+                                 const data::command::iterator& args_end_,
+                                 iface::displayer& displayer_) const
+    {
+      if (_config.saving_enabled)
       {
-        displayer_.show_error("Failed to save the environment into file " + fn);
+        const std::string fn =
+            boost::trim_copy(tokens_to_string(args_begin_, args_end_)).value();
+
+        if (fn.empty())
+        {
+          displayer_.show_error(
+              "Filename to save the environment into is missing.");
+        }
+        else
+        {
+          std::ofstream f(fn.c_str());
+          f << _env.get_all() << std::endl;
+          if (f.fail() || f.bad())
+          {
+            displayer_.show_error("Failed to save the environment into file " +
+                                  fn);
+          }
+        }
+      }
+      else
+      {
+        displayer_.show_error(
+            "Saving is disabled by the --disable_saving command line "
+            "argument.");
       }
     }
-  }
-  else
-  {
-    displayer_.show_error(
-        "Saving is disabled by the --disable_saving command line argument.");
   }
 }

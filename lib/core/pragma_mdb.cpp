@@ -23,79 +23,85 @@
 
 #include <cassert>
 
-using namespace metashell;
-
-pragma_mdb::pragma_mdb(shell& shell_,
-                       command_processor_queue* cpq_,
-                       const boost::filesystem::path& mdb_temp_dir_,
-                       bool preprocessor_,
-                       logger* logger_)
-  : _preprocessor(preprocessor_),
-    _shell(shell_),
-    _cpq(cpq_),
-    _mdb_temp_dir(mdb_temp_dir_),
-    _logger(logger_)
+namespace metashell
 {
-}
-
-iface::pragma_handler* pragma_mdb::clone() const
-{
-  return new pragma_mdb(_shell, _cpq, _mdb_temp_dir, _preprocessor, _logger);
-}
-
-std::string pragma_mdb::arguments() const
-{
-  return data::mdb_usage(_preprocessor);
-}
-
-std::string pragma_mdb::description() const
-{
-  const std::string name =
-      _preprocessor ? "preprocessor debugger" : "metadebugger";
-  return "Starts the " + name + ". For more information see evaluate in the " +
-         name + " command reference.";
-}
-
-void pragma_mdb::run(const data::command::iterator&,
-                     const data::command::iterator&,
-                     const data::command::iterator& args_begin_,
-                     const data::command::iterator& args_end_,
-                     iface::displayer& displayer_) const
-{
-  assert(_cpq != nullptr);
-
-  std::string args = tokens_to_string(args_begin_, args_end_).value();
-
-  command_processor_queue::cleanup_function restore;
-  if (_shell.using_precompiled_headers())
+  namespace core
   {
-    _shell.using_precompiled_headers(false);
-    shell* sh = &_shell;
-    restore = [sh](iface::displayer& displayer_) {
-      try
+    pragma_mdb::pragma_mdb(shell& shell_,
+                           command_processor_queue* cpq_,
+                           const boost::filesystem::path& mdb_temp_dir_,
+                           bool preprocessor_,
+                           logger* logger_)
+      : _preprocessor(preprocessor_),
+        _shell(shell_),
+        _cpq(cpq_),
+        _mdb_temp_dir(mdb_temp_dir_),
+        _logger(logger_)
+    {
+    }
+
+    iface::pragma_handler* pragma_mdb::clone() const
+    {
+      return new pragma_mdb(
+          _shell, _cpq, _mdb_temp_dir, _preprocessor, _logger);
+    }
+
+    std::string pragma_mdb::arguments() const
+    {
+      return data::mdb_usage(_preprocessor);
+    }
+
+    std::string pragma_mdb::description() const
+    {
+      const std::string name =
+          _preprocessor ? "preprocessor debugger" : "metadebugger";
+      return "Starts the " + name +
+             ". For more information see evaluate in the " + name +
+             " command reference.";
+    }
+
+    void pragma_mdb::run(const data::command::iterator&,
+                         const data::command::iterator&,
+                         const data::command::iterator& args_begin_,
+                         const data::command::iterator& args_end_,
+                         iface::displayer& displayer_) const
+    {
+      assert(_cpq != nullptr);
+
+      std::string args = tokens_to_string(args_begin_, args_end_).value();
+
+      command_processor_queue::cleanup_function restore;
+      if (_shell.using_precompiled_headers())
       {
-        sh->using_precompiled_headers(true);
+        _shell.using_precompiled_headers(false);
+        shell* sh = &_shell;
+        restore = [sh](iface::displayer& displayer_) {
+          try
+          {
+            sh->using_precompiled_headers(true);
+          }
+          catch (const std::exception& e_)
+          {
+            displayer_.show_error(e_.what());
+          }
+        };
       }
-      catch (const std::exception& e_)
+
+      std::unique_ptr<mdb_shell> sh(
+          new mdb_shell(_shell.env(), _shell.engine(), _shell.env_path(),
+                        _mdb_temp_dir, _preprocessor, _logger));
+
+      if (_shell.get_config().splash_enabled)
       {
-        displayer_.show_error(e_.what());
+        sh->display_splash(displayer_);
       }
-    };
+
+      if (!args.empty())
+      {
+        sh->command_evaluate(args, displayer_);
+      }
+
+      _cpq->push(move(sh), move(restore));
+    }
   }
-
-  std::unique_ptr<mdb_shell> sh(new mdb_shell(_shell.env(), _shell.engine(),
-                                              _shell.env_path(), _mdb_temp_dir,
-                                              _preprocessor, _logger));
-
-  if (_shell.get_config().splash_enabled)
-  {
-    sh->display_splash(displayer_);
-  }
-
-  if (!args.empty())
-  {
-    sh->command_evaluate(args, displayer_);
-  }
-
-  _cpq->push(move(sh), move(restore));
 }

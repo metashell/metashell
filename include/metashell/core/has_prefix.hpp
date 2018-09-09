@@ -22,8 +22,11 @@
 
 namespace metashell
 {
-  bool has_prefix(const std::vector<std::string>& args_,
-                  const std::vector<std::string>& prefixes_);
+  namespace core
+  {
+    bool has_prefix(const std::vector<std::string>& args_,
+                    const std::vector<std::string>& prefixes_);
+  }
 }
 
 #endif

@@ -19,9 +19,12 @@
 
 namespace metashell
 {
-  class not_supported
+  namespace core
   {
-  };
+    class not_supported
+    {
+    };
+  }
 }
 
 #endif

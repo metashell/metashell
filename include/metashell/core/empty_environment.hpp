@@ -21,23 +21,26 @@
 
 namespace metashell
 {
-  class empty_environment : public iface::environment
+  namespace core
   {
-  public:
-    explicit empty_environment(const boost::filesystem::path& internal_dir_);
+    class empty_environment : public iface::environment
+    {
+    public:
+      explicit empty_environment(const boost::filesystem::path& internal_dir_);
 
-    virtual void append(const data::cpp_code& s_) override;
-    virtual data::cpp_code get() const override;
-    virtual data::cpp_code
-    get_appended(const data::cpp_code& s_) const override;
+      virtual void append(const data::cpp_code& s_) override;
+      virtual data::cpp_code get() const override;
+      virtual data::cpp_code
+      get_appended(const data::cpp_code& s_) const override;
 
-    virtual const data::headers& get_headers() const override;
+      virtual const data::headers& get_headers() const override;
 
-    virtual data::cpp_code get_all() const override;
+      virtual data::cpp_code get_all() const override;
 
-  private:
-    data::headers _headers;
-  };
+    private:
+      data::headers _headers;
+    };
+  }
 }
 
 #endif

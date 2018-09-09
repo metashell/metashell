@@ -24,85 +24,89 @@
 
 #include <algorithm>
 
-using namespace metashell;
-
-namespace
+namespace metashell
 {
-  const std::string true_values[] = {"on", "1"};
-  const std::string false_values[] = {"off", "0"};
-
-  template <int N>
-  bool element_of(const std::string (&a_)[N], const std::string& item_)
+  namespace core
   {
-    return std::find(a_, a_ + N, item_) != a_ + N;
-  }
-
-  bool valid_argument(const std::string& v_)
-  {
-    return element_of(true_values, v_) || element_of(false_values, v_);
-  }
-
-  std::string valid_arguments()
-  {
-    using boost::algorithm::join;
-    return join(true_values, "|") + "|" + join(false_values, "|");
-  }
-}
-
-pragma_switch::pragma_switch(const std::string& name_,
-                             const std::function<bool()>& query_,
-                             const std::function<void(bool)>& update_)
-  : _query(query_), _update(update_), _name(name_)
-{
-}
-
-iface::pragma_handler* pragma_switch::clone() const
-{
-  return new pragma_switch(_name, _query, _update);
-}
-
-std::string pragma_switch::arguments() const
-{
-  return "[" + valid_arguments() + "]";
-}
-
-std::string pragma_switch::description() const
-{
-  return "Turns " + _name +
-         " on or off. When no arguments are used, it displays if " + _name +
-         " is turned on.";
-}
-
-void pragma_switch::run(const data::command::iterator&,
-                        const data::command::iterator&,
-                        const data::command::iterator& args_begin_,
-                        const data::command::iterator& args_end_,
-                        iface::displayer& displayer_) const
-{
-  auto i = args_begin_;
-
-  if (i != args_end_)
-  {
-    const std::string v = i->value().value();
-    if (valid_argument(v))
+    namespace
     {
-      ++i;
-      if (i == args_end_)
+      const std::string true_values[] = {"on", "1"};
+      const std::string false_values[] = {"off", "0"};
+
+      template <int N>
+      bool element_of(const std::string (&a_)[N], const std::string& item_)
       {
-        _update(element_of(true_values, v));
+        return std::find(a_, a_ + N, item_) != a_ + N;
       }
-      else
+
+      bool valid_argument(const std::string& v_)
       {
-        displayer_.show_error("Invalid arguments after " + v + ": " +
-                              tokens_to_string(i, args_end_).value());
+        return element_of(true_values, v_) || element_of(false_values, v_);
+      }
+
+      std::string valid_arguments()
+      {
+        using boost::algorithm::join;
+        return join(true_values, "|") + "|" + join(false_values, "|");
       }
     }
-    else
+
+    pragma_switch::pragma_switch(const std::string& name_,
+                                 const std::function<bool()>& query_,
+                                 const std::function<void(bool)>& update_)
+      : _query(query_), _update(update_), _name(name_)
     {
-      displayer_.show_error("Invalid argument " + v + ". Valid values are: " +
-                            valid_arguments());
+    }
+
+    iface::pragma_handler* pragma_switch::clone() const
+    {
+      return new pragma_switch(_name, _query, _update);
+    }
+
+    std::string pragma_switch::arguments() const
+    {
+      return "[" + valid_arguments() + "]";
+    }
+
+    std::string pragma_switch::description() const
+    {
+      return "Turns " + _name +
+             " on or off. When no arguments are used, it displays if " + _name +
+             " is turned on.";
+    }
+
+    void pragma_switch::run(const data::command::iterator&,
+                            const data::command::iterator&,
+                            const data::command::iterator& args_begin_,
+                            const data::command::iterator& args_end_,
+                            iface::displayer& displayer_) const
+    {
+      auto i = args_begin_;
+
+      if (i != args_end_)
+      {
+        const std::string v = i->value().value();
+        if (valid_argument(v))
+        {
+          ++i;
+          if (i == args_end_)
+          {
+            _update(element_of(true_values, v));
+          }
+          else
+          {
+            displayer_.show_error("Invalid arguments after " + v + ": " +
+                                  tokens_to_string(i, args_end_).value());
+          }
+        }
+        else
+        {
+          displayer_.show_error("Invalid argument " + v +
+                                ". Valid values are: " + valid_arguments());
+        }
+      }
+      displayer_.show_comment(
+          data::text(_name + " is " + (_query() ? "on" : "off")));
     }
   }
-  displayer_.show_comment(
-      data::text(_name + " is " + (_query() ? "on" : "off")));
 }

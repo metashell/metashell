@@ -16,9 +16,13 @@
 
 #include <metashell/core/null_history.hpp>
 
-using namespace metashell;
-
-void null_history::add(const std::string&)
+namespace metashell
 {
-  // throw away
+  namespace core
+  {
+    void null_history::add(const std::string&)
+    {
+      // throw away
+    }
+  }
 }

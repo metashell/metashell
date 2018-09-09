@@ -28,144 +28,149 @@
 #include <set>
 #include <vector>
 
-using namespace metashell;
-
-namespace
+namespace metashell
 {
-  std::vector<metashell::data::include_argument>
-  parse_arguments(const std::string& name_,
-                  data::command::iterator begin_,
-                  const data::command::iterator& end_)
+  namespace core
   {
-    std::vector<data::include_argument> result;
-
-    while (begin_ != end_)
+    namespace
     {
-      const auto include_arg = data::include_argument::parse(begin_, end_);
-      if (include_arg.first)
+      std::vector<data::include_argument>
+      parse_arguments(const std::string& name_,
+                      data::command::iterator begin_,
+                      const data::command::iterator& end_)
       {
-        result.push_back(*include_arg.first);
-        begin_ = include_arg.second;
-      }
-      else
-      {
-        const std::string arguments =
-            data::tokens_to_string(begin_, end_).value();
-        throw exception("Argument of " + name_ +
-                        " is not a header to include. Did you mean <" +
-                        arguments + "> or \"" + arguments + "\"?");
-      }
-    }
+        std::vector<data::include_argument> result;
 
-    if (result.empty())
-    {
-      const boost::filesystem::path empty;
-      result.push_back({data::include_type::sys, empty});
-      result.push_back({data::include_type::quote, empty});
-    }
-
-    return result;
-  }
-
-  boost::filesystem::path resolve_symlink(boost::filesystem::path p_)
-  {
-    std::set<boost::filesystem::path> visited;
-
-    while (visited.find(p_) == visited.end() && is_symlink(p_))
-    {
-      visited.insert(p_);
-      p_ = read_symlink(p_);
-    }
-
-    return p_;
-  }
-
-  void display(iface::displayer& displayer_,
-               const std::string& type_,
-               const std::set<data::include_argument>& paths_,
-               bool extra_new_line_ = false)
-  {
-    if (!paths_.empty())
-    {
-      displayer_.show_comment(data::text{type_ + ":"});
-
-      displayer_.show_cpp_code(
-          data::cpp_code(boost::algorithm::join(
-                             paths_ | boost::adaptors::transformed([](
-                                          const data::include_argument& a_) {
-                               return "#include " + data::include_code(a_);
-                             }),
-                             "\n") +
-                         (extra_new_line_ ? "\n" : "")));
-    }
-  }
-}
-
-pragma_ls::pragma_ls(shell& shell_) : _shell(shell_) {}
-
-iface::pragma_handler* pragma_ls::clone() const
-{
-  return new pragma_ls(_shell);
-}
-
-std::string pragma_ls::arguments() const
-{
-  return "{<include file>|\"include file\"}";
-}
-
-std::string pragma_ls::description() const
-{
-  return "Lists the available header files in the directories specified by the "
-         "arguments.";
-}
-
-void pragma_ls::run(const data::command::iterator& name_begin_,
-                    const data::command::iterator& name_end_,
-                    const data::command::iterator& args_begin_,
-                    const data::command::iterator& args_end_,
-                    iface::displayer& displayer_) const
-{
-  std::set<data::include_argument> dirs;
-  std::set<data::include_argument> headers;
-
-  include_path_cache paths(_shell.engine().header_discoverer());
-
-  const boost::filesystem::directory_iterator end;
-
-  for (const data::include_argument& arg :
-       parse_arguments(data::tokens_to_string(name_begin_, name_end_).value(),
-                       args_begin_, args_end_))
-  {
-    for (const boost::filesystem::path& p : paths[arg.type])
-    {
-      const boost::filesystem::path path = resolve_symlink(p / arg.path);
-
-      if (is_regular_file(path))
-      {
-        headers.insert({arg.type, arg.path});
-      }
-      else if (is_directory(path))
-      {
-        for (boost::filesystem::directory_iterator i(path); i != end; ++i)
+        while (begin_ != end_)
         {
-          const boost::filesystem::path f = resolve_symlink(i->path());
-
-          const data::include_argument entry{
-              arg.type, arg.path / i->path().filename()};
-
-          if (is_regular_file(*i))
+          const auto include_arg = data::include_argument::parse(begin_, end_);
+          if (include_arg.first)
           {
-            headers.insert(entry);
+            result.push_back(*include_arg.first);
+            begin_ = include_arg.second;
           }
-          else if (is_directory(*i))
+          else
           {
-            dirs.insert(entry);
+            const std::string arguments =
+                data::tokens_to_string(begin_, end_).value();
+            throw exception("Argument of " + name_ +
+                            " is not a header to include. Did you mean <" +
+                            arguments + "> or \"" + arguments + "\"?");
           }
+        }
+
+        if (result.empty())
+        {
+          const boost::filesystem::path empty;
+          result.push_back({data::include_type::sys, empty});
+          result.push_back({data::include_type::quote, empty});
+        }
+
+        return result;
+      }
+
+      boost::filesystem::path resolve_symlink(boost::filesystem::path p_)
+      {
+        std::set<boost::filesystem::path> visited;
+
+        while (visited.find(p_) == visited.end() && is_symlink(p_))
+        {
+          visited.insert(p_);
+          p_ = read_symlink(p_);
+        }
+
+        return p_;
+      }
+
+      void display(iface::displayer& displayer_,
+                   const std::string& type_,
+                   const std::set<data::include_argument>& paths_,
+                   bool extra_new_line_ = false)
+      {
+        if (!paths_.empty())
+        {
+          displayer_.show_comment(data::text{type_ + ":"});
+
+          displayer_.show_cpp_code(data::cpp_code(
+              boost::algorithm::join(
+                  paths_ | boost::adaptors::transformed(
+                               [](const data::include_argument& a_) {
+                                 return "#include " + data::include_code(a_);
+                               }),
+                  "\n") +
+              (extra_new_line_ ? "\n" : "")));
         }
       }
     }
-  }
 
-  display(displayer_, "Directories", dirs, !headers.empty());
-  display(displayer_, "Header files", headers);
+    pragma_ls::pragma_ls(shell& shell_) : _shell(shell_) {}
+
+    iface::pragma_handler* pragma_ls::clone() const
+    {
+      return new pragma_ls(_shell);
+    }
+
+    std::string pragma_ls::arguments() const
+    {
+      return "{<include file>|\"include file\"}";
+    }
+
+    std::string pragma_ls::description() const
+    {
+      return "Lists the available header files in the directories specified by "
+             "the "
+             "arguments.";
+    }
+
+    void pragma_ls::run(const data::command::iterator& name_begin_,
+                        const data::command::iterator& name_end_,
+                        const data::command::iterator& args_begin_,
+                        const data::command::iterator& args_end_,
+                        iface::displayer& displayer_) const
+    {
+      std::set<data::include_argument> dirs;
+      std::set<data::include_argument> headers;
+
+      include_path_cache paths(_shell.engine().header_discoverer());
+
+      const boost::filesystem::directory_iterator end;
+
+      for (const data::include_argument& arg : parse_arguments(
+               data::tokens_to_string(name_begin_, name_end_).value(),
+               args_begin_, args_end_))
+      {
+        for (const boost::filesystem::path& p : paths[arg.type])
+        {
+          const boost::filesystem::path path = resolve_symlink(p / arg.path);
+
+          if (is_regular_file(path))
+          {
+            headers.insert({arg.type, arg.path});
+          }
+          else if (is_directory(path))
+          {
+            for (boost::filesystem::directory_iterator i(path); i != end; ++i)
+            {
+              const boost::filesystem::path f = resolve_symlink(i->path());
+
+              const data::include_argument entry{
+                  arg.type, arg.path / i->path().filename()};
+
+              if (is_regular_file(*i))
+              {
+                headers.insert(entry);
+              }
+              else if (is_directory(*i))
+              {
+                dirs.insert(entry);
+              }
+            }
+          }
+        }
+      }
+
+      display(displayer_, "Directories", dirs, !headers.empty());
+      display(displayer_, "Header files", headers);
+    }
+  }
 }

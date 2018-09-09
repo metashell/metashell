@@ -26,8 +26,8 @@ namespace
   std::pair<std::string, std::string> report_for(const std::string& err_)
   {
     const metashell::data::exit_code_t e{1};
-    return {metashell::vc_error_report_on_stdout({e, err_, ""}),
-            metashell::vc_error_report_on_stderr(
+    return {metashell::core::vc_error_report_on_stdout({e, err_, ""}),
+            metashell::core::vc_error_report_on_stderr(
                 {e, "", "Compiler info\nin multiple lines\n\n" + err_})};
   }
 
@@ -56,14 +56,14 @@ TEST(test_vc_binary, test_vc_error_report)
 
 TEST(test_vc_binary, test_vc_error_report_not_supported)
 {
-  ASSERT_THROW(report_for("foo.cpp\nbar.cpp\n"), metashell::exception);
+  ASSERT_THROW(report_for("foo.cpp\nbar.cpp\n"), metashell::core::exception);
   ASSERT_THROW(
       report_for("foo.cpp\nfoo.cpp: error C1234: this is a problem.\n"),
-      metashell::exception);
+      metashell::core::exception);
   ASSERT_THROW(
       report_for("foo.cpp\nbar.cpp(1): error C1234: this is a problem.\n"),
-      metashell::exception);
+      metashell::core::exception);
   ASSERT_THROW(
       report_for("bar.cpp\nfoobar.cpp(1): error C1234: this is a problem.\n"),
-      metashell::exception);
+      metashell::core::exception);
 }

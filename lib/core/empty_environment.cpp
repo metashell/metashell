@@ -18,28 +18,34 @@
 
 namespace metashell
 {
-  empty_environment::empty_environment(
-      const boost::filesystem::path& internal_dir_)
-    : _headers(internal_dir_)
+  namespace core
   {
+    empty_environment::empty_environment(
+        const boost::filesystem::path& internal_dir_)
+      : _headers(internal_dir_)
+    {
+    }
+
+    void empty_environment::append(const data::cpp_code&)
+    {
+      // ignore
+    }
+
+    data::cpp_code empty_environment::get() const { return data::cpp_code(); }
+
+    data::cpp_code empty_environment::get_appended(const data::cpp_code&) const
+    {
+      return data::cpp_code();
+    }
+
+    const data::headers& empty_environment::get_headers() const
+    {
+      return _headers;
+    }
+
+    data::cpp_code empty_environment::get_all() const
+    {
+      return data::cpp_code();
+    }
   }
-
-  void empty_environment::append(const data::cpp_code&)
-  {
-    // ignore
-  }
-
-  data::cpp_code empty_environment::get() const { return data::cpp_code(); }
-
-  data::cpp_code empty_environment::get_appended(const data::cpp_code&) const
-  {
-    return data::cpp_code();
-  }
-
-  const data::headers& empty_environment::get_headers() const
-  {
-    return _headers;
-  }
-
-  data::cpp_code empty_environment::get_all() const { return data::cpp_code(); }
 }

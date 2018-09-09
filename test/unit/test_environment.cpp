@@ -59,8 +59,8 @@ TEST(environment, empty_header_file_environment_is_empty)
   data::shell_config cfg{};
   cfg.use_precompiled_headers = false;
 
-  type_shell_constant type_shell(failing_data());
-  header_file_environment env(&type_shell, cfg, "", "");
+  core::type_shell_constant type_shell(failing_data());
+  core::header_file_environment env(&type_shell, cfg, "", "");
 
   ASSERT_EQ("", env.get_all());
 }
@@ -70,16 +70,16 @@ TEST(environment, append_text_to_header_file_environment)
   data::shell_config cfg{};
   cfg.use_precompiled_headers = false;
 
-  type_shell_constant type_shell(failing_data());
-  header_file_environment env(&type_shell, cfg, "", "");
+  core::type_shell_constant type_shell(failing_data());
+  core::header_file_environment env(&type_shell, cfg, "", "");
 
   test_append_text_to_environment(env);
 }
 
 TEST(environment, reload_environment_rebuilds_the_environment_object)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   const iface::environment* old_env_ptr = &sh.env();
 
   sh.line_available("#msh environment reload", d);
@@ -89,8 +89,8 @@ TEST(environment, reload_environment_rebuilds_the_environment_object)
 
 TEST(environment, invalid_environment_command_displays_an_error)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
 
   sh.line_available("#msh environment foo", d);
 
@@ -99,8 +99,8 @@ TEST(environment, invalid_environment_command_displays_an_error)
 
 TEST(environment, invalid_environment_pop_command_displays_an_error)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
 
   sh.line_available("#msh environment push", d);
   sh.line_available("#msh environment pop foo", d);
@@ -110,8 +110,8 @@ TEST(environment, invalid_environment_pop_command_displays_an_error)
 
 TEST(environment, invalid_environment_push_command_displays_an_error)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
 
   sh.line_available("#msh environment push foo", d);
 
@@ -120,8 +120,8 @@ TEST(environment, invalid_environment_push_command_displays_an_error)
 
 TEST(environment, invalid_environment_reload_command_displays_an_error)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
 
   sh.line_available("#msh environment reload foo", d);
 
@@ -130,8 +130,8 @@ TEST(environment, invalid_environment_reload_command_displays_an_error)
 
 TEST(environment, invalid_environment_stack_command_displays_an_error)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
 
   sh.line_available("#msh environment stack foo", d);
 
@@ -140,8 +140,8 @@ TEST(environment, invalid_environment_stack_command_displays_an_error)
 
 TEST(environment, invalid_environment_reset_command_displays_an_error)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
 
   sh.line_available("#msh environment reset foo", d);
 
@@ -150,8 +150,8 @@ TEST(environment, invalid_environment_reset_command_displays_an_error)
 
 TEST(environment, invalid_quit_command_displays_an_error)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
 
   sh.line_available("#msh quit foo", d);
 
@@ -160,8 +160,8 @@ TEST(environment, invalid_quit_command_displays_an_error)
 
 TEST(environment, environment_save_displays_an_error_when_not_enabled_in_config)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
 
   sh.line_available("#msh environment save", d);
 
@@ -176,8 +176,8 @@ TEST(environment, environment_save_saves_the_environment_when_enabled_in_config)
   data::config cfg;
   cfg.push_back(data::shell_config());
   cfg.saving_enabled = true;
-  in_memory_displayer disp;
-  shell sh(cfg, "", "", "", create_failing_engine());
+  core::in_memory_displayer disp;
+  core::shell sh(cfg, "", "", "", core::create_failing_engine());
 
   sh.line_available("#msh environment save " + fn, disp);
 
@@ -190,8 +190,8 @@ TEST(environment, save_displays_an_error_when_filename_is_missing)
   data::config cfg;
   cfg.push_back(data::shell_config());
   cfg.saving_enabled = true;
-  in_memory_displayer d;
-  shell sh(cfg, "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(cfg, "", "", "", core::create_failing_engine());
 
   sh.line_available("#msh environment save    ", d);
 
@@ -203,8 +203,8 @@ TEST(environment, save_displays_an_error_when_io_error_happens)
   data::config cfg;
   cfg.push_back(data::shell_config());
   cfg.saving_enabled = true;
-  in_memory_displayer d;
-  shell sh(cfg, "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(cfg, "", "", "", core::create_failing_engine());
 
 #ifdef _WIN32
   sh.line_available("#msh environment save /foo *? bar", d);

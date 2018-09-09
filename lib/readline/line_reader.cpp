@@ -36,7 +36,7 @@ namespace
   int completion_end = 0;
 
   // not owning
-  command_processor_queue* processor_queue;
+  core::command_processor_queue* processor_queue;
 
 #ifdef _WIN32
   template <class T>
@@ -108,7 +108,7 @@ namespace
 
   boost::optional<std::string>
   read_next_line(const std::string& prompt_,
-                 command_processor_queue& processor_queue_)
+                 core::command_processor_queue& processor_queue_)
   {
     processor_queue = &processor_queue_;
     rl_attempted_completion_function = tab_completion;
@@ -133,8 +133,8 @@ namespace
   }
 }
 
-metashell::line_reader
-metashell::readline::line_reader(command_processor_queue& processor_queue_)
+metashell::core::line_reader metashell::readline::line_reader(
+    core::command_processor_queue& processor_queue_)
 {
   return [&processor_queue_](const std::string& prompt_) {
     return read_next_line(prompt_ + " ", processor_queue_);

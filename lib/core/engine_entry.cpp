@@ -21,70 +21,73 @@
 
 #include <algorithm>
 
-using namespace metashell;
-
-namespace
+namespace metashell
 {
-  std::string no_features() { return "no features are supported"; }
-}
+  namespace core
+  {
+    namespace
+    {
+      std::string no_features() { return "no features are supported"; }
+    }
 
-engine_entry::engine_entry(engine_factory factory_,
-                           std::string args_,
-                           data::markdown_string description_,
-                           std::vector<data::feature> features_)
-  : _factory(move(factory_)),
-    _args(move(args_)),
-    _description(std::move(description_)),
-    _features(move(features_))
-{
-  std::sort(_features.begin(), _features.end());
-}
+    engine_entry::engine_entry(engine_factory factory_,
+                               std::string args_,
+                               data::markdown_string description_,
+                               std::vector<data::feature> features_)
+      : _factory(move(factory_)),
+        _args(move(args_)),
+        _description(std::move(description_)),
+        _features(move(features_))
+    {
+      std::sort(_features.begin(), _features.end());
+    }
 
-std::unique_ptr<iface::engine>
-engine_entry::build(const data::config& config_,
-                    const boost::filesystem::path& internal_dir_,
-                    const boost::filesystem::path& temp_dir_,
-                    const boost::filesystem::path& env_filename_,
-                    iface::environment_detector& env_detector_,
-                    iface::displayer& displayer_,
-                    logger* logger_) const
-{
-  return _factory(config_, internal_dir_, temp_dir_, env_filename_,
-                  env_detector_, displayer_, logger_);
-}
+    std::unique_ptr<iface::engine>
+    engine_entry::build(const data::config& config_,
+                        const boost::filesystem::path& internal_dir_,
+                        const boost::filesystem::path& temp_dir_,
+                        const boost::filesystem::path& env_filename_,
+                        iface::environment_detector& env_detector_,
+                        iface::displayer& displayer_,
+                        logger* logger_) const
+    {
+      return _factory(config_, internal_dir_, temp_dir_, env_filename_,
+                      env_detector_, displayer_, logger_);
+    }
 
-const std::string& engine_entry::args() const { return _args; }
+    const std::string& engine_entry::args() const { return _args; }
 
-const data::markdown_string& engine_entry::description() const
-{
-  return _description;
-}
+    const data::markdown_string& engine_entry::description() const
+    {
+      return _description;
+    }
 
-const std::vector<data::feature>& engine_entry::features() const
-{
-  return _features;
-}
+    const std::vector<data::feature>& engine_entry::features() const
+    {
+      return _features;
+    }
 
-std::string metashell::list_features(const engine_entry& engine_)
-{
-  return engine_.features().empty() ?
-             no_features() :
-             boost::algorithm::join(
-                 engine_.features() |
-                     boost::adaptors::transformed(
-                         [](data::feature f_) { return to_string(f_); }),
-                 ", ");
-}
+    std::string list_features(const engine_entry& engine_)
+    {
+      return engine_.features().empty() ?
+                 no_features() :
+                 boost::algorithm::join(
+                     engine_.features() |
+                         boost::adaptors::transformed(
+                             [](data::feature f_) { return to_string(f_); }),
+                     ", ");
+    }
 
-data::markdown_string
-metashell::list_features_in_markdown(const engine_entry& engine_)
-{
-  return engine_.features().empty() ?
-             italics(data::markdown_string(no_features())) :
-             boost::algorithm::join(
-                 engine_.features() |
-                     boost::adaptors::transformed([](data::feature f_) {
-                       return data::self_reference(to_string(f_));
-                     }),
-                 ", ");
+    data::markdown_string list_features_in_markdown(const engine_entry& engine_)
+    {
+      return engine_.features().empty() ?
+                 italics(data::markdown_string(no_features())) :
+                 boost::algorithm::join(
+                     engine_.features() |
+                         boost::adaptors::transformed([](data::feature f_) {
+                           return data::self_reference(to_string(f_));
+                         }),
+                     ", ");
+    }
+  }
 }

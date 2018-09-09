@@ -18,131 +18,137 @@
 
 #include <algorithm>
 
-using namespace metashell;
-
-forward_trace_iterator::forward_trace_iterator() : _at_end(boost::none) {}
-
-forward_trace_iterator::forward_trace_iterator(
-    metaprogram::iterator begin_,
-    metaprogram::iterator end_,
-    const boost::optional<int>& max_depth_)
-  : _at_end(begin_ == end_ ? boost::none : boost::make_optional(
-                                               std::make_pair(begin_, end_))),
-    _max_depth(max_depth_)
+namespace metashell
 {
-  cache_current();
-}
-
-forward_trace_iterator& forward_trace_iterator::operator++()
-{
-  assert(!finished());
-  do
+  namespace core
   {
-    step_from(*at());
-    ++at();
-  } while (at() != end() && step_to(*at()));
+    forward_trace_iterator::forward_trace_iterator() : _at_end(boost::none) {}
 
-  if (at() == end() || _depth <= 0)
-  {
-    _at_end = boost::none;
-  }
-  else
-  {
-    cache_current();
-  }
-  return *this;
-}
-
-void forward_trace_iterator::step_from(const data::debugger_event& event_)
-{
-  mpark::visit([this](const auto& f) { this->step_from(f); }, event_);
-}
-
-void forward_trace_iterator::step_from(const data::frame& frame_)
-{
-  if (!frame_.flat())
-  {
-    ++_depth;
-  }
-}
-
-void forward_trace_iterator::step_from(const data::pop_frame&) {}
-
-bool forward_trace_iterator::step_to(const data::debugger_event& event_)
-{
-  return mpark::visit(
-      [this](const auto& f) -> bool { return this->step_to(f); }, event_);
-}
-
-bool forward_trace_iterator::step_to(const data::frame&)
-{
-  return _max_depth && _depth > *_max_depth;
-}
-
-bool forward_trace_iterator::step_to(const data::pop_frame&)
-{
-  --_depth;
-  if (_depth == -1)
-  {
-    _at_end = boost::none;
-  }
-  return _depth > 0;
-}
-
-void forward_trace_iterator::cache_current()
-{
-  auto p = mpark::get_if<data::frame>(&*at());
-  assert(p);
-
-  if (!p->number_of_children() && _at_end)
-  {
-    for (metaprogram::iterator i = at(), e = end();
-         i != e && !p->number_of_children();)
+    forward_trace_iterator::forward_trace_iterator(
+        metaprogram::iterator begin_,
+        metaprogram::iterator end_,
+        const boost::optional<int>& max_depth_)
+      : _at_end(begin_ == end_ ?
+                    boost::none :
+                    boost::make_optional(std::make_pair(begin_, end_))),
+        _max_depth(max_depth_)
     {
-      ++i;
-      p = mpark::get_if<data::frame>(&*at());
+      cache_current();
+    }
+
+    forward_trace_iterator& forward_trace_iterator::operator++()
+    {
+      assert(!finished());
+      do
+      {
+        step_from(*at());
+        ++at();
+      } while (at() != end() && step_to(*at()));
+
+      if (at() == end() || _depth <= 0)
+      {
+        _at_end = boost::none;
+      }
+      else
+      {
+        cache_current();
+      }
+      return *this;
+    }
+
+    void forward_trace_iterator::step_from(const data::debugger_event& event_)
+    {
+      mpark::visit([this](const auto& f) { this->step_from(f); }, event_);
+    }
+
+    void forward_trace_iterator::step_from(const data::frame& frame_)
+    {
+      if (!frame_.flat())
+      {
+        ++_depth;
+      }
+    }
+
+    void forward_trace_iterator::step_from(const data::pop_frame&) {}
+
+    bool forward_trace_iterator::step_to(const data::debugger_event& event_)
+    {
+      return mpark::visit(
+          [this](const auto& f) -> bool { return this->step_to(f); }, event_);
+    }
+
+    bool forward_trace_iterator::step_to(const data::frame&)
+    {
+      return _max_depth && _depth > *_max_depth;
+    }
+
+    bool forward_trace_iterator::step_to(const data::pop_frame&)
+    {
+      --_depth;
+      if (_depth == -1)
+      {
+        _at_end = boost::none;
+      }
+      return _depth > 0;
+    }
+
+    void forward_trace_iterator::cache_current()
+    {
+      auto p = mpark::get_if<data::frame>(&*at());
       assert(p);
+
+      if (!p->number_of_children() && _at_end)
+      {
+        for (metaprogram::iterator i = at(), e = end();
+             i != e && !p->number_of_children();)
+        {
+          ++i;
+          p = mpark::get_if<data::frame>(&*at());
+          assert(p);
+        }
+      }
+
+      const auto number_of_children = p->number_of_children();
+
+      _current = data::call_graph_node(
+          *p, _depth,
+          ((_max_depth && _depth == _max_depth) || !number_of_children) ?
+              0 :
+              *number_of_children);
+    }
+
+    const data::call_graph_node& forward_trace_iterator::operator*() const
+    {
+      assert(!finished());
+      assert(mpark::get_if<data::frame>(&*at()) != nullptr);
+
+      return _current;
+    }
+
+    bool forward_trace_iterator::
+    operator==(const forward_trace_iterator& i_) const
+    {
+      return finished() == i_.finished();
+    }
+
+    bool forward_trace_iterator::finished() const { return !_at_end; }
+
+    const metaprogram::iterator& forward_trace_iterator::at() const
+    {
+      assert(_at_end);
+      return _at_end->first;
+    }
+
+    metaprogram::iterator& forward_trace_iterator::at()
+    {
+      assert(_at_end);
+      return _at_end->first;
+    }
+
+    const metaprogram::iterator& forward_trace_iterator::end() const
+    {
+      assert(_at_end);
+      return _at_end->second;
     }
   }
-
-  const auto number_of_children = p->number_of_children();
-
-  _current = data::call_graph_node(
-      *p, _depth,
-      ((_max_depth && _depth == _max_depth) || !number_of_children) ?
-          0 :
-          *number_of_children);
-}
-
-const data::call_graph_node& forward_trace_iterator::operator*() const
-{
-  assert(!finished());
-  assert(mpark::get_if<data::frame>(&*at()) != nullptr);
-
-  return _current;
-}
-
-bool forward_trace_iterator::operator==(const forward_trace_iterator& i_) const
-{
-  return finished() == i_.finished();
-}
-
-bool forward_trace_iterator::finished() const { return !_at_end; }
-
-const metaprogram::iterator& forward_trace_iterator::at() const
-{
-  assert(_at_end);
-  return _at_end->first;
-}
-
-metaprogram::iterator& forward_trace_iterator::at()
-{
-  assert(_at_end);
-  return _at_end->first;
-}
-
-const metaprogram::iterator& forward_trace_iterator::end() const
-{
-  assert(_at_end);
-  return _at_end->second;
 }

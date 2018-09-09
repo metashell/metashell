@@ -18,50 +18,54 @@
 
 namespace metashell
 {
-  void event_cache::record(const data::event_data& event_)
+  namespace core
   {
-    mpark::visit([this](const auto& det) { this->record(det); }, event_);
-  }
-
-  void event_cache::record(const data::event_details<
-                           data::event_kind::template_instantiation>& event_)
-  {
-    if (!_recording_to.empty())
+    void event_cache::record(const data::event_data& event_)
     {
-      _recorded[_recording_to.back().first].emplace_back(event_);
+      mpark::visit([this](const auto& det) { this->record(det); }, event_);
     }
-    _recording_to.push_back(std::make_pair(event_.what.full_name, 0));
-  }
 
-  void event_cache::record(
-      const data::event_details<data::event_kind::template_end>& event_)
-  {
-    if (!_recording_to.empty())
+    void event_cache::record(const data::event_details<
+                             data::event_kind::template_instantiation>& event_)
     {
-      if (_recording_to.back().second == 0)
-      {
-        _recording_to.pop_back();
-        if (!_recording_to.empty())
-        {
-          _recorded[_recording_to.back().first].emplace_back(event_);
-        }
-      }
-      else
+      if (!_recording_to.empty())
       {
         _recorded[_recording_to.back().first].emplace_back(event_);
-        --_recording_to.back().second;
+      }
+      _recording_to.push_back(std::make_pair(event_.what.full_name, 0));
+    }
+
+    void event_cache::record(
+        const data::event_details<data::event_kind::template_end>& event_)
+    {
+      if (!_recording_to.empty())
+      {
+        if (_recording_to.back().second == 0)
+        {
+          _recording_to.pop_back();
+          if (!_recording_to.empty())
+          {
+            _recorded[_recording_to.back().first].emplace_back(event_);
+          }
+        }
+        else
+        {
+          _recorded[_recording_to.back().first].emplace_back(event_);
+          --_recording_to.back().second;
+        }
       }
     }
-  }
 
-  data::list<data::event_data> event_cache::replay(data::event_data event_)
-  {
-    return mpark::visit(
-        [this](auto& det) { return this->replay(std::move(det)); }, event_);
-  }
+    data::list<data::event_data> event_cache::replay(data::event_data event_)
+    {
+      return mpark::visit(
+          [this](auto& det) { return this->replay(std::move(det)); }, event_);
+    }
 
-  void event_cache::erase_related(const data::event_data& event_)
-  {
-    mpark::visit([this](const auto& det) { this->erase_related(det); }, event_);
+    void event_cache::erase_related(const data::event_data& event_)
+    {
+      mpark::visit(
+          [this](const auto& det) { this->erase_related(det); }, event_);
+    }
   }
 }

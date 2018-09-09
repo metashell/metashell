@@ -26,28 +26,31 @@
 
 namespace metashell
 {
-  class debugger_history
+  namespace core
   {
-  public:
-    typedef std::vector<data::debugger_event>::size_type size_type;
+    class debugger_history
+    {
+    public:
+      typedef std::vector<data::debugger_event>::size_type size_type;
 
-    debugger_history(data::metaprogram_mode mode_, data::frame root_frame_);
+      debugger_history(data::metaprogram_mode mode_, data::frame root_frame_);
 
-    void add_event(data::debugger_event event_,
-                   data::relative_depth rdepth_,
-                   const boost::optional<double>& timestamp_);
+      void add_event(data::debugger_event event_,
+                     data::relative_depth rdepth_,
+                     const boost::optional<double>& timestamp_);
 
-    const data::debugger_event& operator[](size_type n_) const;
+      const data::debugger_event& operator[](size_type n_) const;
 
-    data::backtrace backtrace_at(size_type n_) const;
+      data::backtrace backtrace_at(size_type n_) const;
 
-  private:
-    std::vector<data::debugger_event> _events;
-    data::frame_stack _frame_stack;
-    data::metaprogram_mode _mode;
+    private:
+      std::vector<data::debugger_event> _events;
+      data::frame_stack _frame_stack;
+      data::metaprogram_mode _mode;
 
-    void pop_event();
-  };
+      void pop_event();
+    };
+  }
 }
 
 #endif

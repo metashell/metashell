@@ -20,39 +20,42 @@
 
 namespace metashell
 {
-  cpp_validator_vc::cpp_validator_vc(
-      const boost::filesystem::path& internal_dir_,
-      const boost::filesystem::path& env_filename_,
-      vc_binary vc_binary_,
-      logger* logger_)
-    : _vc_binary(vc_binary_),
-      _env_path(internal_dir_ / env_filename_),
-      _logger(logger_)
+  namespace core
   {
-  }
-
-  data::result cpp_validator_vc::validate_code(const data::cpp_code& src_,
-                                               const data::config& config_,
-                                               const iface::environment& env_,
-                                               bool)
-  {
-    METASHELL_LOG(_logger, "Validating code " + src_.value());
-
-    try
+    cpp_validator_vc::cpp_validator_vc(
+        const boost::filesystem::path& internal_dir_,
+        const boost::filesystem::path& env_filename_,
+        vc_binary vc_binary_,
+        logger* logger_)
+      : _vc_binary(vc_binary_),
+        _env_path(internal_dir_ / env_filename_),
+        _logger(logger_)
     {
-      const data::cpp_code src = env_.get_appended(src_);
-      const data::process_output output = run_vc(_vc_binary, {"/c"}, src);
-      const std::string error = vc_error_report_on_stdout(output);
-
-      const bool accept =
-          output.exit_code == data::exit_code_t(0) && error.empty();
-
-      return data::result{
-          accept, "", error, accept && config_.verbose ? src.value() : ""};
     }
-    catch (const std::exception& e)
+
+    data::result cpp_validator_vc::validate_code(const data::cpp_code& src_,
+                                                 const data::config& config_,
+                                                 const iface::environment& env_,
+                                                 bool)
     {
-      return data::result(false, "", e.what(), "");
+      METASHELL_LOG(_logger, "Validating code " + src_.value());
+
+      try
+      {
+        const data::cpp_code src = env_.get_appended(src_);
+        const data::process_output output = run_vc(_vc_binary, {"/c"}, src);
+        const std::string error = vc_error_report_on_stdout(output);
+
+        const bool accept =
+            output.exit_code == data::exit_code_t(0) && error.empty();
+
+        return data::result{
+            accept, "", error, accept && config_.verbose ? src.value() : ""};
+      }
+      catch (const std::exception& e)
+      {
+        return data::result(false, "", e.what(), "");
+      }
     }
   }
 }

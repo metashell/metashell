@@ -20,68 +20,70 @@
 #include <metashell/core/metaprogram_tracer_templight.hpp>
 #include <metashell/core/protobuf_trace.hpp>
 
-namespace
-{
-  metashell::data::type_or_code_or_error
-  run_metaprogram(metashell::clang_binary& clang_binary_,
-                  const boost::optional<metashell::data::cpp_code>& expression_,
-                  const boost::filesystem::path& output_path_,
-                  metashell::iface::environment& env_,
-                  metashell::iface::displayer& displayer_)
-  {
-    using metashell::data::type_or_code_or_error;
-
-    const metashell::data::result res = metashell::eval(
-        env_, expression_, boost::none, output_path_, clang_binary_);
-
-    if (!res.info.empty())
-    {
-      displayer_.show_raw_text(res.info);
-    }
-
-    if (!res.successful)
-    {
-      return type_or_code_or_error::make_error(res.error);
-    }
-    else if (expression_)
-    {
-      return type_or_code_or_error::make_type(
-          metashell::data::type(res.output));
-    }
-    else
-    {
-      return type_or_code_or_error::make_none();
-    }
-  }
-}
-
 namespace metashell
 {
-  metaprogram_tracer_templight::metaprogram_tracer_templight(
-      clang_binary templight_binary_)
-    : _templight_binary(templight_binary_)
+  namespace core
   {
-  }
+    namespace
+    {
+      data::type_or_code_or_error
+      run_metaprogram(clang_binary& clang_binary_,
+                      const boost::optional<data::cpp_code>& expression_,
+                      const boost::filesystem::path& output_path_,
+                      iface::environment& env_,
+                      iface::displayer& displayer_)
+      {
+        using data::type_or_code_or_error;
 
-  std::unique_ptr<iface::event_data_sequence>
-  metaprogram_tracer_templight::eval(
-      iface::environment& env_,
-      const boost::filesystem::path& temp_dir_,
-      const boost::optional<data::cpp_code>& expression_,
-      data::metaprogram_mode mode_,
-      iface::displayer& displayer_)
-  {
-    const boost::filesystem::path output_path = temp_dir_ / "templight.pb";
+        const data::result res =
+            eval(env_, expression_, boost::none, output_path_, clang_binary_);
 
-    const data::type_or_code_or_error evaluation_result = run_metaprogram(
-        _templight_binary, expression_, output_path, env_, displayer_);
+        if (!res.info.empty())
+        {
+          displayer_.show_raw_text(res.info);
+        }
 
-    return filter_events(
-        protobuf_trace(
-            output_path.string() + ".trace.pbf", evaluation_result,
-            expression_ ? *expression_ : data::cpp_code("<environment>"),
-            mode_),
-        determine_from_line(
-            env_.get(), expression_, data::stdin_name_in_clang()));
+        if (!res.successful)
+        {
+          return type_or_code_or_error::make_error(res.error);
+        }
+        else if (expression_)
+        {
+          return type_or_code_or_error::make_type(data::type(res.output));
+        }
+        else
+        {
+          return type_or_code_or_error::make_none();
+        }
+      }
+    }
+
+    metaprogram_tracer_templight::metaprogram_tracer_templight(
+        clang_binary templight_binary_)
+      : _templight_binary(templight_binary_)
+    {
+    }
+
+    std::unique_ptr<iface::event_data_sequence>
+    metaprogram_tracer_templight::eval(
+        iface::environment& env_,
+        const boost::filesystem::path& temp_dir_,
+        const boost::optional<data::cpp_code>& expression_,
+        data::metaprogram_mode mode_,
+        iface::displayer& displayer_)
+    {
+      const boost::filesystem::path output_path = temp_dir_ / "templight.pb";
+
+      const data::type_or_code_or_error evaluation_result = run_metaprogram(
+          _templight_binary, expression_, output_path, env_, displayer_);
+
+      return filter_events(
+          protobuf_trace(
+              output_path.string() + ".trace.pbf", evaluation_result,
+              expression_ ? *expression_ : data::cpp_code("<environment>"),
+              mode_),
+          determine_from_line(
+              env_.get(), expression_, data::stdin_name_in_clang()));
+    }
   }
 }

@@ -19,39 +19,37 @@
 #include <cassert>
 #include <iostream>
 
-using namespace metashell;
-
-bool column::invariant() const { return _value > 0; }
-
-column::column(int value_) : _value(value_) { assert(invariant()); }
-
-int column::value() const { return _value; }
-
-column& column::operator+=(int n_)
+namespace metashell
 {
-  _value += n_;
-  assert(invariant());
-  return *this;
-}
+  namespace core
+  {
+    bool column::invariant() const { return _value > 0; }
 
-column& column::operator-=(int n_)
-{
-  _value -= n_;
-  assert(invariant());
-  return *this;
-}
+    column::column(int value_) : _value(value_) { assert(invariant()); }
 
-std::string metashell::to_string(column l_)
-{
-  return std::to_string(l_.value());
-}
+    int column::value() const { return _value; }
 
-std::ostream& metashell::operator<<(std::ostream& out_, column l_)
-{
-  return out_ << to_string(l_);
-}
+    column& column::operator+=(int n_)
+    {
+      _value += n_;
+      assert(invariant());
+      return *this;
+    }
 
-bool metashell::operator==(column a_, column b_)
-{
-  return a_.value() == b_.value();
+    column& column::operator-=(int n_)
+    {
+      _value -= n_;
+      assert(invariant());
+      return *this;
+    }
+
+    std::string to_string(column l_) { return std::to_string(l_.value()); }
+
+    std::ostream& operator<<(std::ostream& out_, column l_)
+    {
+      return out_ << to_string(l_);
+    }
+
+    bool operator==(column a_, column b_) { return a_.value() == b_.value(); }
+  }
 }

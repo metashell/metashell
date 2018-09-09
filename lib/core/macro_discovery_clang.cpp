@@ -18,24 +18,27 @@
 
 namespace metashell
 {
-  macro_discovery_clang::macro_discovery_clang(clang_binary clang_binary_)
-    : _clang_binary(clang_binary_)
+  namespace core
   {
-  }
-
-  data::cpp_code macro_discovery_clang::macros(const iface::environment& env_)
-  {
-    const data::process_output output =
-        run_clang(_clang_binary, {"-dM", "-E"}, env_.get_all());
-
-    if (output.exit_code == data::exit_code_t(0))
+    macro_discovery_clang::macro_discovery_clang(clang_binary clang_binary_)
+      : _clang_binary(clang_binary_)
     {
-      return data::cpp_code(output.standard_output);
     }
-    else
+
+    data::cpp_code macro_discovery_clang::macros(const iface::environment& env_)
     {
-      throw std::runtime_error("Error getting list of macros: " +
-                               output.standard_error);
+      const data::process_output output =
+          run_clang(_clang_binary, {"-dM", "-E"}, env_.get_all());
+
+      if (output.exit_code == data::exit_code_t(0))
+      {
+        return data::cpp_code(output.standard_output);
+      }
+      else
+      {
+        throw std::runtime_error("Error getting list of macros: " +
+                                 output.standard_error);
+      }
     }
   }
 }

@@ -24,8 +24,8 @@ using namespace metashell;
 
 TEST(mdb_command, repeatable_constructor)
 {
-  mdb_command x(
-      {"asdf"}, repeatable_t::repeatable, nullptr, "[asd]", "fdsa", "xxyy");
+  core::mdb_command x({"asdf"}, core::repeatable_t::repeatable, nullptr,
+                      "[asd]", "fdsa", "xxyy");
 
   ASSERT_EQ(std::vector<std::string>{"asdf"}, x.get_keys());
   ASSERT_TRUE(x.is_repeatable());
@@ -36,8 +36,8 @@ TEST(mdb_command, repeatable_constructor)
 
 TEST(mdb_command, non_repeatable_constructor)
 {
-  mdb_command x(
-      {"asdf"}, repeatable_t::non_repeatable, nullptr, "[asd]", "fdsa", "xxyy");
+  core::mdb_command x({"asdf"}, core::repeatable_t::non_repeatable, nullptr,
+                      "[asd]", "fdsa", "xxyy");
 
   ASSERT_EQ(std::vector<std::string>{"asdf"}, x.get_keys());
   ASSERT_FALSE(x.is_repeatable());
@@ -47,8 +47,8 @@ TEST(mdb_command, non_repeatable_constructor)
 
 TEST(mdb_command, multiple_keys_constructor)
 {
-  mdb_command x({"asdf", "xxx"}, repeatable_t::non_repeatable, nullptr, "[asd]",
-                "fd", "xx");
+  core::mdb_command x({"asdf", "xxx"}, core::repeatable_t::non_repeatable,
+                      nullptr, "[asd]", "fd", "xx");
 
   ASSERT_EQ((std::vector<std::string>{"asdf", "xxx"}), x.get_keys());
   ASSERT_FALSE(x.is_repeatable());
@@ -59,8 +59,9 @@ TEST(mdb_command, multiple_keys_constructor)
 
 TEST(mdb_command, full_description_empty_long_description)
 {
-  mdb_command x(std::vector<std::string>{"asdf"}, repeatable_t::non_repeatable,
-                nullptr, "[asd]", "fd", "");
+  core::mdb_command x(std::vector<std::string>{"asdf"},
+                      core::repeatable_t::non_repeatable, nullptr, "[asd]",
+                      "fd", "");
 
   ASSERT_EQ(x.get_usage(), "[asd]");
   ASSERT_EQ(x.get_short_description(), "fd");
@@ -70,8 +71,9 @@ TEST(mdb_command, full_description_empty_long_description)
 
 TEST(mdb_command, full_description_non_empty_long_description)
 {
-  mdb_command x(std::vector<std::string>{"asdf"}, repeatable_t::non_repeatable,
-                nullptr, "[asd]", "fd", "xx");
+  core::mdb_command x(std::vector<std::string>{"asdf"},
+                      core::repeatable_t::non_repeatable, nullptr, "[asd]",
+                      "fd", "xx");
 
   ASSERT_EQ(x.get_usage(), "[asd]");
   ASSERT_EQ(x.get_short_description(), "fd");

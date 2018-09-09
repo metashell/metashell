@@ -24,8 +24,8 @@
 #include <string>
 #include <tuple>
 
-std::tuple<metashell::mdb_command, std::string>
-get_command_from_map(const metashell::mdb_command_handler_map& map,
+std::tuple<metashell::core::mdb_command, std::string>
+get_command_from_map(const metashell::core::mdb_command_handler_map& map,
                      const std::string& line);
 
 template <int N>

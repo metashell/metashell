@@ -40,16 +40,16 @@ namespace metashell
 
     iface::displayer& displayer();
     iface::history& history();
-    line_reader& reader();
-    command_processor_queue& processor_queue();
+    core::line_reader& reader();
+    core::command_processor_queue& processor_queue();
 
   private:
-    command_processor_queue _processor_queue;
+    core::command_processor_queue _processor_queue;
     std::unique_ptr<iface::console> _console;
     std::unique_ptr<iface::json_writer> _json_writer;
     std::unique_ptr<iface::displayer> _displayer;
     std::unique_ptr<iface::history> _history;
-    line_reader _reader;
+    core::line_reader _reader;
   };
 }
 

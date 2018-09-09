@@ -32,29 +32,32 @@
 
 namespace metashell
 {
-  preprocessor_shell_wave::preprocessor_shell_wave(data::wave_config config_)
-    : _config(std::move(config_))
+  namespace core
   {
-  }
-
-  data::result preprocessor_shell_wave::precompile(const data::cpp_code& exp_)
-  {
-    try
+    preprocessor_shell_wave::preprocessor_shell_wave(data::wave_config config_)
+      : _config(std::move(config_))
     {
-      wave_context ctx(exp_.begin(), exp_.end(), "<stdin>");
-      apply(ctx, _config);
-
-      std::ostringstream s;
-      display(s, ctx, _config.ignore_macro_redefinition);
-      return data::result{true, s.str(), "", ""};
     }
-    catch (const boost::wave::cpp_exception& error_)
+
+    data::result preprocessor_shell_wave::precompile(const data::cpp_code& exp_)
     {
-      return data::result{false, "", to_string(error_), ""};
-    }
-    catch (const std::exception& error_)
-    {
-      return data::result{false, "", error_.what(), ""};
+      try
+      {
+        wave_context ctx(exp_.begin(), exp_.end(), "<stdin>");
+        apply(ctx, _config);
+
+        std::ostringstream s;
+        display(s, ctx, _config.ignore_macro_redefinition);
+        return data::result{true, s.str(), "", ""};
+      }
+      catch (const boost::wave::cpp_exception& error_)
+      {
+        return data::result{false, "", to_string(error_), ""};
+      }
+      catch (const std::exception& error_)
+      {
+        return data::result{false, "", error_.what(), ""};
+      }
     }
   }
 }

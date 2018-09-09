@@ -25,21 +25,24 @@
 
 namespace metashell
 {
-  class metaprogram_tracer_templight : public iface::metaprogram_tracer
+  namespace core
   {
-  public:
-    explicit metaprogram_tracer_templight(clang_binary templight_binary_);
+    class metaprogram_tracer_templight : public iface::metaprogram_tracer
+    {
+    public:
+      explicit metaprogram_tracer_templight(clang_binary templight_binary_);
 
-    virtual std::unique_ptr<iface::event_data_sequence>
-    eval(iface::environment& env_,
-         const boost::filesystem::path& temp_dir_,
-         const boost::optional<data::cpp_code>& expression_,
-         data::metaprogram_mode mode_,
-         iface::displayer& displayer_) override;
+      virtual std::unique_ptr<iface::event_data_sequence>
+      eval(iface::environment& env_,
+           const boost::filesystem::path& temp_dir_,
+           const boost::optional<data::cpp_code>& expression_,
+           data::metaprogram_mode mode_,
+           iface::displayer& displayer_) override;
 
-  private:
-    clang_binary _templight_binary;
-  };
+    private:
+      clang_binary _templight_binary;
+    };
+  }
 }
 
 #endif

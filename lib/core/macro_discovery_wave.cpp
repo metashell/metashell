@@ -19,49 +19,52 @@
 
 namespace metashell
 {
-  macro_discovery_wave::macro_discovery_wave(data::wave_config config_)
-    : _config(std::move(config_))
+  namespace core
   {
-  }
-
-  data::cpp_code macro_discovery_wave::macros(const iface::environment& env_)
-  {
-    const data::cpp_code code = env_.get_all() + "\n";
-    wave_context ctx(code.begin(), code.end(), "<stdin>");
-    apply(ctx, _config);
-    preprocess(ctx);
-
-    std::ostringstream result;
-
-    const auto e = ctx.macro_names_end();
-    for (auto i = ctx.macro_names_begin(); i != e; ++i)
+    macro_discovery_wave::macro_discovery_wave(data::wave_config config_)
+      : _config(std::move(config_))
     {
-      result << "#define " << *i;
-
-      bool function_style = false;
-      bool predefined = false;
-      wave_context::position_type pos;
-      std::vector<wave_token> parameters;
-      wave_context::token_sequence_type definition;
-
-      if (ctx.get_macro_definition(
-              *i, function_style, predefined, pos, parameters, definition))
-      {
-        if (function_style)
-        {
-          result << "(";
-          display(result, parameters, _config.ignore_macro_redefinition);
-          result << ") ";
-        }
-        else
-        {
-          result << " ";
-        }
-        display(result, definition, _config.ignore_macro_redefinition);
-      }
-      result << "\n";
     }
 
-    return data::cpp_code(result.str());
+    data::cpp_code macro_discovery_wave::macros(const iface::environment& env_)
+    {
+      const data::cpp_code code = env_.get_all() + "\n";
+      wave_context ctx(code.begin(), code.end(), "<stdin>");
+      apply(ctx, _config);
+      preprocess(ctx);
+
+      std::ostringstream result;
+
+      const auto e = ctx.macro_names_end();
+      for (auto i = ctx.macro_names_begin(); i != e; ++i)
+      {
+        result << "#define " << *i;
+
+        bool function_style = false;
+        bool predefined = false;
+        wave_context::position_type pos;
+        std::vector<wave_token> parameters;
+        wave_context::token_sequence_type definition;
+
+        if (ctx.get_macro_definition(
+                *i, function_style, predefined, pos, parameters, definition))
+        {
+          if (function_style)
+          {
+            result << "(";
+            display(result, parameters, _config.ignore_macro_redefinition);
+            result << ") ";
+          }
+          else
+          {
+            result << " ";
+          }
+          display(result, definition, _config.ignore_macro_redefinition);
+        }
+        result << "\n";
+      }
+
+      return data::cpp_code(result.str());
+    }
   }
 }

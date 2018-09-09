@@ -26,24 +26,28 @@
 
 namespace metashell
 {
-  class cpp_validator_clang : public iface::cpp_validator
+  namespace core
   {
-  public:
-    cpp_validator_clang(const boost::filesystem::path& internal_dir_,
-                        const boost::filesystem::path& env_filename_,
-                        clang_binary clang_binary_,
-                        logger* logger_);
+    class cpp_validator_clang : public iface::cpp_validator
+    {
+    public:
+      cpp_validator_clang(const boost::filesystem::path& internal_dir_,
+                          const boost::filesystem::path& env_filename_,
+                          clang_binary clang_binary_,
+                          logger* logger_);
 
-    virtual data::result validate_code(const data::cpp_code& src_,
-                                       const data::config& config_,
-                                       const iface::environment& env_,
-                                       bool use_precompiled_headers_) override;
+      virtual data::result
+      validate_code(const data::cpp_code& src_,
+                    const data::config& config_,
+                    const iface::environment& env_,
+                    bool use_precompiled_headers_) override;
 
-  private:
-    clang_binary _clang_binary;
-    boost::filesystem::path _env_path;
-    logger* _logger;
-  };
+    private:
+      clang_binary _clang_binary;
+      boost::filesystem::path _env_path;
+      logger* _logger;
+    };
+  }
 }
 
 #endif

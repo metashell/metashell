@@ -26,26 +26,29 @@
 
 namespace metashell
 {
-  class code_completer_clang : public iface::code_completer
+  namespace core
   {
-  public:
-    code_completer_clang(const boost::filesystem::path& internal_dir_,
-                         const boost::filesystem::path& temp_dir_,
-                         const boost::filesystem::path& env_filename_,
-                         clang_binary clang_binary_,
-                         logger* logger_);
+    class code_completer_clang : public iface::code_completer
+    {
+    public:
+      code_completer_clang(const boost::filesystem::path& internal_dir_,
+                           const boost::filesystem::path& temp_dir_,
+                           const boost::filesystem::path& env_filename_,
+                           clang_binary clang_binary_,
+                           logger* logger_);
 
-    virtual void code_complete(const iface::environment& env_,
-                               const std::string& src_,
-                               std::set<std::string>& out_,
-                               bool use_precompiled_headers_) override;
+      virtual void code_complete(const iface::environment& env_,
+                                 const std::string& src_,
+                                 std::set<std::string>& out_,
+                                 bool use_precompiled_headers_) override;
 
-  private:
-    clang_binary _clang_binary;
-    boost::filesystem::path _temp_dir;
-    boost::filesystem::path _env_path;
-    logger* _logger;
-  };
+    private:
+      clang_binary _clang_binary;
+      boost::filesystem::path _temp_dir;
+      boost::filesystem::path _env_path;
+      logger* _logger;
+    };
+  }
 }
 
 #endif

@@ -18,88 +18,88 @@
 
 #include <sstream>
 
-namespace
-{
-  class match_visitor : public boost::static_visitor<>
-  {
-  public:
-    explicit match_visitor(const boost::regex& regex_) : _regex(regex_) {}
-
-    template <class T>
-    void operator()(const T& t_)
-    {
-      _last_result = match(t_);
-    }
-
-    bool last_result() const { return _last_result; }
-  private:
-    boost::regex _regex;
-    bool _last_result;
-
-    bool match(const std::string& s_) const
-    {
-      return boost::regex_search(s_, _regex);
-    }
-
-    bool match(const metashell::data::cpp_code& code_) const
-    {
-      return match(code_.value());
-    }
-
-    bool match(const metashell::data::type& type_) const
-    {
-      return match(type_.name());
-    }
-
-    bool match(const metashell::data::token& token_) const
-    {
-      return match(token_.value());
-    }
-
-    bool match(const boost::filesystem::path& path_) const
-    {
-      return match(path_.string());
-    }
-  };
-}
-
 namespace metashell
 {
-
-  breakpoint::breakpoint(int id, const boost::regex& name_regex)
-    : id(id), name_regex(name_regex)
+  namespace core
   {
+    namespace
+    {
+      class match_visitor : public boost::static_visitor<>
+      {
+      public:
+        explicit match_visitor(const boost::regex& regex_) : _regex(regex_) {}
+
+        template <class T>
+        void operator()(const T& t_)
+        {
+          _last_result = match(t_);
+        }
+
+        bool last_result() const { return _last_result; }
+      private:
+        boost::regex _regex;
+        bool _last_result;
+
+        bool match(const std::string& s_) const
+        {
+          return boost::regex_search(s_, _regex);
+        }
+
+        bool match(const data::cpp_code& code_) const
+        {
+          return match(code_.value());
+        }
+
+        bool match(const data::type& type_) const
+        {
+          return match(type_.name());
+        }
+
+        bool match(const data::token& token_) const
+        {
+          return match(token_.value());
+        }
+
+        bool match(const boost::filesystem::path& path_) const
+        {
+          return match(path_.string());
+        }
+      };
+    }
+    breakpoint::breakpoint(int id, const boost::regex& name_regex)
+      : id(id), name_regex(name_regex)
+    {
+    }
+
+    bool breakpoint::match(const data::metaprogram_node& node) const
+    {
+      if (name_regex)
+      {
+        match_visitor v(*name_regex);
+        boost::apply_visitor(v, node);
+        return v.last_result();
+      }
+      else
+      {
+        return false;
+      }
+    }
+
+    int breakpoint::get_id() const { return id; }
+
+    std::string breakpoint::to_string() const
+    {
+      std::stringstream ss;
+      ss << "Breakpoint " << id << ": ";
+      if (name_regex)
+      {
+        ss << "regex(\"" + name_regex->str() + "\")";
+      }
+      else
+      {
+        ss << "unknown()";
+      }
+      return ss.str();
+    }
   }
-
-  bool breakpoint::match(const data::metaprogram_node& node) const
-  {
-    if (name_regex)
-    {
-      match_visitor v(*name_regex);
-      boost::apply_visitor(v, node);
-      return v.last_result();
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  int breakpoint::get_id() const { return id; }
-
-  std::string breakpoint::to_string() const
-  {
-    std::stringstream ss;
-    ss << "Breakpoint " << id << ": ";
-    if (name_regex)
-    {
-      ss << "regex(\"" + name_regex->str() + "\")";
-    }
-    else
-    {
-      ss << "unknown()";
-    }
-    return ss.str();
-  }
-
 } // namespace metashell

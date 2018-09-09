@@ -18,61 +18,71 @@
 #include <metashell/core/pragma_included_headers.hpp>
 #include <metashell/core/shell.hpp>
 
-using namespace metashell;
-
-pragma_included_headers::pragma_included_headers(shell& shell_) : _shell(shell_)
+namespace metashell
 {
-}
-
-iface::pragma_handler* pragma_included_headers::clone() const
-{
-  return new pragma_included_headers(_shell);
-}
-
-std::string pragma_included_headers::arguments() const
-{
-  return "[<expression>]";
-}
-std::string pragma_included_headers::description() const
-{
-  return "Displays the list of header files (recursively) included into the "
-         "environment. When <expression> is provided, it displays the headers "
-         "added to the envrionment by <expression>. Headers that are included "
-         "multiple times are listed only once. Headers that are not included "
-         "because of being in a conditional (#if ... #endif) part that is "
-         "skipped are not listed.";
-}
-
-void pragma_included_headers::run(const data::command::iterator&,
-                                  const data::command::iterator&,
-                                  const data::command::iterator& args_begin_,
-                                  const data::command::iterator& args_end_,
-                                  iface::displayer& displayer_) const
-{
-  const data::cpp_code env = _shell.env().get_all();
-
-  auto& header_discoverer = _shell.engine().header_discoverer();
-
-  const auto by_current_env = header_discoverer.files_included_by(env);
-
-  if (args_begin_ == args_end_)
+  namespace core
   {
-    displayer_.show_filename_set(by_current_env);
-  }
-  else
-  {
-    const auto by_ext_env = header_discoverer.files_included_by(
-        env + "\n" + data::tokens_to_string(args_begin_, args_end_));
-
-    std::set<boost::filesystem::path> new_headers;
-    for (const boost::filesystem::path& p : by_ext_env)
+    pragma_included_headers::pragma_included_headers(shell& shell_)
+      : _shell(shell_)
     {
-      if (by_current_env.find(p) == by_current_env.end())
-      {
-        new_headers.insert(p);
-      }
     }
 
-    displayer_.show_filename_set(new_headers);
+    iface::pragma_handler* pragma_included_headers::clone() const
+    {
+      return new pragma_included_headers(_shell);
+    }
+
+    std::string pragma_included_headers::arguments() const
+    {
+      return "[<expression>]";
+    }
+    std::string pragma_included_headers::description() const
+    {
+      return "Displays the list of header files (recursively) included into "
+             "the "
+             "environment. When <expression> is provided, it displays the "
+             "headers "
+             "added to the envrionment by <expression>. Headers that are "
+             "included "
+             "multiple times are listed only once. Headers that are not "
+             "included "
+             "because of being in a conditional (#if ... #endif) part that is "
+             "skipped are not listed.";
+    }
+
+    void
+    pragma_included_headers::run(const data::command::iterator&,
+                                 const data::command::iterator&,
+                                 const data::command::iterator& args_begin_,
+                                 const data::command::iterator& args_end_,
+                                 iface::displayer& displayer_) const
+    {
+      const data::cpp_code env = _shell.env().get_all();
+
+      auto& header_discoverer = _shell.engine().header_discoverer();
+
+      const auto by_current_env = header_discoverer.files_included_by(env);
+
+      if (args_begin_ == args_end_)
+      {
+        displayer_.show_filename_set(by_current_env);
+      }
+      else
+      {
+        const auto by_ext_env = header_discoverer.files_included_by(
+            env + "\n" + data::tokens_to_string(args_begin_, args_end_));
+
+        std::set<boost::filesystem::path> new_headers;
+        for (const boost::filesystem::path& p : by_ext_env)
+        {
+          if (by_current_env.find(p) == by_current_env.end())
+          {
+            new_headers.insert(p);
+          }
+        }
+
+        displayer_.show_filename_set(new_headers);
+      }
+    }
   }
 }

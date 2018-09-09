@@ -16,6 +16,10 @@
 
 #include <metashell/core/exception.hpp>
 
-using namespace metashell;
-
-exception::exception(const std::string& msg_) : std::runtime_error(msg_) {}
+namespace metashell
+{
+  namespace core
+  {
+    exception::exception(const std::string& msg_) : std::runtime_error(msg_) {}
+  }
+}

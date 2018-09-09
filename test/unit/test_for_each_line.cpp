@@ -30,8 +30,9 @@ namespace
                        const std::string& line_separator_)
   {
     std::vector<std::string> result;
-    for_each_line(boost::algorithm::join(lines_, line_separator_),
-                  [&result](const std::string& s_) { result.push_back(s_); });
+    core::for_each_line(
+        boost::algorithm::join(lines_, line_separator_),
+        [&result](const std::string& s_) { result.push_back(s_); });
     ASSERT_EQ(lines_, result);
   }
 

@@ -25,15 +25,18 @@
 
 namespace metashell
 {
-  std::map<std::string, engine_entry> available_engines()
+  namespace core
   {
-    return {{"internal", metashell::get_internal_templight_entry()},
-            {"clang", metashell::get_engine_clang_entry()},
-            {"templight", metashell::get_engine_templight_entry()},
-            {"null", metashell::get_engine_null_entry()},
-            {"gcc", metashell::get_engine_gcc_entry()},
-            {"msvc", metashell::get_engine_vc_entry()},
-            {"wave", metashell::get_engine_wave_entry_with_templight_headers()},
-            {"pure_wave", metashell::get_engine_wave_entry()}};
+    std::map<std::string, engine_entry> available_engines()
+    {
+      return {{"internal", get_internal_templight_entry()},
+              {"clang", get_engine_clang_entry()},
+              {"templight", get_engine_templight_entry()},
+              {"null", get_engine_null_entry()},
+              {"gcc", get_engine_gcc_entry()},
+              {"msvc", get_engine_vc_entry()},
+              {"wave", get_engine_wave_entry_with_templight_headers()},
+              {"pure_wave", get_engine_wave_entry()}};
+    }
   }
 }

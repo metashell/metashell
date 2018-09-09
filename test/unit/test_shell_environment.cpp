@@ -42,17 +42,17 @@ namespace
 
 TEST(shell_environment, popping_environment_from_empty_queue)
 {
-  metashell::shell sh(
-      metashell::test_config(), "", "", "", metashell::create_failing_engine());
+  metashell::core::shell sh(metashell::test_config(), "", "", "",
+                            metashell::core::create_failing_engine());
 
   ASSERT_ANY_THROW(sh.pop_environment());
 }
 
 TEST(shell_environment, env_pop_reverts_changes_since_push)
 {
-  metashell::in_memory_displayer d;
-  metashell::shell sh(
-      metashell::test_config(), "", "", "", metashell::create_failing_engine());
+  metashell::core::in_memory_displayer d;
+  metashell::core::shell sh(metashell::test_config(), "", "", "",
+                            metashell::core::create_failing_engine());
 
   sh.push_environment();
   const metashell::data::cpp_code old_env = sh.env().get_all();
@@ -64,8 +64,8 @@ TEST(shell_environment, env_pop_reverts_changes_since_push)
 
 TEST(shell_environment, more_pops_than_pushes_throws)
 {
-  metashell::shell sh(
-      metashell::test_config(), "", "", "", metashell::create_failing_engine());
+  metashell::core::shell sh(metashell::test_config(), "", "", "",
+                            metashell::core::create_failing_engine());
 
   sh.push_environment();
   sh.pop_environment();
@@ -75,9 +75,9 @@ TEST(shell_environment, more_pops_than_pushes_throws)
 
 TEST(shell_environment, env_two_level_environment_stack)
 {
-  metashell::in_memory_displayer d;
-  metashell::shell sh(
-      metashell::test_config(), "", "", "", metashell::create_failing_engine());
+  metashell::core::in_memory_displayer d;
+  metashell::core::shell sh(metashell::test_config(), "", "", "",
+                            metashell::core::create_failing_engine());
 
   sh.push_environment();
   const metashell::data::cpp_code old_env = sh.env().get_all();
@@ -94,9 +94,9 @@ TEST(shell_environment, env_two_level_environment_stack)
 
 TEST(shell_environment, displaying_the_size_of_the_empty_environment_stack)
 {
-  metashell::in_memory_displayer d;
-  metashell::shell sh(
-      metashell::test_config(), "", "", "", metashell::create_failing_engine());
+  metashell::core::in_memory_displayer d;
+  metashell::core::shell sh(metashell::test_config(), "", "", "",
+                            metashell::core::create_failing_engine());
   sh.display_environment_stack_size(d);
 
   ASSERT_EQ(text("Environment stack is empty"), d.comments());
@@ -104,9 +104,9 @@ TEST(shell_environment, displaying_the_size_of_the_empty_environment_stack)
 
 TEST(shell_environment, displaying_the_size_of_one_element_stack)
 {
-  metashell::in_memory_displayer d;
-  metashell::shell sh(
-      metashell::test_config(), "", "", "", metashell::create_failing_engine());
+  metashell::core::in_memory_displayer d;
+  metashell::core::shell sh(metashell::test_config(), "", "", "",
+                            metashell::core::create_failing_engine());
   sh.push_environment();
   sh.display_environment_stack_size(d);
 
@@ -115,9 +115,9 @@ TEST(shell_environment, displaying_the_size_of_one_element_stack)
 
 TEST(shell_environment, displaying_the_size_of_two_element_stack)
 {
-  metashell::in_memory_displayer d;
-  metashell::shell sh(
-      metashell::test_config(), "", "", "", metashell::create_failing_engine());
+  metashell::core::in_memory_displayer d;
+  metashell::core::shell sh(metashell::test_config(), "", "", "",
+                            metashell::core::create_failing_engine());
   sh.push_environment();
   sh.push_environment();
   sh.display_environment_stack_size(d);
@@ -137,9 +137,10 @@ TEST(shell_environment, appended_since_when_something_appended)
 
 TEST(shell_environment, extending_environment_with_pragma)
 {
-  metashell::in_memory_displayer d;
-  metashell::shell sh(metashell::test_config(), "", "", "",
-                      metashell::create_engine_returning_type("void"));
+  metashell::core::in_memory_displayer d;
+  metashell::core::shell sh(
+      metashell::test_config(), "", "", "",
+      metashell::core::create_engine_returning_type("void"));
   const metashell::data::cpp_code original_env = sh.env().get_all();
 
   sh.line_available("#pragma metashell environment add typedef int x;", d);

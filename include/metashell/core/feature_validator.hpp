@@ -27,29 +27,32 @@
 
 namespace metashell
 {
-  class feature_validator
+  namespace core
   {
-  public:
-    feature_validator(std::string engine_name_,
-                      std::vector<data::feature> supported_features_);
-
-    template <class FeatureUsed>
-    feature_validator& check(data::feature feature_, const FeatureUsed&)
+    class feature_validator
     {
-      check(feature_, !std::is_same<FeatureUsed, not_supported>::value);
+    public:
+      feature_validator(std::string engine_name_,
+                        std::vector<data::feature> supported_features_);
 
-      return *this;
-    }
+      template <class FeatureUsed>
+      feature_validator& check(data::feature feature_, const FeatureUsed&)
+      {
+        check(feature_, !std::is_same<FeatureUsed, not_supported>::value);
 
-    void all_checked();
+        return *this;
+      }
 
-  private:
-    std::string _engine_name;
-    std::vector<data::feature> _supported_features;
-    bool _all_checked;
+      void all_checked();
 
-    void check(data::feature feature_, bool really_supported_);
-  };
+    private:
+      std::string _engine_name;
+      std::vector<data::feature> _supported_features;
+      bool _all_checked;
+
+      void check(data::feature feature_, bool really_supported_);
+    };
+  }
 }
 
 #endif

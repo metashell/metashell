@@ -25,62 +25,68 @@
 
 namespace metashell
 {
-  feature_validator::feature_validator(
-      std::string engine_name_, std::vector<data::feature> supported_features_)
-    : _engine_name(move(engine_name_)),
-      _supported_features(move(supported_features_)),
-      _all_checked(false)
+  namespace core
   {
-  }
-
-  void feature_validator::check(data::feature feature_, bool really_supported_)
-  {
-    assert(!_all_checked);
-
-    const auto old_size = _supported_features.size();
-
-    _supported_features.erase(std::remove(_supported_features.begin(),
-                                          _supported_features.end(), feature_),
-                              _supported_features.end());
-
-    const bool doc_says_supported = _supported_features.size() != old_size;
-
-    if (really_supported_)
+    feature_validator::feature_validator(
+        std::string engine_name_,
+        std::vector<data::feature> supported_features_)
+      : _engine_name(move(engine_name_)),
+        _supported_features(move(supported_features_)),
+        _all_checked(false)
     {
-      if (!doc_says_supported)
+    }
+
+    void feature_validator::check(data::feature feature_,
+                                  bool really_supported_)
+    {
+      assert(!_all_checked);
+
+      const auto old_size = _supported_features.size();
+
+      _supported_features.erase(
+          std::remove(
+              _supported_features.begin(), _supported_features.end(), feature_),
+          _supported_features.end());
+
+      const bool doc_says_supported = _supported_features.size() != old_size;
+
+      if (really_supported_)
+      {
+        if (!doc_says_supported)
+        {
+          throw std::runtime_error(
+              "Documentation of engine " + _engine_name + " states feature " +
+              to_string(feature_) +
+              " is not supported, but the engine supports it.");
+        }
+      }
+      else if (doc_says_supported)
       {
         throw std::runtime_error(
             "Documentation of engine " + _engine_name + " states feature " +
             to_string(feature_) +
-            " is not supported, but the engine supports it.");
+            " is supported, but the engine does not support it.");
       }
     }
-    else if (doc_says_supported)
+
+    void feature_validator::all_checked()
     {
-      throw std::runtime_error(
-          "Documentation of engine " + _engine_name + " states feature " +
-          to_string(feature_) +
-          " is supported, but the engine does not support it.");
+      using boost::adaptors::transformed;
+
+      assert(!_all_checked);
+
+      if (!_supported_features.empty())
+      {
+        throw std::runtime_error(
+            "During the validaton of engine " + _engine_name +
+            ", the following features have not been checked: " +
+            boost::algorithm::join(
+                _supported_features |
+                    transformed([](data::feature f_) { return to_string(f_); }),
+                ", "));
+      }
+
+      _all_checked = true;
     }
-  }
-
-  void feature_validator::all_checked()
-  {
-    using boost::adaptors::transformed;
-
-    assert(!_all_checked);
-
-    if (!_supported_features.empty())
-    {
-      throw std::runtime_error(
-          "During the validaton of engine " + _engine_name +
-          ", the following features have not been checked: " +
-          boost::algorithm::join(
-              _supported_features |
-                  transformed([](data::feature f_) { return to_string(f_); }),
-              ", "));
-    }
-
-    _all_checked = true;
   }
 }

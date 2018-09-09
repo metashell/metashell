@@ -23,18 +23,21 @@
 
 namespace metashell
 {
-  class fstream_file_writer : public iface::file_writer
+  namespace core
   {
-  public:
-    virtual bool open(const std::string& filename_) override;
-    virtual void close() override;
-    virtual bool is_open() const override;
+    class fstream_file_writer : public iface::file_writer
+    {
+    public:
+      virtual bool open(const std::string& filename_) override;
+      virtual void close() override;
+      virtual bool is_open() const override;
 
-    virtual bool write(const std::string& content_) override;
+      virtual bool write(const std::string& content_) override;
 
-  private:
-    std::ofstream _f;
-  };
+    private:
+      std::ofstream _f;
+    };
+  }
 }
 
 #endif

@@ -23,16 +23,19 @@
 
 namespace metashell
 {
-  class macro_discovery_wave : public iface::macro_discovery
+  namespace core
   {
-  public:
-    explicit macro_discovery_wave(data::wave_config config_);
+    class macro_discovery_wave : public iface::macro_discovery
+    {
+    public:
+      explicit macro_discovery_wave(data::wave_config config_);
 
-    virtual data::cpp_code macros(const iface::environment& env_) override;
+      virtual data::cpp_code macros(const iface::environment& env_) override;
 
-  private:
-    data::wave_config _config;
-  };
+    private:
+      data::wave_config _config;
+    };
+  }
 }
 
 #endif

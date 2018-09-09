@@ -29,55 +29,58 @@
 
 namespace metashell
 {
-  template <class Events>
-  class filter_expand_memoizations_t
+  namespace core
   {
-  public:
-    explicit filter_expand_memoizations_t(Events&& events_, bool enabled_)
-      : _events(std::move(events_)), _enabled(enabled_), _skip(0)
+    template <class Events>
+    class filter_expand_memoizations_t
     {
-    }
-
-    boost::optional<data::event_data> next()
-    {
-      boost::optional<data::event_data> event = _events.next();
-
-      if (_enabled && event)
+    public:
+      explicit filter_expand_memoizations_t(Events&& events_, bool enabled_)
+        : _events(std::move(events_)), _enabled(enabled_), _skip(0)
       {
-        auto tail = _cache.replay(*event).tail;
-
-        if (_skip > 0)
-        {
-          --_skip;
-        }
-        else
-        {
-          _cache.record(*event);
-        }
-
-        _skip += tail.size();
-        _events.queue(tail);
       }
 
-      return event;
+      boost::optional<data::event_data> next()
+      {
+        boost::optional<data::event_data> event = _events.next();
+
+        if (_enabled && event)
+        {
+          auto tail = _cache.replay(*event).tail;
+
+          if (_skip > 0)
+          {
+            --_skip;
+          }
+          else
+          {
+            _cache.record(*event);
+          }
+
+          _skip += tail.size();
+          _events.queue(tail);
+        }
+
+        return event;
+      }
+
+      data::cpp_code root_name() const { return _events.root_name(); }
+
+      data::metaprogram_mode mode() const { return _events.mode(); }
+
+    private:
+      filter_with_queue<Events> _events;
+      bool _enabled;
+      int _skip;
+      event_cache _cache;
+    };
+
+    template <class Events>
+    filter_expand_memoizations_t<Events>
+    filter_expand_memoizations(Events&& events_, bool enabled_)
+    {
+      return filter_expand_memoizations_t<Events>(std::move(events_), enabled_);
     }
-
-    data::cpp_code root_name() const { return _events.root_name(); }
-
-    data::metaprogram_mode mode() const { return _events.mode(); }
-
-  private:
-    filter_with_queue<Events> _events;
-    bool _enabled;
-    int _skip;
-    event_cache _cache;
-  };
-
-  template <class Events>
-  filter_expand_memoizations_t<Events>
-  filter_expand_memoizations(Events&& events_, bool enabled_)
-  {
-    return filter_expand_memoizations_t<Events>(std::move(events_), enabled_);
   }
 }
 

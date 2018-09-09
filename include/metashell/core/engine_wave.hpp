@@ -21,8 +21,11 @@
 
 namespace metashell
 {
-  engine_entry get_engine_wave_entry();
-  engine_entry get_engine_wave_entry_with_templight_headers();
+  namespace core
+  {
+    engine_entry get_engine_wave_entry();
+    engine_entry get_engine_wave_entry_with_templight_headers();
+  }
 }
 
 #endif

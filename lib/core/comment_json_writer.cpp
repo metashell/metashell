@@ -18,36 +18,45 @@
 
 namespace metashell
 {
-  comment_json_writer::comment_json_writer(iface::displayer& displayer_)
-    : _displayer(displayer_), _buff(), _writer(_buff)
+  namespace core
   {
+    comment_json_writer::comment_json_writer(iface::displayer& displayer_)
+      : _displayer(displayer_), _buff(), _writer(_buff)
+    {
+    }
+
+    comment_json_writer::~comment_json_writer()
+    {
+      _displayer.show_comment(data::text(_buff.str()));
+    }
+
+    void comment_json_writer::string(const std::string& value_)
+    {
+      _writer.string(value_);
+    }
+
+    void comment_json_writer::int_(int value_) { _writer.int_(value_); }
+
+    void comment_json_writer::double_(double value_)
+    {
+      _writer.double_(value_);
+    }
+
+    void comment_json_writer::bool_(bool value_) { _writer.bool_(value_); }
+
+    void comment_json_writer::start_object() { _writer.start_object(); }
+
+    void comment_json_writer::key(const std::string& key_)
+    {
+      _writer.key(key_);
+    }
+
+    void comment_json_writer::end_object() { _writer.end_object(); }
+
+    void comment_json_writer::start_array() { _writer.start_array(); }
+
+    void comment_json_writer::end_array() { _writer.end_array(); }
+
+    void comment_json_writer::end_document() { _writer.end_document(); }
   }
-
-  comment_json_writer::~comment_json_writer()
-  {
-    _displayer.show_comment(data::text(_buff.str()));
-  }
-
-  void comment_json_writer::string(const std::string& value_)
-  {
-    _writer.string(value_);
-  }
-
-  void comment_json_writer::int_(int value_) { _writer.int_(value_); }
-
-  void comment_json_writer::double_(double value_) { _writer.double_(value_); }
-
-  void comment_json_writer::bool_(bool value_) { _writer.bool_(value_); }
-
-  void comment_json_writer::start_object() { _writer.start_object(); }
-
-  void comment_json_writer::key(const std::string& key_) { _writer.key(key_); }
-
-  void comment_json_writer::end_object() { _writer.end_object(); }
-
-  void comment_json_writer::start_array() { _writer.start_array(); }
-
-  void comment_json_writer::end_array() { _writer.end_array(); }
-
-  void comment_json_writer::end_document() { _writer.end_document(); }
 }

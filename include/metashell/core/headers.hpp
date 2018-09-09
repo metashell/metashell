@@ -21,9 +21,9 @@
 
 namespace metashell
 {
-  namespace data
+  namespace core
   {
-    void generate(const headers& headers_);
+    void generate(const data::headers& headers_);
   }
 }
 

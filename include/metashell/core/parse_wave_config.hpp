@@ -31,16 +31,19 @@
 
 namespace metashell
 {
-  data::wave_config
-  parse_wave_config(bool use_templight_headers_,
-                    const std::vector<std::string>& args_,
-                    const std::string& metashell_binary_,
-                    const boost::filesystem::path& internal_dir_,
-                    metashell::iface::environment_detector& env_detector_,
-                    metashell::iface::displayer& displayer_,
-                    metashell::logger* logger_);
+  namespace core
+  {
+    data::wave_config
+    parse_wave_config(bool use_templight_headers_,
+                      const std::vector<std::string>& args_,
+                      const std::string& metashell_binary_,
+                      const boost::filesystem::path& internal_dir_,
+                      iface::environment_detector& env_detector_,
+                      iface::displayer& displayer_,
+                      logger* logger_);
 
-  std::string wave_args(bool use_templight_headers_);
+    std::string wave_args(bool use_templight_headers_);
+  }
 }
 
 #endif

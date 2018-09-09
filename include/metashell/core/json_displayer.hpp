@@ -22,32 +22,35 @@
 
 namespace metashell
 {
-  class json_displayer : public iface::displayer
+  namespace core
   {
-  public:
-    explicit json_displayer(iface::json_writer& w_);
+    class json_displayer : public iface::displayer
+    {
+    public:
+      explicit json_displayer(iface::json_writer& w_);
 
-    virtual void show_raw_text(const std::string& text_) override;
-    virtual void show_error(const std::string& msg_) override;
-    virtual void show_type(const data::type& type_) override;
-    virtual void show_comment(const data::text& msg_) override;
-    virtual void show_cpp_code(const data::cpp_code& code_) override;
+      virtual void show_raw_text(const std::string& text_) override;
+      virtual void show_error(const std::string& msg_) override;
+      virtual void show_type(const data::type& type_) override;
+      virtual void show_comment(const data::text& msg_) override;
+      virtual void show_cpp_code(const data::cpp_code& code_) override;
 
-    virtual void show_frame(const data::frame& frame_) override;
-    virtual void show_file_section(const data::file_location& location_,
-                                   const std::string& env_buffer_) override;
-    virtual void show_backtrace(const data::backtrace& trace_) override;
-    virtual void show_call_graph(const iface::call_graph& cg_) override;
+      virtual void show_frame(const data::frame& frame_) override;
+      virtual void show_file_section(const data::file_location& location_,
+                                     const std::string& env_buffer_) override;
+      virtual void show_backtrace(const data::backtrace& trace_) override;
+      virtual void show_call_graph(const iface::call_graph& cg_) override;
 
-    virtual void show_filename_list(
-        const std::vector<boost::filesystem::path>& filenames_) override;
+      virtual void show_filename_list(
+          const std::vector<boost::filesystem::path>& filenames_) override;
 
-    virtual void show_filename_set(
-        const std::set<boost::filesystem::path>& filenames_) override;
+      virtual void show_filename_set(
+          const std::set<boost::filesystem::path>& filenames_) override;
 
-  private:
-    iface::json_writer& _writer;
-  };
+    private:
+      iface::json_writer& _writer;
+    };
+  }
 }
 
 #endif

@@ -27,29 +27,33 @@
 
 namespace metashell
 {
-  class rapid_object_handler : public rapid_handler<rapid_object_handler, false>
+  namespace core
   {
-  public:
-    explicit rapid_object_handler(iface::displayer& displayer_);
+    class rapid_object_handler
+        : public rapid_handler<rapid_object_handler, false>
+    {
+    public:
+      explicit rapid_object_handler(iface::displayer& displayer_);
 
-    bool StartObject();
+      bool StartObject();
 
-    boost::optional<std::string> field(const std::string& name_) const;
+      boost::optional<std::string> field(const std::string& name_) const;
 
-    void fail(const std::string& msg_);
+      void fail(const std::string& msg_);
 
-    bool string(const std::string& str_);
-    bool key(const std::string& str_);
-    bool end_object();
+      bool string(const std::string& str_);
+      bool key(const std::string& str_);
+      bool end_object();
 
-  private:
-    std::map<std::string, std::string> _fields;
+    private:
+      std::map<std::string, std::string> _fields;
 
-    bool _in_object;
-    std::string _next_key;
+      bool _in_object;
+      std::string _next_key;
 
-    iface::displayer& _displayer;
-  };
+      iface::displayer& _displayer;
+    };
+  }
 }
 
 #endif

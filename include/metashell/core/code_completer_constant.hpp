@@ -21,14 +21,17 @@
 
 namespace metashell
 {
-  class code_completer_constant : public iface::code_completer
+  namespace core
   {
-  public:
-    virtual void code_complete(const iface::environment&,
-                               const std::string&,
-                               std::set<std::string>&,
-                               bool) override;
-  };
+    class code_completer_constant : public iface::code_completer
+    {
+    public:
+      virtual void code_complete(const iface::environment&,
+                                 const std::string&,
+                                 std::set<std::string>&,
+                                 bool) override;
+    };
+  }
 }
 
 #endif

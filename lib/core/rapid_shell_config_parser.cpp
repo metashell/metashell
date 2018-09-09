@@ -24,232 +24,236 @@
 
 namespace metashell
 {
-  namespace
+  namespace core
   {
-    enum class field_type
+    namespace
     {
-      string_,
-      bool_,
-      list_
-    };
-
-    std::string to_string(field_type v_)
-    {
-      switch (v_)
+      enum class field_type
       {
-      case field_type::string_:
-        return "string";
-      case field_type::bool_:
-        return "bool";
-      case field_type::list_:
-        return "list of strings";
-      }
-      assert(!"This point should not be reached");
-      return "";
-    }
+        string_,
+        bool_,
+        list_
+      };
 
-    std::string to_string(boost::optional<field_type> v_)
-    {
-      return v_ ? to_string(*v_) : "";
-    }
-
-    boost::optional<field_type> type_of_field(const std::string& field_)
-    {
-      static const std::map<std::string, field_type> fields{
-          {"name", field_type::string_},
-          {"engine", field_type::string_},
-          {"engine_args", field_type::list_},
-          {"use_precompiled_headers", field_type::bool_},
-          {"preprocessor_mode", field_type::bool_}};
-
-      const auto i = fields.find(field_);
-      return i == fields.end() ? boost::none : boost::make_optional(i->second);
-    }
-  }
-
-  bool rapid_shell_config_parser::StartArray()
-  {
-    not_empty();
-
-    if (_config && _key)
-    {
-      const auto t = type_of_field(*_key);
-
-      if (_in_engine_args)
+      std::string to_string(field_type v_)
       {
-        fail("A list containing a list is not a valid value for " + *_key +
-             ", which should be a " + to_string(t));
-        return false;
-      }
-      else if (t == field_type::list_)
-      {
-        _in_engine_args = true;
-        return true;
-      }
-      else
-      {
-        fail("A list is not a valid value for " + *_key +
-             ", which should be a " + to_string(t));
-        return false;
-      }
-    }
-    else if (_in_list || _config)
-    {
-      fail("Unexpected array");
-      return false;
-    }
-    else
-    {
-      _in_list = true;
-      return true;
-    }
-  }
-
-  bool rapid_shell_config_parser::end_array()
-  {
-    not_empty();
-
-    _in_list = false;
-    _in_engine_args = false;
-    _key = boost::none;
-
-    return true;
-  }
-
-  bool rapid_shell_config_parser::StartObject()
-  {
-    not_empty();
-
-    if (_config || _in_engine_args)
-    {
-      fail("Unexpected object");
-      return false;
-    }
-
-    _config = data::shell_config();
-    return true;
-  }
-
-  bool rapid_shell_config_parser::end_object()
-  {
-    assert(bool(_config));
-
-    not_empty();
-
-    if (_config->name.empty())
-    {
-      fail("The name of a config is missing");
-      return false;
-    }
-    else
-    {
-      parsed_config_callback(std::move(*_config));
-      _config = boost::none;
-
-      return true;
-    }
-  }
-
-  bool rapid_shell_config_parser::key(const std::string& str_)
-  {
-    assert(bool(_config));
-
-    not_empty();
-
-    if (type_of_field(str_))
-    {
-      _key = str_;
-      return true;
-    }
-    else
-    {
-      fail("Invalid key: " + str_);
-      return false;
-    }
-  }
-
-  bool rapid_shell_config_parser::string(const std::string& str_)
-  {
-    not_empty();
-
-    if (_config && _key)
-    {
-      const auto t = type_of_field(*_key);
-
-      if (t == field_type::string_)
-      {
-        if (*_key == "name")
+        switch (v_)
         {
-          _config->name = data::shell_config_name(str_);
+        case field_type::string_:
+          return "string";
+        case field_type::bool_:
+          return "bool";
+        case field_type::list_:
+          return "list of strings";
         }
-        else if (*_key == "engine")
+        assert(!"This point should not be reached");
+        return "";
+      }
+
+      std::string to_string(boost::optional<field_type> v_)
+      {
+        return v_ ? to_string(*v_) : "";
+      }
+
+      boost::optional<field_type> type_of_field(const std::string& field_)
+      {
+        static const std::map<std::string, field_type> fields{
+            {"name", field_type::string_},
+            {"engine", field_type::string_},
+            {"engine_args", field_type::list_},
+            {"use_precompiled_headers", field_type::bool_},
+            {"preprocessor_mode", field_type::bool_}};
+
+        const auto i = fields.find(field_);
+        return i == fields.end() ? boost::none :
+                                   boost::make_optional(i->second);
+      }
+    }
+
+    bool rapid_shell_config_parser::StartArray()
+    {
+      not_empty();
+
+      if (_config && _key)
+      {
+        const auto t = type_of_field(*_key);
+
+        if (_in_engine_args)
         {
-          _config->engine = str_;
+          fail("A list containing a list is not a valid value for " + *_key +
+               ", which should be a " + to_string(t));
+          return false;
+        }
+        else if (t == field_type::list_)
+        {
+          _in_engine_args = true;
+          return true;
         }
         else
         {
-          assert(false);
+          fail("A list is not a valid value for " + *_key +
+               ", which should be a " + to_string(t));
+          return false;
         }
+      }
+      else if (_in_list || _config)
+      {
+        fail("Unexpected array");
+        return false;
+      }
+      else
+      {
+        _in_list = true;
+        return true;
+      }
+    }
+
+    bool rapid_shell_config_parser::end_array()
+    {
+      not_empty();
+
+      _in_list = false;
+      _in_engine_args = false;
+      _key = boost::none;
+
+      return true;
+    }
+
+    bool rapid_shell_config_parser::StartObject()
+    {
+      not_empty();
+
+      if (_config || _in_engine_args)
+      {
+        fail("Unexpected object");
+        return false;
+      }
+
+      _config = data::shell_config();
+      return true;
+    }
+
+    bool rapid_shell_config_parser::end_object()
+    {
+      assert(bool(_config));
+
+      not_empty();
+
+      if (_config->name.empty())
+      {
+        fail("The name of a config is missing");
+        return false;
+      }
+      else
+      {
+        parsed_config_callback(std::move(*_config));
+        _config = boost::none;
 
         return true;
       }
-      else if (t == field_type::list_ && _in_engine_args)
+    }
+
+    bool rapid_shell_config_parser::key(const std::string& str_)
+    {
+      assert(bool(_config));
+
+      not_empty();
+
+      if (type_of_field(str_))
       {
-        _config->engine_args.push_back(str_);
+        _key = str_;
         return true;
       }
       else
       {
-        fail("\"" + str_ + "\" is not a valid value for " + *_key +
-             ", which should be a " + to_string(t));
+        fail("Invalid key: " + str_);
         return false;
       }
     }
-    else
+
+    bool rapid_shell_config_parser::string(const std::string& str_)
     {
-      fail("Unexpected string element: \"" + str_ + "\"");
-      return false;
-    }
-  }
+      not_empty();
 
-  bool rapid_shell_config_parser::Bool(bool b_)
-  {
-    not_empty();
-
-    const std::string value = b_ ? "true" : "false";
-
-    if (_config && _key)
-    {
-      const auto t = type_of_field(*_key);
-
-      if (t == field_type::bool_)
+      if (_config && _key)
       {
-        if (*_key == "use_precompiled_headers")
+        const auto t = type_of_field(*_key);
+
+        if (t == field_type::string_)
         {
-          _config->use_precompiled_headers = b_;
+          if (*_key == "name")
+          {
+            _config->name = data::shell_config_name(str_);
+          }
+          else if (*_key == "engine")
+          {
+            _config->engine = str_;
+          }
+          else
+          {
+            assert(false);
+          }
+
+          return true;
         }
-        else if (*_key == "preprocessor_mode")
+        else if (t == field_type::list_ && _in_engine_args)
         {
-          _config->preprocessor_mode = b_;
+          _config->engine_args.push_back(str_);
+          return true;
         }
         else
         {
-          assert(false);
+          fail("\"" + str_ + "\" is not a valid value for " + *_key +
+               ", which should be a " + to_string(t));
+          return false;
         }
-
-        return true;
       }
       else
       {
-        fail(value + " is not a valid value for " + *_key +
-             ", which should be a " + to_string(t));
+        fail("Unexpected string element: \"" + str_ + "\"");
         return false;
       }
     }
-    else
+
+    bool rapid_shell_config_parser::Bool(bool b_)
     {
-      fail("Unexpected bool element: " + value);
-      return false;
+      not_empty();
+
+      const std::string value = b_ ? "true" : "false";
+
+      if (_config && _key)
+      {
+        const auto t = type_of_field(*_key);
+
+        if (t == field_type::bool_)
+        {
+          if (*_key == "use_precompiled_headers")
+          {
+            _config->use_precompiled_headers = b_;
+          }
+          else if (*_key == "preprocessor_mode")
+          {
+            _config->preprocessor_mode = b_;
+          }
+          else
+          {
+            assert(false);
+          }
+
+          return true;
+        }
+        else
+        {
+          fail(value + " is not a valid value for " + *_key +
+               ", which should be a " + to_string(t));
+          return false;
+        }
+      }
+      else
+      {
+        fail("Unexpected bool element: " + value);
+        return false;
+      }
     }
   }
 }

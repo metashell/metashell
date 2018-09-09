@@ -20,103 +20,110 @@
 #include <cassert>
 #include <vector>
 
-using namespace metashell;
-
-namespace
+namespace metashell
 {
-  bool is_whitespace(char c_)
+  namespace core
   {
-    return c_ == ' ' || c_ == '\t' || c_ == '\v' || c_ == '\r' || c_ == '\n';
-  }
-
-  template <class It>
-  It pos_after_last_non_whitespace(It begin_, It end_)
-  {
-    if (begin_ == end_)
+    namespace
     {
-      return end_;
-    }
-    else
-    {
-      for (It i = end_ - 1; i != begin_; --i)
+      bool is_whitespace(char c_)
       {
-        if (!is_whitespace(*i))
+        return c_ == ' ' || c_ == '\t' || c_ == '\v' || c_ == '\r' ||
+               c_ == '\n';
+      }
+
+      template <class It>
+      It pos_after_last_non_whitespace(It begin_, It end_)
+      {
+        if (begin_ == end_)
         {
-          return i + 1;
+          return end_;
+        }
+        else
+        {
+          for (It i = end_ - 1; i != begin_; --i)
+          {
+            if (!is_whitespace(*i))
+            {
+              return i + 1;
+            }
+          }
+
+          return is_whitespace(*begin_) ? end_ : begin_;
         }
       }
 
-      return is_whitespace(*begin_) ? end_ : begin_;
-    }
-  }
-
-  template <class It>
-  It first_non_whitespace(It begin_, It end_)
-  {
-    return std::find_if(
-        begin_, end_, [](char c_) { return !is_whitespace(c_); });
-  }
-
-  template <class It>
-  void word_wrap(It begin_, It end_, int width_, std::vector<std::string>& out_)
-  {
-    // Some environments report 0 width
-    if (width_ <= 0)
-    {
-      width_ = 80;
-    }
-
-    for (auto i = begin_; i != end_;)
-    {
-      const auto max = i + std::min<int>(end_ - i, width_);
-      auto break_at = i;
-      auto last_whitespace = end_;
-      for (; break_at != max && *break_at != '\n'; ++break_at)
+      template <class It>
+      It first_non_whitespace(It begin_, It end_)
       {
-        if (is_whitespace(*break_at))
-        {
-          last_whitespace = break_at;
-        }
+        return std::find_if(
+            begin_, end_, [](char c_) { return !is_whitespace(c_); });
       }
 
-      const auto bp = (static_cast<int>(break_at - i) == width_ &&
-                       last_whitespace != end_) ?
-                          last_whitespace :
-                          break_at;
+      template <class It>
+      void
+      word_wrap(It begin_, It end_, int width_, std::vector<std::string>& out_)
+      {
+        // Some environments report 0 width
+        if (width_ <= 0)
+        {
+          width_ = 80;
+        }
 
-      out_.push_back(std::string(i, pos_after_last_non_whitespace(i, bp)));
+        for (auto i = begin_; i != end_;)
+        {
+          const auto max = i + std::min<int>(end_ - i, width_);
+          auto break_at = i;
+          auto last_whitespace = end_;
+          for (; break_at != max && *break_at != '\n'; ++break_at)
+          {
+            if (is_whitespace(*break_at))
+            {
+              last_whitespace = break_at;
+            }
+          }
 
-      const auto new_i =
-          (bp == end_ || *bp != '\n') ? first_non_whitespace(bp, end_) : bp + 1;
-      assert(i < new_i);
-      i = new_i;
+          const auto bp = (static_cast<int>(break_at - i) == width_ &&
+                           last_whitespace != end_) ?
+                              last_whitespace :
+                              break_at;
+
+          out_.push_back(std::string(i, pos_after_last_non_whitespace(i, bp)));
+
+          const auto new_i = (bp == end_ || *bp != '\n') ?
+                                 first_non_whitespace(bp, end_) :
+                                 bp + 1;
+          assert(i < new_i);
+          i = new_i;
+        }
+      }
+    }
+
+    indenter::indenter(int width_) : _width(width_) {}
+
+    std::string indenter::str() const { return _buff.str(); }
+
+    indenter& indenter::raw(const std::string& s_)
+    {
+      _buff << s_ << "\n";
+      return *this;
+    }
+
+    indenter& indenter::left_align(const std::string& s_,
+                                   const std::string& line_prefix_,
+                                   const std::string& first_line_prefix_)
+    {
+      assert(first_line_prefix_.length() == line_prefix_.length());
+
+      std::vector<std::string> lines;
+      word_wrap(s_.begin(), s_.end(), _width - line_prefix_.length(), lines);
+      bool first = true;
+      for (const std::string& line : lines)
+      {
+        _buff << (first ? first_line_prefix_ : line_prefix_) << line << "\n";
+        first = false;
+      }
+      return *this;
     }
   }
-}
-
-indenter::indenter(int width_) : _width(width_) {}
-
-std::string indenter::str() const { return _buff.str(); }
-
-indenter& indenter::raw(const std::string& s_)
-{
-  _buff << s_ << "\n";
-  return *this;
-}
-
-indenter& indenter::left_align(const std::string& s_,
-                               const std::string& line_prefix_,
-                               const std::string& first_line_prefix_)
-{
-  assert(first_line_prefix_.length() == line_prefix_.length());
-
-  std::vector<std::string> lines;
-  word_wrap(s_.begin(), s_.end(), _width - line_prefix_.length(), lines);
-  bool first = true;
-  for (const std::string& line : lines)
-  {
-    _buff << (first ? first_line_prefix_ : line_prefix_) << line << "\n";
-    first = false;
-  }
-  return *this;
 }

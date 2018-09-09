@@ -22,123 +22,130 @@
 #include <cassert>
 #include <map>
 
-using namespace metashell;
-
-namespace
+namespace metashell
 {
-  void show_code_complete_result(iface::json_writer& writer_,
-                                 const std::set<std::string>& completions_)
+  namespace core
   {
-    writer_.start_object();
-
-    writer_.key("type");
-    writer_.string("code_completion_result");
-
-    writer_.key("completions");
-    writer_.start_array();
-    for (const std::string& c : completions_)
+    namespace
     {
-      writer_.string(c);
-    }
-    writer_.end_array();
-
-    writer_.end_object();
-    writer_.end_document();
-  }
-
-  void show_prompt(iface::json_writer& writer_, const std::string& prompt_)
-  {
-    writer_.start_object();
-
-    writer_.key("type");
-    writer_.string("prompt");
-
-    writer_.key("prompt");
-    writer_.string(prompt_);
-
-    writer_.end_object();
-    writer_.end_document();
-  }
-
-  boost::optional<std::string> read_next_line(const line_reader& line_reader_,
-                                              iface::json_writer& json_writer_,
-                                              const std::string& prompt_)
-  {
-    show_prompt(json_writer_, prompt_);
-    return line_reader_("");
-  }
-
-  boost::optional<std::string>
-  json_line_reader(const line_reader& line_reader_,
-                   iface::displayer& displayer_,
-                   iface::json_writer& json_writer_,
-                   command_processor_queue& command_processor_queue_,
-                   const std::string& prompt_)
-  {
-    while (const auto s = read_next_line(line_reader_, json_writer_, prompt_))
-    {
-      rapid_object_handler handler(displayer_);
-      rapidjson::Reader reader;
-      rapidjson::StringStream string_stream(s->c_str());
-      reader.Parse(string_stream, handler);
-      if (!handler.failed())
+      void show_code_complete_result(iface::json_writer& writer_,
+                                     const std::set<std::string>& completions_)
       {
-        if (handler.empty())
+        writer_.start_object();
+
+        writer_.key("type");
+        writer_.string("code_completion_result");
+
+        writer_.key("completions");
+        writer_.start_array();
+        for (const std::string& c : completions_)
         {
-          return std::string();
+          writer_.string(c);
         }
-        else if (const auto type = handler.field("type"))
+        writer_.end_array();
+
+        writer_.end_object();
+        writer_.end_document();
+      }
+
+      void show_prompt(iface::json_writer& writer_, const std::string& prompt_)
+      {
+        writer_.start_object();
+
+        writer_.key("type");
+        writer_.string("prompt");
+
+        writer_.key("prompt");
+        writer_.string(prompt_);
+
+        writer_.end_object();
+        writer_.end_document();
+      }
+
+      boost::optional<std::string>
+      read_next_line(const line_reader& line_reader_,
+                     iface::json_writer& json_writer_,
+                     const std::string& prompt_)
+      {
+        show_prompt(json_writer_, prompt_);
+        return line_reader_("");
+      }
+
+      boost::optional<std::string>
+      json_line_reader(const line_reader& line_reader_,
+                       iface::displayer& displayer_,
+                       iface::json_writer& json_writer_,
+                       command_processor_queue& command_processor_queue_,
+                       const std::string& prompt_)
+      {
+        while (const auto s =
+                   read_next_line(line_reader_, json_writer_, prompt_))
         {
-          if (*type == "cmd")
+          rapid_object_handler handler(displayer_);
+          rapidjson::Reader reader;
+          rapidjson::StringStream string_stream(s->c_str());
+          reader.Parse(string_stream, handler);
+          if (!handler.failed())
           {
-            if (const auto cmd = handler.field("cmd"))
+            if (handler.empty())
             {
-              return *cmd;
+              return std::string();
+            }
+            else if (const auto type = handler.field("type"))
+            {
+              if (*type == "cmd")
+              {
+                if (const auto cmd = handler.field("cmd"))
+                {
+                  return *cmd;
+                }
+                else
+                {
+                  displayer_.show_error(
+                      "The cmd field of the cmd command is missing");
+                }
+              }
+              else if (*type == "code_completion")
+              {
+                if (const auto code = handler.field("code"))
+                {
+                  std::set<std::string> cc;
+                  command_processor_queue_.code_complete(*code, cc);
+                  show_code_complete_result(json_writer_, cc);
+                }
+                else
+                {
+                  displayer_.show_error(
+                      "The code field of the code_completion command is "
+                      "missing");
+                }
+              }
+              else
+              {
+                displayer_.show_error("Unknown command type: " + *type);
+              }
             }
             else
             {
-              displayer_.show_error(
-                  "The cmd field of the cmd command is missing");
+              displayer_.show_error("Command without a type: " + *s);
             }
-          }
-          else if (*type == "code_completion")
-          {
-            if (const auto code = handler.field("code"))
-            {
-              std::set<std::string> cc;
-              command_processor_queue_.code_complete(*code, cc);
-              show_code_complete_result(json_writer_, cc);
-            }
-            else
-            {
-              displayer_.show_error(
-                  "The code field of the code_completion command is missing");
-            }
-          }
-          else
-          {
-            displayer_.show_error("Unknown command type: " + *type);
           }
         }
-        else
-        {
-          displayer_.show_error("Command without a type: " + *s);
-        }
+        return boost::none;
       }
     }
-    return boost::none;
-  }
-}
 
-line_reader metashell::build_json_line_reader(
-    const line_reader& line_reader_,
-    iface::displayer& displayer_,
-    iface::json_writer& json_writer_,
-    command_processor_queue& command_processor_queue_)
-{
-  return [line_reader_, &displayer_, &json_writer_,
-          &command_processor_queue_](const std::string& prompt_) {
-    return json_line_reader(line_reader_, displayer_, json_writer_,
-                            command_processor_queue_, prompt_);
-  };
+    line_reader
+    build_json_line_reader(const line_reader& line_reader_,
+                           iface::displayer& displayer_,
+                           iface::json_writer& json_writer_,
+                           command_processor_queue& command_processor_queue_)
+    {
+      return [line_reader_, &displayer_, &json_writer_,
+              &command_processor_queue_](const std::string& prompt_) {
+        return json_line_reader(line_reader_, displayer_, json_writer_,
+                                command_processor_queue_, prompt_);
+      };
+    }
+  }
 }

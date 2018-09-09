@@ -33,10 +33,10 @@ namespace
 
   call_grph fib5_call_graph()
   {
-    using metashell::data::event_kind;
-    using metashell::data::type;
-    using metashell::data::frame;
-    using metashell::data::file_location;
+    using data::event_kind;
+    using data::type;
+    using data::frame;
+    using data::file_location;
 
     file_location f("a.cpp", 1, 2);
     file_location f2("b.hpp", 1, 2);
@@ -76,13 +76,13 @@ namespace
 TEST(console_displayer, nothing_is_displayed_by_default)
 {
   ::testing::StrictMock<mock_console> c;
-  console_displayer cd(c, false, false);
+  core::console_displayer cd(c, false, false);
 }
 
 TEST(console_displayer, raw_text_is_printed)
 {
   mock_console c;
-  console_displayer cd(c, false, false);
+  core::console_displayer cd(c, false, false);
 
   EXPECT_CALL(c, show(data::colored_string("Hello world!")));
   EXPECT_CALL(c, new_line());
@@ -93,7 +93,7 @@ TEST(console_displayer, raw_text_is_printed)
 TEST(console_displayer, raw_text_with_new_line_is_printed)
 {
   mock_console c;
-  console_displayer cd(c, false, false);
+  core::console_displayer cd(c, false, false);
 
   EXPECT_CALL(c, show(data::colored_string("Hello\nworld!")));
   EXPECT_CALL(c, new_line());
@@ -104,7 +104,7 @@ TEST(console_displayer, raw_text_with_new_line_is_printed)
 TEST(console_displayer, error_with_no_colors_is_printed)
 {
   mock_console c;
-  console_displayer cd(c, false, false);
+  core::console_displayer cd(c, false, false);
 
   EXPECT_CALL(c, show(data::colored_string("Something went wrong")));
   EXPECT_CALL(c, new_line());
@@ -115,7 +115,7 @@ TEST(console_displayer, error_with_no_colors_is_printed)
 TEST(console_displayer, error_with_colors_is_printed_in_red)
 {
   mock_console c;
-  console_displayer cd(c, false, true);
+  core::console_displayer cd(c, false, true);
 
   EXPECT_CALL(c, show(data::colored_string(
                      "Something went wrong", data::color::bright_red)));
@@ -131,7 +131,7 @@ TEST(console_displayer, mdb_forwardtrace_from_root_on_narrow_terminal)
   ON_CALL(c, width()).WillByDefault(Return(25));
   ON_CALL(c, height()).WillByDefault(Return(100));
 
-  console_displayer d(c, false, false);
+  core::console_displayer d(c, false, false);
 
   {
     ::testing::InSequence s;
@@ -302,7 +302,7 @@ TEST(console_displayer, mdb_forwardtrace_on_extremely_narrow_terminal_w0)
   ON_CALL(c, width()).WillByDefault(Return(0));
   ON_CALL(c, height()).WillByDefault(Return(1000));
 
-  console_displayer d(c, false, false);
+  core::console_displayer d(c, false, false);
 
   // The algorithm just gives up, and prints without extra line breaks
   {
@@ -387,7 +387,7 @@ TEST(console_displayer, mdb_forwardtrace_on_extremely_narrow_terminal_w1)
   ON_CALL(c, width()).WillByDefault(Return(1));
   ON_CALL(c, height()).WillByDefault(Return(1000));
 
-  console_displayer d(c, false, false);
+  core::console_displayer d(c, false, false);
 
   // The algorithm just gives up, and prints without extra line breaks
   {
@@ -471,7 +471,7 @@ TEST(console_displayer, show_file_section_3_lines_1)
 
   ON_CALL(c, width()).WillByDefault(Return(0));
 
-  console_displayer d(c, false, false);
+  core::console_displayer d(c, false, false);
 
   {
     ::testing::InSequence s;
@@ -494,7 +494,7 @@ TEST(console_displayer, show_file_section_3_lines_2)
 
   ON_CALL(c, width()).WillByDefault(Return(0));
 
-  console_displayer d(c, false, false);
+  core::console_displayer d(c, false, false);
 
   {
     ::testing::InSequence s;
@@ -517,7 +517,7 @@ TEST(console_displayer, show_file_section_6_lines_1)
 
   ON_CALL(c, width()).WillByDefault(Return(0));
 
-  console_displayer d(c, false, false);
+  core::console_displayer d(c, false, false);
 
   {
     ::testing::InSequence s;
@@ -546,7 +546,7 @@ TEST(console_displayer, show_file_section_6_lines_2)
 
   ON_CALL(c, width()).WillByDefault(Return(0));
 
-  console_displayer d(c, false, false);
+  core::console_displayer d(c, false, false);
 
   {
     ::testing::InSequence s;
@@ -578,7 +578,7 @@ TEST(console_displayer, show_file_section_10_lines)
 
   ON_CALL(c, width()).WillByDefault(Return(0));
 
-  console_displayer d(c, false, false);
+  core::console_displayer d(c, false, false);
 
   {
     ::testing::InSequence s;

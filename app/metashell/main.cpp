@@ -55,7 +55,7 @@ namespace
 #endif
         ;
 
-    return {{"Boost.Wave", metashell::wave_version()},
+    return {{"Boost.Wave", metashell::core::wave_version()},
             {readline_name, metashell::readline::version()}};
   }
 }
@@ -66,13 +66,13 @@ int main(int argc_, const char* argv_[])
 
   try
   {
-    using metashell::parse_config;
-    using metashell::parse_config_result;
+    using metashell::core::parse_config;
+    using metashell::core::parse_config_result;
 
-    const std::map<std::string, metashell::engine_entry> engines =
-        metashell::available_engines();
+    const std::map<std::string, metashell::core::engine_entry> engines =
+        metashell::core::available_engines();
 
-    metashell::default_environment_detector det(argv_[0]);
+    metashell::core::default_environment_detector det(argv_[0]);
 
     const parse_config_result r =
         parse_config(argc_, argv_, engines, det, &std::cout, &std::cerr);
@@ -82,8 +82,8 @@ int main(int argc_, const char* argv_[])
       metashell::console_config ccfg(
           r.cfg.con_type, r.cfg.indent, r.cfg.syntax_highlight);
 
-      metashell::fstream_file_writer file_writer;
-      metashell::logger logger(ccfg.displayer(), file_writer);
+      metashell::core::fstream_file_writer file_writer;
+      metashell::core::logger logger(ccfg.displayer(), file_writer);
       switch (r.cfg.log_mode)
       {
       case metashell::data::logging_mode::none:
@@ -113,7 +113,7 @@ int main(int argc_, const char* argv_[])
       create_directories(temp_dir);
       create_directories(mdb_dir);
 
-      auto shell = metashell::make_unique<metashell::shell>(
+      auto shell = metashell::core::make_unique<metashell::core::shell>(
           r.cfg, ccfg.processor_queue(), shell_dir, env_filename, mdb_dir,
           // The shell should be destroyed when this scope is left, capturing
           // locals by reference should be safe.
@@ -147,7 +147,7 @@ int main(int argc_, const char* argv_[])
 
       METASHELL_LOG(&logger, "Starting input loop");
 
-      metashell::input_loop(
+      metashell::core::input_loop(
           ccfg.processor_queue(), ccfg.displayer(), ccfg.reader());
 
       METASHELL_LOG(&logger, "Input loop finished");

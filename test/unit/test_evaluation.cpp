@@ -15,10 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "breaking_environment.hpp"
+#include "empty_container.hpp"
 #include "mock_environment_detector.hpp"
 #include "test_config.hpp"
 #include "util.hpp"
-#include "empty_container.hpp"
 
 #include <metashell/core/engine_constant.hpp>
 #include <metashell/core/engine_templight.hpp>
@@ -38,8 +38,8 @@ using ::testing::_;
 
 TEST(evaluation, accept_empty_input)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("", d);
 
   ASSERT_EQ(empty_container, d.types());
@@ -48,8 +48,8 @@ TEST(evaluation, accept_empty_input)
 
 TEST(evaluation, accept_space_input)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   sh.line_available(" ", d);
 
   ASSERT_EQ(empty_container, d.types());
@@ -58,8 +58,8 @@ TEST(evaluation, accept_space_input)
 
 TEST(evaluation, accept_tab_input)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("\t", d);
 
   ASSERT_EQ(empty_container, d.types());
@@ -68,8 +68,8 @@ TEST(evaluation, accept_tab_input)
 
 TEST(evaluation, accept_vertical_tab_input)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("\v", d);
 
   ASSERT_EQ(empty_container, d.types());
@@ -78,8 +78,8 @@ TEST(evaluation, accept_vertical_tab_input)
 
 TEST(evaluation, accept_new_line_input)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("\n", d);
 
   ASSERT_EQ(empty_container, d.types());
@@ -88,8 +88,8 @@ TEST(evaluation, accept_new_line_input)
 
 TEST(evaluation, accept_carrige_return_input)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("\r", d);
 
   ASSERT_EQ(empty_container, d.types());
@@ -98,8 +98,8 @@ TEST(evaluation, accept_carrige_return_input)
 
 TEST(evaluation, accept_two_space_input)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("  ", d);
 
   ASSERT_EQ(empty_container, d.types());
@@ -108,9 +108,9 @@ TEST(evaluation, accept_two_space_input)
 
 TEST(evaluation, history_is_stored)
 {
-  null_displayer d;
-  in_memory_history h;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::null_displayer d;
+  core::in_memory_history h;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
 
   sh.line_available("int", d, h);
 
@@ -119,9 +119,9 @@ TEST(evaluation, history_is_stored)
 
 TEST(evaluation, empty_line_is_not_stored_in_history)
 {
-  null_displayer d;
-  in_memory_history h;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::null_displayer d;
+  core::in_memory_history h;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
 
   sh.line_available("", d, h);
 
@@ -130,9 +130,9 @@ TEST(evaluation, empty_line_is_not_stored_in_history)
 
 TEST(evaluation, line_containing_just_whitespace_is_not_stored_in_history)
 {
-  null_displayer d;
-  in_memory_history h;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::null_displayer d;
+  core::in_memory_history h;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
 
   sh.line_available(" ", d, h);
 
@@ -142,9 +142,9 @@ TEST(evaluation, line_containing_just_whitespace_is_not_stored_in_history)
 TEST(evaluation,
      the_same_thing_following_each_other_is_not_added_to_history_twice)
 {
-  null_displayer d;
-  in_memory_history h;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::null_displayer d;
+  core::in_memory_history h;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
 
   sh.line_available("int", d, h);
   sh.line_available("int", d, h);
@@ -154,8 +154,8 @@ TEST(evaluation,
 
 TEST(evaluation, accept_c_comment_input)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("/* some comment */", d);
 
   ASSERT_EQ(empty_container, d.types());
@@ -164,8 +164,8 @@ TEST(evaluation, accept_c_comment_input)
 
 TEST(evaluation, accept_cpp_comment_input)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("// some comment", d);
 
   ASSERT_EQ(empty_container, d.types());
@@ -174,9 +174,9 @@ TEST(evaluation, accept_cpp_comment_input)
 
 TEST(evaluation, comment_is_stored_in_history)
 {
-  null_displayer d;
-  in_memory_history h;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::null_displayer d;
+  core::in_memory_history h;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
 
   sh.line_available("// some comment", d, h);
 
@@ -189,12 +189,12 @@ TEST(evaluation, throwing_environment_update_not_breaking_shell)
   cfg.push_back(data::shell_config());
 
   breaking_environment* e = new breaking_environment();
-  in_memory_displayer d;
-  null_history h;
-  command_processor_queue cpq;
+  core::in_memory_displayer d;
+  core::null_history h;
+  core::command_processor_queue cpq;
   cpq.history(h);
-  shell sh(cfg, std::unique_ptr<breaking_environment>(e), cpq, "", "", "",
-           create_failing_engine());
+  core::shell sh(cfg, std::unique_ptr<breaking_environment>(e), cpq, "", "", "",
+                 core::create_failing_engine());
   e->append_throw_from_now();
 
   sh.store_in_buffer(data::cpp_code("typedef int foo;"), d);
@@ -210,7 +210,7 @@ TEST(evaluation, throwing_environment_not_breaking_validate)
   NiceMock<mock_environment_detector> det;
   breaking_environment e;
   e.get_appended_throw_from_now();
-  null_displayer d;
+  core::null_displayer d;
 
   ON_CALL(det, on_windows()).WillByDefault(Return(false));
   ON_CALL(det, on_osx()).WillByDefault(Return(false));
@@ -218,7 +218,7 @@ TEST(evaluation, throwing_environment_not_breaking_validate)
   ON_CALL(det, file_exists(_)).WillByDefault(Return(true));
 
   const data::result r =
-      get_internal_templight_entry()
+      core::get_internal_templight_entry()
           .build(cfg, "", "", "env.hpp", det, d, nullptr)
           ->cpp_validator()
           .validate_code(data::cpp_code("typedef int foo;"), cfg, e, false);
@@ -230,32 +230,35 @@ TEST(evaluation, throwing_environment_not_breaking_validate)
 TEST(evaluation, variable_definition)
 {
   using data::command;
-  ASSERT_TRUE(is_environment_setup_command(command(data::cpp_code("int x;"))));
+  ASSERT_TRUE(
+      core::is_environment_setup_command(command(data::cpp_code("int x;"))));
 }
 
 TEST(evaluation, function_definition)
 {
   using data::command;
-  ASSERT_TRUE(
-      is_environment_setup_command(command(data::cpp_code("void f() {}"))));
+  ASSERT_TRUE(core::is_environment_setup_command(
+      command(data::cpp_code("void f() {}"))));
 }
 
 TEST(evaluation, is_environment_setup_with_leading_whitespace)
 {
   using data::command;
-  ASSERT_FALSE(is_environment_setup_command(command(data::cpp_code(" int"))));
+  ASSERT_FALSE(
+      core::is_environment_setup_command(command(data::cpp_code(" int"))));
 }
 
 TEST(evaluation, is_environment_setup_without_leading_whitespace)
 {
   using data::command;
-  ASSERT_FALSE(is_environment_setup_command(command(data::cpp_code("int"))));
+  ASSERT_FALSE(
+      core::is_environment_setup_command(command(data::cpp_code("int"))));
 }
 
 TEST(evaluation, prompt_is_different_in_multiline_input)
 {
-  null_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::null_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("const \\", d);
 
   ASSERT_EQ("...>", sh.prompt());
@@ -265,6 +268,6 @@ TEST(evaluation, command_macro_usage_with_semicolon_is_environment_setup)
 {
   using data::command;
 
-  ASSERT_TRUE(
-      is_environment_setup_command(command(data::cpp_code("SOME_MACRO(13);"))));
+  ASSERT_TRUE(core::is_environment_setup_command(
+      command(data::cpp_code("SOME_MACRO(13);"))));
 }

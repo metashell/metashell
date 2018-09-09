@@ -18,22 +18,25 @@
 
 namespace metashell
 {
-  header_discoverer_constant::header_discoverer_constant(
-      std::vector<boost::filesystem::path> sysincludes_,
-      std::vector<boost::filesystem::path> quoteincludes_)
-    : _includes(move(sysincludes_), move(quoteincludes_))
+  namespace core
   {
-  }
+    header_discoverer_constant::header_discoverer_constant(
+        std::vector<boost::filesystem::path> sysincludes_,
+        std::vector<boost::filesystem::path> quoteincludes_)
+      : _includes(move(sysincludes_), move(quoteincludes_))
+    {
+    }
 
-  std::vector<boost::filesystem::path>
-  header_discoverer_constant::include_path(data::include_type type_)
-  {
-    return get(type_, _includes);
-  }
+    std::vector<boost::filesystem::path>
+    header_discoverer_constant::include_path(data::include_type type_)
+    {
+      return get(type_, _includes);
+    }
 
-  std::set<boost::filesystem::path>
-  header_discoverer_constant::files_included_by(const data::cpp_code&)
-  {
-    return std::set<boost::filesystem::path>();
+    std::set<boost::filesystem::path>
+    header_discoverer_constant::files_included_by(const data::cpp_code&)
+    {
+      return std::set<boost::filesystem::path>();
+    }
   }
 }

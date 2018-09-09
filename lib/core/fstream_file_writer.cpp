@@ -16,25 +16,29 @@
 
 #include <metashell/core/fstream_file_writer.hpp>
 
-using namespace metashell;
-
-namespace
+namespace metashell
 {
-  bool was_error(const std::ostream& s_) { return s_.fail() || s_.bad(); }
-}
+  namespace core
+  {
+    namespace
+    {
+      bool was_error(const std::ostream& s_) { return s_.fail() || s_.bad(); }
+    }
 
-bool fstream_file_writer::open(const std::string& filename_)
-{
-  _f.open(filename_.c_str());
-  return !was_error(_f);
-}
+    bool fstream_file_writer::open(const std::string& filename_)
+    {
+      _f.open(filename_.c_str());
+      return !was_error(_f);
+    }
 
-void fstream_file_writer::close() { _f.close(); }
+    void fstream_file_writer::close() { _f.close(); }
 
-bool fstream_file_writer::is_open() const { return _f.is_open(); }
+    bool fstream_file_writer::is_open() const { return _f.is_open(); }
 
-bool fstream_file_writer::write(const std::string& content_)
-{
-  _f << content_;
-  return !was_error(_f);
+    bool fstream_file_writer::write(const std::string& content_)
+    {
+      _f << content_;
+      return !was_error(_f);
+    }
+  }
 }

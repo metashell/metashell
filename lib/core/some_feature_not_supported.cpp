@@ -18,10 +18,13 @@
 
 namespace metashell
 {
-  some_feature_not_supported::some_feature_not_supported(
-      const std::string& engine_name_, const data::feature& feature_)
-    : exception("Feature " + to_string(feature_) + " is not supported by the " +
-                engine_name_ + " engine.")
+  namespace core
   {
+    some_feature_not_supported::some_feature_not_supported(
+        const std::string& engine_name_, const data::feature& feature_)
+      : exception("Feature " + to_string(feature_) +
+                  " is not supported by the " + engine_name_ + " engine.")
+    {
+    }
   }
 }

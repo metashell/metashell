@@ -21,24 +21,25 @@
 
 namespace metashell
 {
-
-  class pager
+  namespace core
   {
-  public:
-    pager(iface::console& console);
+    class pager
+    {
+    public:
+      pager(iface::console& console);
 
-    void show(const data::colored_string& string);
-    bool new_line();
+      void show(const data::colored_string& string);
+      bool new_line();
 
-  private:
-    iface::console& console_;
+    private:
+      iface::console& console_;
 
-    bool show_all = false;
+      bool show_all = false;
 
-    int lines_in_current_page = 0;
-    int chars_in_current_line = 0;
-  };
-
-} // namespace metashell
+      int lines_in_current_page = 0;
+      int chars_in_current_line = 0;
+    };
+  }
+} // namespace metashell { namespace core
 
 #endif

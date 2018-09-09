@@ -21,55 +21,56 @@
 
 namespace metashell
 {
-
-  file_section
-  get_file_section(std::istream& stream, int middle_line, int offset)
+  namespace core
   {
-    if (middle_line <= 0 || offset < 0)
+    file_section
+    get_file_section(std::istream& stream, int middle_line, int offset)
     {
-      return {};
-    }
-
-    file_section result;
-
-    std::string line;
-    int i = 1;
-    for (; std::getline(stream, line); ++i)
-    {
-      if (i > middle_line + offset)
+      if (middle_line <= 0 || offset < 0)
       {
-        break;
+        return {};
       }
-      if (i < middle_line - offset)
+
+      file_section result;
+
+      std::string line;
+      int i = 1;
+      for (; std::getline(stream, line); ++i)
       {
-        continue;
+        if (i > middle_line + offset)
+        {
+          break;
+        }
+        if (i < middle_line - offset)
+        {
+          continue;
+        }
+        result.push_back({i, line});
       }
-      result.push_back({i, line});
+      if (i - 1 < middle_line)
+      {
+        return {};
+      }
+      return result;
     }
-    if (i - 1 < middle_line)
+
+    file_section get_file_section_from_file(
+        const boost::filesystem::path& file_name, int middle_line, int offset)
     {
-      return {};
+      std::ifstream in(file_name.string());
+      if (!in)
+      {
+        return {};
+      }
+      return get_file_section(in, middle_line, offset);
     }
-    return result;
-  }
 
-  file_section get_file_section_from_file(
-      const boost::filesystem::path& file_name, int middle_line, int offset)
-  {
-    std::ifstream in(file_name.string());
-    if (!in)
+    file_section get_file_section_from_buffer(const std::string& buffer,
+                                              int middle_line,
+                                              int offset)
     {
-      return {};
+      std::stringstream ss(buffer);
+      return get_file_section(ss, middle_line, offset);
     }
-    return get_file_section(in, middle_line, offset);
   }
-
-  file_section get_file_section_from_buffer(const std::string& buffer,
-                                            int middle_line,
-                                            int offset)
-  {
-    std::stringstream ss(buffer);
-    return get_file_section(ss, middle_line, offset);
-  }
-
-} // namespace metashell
+} // namespace metashell { namespace core

@@ -23,19 +23,23 @@
 
 namespace metashell
 {
-  class cpp_validator_wave : public iface::cpp_validator
+  namespace core
   {
-  public:
-    explicit cpp_validator_wave(data::wave_config config_);
+    class cpp_validator_wave : public iface::cpp_validator
+    {
+    public:
+      explicit cpp_validator_wave(data::wave_config config_);
 
-    virtual data::result validate_code(const data::cpp_code& src_,
-                                       const data::config& config_,
-                                       const iface::environment& env_,
-                                       bool use_precompiled_headers_) override;
+      virtual data::result
+      validate_code(const data::cpp_code& src_,
+                    const data::config& config_,
+                    const iface::environment& env_,
+                    bool use_precompiled_headers_) override;
 
-  private:
-    preprocessor_shell_wave _preprocessor;
-  };
+    private:
+      preprocessor_shell_wave _preprocessor;
+    };
+  }
 }
 
 #endif

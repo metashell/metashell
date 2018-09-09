@@ -18,8 +18,11 @@
 
 namespace metashell
 {
-  json_parsing_error::json_parsing_error(const std::string& msg_)
-    : exception("JSON parsing failed: " + msg_)
+  namespace core
   {
+    json_parsing_error::json_parsing_error(const std::string& msg_)
+      : exception("JSON parsing failed: " + msg_)
+    {
+    }
   }
 }

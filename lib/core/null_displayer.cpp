@@ -16,61 +16,66 @@
 
 #include <metashell/core/null_displayer.hpp>
 
-using namespace metashell;
-
-void null_displayer::show_raw_text(const std::string&)
+namespace metashell
 {
-  // throw away
-}
+  namespace core
+  {
+    void null_displayer::show_raw_text(const std::string&)
+    {
+      // throw away
+    }
 
-void null_displayer::show_error(const std::string&)
-{
-  // throw away
-}
+    void null_displayer::show_error(const std::string&)
+    {
+      // throw away
+    }
 
-void null_displayer::show_type(const data::type&)
-{
-  // throw away
-}
+    void null_displayer::show_type(const data::type&)
+    {
+      // throw away
+    }
 
-void null_displayer::show_comment(const data::text&)
-{
-  // throw away
-}
+    void null_displayer::show_comment(const data::text&)
+    {
+      // throw away
+    }
 
-void null_displayer::show_cpp_code(const data::cpp_code&)
-{
-  // throw away
-}
+    void null_displayer::show_cpp_code(const data::cpp_code&)
+    {
+      // throw away
+    }
 
-void null_displayer::show_frame(const data::frame&)
-{
-  // throw away
-}
+    void null_displayer::show_frame(const data::frame&)
+    {
+      // throw away
+    }
 
-void null_displayer::show_file_section(const data::file_location&,
-                                       const std::string&)
-{
-  // throw away
-}
+    void null_displayer::show_file_section(const data::file_location&,
+                                           const std::string&)
+    {
+      // throw away
+    }
 
-void null_displayer::show_backtrace(const data::backtrace&)
-{
-  // throw away
-}
+    void null_displayer::show_backtrace(const data::backtrace&)
+    {
+      // throw away
+    }
 
-void null_displayer::show_call_graph(const iface::call_graph&)
-{
-  // throw away
-}
+    void null_displayer::show_call_graph(const iface::call_graph&)
+    {
+      // throw away
+    }
 
-void null_displayer::show_filename_list(
-    const std::vector<boost::filesystem::path>&)
-{
-  // throw away
-}
+    void null_displayer::show_filename_list(
+        const std::vector<boost::filesystem::path>&)
+    {
+      // throw away
+    }
 
-void null_displayer::show_filename_set(const std::set<boost::filesystem::path>&)
-{
-  // throw away
+    void
+    null_displayer::show_filename_set(const std::set<boost::filesystem::path>&)
+    {
+      // throw away
+    }
+  }
 }

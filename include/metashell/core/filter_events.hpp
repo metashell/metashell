@@ -27,18 +27,21 @@
 
 namespace metashell
 {
-  template <class Events>
-  std::unique_ptr<iface::event_data_sequence>
-  filter_events(Events&& events_, boost::optional<data::file_location> from_)
+  namespace core
   {
-    const bool full = events_.mode() == data::metaprogram_mode::full;
-    return make_event_data_sequence_ptr(filter_expand_memoizations(
-        filter_repeated_memoization(
-            filter_unwrap_vertices(filter_enable_reachable(
-                filter_replay_instantiations(
-                    filter_merge_repeated_events(std::move(events_)), from_),
-                from_))),
-        full));
+    template <class Events>
+    std::unique_ptr<iface::event_data_sequence>
+    filter_events(Events&& events_, boost::optional<data::file_location> from_)
+    {
+      const bool full = events_.mode() == data::metaprogram_mode::full;
+      return make_event_data_sequence_ptr(filter_expand_memoizations(
+          filter_repeated_memoization(
+              filter_unwrap_vertices(filter_enable_reachable(
+                  filter_replay_instantiations(
+                      filter_merge_repeated_events(std::move(events_)), from_),
+                  from_))),
+          full));
+    }
   }
 }
 

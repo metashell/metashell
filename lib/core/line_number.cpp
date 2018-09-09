@@ -19,39 +19,43 @@
 #include <cassert>
 #include <iostream>
 
-using namespace metashell;
-
-bool line_number::invariant() const { return _value > 0; }
-
-line_number::line_number(int value_) : _value(value_) { assert(invariant()); }
-
-int line_number::value() const { return _value; }
-
-line_number& line_number::operator+=(int n_)
+namespace metashell
 {
-  _value += n_;
-  assert(invariant());
-  return *this;
-}
+  namespace core
+  {
+    bool line_number::invariant() const { return _value > 0; }
 
-line_number& line_number::operator-=(int n_)
-{
-  _value -= n_;
-  assert(invariant());
-  return *this;
-}
+    line_number::line_number(int value_) : _value(value_)
+    {
+      assert(invariant());
+    }
 
-std::string metashell::to_string(line_number l_)
-{
-  return std::to_string(l_.value());
-}
+    int line_number::value() const { return _value; }
 
-std::ostream& metashell::operator<<(std::ostream& out_, line_number l_)
-{
-  return out_ << to_string(l_);
-}
+    line_number& line_number::operator+=(int n_)
+    {
+      _value += n_;
+      assert(invariant());
+      return *this;
+    }
 
-bool metashell::operator==(line_number a_, line_number b_)
-{
-  return a_.value() == b_.value();
+    line_number& line_number::operator-=(int n_)
+    {
+      _value -= n_;
+      assert(invariant());
+      return *this;
+    }
+
+    std::string to_string(line_number l_) { return std::to_string(l_.value()); }
+
+    std::ostream& operator<<(std::ostream& out_, line_number l_)
+    {
+      return out_ << to_string(l_);
+    }
+
+    bool operator==(line_number a_, line_number b_)
+    {
+      return a_.value() == b_.value();
+    }
+  }
 }

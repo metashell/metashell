@@ -25,25 +25,28 @@
 
 namespace metashell
 {
-  class logger
+  namespace core
   {
-  public:
-    logger(iface::displayer& displayer_, iface::file_writer& fwriter_);
+    class logger
+    {
+    public:
+      logger(iface::displayer& displayer_, iface::file_writer& fwriter_);
 
-    bool logging() const;
-    data::logging_mode mode() const;
+      bool logging() const;
+      data::logging_mode mode() const;
 
-    void log_into_file(const std::string& filename_);
-    void log_to_console();
-    void stop_logging();
+      void log_into_file(const std::string& filename_);
+      void log_to_console();
+      void stop_logging();
 
-    void log(const std::string& msg_);
+      void log(const std::string& msg_);
 
-  private:
-    data::logging_mode _mode;
-    iface::file_writer& _fwriter;
-    iface::displayer& _displayer;
-  };
+    private:
+      data::logging_mode _mode;
+      iface::file_writer& _fwriter;
+      iface::displayer& _displayer;
+    };
+  }
 }
 
 #ifdef METASHELL_LOG
@@ -52,7 +55,7 @@ namespace metashell
 #define METASHELL_LOG(logger_ptr, msg)                                         \
   do                                                                           \
   {                                                                            \
-    ::metashell::logger* l = (logger_ptr);                                     \
+    ::metashell::core::logger* l = (logger_ptr);                               \
     if (l != nullptr && l->logging())                                          \
     {                                                                          \
       l->log(msg);                                                             \

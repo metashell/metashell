@@ -24,7 +24,8 @@ namespace metashell
 {
   namespace readline
   {
-    line_reader line_reader(command_processor_queue& processor_queue_);
+    core::line_reader
+    line_reader(core::command_processor_queue& processor_queue_);
   }
 }
 

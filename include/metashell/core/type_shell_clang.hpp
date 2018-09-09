@@ -26,26 +26,29 @@
 
 namespace metashell
 {
-  class type_shell_clang : public iface::type_shell
+  namespace core
   {
-  public:
-    type_shell_clang(const boost::filesystem::path& internal_dir_,
-                     const boost::filesystem::path& env_filename_,
-                     clang_binary clang_binary_,
-                     logger* logger_);
+    class type_shell_clang : public iface::type_shell
+    {
+    public:
+      type_shell_clang(const boost::filesystem::path& internal_dir_,
+                       const boost::filesystem::path& env_filename_,
+                       clang_binary clang_binary_,
+                       logger* logger_);
 
-    virtual data::result eval(const iface::environment& env_,
-                              const boost::optional<data::cpp_code>& tmp_exp_,
-                              bool use_precompiled_headers_) override;
+      virtual data::result eval(const iface::environment& env_,
+                                const boost::optional<data::cpp_code>& tmp_exp_,
+                                bool use_precompiled_headers_) override;
 
-    virtual void
-    generate_precompiled_header(const boost::filesystem::path& fn_) override;
+      virtual void
+      generate_precompiled_header(const boost::filesystem::path& fn_) override;
 
-  private:
-    clang_binary _clang_binary;
-    boost::filesystem::path _env_path;
-    logger* _logger;
-  };
+    private:
+      clang_binary _clang_binary;
+      boost::filesystem::path _env_path;
+      logger* _logger;
+    };
+  }
 }
 
 #endif

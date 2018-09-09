@@ -27,50 +27,53 @@
 
 namespace metashell
 {
-  class console_displayer : public iface::displayer
+  namespace core
   {
-  public:
-    console_displayer(iface::console& console_,
-                      bool indent_,
-                      bool syntax_highlight_);
+    class console_displayer : public iface::displayer
+    {
+    public:
+      console_displayer(iface::console& console_,
+                        bool indent_,
+                        bool syntax_highlight_);
 
-    virtual void show_raw_text(const std::string& text_) override;
-    virtual void show_error(const std::string& msg_) override;
-    virtual void show_type(const data::type& type_) override;
-    virtual void show_comment(const data::text& msg_) override;
-    virtual void show_cpp_code(const data::cpp_code& code_) override;
+      virtual void show_raw_text(const std::string& text_) override;
+      virtual void show_error(const std::string& msg_) override;
+      virtual void show_type(const data::type& type_) override;
+      virtual void show_comment(const data::text& msg_) override;
+      virtual void show_cpp_code(const data::cpp_code& code_) override;
 
-    virtual void show_frame(const data::frame& frame_) override;
-    virtual void show_file_section(const data::file_location& location_,
-                                   const std::string& env_buffer_) override;
-    virtual void show_backtrace(const data::backtrace& trace_) override;
-    virtual void show_call_graph(const iface::call_graph& cg_) override;
+      virtual void show_frame(const data::frame& frame_) override;
+      virtual void show_file_section(const data::file_location& location_,
+                                     const std::string& env_buffer_) override;
+      virtual void show_backtrace(const data::backtrace& trace_) override;
+      virtual void show_call_graph(const iface::call_graph& cg_) override;
 
-    virtual void show_filename_list(
-        const std::vector<boost::filesystem::path>& filenames_) override;
+      virtual void show_filename_list(
+          const std::vector<boost::filesystem::path>& filenames_) override;
 
-    virtual void show_filename_set(
-        const std::set<boost::filesystem::path>& filenames_) override;
+      virtual void show_filename_set(
+          const std::set<boost::filesystem::path>& filenames_) override;
 
-  private:
-    iface::console* _console;
-    bool _indent;
-    bool _syntax_highlight;
+    private:
+      iface::console* _console;
+      bool _indent;
+      bool _syntax_highlight;
 
-    data::colored_string format_code(const data::cpp_code& c_);
-    data::colored_string format_time(double time_in_seconds_);
-    data::colored_string format_ratio(double ratio_);
-    data::colored_string format_frame(const data::frame& f_);
-    data::colored_string format_token(const data::token& t_);
-    data::colored_string
-    format_metaprogram_node(const data::metaprogram_node& n_);
+      data::colored_string format_code(const data::cpp_code& c_);
+      data::colored_string format_time(double time_in_seconds_);
+      data::colored_string format_ratio(double ratio_);
+      data::colored_string format_frame(const data::frame& f_);
+      data::colored_string format_token(const data::token& t_);
+      data::colored_string
+      format_metaprogram_node(const data::metaprogram_node& n_);
 
-    bool display_frame_with_pager(const data::frame& frame_, pager& pager_);
+      bool display_frame_with_pager(const data::frame& frame_, pager& pager_);
 
-    bool display_node(const data::call_graph_node& node_,
-                      const std::vector<int>& depth_counter_,
-                      pager& pager_);
-  };
+      bool display_node(const data::call_graph_node& node_,
+                        const std::vector<int>& depth_counter_,
+                        pager& pager_);
+    };
+  }
 }
 
 #endif

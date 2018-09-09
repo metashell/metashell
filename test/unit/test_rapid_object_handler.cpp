@@ -24,20 +24,20 @@ using namespace metashell;
 
 TEST(rapid_object_handler, new_is_empty)
 {
-  null_displayer d;
-  ASSERT_TRUE(rapid_object_handler(d).empty());
+  core::null_displayer d;
+  ASSERT_TRUE(core::rapid_object_handler(d).empty());
 }
 
 TEST(rapid_object_handler, new_is_not_failed)
 {
-  null_displayer d;
-  ASSERT_FALSE(rapid_object_handler(d).failed());
+  core::null_displayer d;
+  ASSERT_FALSE(core::rapid_object_handler(d).failed());
 }
 
 TEST(rapid_object_handler, new_is_failed_after_null)
 {
-  in_memory_displayer d;
-  rapid_object_handler r(d);
+  core::in_memory_displayer d;
+  core::rapid_object_handler r(d);
   const bool b = r.Null();
 
   ASSERT_FALSE(b);
@@ -47,8 +47,8 @@ TEST(rapid_object_handler, new_is_failed_after_null)
 
 TEST(rapid_object_handler, new_is_failed_after_bool)
 {
-  in_memory_displayer d;
-  rapid_object_handler r(d);
+  core::in_memory_displayer d;
+  core::rapid_object_handler r(d);
   const bool b = r.Bool(true);
 
   ASSERT_FALSE(b);
@@ -59,8 +59,8 @@ TEST(rapid_object_handler, new_is_failed_after_bool)
 
 TEST(rapid_object_handler, new_is_failed_after_int)
 {
-  in_memory_displayer d;
-  rapid_object_handler r(d);
+  core::in_memory_displayer d;
+  core::rapid_object_handler r(d);
   const bool b = r.Int(1);
 
   ASSERT_FALSE(b);
@@ -71,8 +71,8 @@ TEST(rapid_object_handler, new_is_failed_after_int)
 
 TEST(rapid_object_handler, new_is_failed_after_uint)
 {
-  in_memory_displayer d;
-  rapid_object_handler r(d);
+  core::in_memory_displayer d;
+  core::rapid_object_handler r(d);
   const bool b = r.Uint(1);
 
   ASSERT_FALSE(b);
@@ -83,8 +83,8 @@ TEST(rapid_object_handler, new_is_failed_after_uint)
 
 TEST(rapid_object_handler, new_is_failed_after_int64)
 {
-  in_memory_displayer d;
-  rapid_object_handler r(d);
+  core::in_memory_displayer d;
+  core::rapid_object_handler r(d);
   const bool b = r.Int64(1);
 
   ASSERT_FALSE(b);
@@ -95,8 +95,8 @@ TEST(rapid_object_handler, new_is_failed_after_int64)
 
 TEST(rapid_object_handler, new_is_failed_after_uint64)
 {
-  in_memory_displayer d;
-  rapid_object_handler r(d);
+  core::in_memory_displayer d;
+  core::rapid_object_handler r(d);
   const bool b = r.Uint64(1);
 
   ASSERT_FALSE(b);
@@ -107,8 +107,8 @@ TEST(rapid_object_handler, new_is_failed_after_uint64)
 
 TEST(rapid_object_handler, new_is_failed_after_double)
 {
-  in_memory_displayer d;
-  rapid_object_handler r(d);
+  core::in_memory_displayer d;
+  core::rapid_object_handler r(d);
   const bool b = r.Double(11.13);
 
   ASSERT_FALSE(b);
@@ -119,8 +119,8 @@ TEST(rapid_object_handler, new_is_failed_after_double)
 
 TEST(rapid_object_handler, new_is_failed_after_zero_double)
 {
-  in_memory_displayer d;
-  rapid_object_handler r(d);
+  core::in_memory_displayer d;
+  core::rapid_object_handler r(d);
   const bool b = r.Double(0);
 
   ASSERT_FALSE(b);
@@ -131,8 +131,8 @@ TEST(rapid_object_handler, new_is_failed_after_zero_double)
 
 TEST(rapid_object_handler, new_is_failed_after_one_double)
 {
-  in_memory_displayer d;
-  rapid_object_handler r(d);
+  core::in_memory_displayer d;
+  core::rapid_object_handler r(d);
   const bool b = r.Double(1);
 
   ASSERT_FALSE(b);
@@ -143,8 +143,8 @@ TEST(rapid_object_handler, new_is_failed_after_one_double)
 
 TEST(rapid_object_handler, new_is_failed_after_standalone_string)
 {
-  in_memory_displayer d;
-  rapid_object_handler r(d);
+  core::in_memory_displayer d;
+  core::rapid_object_handler r(d);
   const bool b = r.String("foo", sizeof("foo") - 1, true);
 
   ASSERT_FALSE(b);
@@ -154,8 +154,8 @@ TEST(rapid_object_handler, new_is_failed_after_standalone_string)
 
 TEST(rapid_object_handler, new_is_failed_after_start_array)
 {
-  in_memory_displayer d;
-  rapid_object_handler r(d);
+  core::in_memory_displayer d;
+  core::rapid_object_handler r(d);
   const bool b = r.StartArray();
 
   ASSERT_FALSE(b);
@@ -165,8 +165,8 @@ TEST(rapid_object_handler, new_is_failed_after_start_array)
 
 TEST(rapid_object_handler, not_failed_after_start_object)
 {
-  null_displayer d;
-  rapid_object_handler r(d);
+  core::null_displayer d;
+  core::rapid_object_handler r(d);
   const bool b = r.StartObject();
 
   ASSERT_TRUE(b);
@@ -175,8 +175,8 @@ TEST(rapid_object_handler, not_failed_after_start_object)
 
 TEST(rapid_object_handler, returns_none_for_non_existing_fields)
 {
-  null_displayer d;
-  rapid_object_handler r(d);
+  core::null_displayer d;
+  core::rapid_object_handler r(d);
 
   const boost::optional<std::string> f = r.field("foo");
 
@@ -185,8 +185,8 @@ TEST(rapid_object_handler, returns_none_for_non_existing_fields)
 
 TEST(rapid_object_handler, failed_after_parsing_non_whitelisted_key)
 {
-  in_memory_displayer d;
-  rapid_object_handler r(d);
+  core::in_memory_displayer d;
+  core::rapid_object_handler r(d);
 
   r.StartObject();
   const bool b = r.Key("foo", sizeof("foo") - 1, true);
@@ -200,8 +200,8 @@ namespace
 {
   void test_whitelisted_field(const std::string& field_)
   {
-    null_displayer d;
-    rapid_object_handler r(d);
+    core::null_displayer d;
+    core::rapid_object_handler r(d);
 
     r.StartObject();
     const bool b_key = r.Key(field_.c_str(), field_.size(), true);
@@ -228,8 +228,8 @@ TEST(rapid_object_handler, whitelisted_fields)
 
 TEST(rapid_object_handler, new_is_failed_after_nested_object)
 {
-  in_memory_displayer d;
-  rapid_object_handler r(d);
+  core::in_memory_displayer d;
+  core::rapid_object_handler r(d);
 
   const bool b1 = r.StartObject();
   ASSERT_TRUE(b1);
@@ -246,8 +246,8 @@ TEST(rapid_object_handler, new_is_failed_after_nested_object)
 
 TEST(rapid_object_handler, end_object_after_start_object_succeeds)
 {
-  null_displayer d;
-  rapid_object_handler r(d);
+  core::null_displayer d;
+  core::rapid_object_handler r(d);
 
   const bool b1 = r.StartObject();
   ASSERT_TRUE(b1);

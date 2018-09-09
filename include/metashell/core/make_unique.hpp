@@ -21,11 +21,14 @@
 
 namespace metashell
 {
-  // TODO: remove this after moving to newer standard
-  template <class T, class... Ts>
-  std::unique_ptr<T> make_unique(Ts&&... ts_)
+  namespace core
   {
-    return std::unique_ptr<T>(new T(std::forward<Ts>(ts_)...));
+    // TODO: remove this after moving to newer standard
+    template <class T, class... Ts>
+    std::unique_ptr<T> make_unique(Ts&&... ts_)
+    {
+      return std::unique_ptr<T>(new T(std::forward<Ts>(ts_)...));
+    }
   }
 }
 

@@ -23,10 +23,12 @@
 
 namespace metashell
 {
+  namespace core
+  {
+    data::colored_string::color_t color_of_token(const data::token& t);
 
-  data::colored_string::color_t color_of_token(const data::token& t);
-
-  data::colored_string highlight_syntax(const data::cpp_code& s);
+    data::colored_string highlight_syntax(const data::cpp_code& s);
+  }
 }
 
 #endif

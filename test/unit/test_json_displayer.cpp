@@ -27,7 +27,7 @@ using namespace metashell;
 TEST(json_displayer, raw_text)
 {
   mock_json_writer w;
-  json_displayer d(w);
+  core::json_displayer d(w);
 
   {
     ::testing::InSequence s;
@@ -47,7 +47,7 @@ TEST(json_displayer, raw_text)
 TEST(json_displayer, error)
 {
   mock_json_writer w;
-  json_displayer d(w);
+  core::json_displayer d(w);
 
   {
     ::testing::InSequence s;
@@ -67,7 +67,7 @@ TEST(json_displayer, error)
 TEST(json_displayer, type)
 {
   mock_json_writer w;
-  json_displayer d(w);
+  core::json_displayer d(w);
 
   {
     ::testing::InSequence s;
@@ -87,7 +87,7 @@ TEST(json_displayer, type)
 TEST(json_displayer, empty_comment)
 {
   mock_json_writer w;
-  json_displayer d(w);
+  core::json_displayer d(w);
 
   {
     ::testing::InSequence s;
@@ -108,7 +108,7 @@ TEST(json_displayer, empty_comment)
 TEST(json_displayer, comment_with_one_paragraph)
 {
   mock_json_writer w;
-  json_displayer d(w);
+  core::json_displayer d(w);
 
   {
     ::testing::InSequence s;
@@ -137,7 +137,7 @@ TEST(json_displayer, comment_with_one_paragraph)
 TEST(json_displayer, cpp_code)
 {
   mock_json_writer w;
-  json_displayer d(w);
+  core::json_displayer d(w);
 
   {
     ::testing::InSequence s;
@@ -157,7 +157,7 @@ TEST(json_displayer, cpp_code)
 TEST(json_displayer, frame_normal)
 {
   mock_json_writer w;
-  json_displayer d(w);
+  core::json_displayer d(w);
 
   {
     ::testing::InSequence s;
@@ -184,7 +184,7 @@ namespace
     using metashell::data::file_location;
 
     mock_json_writer w;
-    json_displayer d(w);
+    core::json_displayer d(w);
 
     const data::file_location source_location("sl.hpp", 10, 20);
     const data::file_location point_of_event("pof.cpp", 20, 30);
@@ -237,7 +237,7 @@ TEST(json_displayer, frame_full)
 TEST(json_displayer, backtrace)
 {
   mock_json_writer w;
-  json_displayer d(w);
+  core::json_displayer d(w);
 
   {
     ::testing::InSequence s;
@@ -277,7 +277,7 @@ TEST(json_displayer, backtrace)
 TEST(json_displayer, call_graph)
 {
   mock_json_writer w;
-  json_displayer d(w);
+  core::json_displayer d(w);
 
   const data::type int_("int");
 

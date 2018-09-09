@@ -23,70 +23,71 @@
 
 namespace metashell
 {
-
-  pager::pager(iface::console& console) : console_(console) {}
-
-  void pager::show(const data::colored_string& string)
+  namespace core
   {
-    console_.show(string);
+    pager::pager(iface::console& console) : console_(console) {}
 
-    if (show_all)
+    void pager::show(const data::colored_string& string)
     {
-      return;
-    }
+      console_.show(string);
 
-    int width = console_.width();
-
-    for (char ch : string.get_string())
-    {
-      if (ch == '\n')
+      if (show_all)
       {
-        ++lines_in_current_page;
-        chars_in_current_line = 0;
+        return;
       }
-      else
+
+      int width = console_.width();
+
+      for (char ch : string.get_string())
       {
-        ++chars_in_current_line;
-        if (chars_in_current_line > width)
+        if (ch == '\n')
         {
           ++lines_in_current_page;
           chars_in_current_line = 0;
         }
+        else
+        {
+          ++chars_in_current_line;
+          if (chars_in_current_line > width)
+          {
+            ++lines_in_current_page;
+            chars_in_current_line = 0;
+          }
+        }
       }
     }
-  }
 
-  bool pager::new_line()
-  {
-    console_.new_line();
-
-    if (show_all)
+    bool pager::new_line()
     {
+      console_.new_line();
+
+      if (show_all)
+      {
+        return true;
+      }
+
+      chars_in_current_line = 0;
+      ++lines_in_current_page;
+
+      int height = console_.height();
+      if (height <= lines_in_current_page + 1)
+      {
+        lines_in_current_page = 0;
+
+        auto answer = console_.ask_for_continuation();
+
+        switch (answer)
+        {
+        case iface::console::user_answer::show_all:
+          show_all = true;
+          return true;
+        case iface::console::user_answer::quit:
+          return false;
+        case iface::console::user_answer::next_page:
+          return true;
+        }
+      }
       return true;
     }
-
-    chars_in_current_line = 0;
-    ++lines_in_current_page;
-
-    int height = console_.height();
-    if (height <= lines_in_current_page + 1)
-    {
-      lines_in_current_page = 0;
-
-      auto answer = console_.ask_for_continuation();
-
-      switch (answer)
-      {
-      case iface::console::user_answer::show_all:
-        show_all = true;
-        return true;
-      case iface::console::user_answer::quit:
-        return false;
-      case iface::console::user_answer::next_page:
-        return true;
-      }
-    }
-    return true;
   }
-
-} // namespace metashell
+} // namespace metashell { namespace core

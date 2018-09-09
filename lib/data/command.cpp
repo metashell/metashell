@@ -32,7 +32,7 @@ namespace
 
 command::command(const cpp_code& cmd_) : _cmd(cmd_), _tokens()
 {
-  for (auto t = create_wave_tokeniser(cmd_, "<command>");
+  for (auto t = core::create_wave_tokeniser(cmd_, "<command>");
        t->has_further_tokens(); t->move_to_next_token())
   {
     _tokens.push_back(t->current_token());

@@ -17,28 +17,34 @@
 #include <metashell/core/null_history.hpp>
 #include <metashell/core/pragma_macro.hpp>
 
-using namespace metashell;
-
-pragma_macro::pragma_macro(std::string description_,
-                           std::vector<std::string> commands_,
-                           iface::command_processor& shell_)
-  : _shell(shell_), _commands(move(commands_)), _description(move(description_))
+namespace metashell
 {
-}
-
-iface::pragma_handler* pragma_macro::clone() const
-{
-  return new pragma_macro(_description, _commands, _shell);
-}
-
-std::string pragma_macro::description() const { return _description; }
-
-void pragma_macro::run(iface::displayer& displayer_) const
-{
-  null_history ignore;
-
-  for (const std::string& cmd : _commands)
+  namespace core
   {
-    _shell.line_available(cmd, displayer_, ignore);
+    pragma_macro::pragma_macro(std::string description_,
+                               std::vector<std::string> commands_,
+                               iface::command_processor& shell_)
+      : _shell(shell_),
+        _commands(move(commands_)),
+        _description(move(description_))
+    {
+    }
+
+    iface::pragma_handler* pragma_macro::clone() const
+    {
+      return new pragma_macro(_description, _commands, _shell);
+    }
+
+    std::string pragma_macro::description() const { return _description; }
+
+    void pragma_macro::run(iface::displayer& displayer_) const
+    {
+      null_history ignore;
+
+      for (const std::string& cmd : _commands)
+      {
+        _shell.line_available(cmd, displayer_, ignore);
+      }
+    }
   }
 }

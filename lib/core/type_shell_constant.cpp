@@ -18,21 +18,23 @@
 
 namespace metashell
 {
-  type_shell_constant::type_shell_constant(data::result result_)
-    : _result(std::move(result_))
+  namespace core
   {
-  }
+    type_shell_constant::type_shell_constant(data::result result_)
+      : _result(std::move(result_))
+    {
+    }
 
-  data::result type_shell_constant::eval(const iface::environment&,
-                                         const boost::optional<data::cpp_code>&,
-                                         bool)
-  {
-    return _result;
-  }
+    data::result type_shell_constant::eval(
+        const iface::environment&, const boost::optional<data::cpp_code>&, bool)
+    {
+      return _result;
+    }
 
-  void type_shell_constant::generate_precompiled_header(
-      const boost::filesystem::path&)
-  {
-    // ignore
+    void type_shell_constant::generate_precompiled_header(
+        const boost::filesystem::path&)
+    {
+      // ignore
+    }
   }
 }

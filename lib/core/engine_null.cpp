@@ -20,22 +20,26 @@
 
 namespace metashell
 {
-  std::vector<data::feature> supported_features() { return {}; }
-
-  engine_entry get_engine_null_entry()
+  namespace core
   {
-    return engine_entry(
-        [](const data::config& config_, const boost::filesystem::path&,
-           const boost::filesystem::path&, const boost::filesystem::path&,
-           iface::environment_detector&, iface::displayer&, logger*) {
-          return make_engine(config_.active_shell_config().engine,
-                             not_supported(), not_supported(), not_supported(),
-                             not_supported(), not_supported(), not_supported(),
-                             not_supported(), not_supported(),
-                             supported_features());
-        },
-        "", data::markdown_string("An engine which does not support anything. "
-                                  "Mainly for testing purposes."),
-        supported_features());
+    std::vector<data::feature> supported_features() { return {}; }
+
+    engine_entry get_engine_null_entry()
+    {
+      return engine_entry(
+          [](const data::config& config_, const boost::filesystem::path&,
+             const boost::filesystem::path&, const boost::filesystem::path&,
+             iface::environment_detector&, iface::displayer&, logger*) {
+            return make_engine(
+                config_.active_shell_config().engine, not_supported(),
+                not_supported(), not_supported(), not_supported(),
+                not_supported(), not_supported(), not_supported(),
+                not_supported(), supported_features());
+          },
+          "",
+          data::markdown_string("An engine which does not support anything. "
+                                "Mainly for testing purposes."),
+          supported_features());
+    }
   }
 }

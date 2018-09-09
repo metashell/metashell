@@ -27,44 +27,47 @@
 
 namespace metashell
 {
-  template <class Events>
-  class filter_with_queue
+  namespace core
   {
-  public:
-    explicit filter_with_queue(Events&& events_) : _events(std::move(events_))
+    template <class Events>
+    class filter_with_queue
     {
-    }
-
-    boost::optional<data::event_data> next()
-    {
-      boost::optional<data::event_data> result =
-          _queue.empty() ? _events.next() : std::move(_queue.front());
-      if (!_queue.empty())
+    public:
+      explicit filter_with_queue(Events&& events_) : _events(std::move(events_))
       {
-        _queue.pop_front();
       }
-      return result;
-    }
 
-    template <class InputRange>
-    void queue(InputRange& events_)
-    {
-      _queue.insert(_queue.begin(), events_.begin(), events_.end());
-    }
+      boost::optional<data::event_data> next()
+      {
+        boost::optional<data::event_data> result =
+            _queue.empty() ? _events.next() : std::move(_queue.front());
+        if (!_queue.empty())
+        {
+          _queue.pop_front();
+        }
+        return result;
+      }
 
-    void queue(data::event_data event_)
-    {
-      _queue.push_front(std::move(event_));
-    }
+      template <class InputRange>
+      void queue(InputRange& events_)
+      {
+        _queue.insert(_queue.begin(), events_.begin(), events_.end());
+      }
 
-    data::cpp_code root_name() const { return _events.root_name(); }
+      void queue(data::event_data event_)
+      {
+        _queue.push_front(std::move(event_));
+      }
 
-    data::metaprogram_mode mode() const { return _events.mode(); }
+      data::cpp_code root_name() const { return _events.root_name(); }
 
-  private:
-    Events _events;
-    std::deque<data::event_data> _queue;
-  };
+      data::metaprogram_mode mode() const { return _events.mode(); }
+
+    private:
+      Events _events;
+      std::deque<data::event_data> _queue;
+    };
+  }
 }
 
 #endif

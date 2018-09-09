@@ -23,15 +23,18 @@
 
 namespace metashell
 {
-  template <class T>
-  struct supported : std::true_type
+  namespace core
   {
-  };
+    template <class T>
+    struct supported : std::true_type
+    {
+    };
 
-  template <>
-  struct supported<not_supported> : std::false_type
-  {
-  };
+    template <>
+    struct supported<not_supported> : std::false_type
+    {
+    };
+  }
 }
 
 #endif

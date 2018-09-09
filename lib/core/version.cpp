@@ -17,10 +17,12 @@
 #include <metashell/core/to_string.hpp>
 #include <metashell/core/version.hpp>
 
-using namespace metashell;
-
-std::string metashell::version()
+namespace metashell
 {
+  namespace core
+  {
+    std::string version()
+    {
 #ifndef METASHELL_MAJOR
 #error METASHELL_MAJOR not defined
 #endif
@@ -33,6 +35,8 @@ std::string metashell::version()
 #error METASHELL_PATCH not defined
 #endif
 
-  return TO_STRING(METASHELL_MAJOR) "." TO_STRING(
-      METASHELL_MINOR) "." TO_STRING(METASHELL_PATCH);
+      return TO_STRING(METASHELL_MAJOR) "." TO_STRING(
+          METASHELL_MINOR) "." TO_STRING(METASHELL_PATCH);
+    }
+  }
 }

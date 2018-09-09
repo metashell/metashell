@@ -19,50 +19,54 @@
 
 #include <cassert>
 
-using namespace metashell;
-
-namespace
+namespace metashell
 {
-  // single threaded
-  class single_entry_guard
+  namespace core
   {
-  public:
-    single_entry_guard()
+    namespace
     {
-      assert(!_active);
-      _active = true;
+      // single threaded
+      class single_entry_guard
+      {
+      public:
+        single_entry_guard()
+        {
+          assert(!_active);
+          _active = true;
+        }
+
+        ~single_entry_guard() { _active = false; }
+      private:
+        static bool _active;
+      };
+
+      bool single_entry_guard::_active = false;
     }
 
-    ~single_entry_guard() { _active = false; }
-  private:
-    static bool _active;
-  };
-
-  bool single_entry_guard::_active = false;
-}
-
-void metashell::input_loop(command_processor_queue& processor_queue_,
-                           iface::displayer& displayer_,
-                           const line_reader& line_reader_)
-{
-  single_entry_guard g;
-
-  interrupt_handler_override ovr3(
-      [&processor_queue_]() { processor_queue_.cancel_operation(); });
-
-  while (!processor_queue_.empty())
-  {
-    processor_queue_.pop_stopped_processors(displayer_);
-
-    if (!processor_queue_.empty())
+    void input_loop(command_processor_queue& processor_queue_,
+                    iface::displayer& displayer_,
+                    const line_reader& line_reader_)
     {
-      if (const auto line = line_reader_(processor_queue_.prompt()))
+      single_entry_guard g;
+
+      interrupt_handler_override ovr3(
+          [&processor_queue_]() { processor_queue_.cancel_operation(); });
+
+      while (!processor_queue_.empty())
       {
-        processor_queue_.line_available(*line, displayer_);
-      }
-      else
-      {
-        processor_queue_.pop(displayer_);
+        processor_queue_.pop_stopped_processors(displayer_);
+
+        if (!processor_queue_.empty())
+        {
+          if (const auto line = line_reader_(processor_queue_.prompt()))
+          {
+            processor_queue_.line_available(*line, displayer_);
+          }
+          else
+          {
+            processor_queue_.pop(displayer_);
+          }
+        }
       }
     }
   }

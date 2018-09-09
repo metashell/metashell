@@ -22,18 +22,22 @@
 
 namespace metashell
 {
-  preprocessor_tracer_wave::preprocessor_tracer_wave(data::wave_config config_)
-    : _config(std::move(config_))
+  namespace core
   {
-  }
+    preprocessor_tracer_wave::preprocessor_tracer_wave(
+        data::wave_config config_)
+      : _config(std::move(config_))
+    {
+    }
 
-  std::unique_ptr<iface::event_data_sequence>
-  preprocessor_tracer_wave::eval(iface::environment& env_,
-                                 const boost::optional<data::cpp_code>& exp_,
-                                 data::metaprogram_mode mode_)
-  {
-    return filter_events(wave_trace(env_.get(), exp_, _config, mode_),
-                         data::determine_from_line(
-                             env_.get(), exp_, data::stdin_name_in_clang()));
+    std::unique_ptr<iface::event_data_sequence>
+    preprocessor_tracer_wave::eval(iface::environment& env_,
+                                   const boost::optional<data::cpp_code>& exp_,
+                                   data::metaprogram_mode mode_)
+    {
+      return filter_events(wave_trace(env_.get(), exp_, _config, mode_),
+                           data::determine_from_line(
+                               env_.get(), exp_, data::stdin_name_in_clang()));
+    }
   }
 }

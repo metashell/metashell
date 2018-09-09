@@ -26,23 +26,27 @@
 
 namespace metashell
 {
-  template <class Expected, class Real>
-  typename std::enable_if<supported<Real>::value, Expected&>::type
-  if_supported(Real& real_, const std::string&)
+  namespace core
   {
-    return real_;
-  }
+    template <class Expected, class Real>
+    typename std::enable_if<supported<Real>::value, Expected&>::type
+    if_supported(Real& real_, const std::string&)
+    {
+      return real_;
+    }
 
-  template <class Expected, class Real>
-  const Expected& if_supported(const Real& real_, const std::string&)
-  {
-    return real_;
-  }
+    template <class Expected, class Real>
+    const Expected& if_supported(const Real& real_, const std::string&)
+    {
+      return real_;
+    }
 
-  template <class Expected>
-  Expected& if_supported(const not_supported&, const std::string& engine_name_)
-  {
-    throw feature_not_supported<Expected>(engine_name_);
+    template <class Expected>
+    Expected& if_supported(const not_supported&,
+                           const std::string& engine_name_)
+    {
+      throw feature_not_supported<Expected>(engine_name_);
+    }
   }
 }
 

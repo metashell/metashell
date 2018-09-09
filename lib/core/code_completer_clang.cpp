@@ -29,152 +29,157 @@
 #include <boost/range/adaptor/sliced.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 
-namespace
-{
-  boost::optional<std::string> remove_prefix(const std::string& s_,
-                                             const std::string& prefix_)
-  {
-    if (boost::starts_with(s_, prefix_))
-    {
-      return std::string(s_.begin() + prefix_.length(), s_.end());
-    }
-    else
-    {
-      return boost::none;
-    }
-  }
-
-  boost::optional<std::string> parse_completion(std::string line_)
-  {
-    if (const auto without_completion = remove_prefix(line_, "COMPLETION: "))
-    {
-      if (const auto pattern = remove_prefix(*without_completion, "Pattern : "))
-      {
-        const auto prefix_end = pattern->find("<#");
-        return std::string(pattern->begin(), prefix_end == std::string::npos ?
-                                                 pattern->end() :
-                                                 pattern->begin() + prefix_end);
-      }
-      else
-      {
-        return std::string(without_completion->begin(),
-                           std::find(without_completion->begin(),
-                                     without_completion->end(), ' '));
-      }
-    }
-    else
-    {
-      return boost::none;
-    }
-  }
-
-  std::pair<std::string, std::string>
-  find_completion_start(const std::string& s_)
-  {
-    namespace data = metashell::data;
-
-    const data::command cmd{data::cpp_code(s_)};
-
-    if (cmd.empty())
-    {
-      return {"", ""};
-    }
-    else
-    {
-      using boost::adaptors::sliced;
-      using boost::adaptors::transformed;
-
-      const std::string prefix =
-          boost::algorithm::join(cmd | sliced(0, cmd.size() - 1) |
-                                     transformed([](const data::token& t_) {
-                                       return t_.value().value();
-                                     }),
-                                 "");
-
-      const data::token& last = *(cmd.end() - 1);
-
-      if (last.category() == data::token_category::identifier ||
-          last.category() == data::token_category::keyword)
-      {
-        return {prefix, last.value().value()};
-      }
-      else
-      {
-        return {prefix + last.value().value(), ""};
-      }
-    }
-  }
-}
-
 namespace metashell
 {
-  code_completer_clang::code_completer_clang(
-      const boost::filesystem::path& internal_dir_,
-      const boost::filesystem::path& temp_dir_,
-      const boost::filesystem::path& env_filename_,
-      clang_binary clang_binary_,
-      logger* logger_)
-    : _clang_binary(clang_binary_),
-      _temp_dir(temp_dir_),
-      _env_path(internal_dir_ / env_filename_),
-      _logger(logger_)
+  namespace core
   {
-  }
-
-  void code_completer_clang::code_complete(const iface::environment& env_,
-                                           const std::string& src_,
-                                           std::set<std::string>& out_,
-                                           bool use_precompiled_headers_)
-  {
-    using boost::starts_with;
-
-    using std::pair;
-    using std::string;
-    using std::set;
-
-    METASHELL_LOG(_logger, "Code completion of " + src_);
-
-    const pair<string, string> completion_start = find_completion_start(src_);
-
-    METASHELL_LOG(
-        _logger, "Part kept for code completion: " + completion_start.first);
-
-    const data::unsaved_file src(
-        _temp_dir / "code_complete.cpp",
-        env_.get_appended(data::cpp_code(completion_start.first)).value());
-
-    generate(src);
-
-    const source_position sp = source_position_of(src.content());
-
-    std::vector<std::string> clang_args{
-        "-fsyntax-only", "-Xclang",
-        "-code-completion-at=" + src.filename().string() + ":" + to_string(sp),
-        src.filename().string()};
-
-    if (use_precompiled_headers_)
+    namespace
     {
-      clang_args.push_back("-include");
-      clang_args.push_back(_env_path.string());
+      boost::optional<std::string> remove_prefix(const std::string& s_,
+                                                 const std::string& prefix_)
+      {
+        if (boost::starts_with(s_, prefix_))
+        {
+          return std::string(s_.begin() + prefix_.length(), s_.end());
+        }
+        else
+        {
+          return boost::none;
+        }
+      }
+
+      boost::optional<std::string> parse_completion(std::string line_)
+      {
+        if (const auto without_completion =
+                remove_prefix(line_, "COMPLETION: "))
+        {
+          if (const auto pattern =
+                  remove_prefix(*without_completion, "Pattern : "))
+          {
+            const auto prefix_end = pattern->find("<#");
+            return std::string(
+                pattern->begin(), prefix_end == std::string::npos ?
+                                      pattern->end() :
+                                      pattern->begin() + prefix_end);
+          }
+          else
+          {
+            return std::string(without_completion->begin(),
+                               std::find(without_completion->begin(),
+                                         without_completion->end(), ' '));
+          }
+        }
+        else
+        {
+          return boost::none;
+        }
+      }
+
+      std::pair<std::string, std::string>
+      find_completion_start(const std::string& s_)
+      {
+        const data::command cmd{data::cpp_code(s_)};
+
+        if (cmd.empty())
+        {
+          return {"", ""};
+        }
+        else
+        {
+          using boost::adaptors::sliced;
+          using boost::adaptors::transformed;
+
+          const std::string prefix =
+              boost::algorithm::join(cmd | sliced(0, cmd.size() - 1) |
+                                         transformed([](const data::token& t_) {
+                                           return t_.value().value();
+                                         }),
+                                     "");
+
+          const data::token& last = *(cmd.end() - 1);
+
+          if (last.category() == data::token_category::identifier ||
+              last.category() == data::token_category::keyword)
+          {
+            return {prefix, last.value().value()};
+          }
+          else
+          {
+            return {prefix + last.value().value(), ""};
+          }
+        }
+      }
     }
 
-    const data::process_output o = _clang_binary.run(clang_args, "");
+    code_completer_clang::code_completer_clang(
+        const boost::filesystem::path& internal_dir_,
+        const boost::filesystem::path& temp_dir_,
+        const boost::filesystem::path& env_filename_,
+        clang_binary clang_binary_,
+        logger* logger_)
+      : _clang_binary(clang_binary_),
+        _temp_dir(temp_dir_),
+        _env_path(internal_dir_ / env_filename_),
+        _logger(logger_)
+    {
+    }
 
-    METASHELL_LOG(_logger, "Exit code of clang: " + to_string(o.exit_code));
+    void code_completer_clang::code_complete(const iface::environment& env_,
+                                             const std::string& src_,
+                                             std::set<std::string>& out_,
+                                             bool use_precompiled_headers_)
+    {
+      using boost::starts_with;
 
-    const std::string out = o.standard_output;
-    out_.clear();
-    const int prefix_len = completion_start.second.length();
-    for_each_line(
-        out, [&out_, &completion_start, prefix_len](const std::string& line_) {
-          if (const boost::optional<std::string> comp = parse_completion(line_))
+      using std::pair;
+      using std::string;
+      using std::set;
+
+      METASHELL_LOG(_logger, "Code completion of " + src_);
+
+      const pair<string, string> completion_start = find_completion_start(src_);
+
+      METASHELL_LOG(
+          _logger, "Part kept for code completion: " + completion_start.first);
+
+      const data::unsaved_file src(
+          _temp_dir / "code_complete.cpp",
+          env_.get_appended(data::cpp_code(completion_start.first)).value());
+
+      generate(src);
+
+      const source_position sp = source_position_of(src.content());
+
+      std::vector<std::string> clang_args{"-fsyntax-only", "-Xclang",
+                                          "-code-completion-at=" +
+                                              src.filename().string() + ":" +
+                                              to_string(sp),
+                                          src.filename().string()};
+
+      if (use_precompiled_headers_)
+      {
+        clang_args.push_back("-include");
+        clang_args.push_back(_env_path.string());
+      }
+
+      const data::process_output o = _clang_binary.run(clang_args, "");
+
+      METASHELL_LOG(_logger, "Exit code of clang: " + to_string(o.exit_code));
+
+      const std::string out = o.standard_output;
+      out_.clear();
+      const int prefix_len = completion_start.second.length();
+      for_each_line(out, [&out_, &completion_start,
+                          prefix_len](const std::string& line_) {
+        if (const boost::optional<std::string> comp = parse_completion(line_))
+        {
+          if (starts_with(*comp, completion_start.second) &&
+              *comp != completion_start.second)
           {
-            if (starts_with(*comp, completion_start.second) &&
-                *comp != completion_start.second)
-            {
-              out_.insert(string(comp->begin() + prefix_len, comp->end()));
-            }
+            out_.insert(string(comp->begin() + prefix_len, comp->end()));
           }
-        });
+        }
+      });
+    }
   }
 }

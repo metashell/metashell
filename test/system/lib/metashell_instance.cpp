@@ -116,10 +116,10 @@ namespace metashell
         const boost::filesystem::path& cwd_,
         bool allow_user_defined_args_,
         bool allow_standard_headers_)
-      : _include(
-            (allow_standard_headers_ || !using_msvc()) ?
-                nullptr :
-                make_unique<just::environment::override_guard>("INCLUDE", "")),
+      : _include((allow_standard_headers_ || !using_msvc()) ?
+                     nullptr :
+                     core::make_unique<just::environment::override_guard>(
+                         "INCLUDE", "")),
         _process_execution(construct_cmd(
             extra_args_, allow_user_defined_args_, allow_standard_headers_)),
         _child(absolute(system_test_config::metashell_binary()),

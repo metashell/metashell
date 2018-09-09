@@ -20,8 +20,8 @@
 
 #include <stdexcept>
 
-std::tuple<metashell::mdb_command, std::string>
-get_command_from_map(const metashell::mdb_command_handler_map& map,
+std::tuple<metashell::core::mdb_command, std::string>
+get_command_from_map(const metashell::core::mdb_command_handler_map& map,
                      const std::string& line)
 {
   if (const auto opt_pair = map.get_command_for_line(line))

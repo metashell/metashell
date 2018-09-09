@@ -16,21 +16,25 @@
 
 #include <metashell/core/include_path_cache.hpp>
 
-using namespace metashell;
-
-include_path_cache::include_path_cache(
-    iface::header_discoverer& header_discoverer_)
-  : sys([&header_discoverer_]() {
-      return header_discoverer_.include_path(data::include_type::sys);
-    }),
-    quote([&header_discoverer_]() {
-      return header_discoverer_.include_path(data::include_type::quote);
-    })
+namespace metashell
 {
-}
+  namespace core
+  {
+    include_path_cache::include_path_cache(
+        iface::header_discoverer& header_discoverer_)
+      : sys([&header_discoverer_]() {
+          return header_discoverer_.include_path(data::include_type::sys);
+        }),
+        quote([&header_discoverer_]() {
+          return header_discoverer_.include_path(data::include_type::quote);
+        })
+    {
+    }
 
-const std::vector<boost::filesystem::path>& include_path_cache::
-operator[](data::include_type type_)
-{
-  return type_ == data::include_type::sys ? *sys : *quote;
+    const std::vector<boost::filesystem::path>& include_path_cache::
+    operator[](data::include_type type_)
+    {
+      return type_ == data::include_type::sys ? *sys : *quote;
+    }
+  }
 }

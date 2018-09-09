@@ -24,16 +24,16 @@
 #include <metashell/core/metaprogram.hpp>
 #include <metashell/core/shell.hpp>
 
-class mdb_test_shell : public metashell::mdb_shell
+class mdb_test_shell : public metashell::core::mdb_shell
 {
 public:
   mdb_test_shell(const std::string& line = "");
-  mdb_test_shell(metashell::shell& shell, const std::string& line = "");
+  mdb_test_shell(metashell::core::shell& shell, const std::string& line = "");
 
   bool has_metaprogram() const;
-  const metashell::metaprogram& get_metaprogram() const;
+  const metashell::core::metaprogram& get_metaprogram() const;
 
-  const metashell::breakpoints_t& get_breakpoints() const;
+  const metashell::core::breakpoints_t& get_breakpoints() const;
 };
 
 #endif

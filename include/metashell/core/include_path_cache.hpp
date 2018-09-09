@@ -29,17 +29,20 @@
 
 namespace metashell
 {
-  struct include_path_cache
+  namespace core
   {
-  public:
-    cached<std::vector<boost::filesystem::path>> sys;
-    cached<std::vector<boost::filesystem::path>> quote;
+    struct include_path_cache
+    {
+    public:
+      cached<std::vector<boost::filesystem::path>> sys;
+      cached<std::vector<boost::filesystem::path>> quote;
 
-    explicit include_path_cache(iface::header_discoverer& header_discoverer_);
+      explicit include_path_cache(iface::header_discoverer& header_discoverer_);
 
-    const std::vector<boost::filesystem::path>&
-    operator[](data::include_type type_);
-  };
+      const std::vector<boost::filesystem::path>&
+      operator[](data::include_type type_);
+    };
+  }
 }
 
 #endif

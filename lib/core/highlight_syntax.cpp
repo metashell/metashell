@@ -19,47 +19,49 @@
 
 namespace metashell
 {
-
-  data::colored_string::color_t color_of_token(const data::token& t)
+  namespace core
   {
-    switch (t.category())
+    data::colored_string::color_t color_of_token(const data::token& t)
     {
-    case data::token_category::character_literal:
-    case data::token_category::floating_literal:
-    case data::token_category::integer_literal:
-    case data::token_category::string_literal:
-    case data::token_category::bool_literal:
-    case data::token_category::preprocessor:
-      return data::color::magenta;
-    case data::token_category::keyword:
-      return data::color::bright_green;
-    case data::token_category::comment:
-      return data::color::green;
-    default:
-      return boost::none;
-    }
-  }
-
-  data::colored_string highlight_syntax(const data::cpp_code& str)
-  {
-    data::colored_string result;
-
-    auto tokeniser = create_wave_tokeniser(str);
-
-    for (; tokeniser->has_further_tokens(); tokeniser->move_to_next_token())
-    {
-      data::token token = tokeniser->current_token();
-      result +=
-          data::colored_string(token.value().value(), color_of_token(token));
+      switch (t.category())
+      {
+      case data::token_category::character_literal:
+      case data::token_category::floating_literal:
+      case data::token_category::integer_literal:
+      case data::token_category::string_literal:
+      case data::token_category::bool_literal:
+      case data::token_category::preprocessor:
+        return data::color::magenta;
+      case data::token_category::keyword:
+        return data::color::bright_green;
+      case data::token_category::comment:
+        return data::color::green;
+      default:
+        return boost::none;
+      }
     }
 
-    // If we couldn't lex it for some reason, it's better not to do any
-    // syntax highlighting than to lose some parts of the source code
-    if (tokeniser->was_error())
+    data::colored_string highlight_syntax(const data::cpp_code& str)
     {
-      return str.value();
-    }
+      data::colored_string result;
 
-    return result;
+      auto tokeniser = create_wave_tokeniser(str);
+
+      for (; tokeniser->has_further_tokens(); tokeniser->move_to_next_token())
+      {
+        data::token token = tokeniser->current_token();
+        result +=
+            data::colored_string(token.value().value(), color_of_token(token));
+      }
+
+      // If we couldn't lex it for some reason, it's better not to do any
+      // syntax highlighting than to lose some parts of the source code
+      if (tokeniser->was_error())
+      {
+        return str.value();
+      }
+
+      return result;
+    }
   }
 }

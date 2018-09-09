@@ -17,24 +17,29 @@
 #include <metashell/core/pragma_environment_pop.hpp>
 #include <metashell/core/shell.hpp>
 
-using namespace metashell;
-
-pragma_environment_pop::pragma_environment_pop(shell& shell_) : _shell(shell_)
+namespace metashell
 {
-}
+  namespace core
+  {
+    pragma_environment_pop::pragma_environment_pop(shell& shell_)
+      : _shell(shell_)
+    {
+    }
 
-iface::pragma_handler* pragma_environment_pop::clone() const
-{
-  return new pragma_environment_pop(_shell);
-}
+    iface::pragma_handler* pragma_environment_pop::clone() const
+    {
+      return new pragma_environment_pop(_shell);
+    }
 
-std::string pragma_environment_pop::description() const
-{
-  return "Pops the last environment from the environment stack.";
-}
+    std::string pragma_environment_pop::description() const
+    {
+      return "Pops the last environment from the environment stack.";
+    }
 
-void pragma_environment_pop::run(iface::displayer& displayer_) const
-{
-  _shell.pop_environment();
-  _shell.display_environment_stack_size(displayer_);
+    void pragma_environment_pop::run(iface::displayer& displayer_) const
+    {
+      _shell.pop_environment();
+      _shell.display_environment_stack_size(displayer_);
+    }
+  }
 }

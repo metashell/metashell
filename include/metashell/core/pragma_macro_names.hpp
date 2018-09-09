@@ -24,20 +24,23 @@
 
 namespace metashell
 {
-  class pragma_macro_names : public pragma_without_arguments
+  namespace core
   {
-  public:
-    explicit pragma_macro_names(shell& shell_);
+    class pragma_macro_names : public pragma_without_arguments
+    {
+    public:
+      explicit pragma_macro_names(shell& shell_);
 
-    virtual iface::pragma_handler* clone() const override;
+      virtual iface::pragma_handler* clone() const override;
 
-    virtual std::string description() const override;
+      virtual std::string description() const override;
 
-    virtual void run(iface::displayer& displayer_) const override;
+      virtual void run(iface::displayer& displayer_) const override;
 
-  private:
-    shell& _shell;
-  };
+    private:
+      shell& _shell;
+    };
+  }
 }
 
 #endif

@@ -17,40 +17,44 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/core/engine.hpp>
 #include <metashell/core/pragma_without_arguments.hpp>
+#include <metashell/core/shell.hpp>
+#include <metashell/data/include_type.hpp>
 
 #include <string>
 
 namespace metashell
 {
-  class shell;
-
-  template <data::include_type Type>
-  class pragma_includes : public pragma_without_arguments
+  namespace core
   {
-  public:
-    explicit pragma_includes(shell& shell_) : _shell(shell_) {}
-
-    virtual iface::pragma_handler* clone() const override
+    template <data::include_type Type>
+    class pragma_includes : public pragma_without_arguments
     {
-      return new pragma_includes(_shell);
-    }
+    public:
+      explicit pragma_includes(shell& shell_) : _shell(shell_) {}
 
-    virtual std::string description() const override
-    {
-      return std::string("Displays the directories checked for ") +
-             data::include_dotdotdot<Type>();
-    }
+      virtual iface::pragma_handler* clone() const override
+      {
+        return new pragma_includes(_shell);
+      }
 
-    virtual void run(iface::displayer& displayer_) const override
-    {
-      displayer_.show_filename_list(
-          _shell.engine().header_discoverer().include_path(Type));
-    }
+      virtual std::string description() const override
+      {
+        return std::string("Displays the directories checked for ") +
+               data::include_dotdotdot<Type>();
+      }
 
-  private:
-    shell& _shell;
-  };
+      virtual void run(iface::displayer& displayer_) const override
+      {
+        displayer_.show_filename_list(
+            _shell.engine().header_discoverer().include_path(Type));
+      }
+
+    private:
+      shell& _shell;
+    };
+  }
 }
 
 #endif

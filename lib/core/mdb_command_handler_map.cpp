@@ -25,72 +25,76 @@
 
 namespace metashell
 {
-
-  mdb_command_handler_map::mdb_command_handler_map(
-      const commands_t& commands_arg)
-    : commands(commands_arg)
-  {
-    std::vector<key_command_map_t::value_type> key_command_vec;
-    for (std::size_t i = 0; i < commands.size(); ++i)
-    {
-      for (const std::string& key : commands[i].get_keys())
-      {
-        key_command_vec.push_back(key_command_map_t::value_type(key, i));
-      }
-    }
-    key_command_map.insert(key_command_vec.begin(), key_command_vec.end());
-  }
-
-  boost::optional<std::tuple<mdb_command, std::string>>
-  mdb_command_handler_map::get_command_for_line(const std::string& line) const
+  namespace core
   {
 
-    std::stringstream line_stream(line);
-    std::string command;
-
-    if (!(line_stream >> command))
+    mdb_command_handler_map::mdb_command_handler_map(
+        const commands_t& commands_arg)
+      : commands(commands_arg)
     {
-      return boost::none;
-    }
-
-    key_command_map_t::const_iterator lower =
-        key_command_map.lower_bound(command);
-
-    using boost::algorithm::starts_with;
-
-    if (lower == key_command_map.end() || !starts_with(lower->first, command))
-    {
-      return boost::none;
-    }
-
-    // Check if the found command is unambiguous
-    if (command != lower->first)
-    { // Pass if the match is full
-      std::size_t command_index = lower->second;
-      for (key_command_map_t::const_iterator it = std::next(lower);
-           it != key_command_map.end() && starts_with(it->first, command); ++it)
+      std::vector<key_command_map_t::value_type> key_command_vec;
+      for (std::size_t i = 0; i < commands.size(); ++i)
       {
-        // Even there are multiple matches,
-        // aliases for the same command should pass
-        // For example forwardtrace and ft with line "f"
-        if (it->second != command_index)
+        for (const std::string& key : commands[i].get_keys())
         {
-          return boost::none;
+          key_command_vec.push_back(key_command_map_t::value_type(key, i));
         }
       }
+      key_command_map.insert(key_command_vec.begin(), key_command_vec.end());
     }
 
-    line_stream >> std::ws;
-    std::string rest;
-    std::getline(line_stream, rest);
+    boost::optional<std::tuple<mdb_command, std::string>>
+    mdb_command_handler_map::get_command_for_line(const std::string& line) const
+    {
 
-    assert(lower->second < commands.size());
-    return std::make_tuple(commands[lower->second], rest);
-  }
+      std::stringstream line_stream(line);
+      std::string command;
 
-  const mdb_command_handler_map::commands_t&
-  mdb_command_handler_map::get_commands() const
-  {
-    return commands;
+      if (!(line_stream >> command))
+      {
+        return boost::none;
+      }
+
+      key_command_map_t::const_iterator lower =
+          key_command_map.lower_bound(command);
+
+      using boost::algorithm::starts_with;
+
+      if (lower == key_command_map.end() || !starts_with(lower->first, command))
+      {
+        return boost::none;
+      }
+
+      // Check if the found command is unambiguous
+      if (command != lower->first)
+      { // Pass if the match is full
+        std::size_t command_index = lower->second;
+        for (key_command_map_t::const_iterator it = std::next(lower);
+             it != key_command_map.end() && starts_with(it->first, command);
+             ++it)
+        {
+          // Even there are multiple matches,
+          // aliases for the same command should pass
+          // For example forwardtrace and ft with line "f"
+          if (it->second != command_index)
+          {
+            return boost::none;
+          }
+        }
+      }
+
+      line_stream >> std::ws;
+      std::string rest;
+      std::getline(line_stream, rest);
+
+      assert(lower->second < commands.size());
+      return std::make_tuple(commands[lower->second], rest);
+    }
+
+    const mdb_command_handler_map::commands_t&
+    mdb_command_handler_map::get_commands() const
+    {
+      return commands;
+    }
   }
 }

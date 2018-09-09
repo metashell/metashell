@@ -23,67 +23,72 @@
 
 namespace metashell
 {
-  namespace
+  namespace core
   {
-    void restore_config(const data::shell_config_name& name_, shell& shell_)
+    namespace
     {
-      shell_.get_config().activate(name_);
-      shell_.rebuild_environment();
-    }
-  }
-
-  pragma_config_load::pragma_config_load(shell& shell_) : _shell(shell_) {}
-
-  iface::pragma_handler* pragma_config_load::clone() const
-  {
-    return new pragma_config_load(_shell);
-  }
-
-  std::string pragma_config_load::arguments() const { return "<name>"; }
-
-  std::string pragma_config_load::description() const
-  {
-    return "Loads the config in the shell (keeping the environment).";
-  }
-
-  void pragma_config_load::run(const data::command::iterator&,
-                               const data::command::iterator&,
-                               const data::command::iterator& args_begin_,
-                               const data::command::iterator& args_end_,
-                               iface::displayer& displayer_) const
-  {
-    const data::shell_config_name name = data::shell_config_name(
-        tokens_to_string(args_begin_, args_end_).value());
-
-    const auto& configs = _shell.get_config().shell_configs();
-
-    const auto cfg = std::find_if(
-        configs.begin(), configs.end(),
-        [&name](const data::shell_config& cfg_) { return cfg_.name == name; });
-
-    if (cfg == configs.end())
-    {
-      throw exception("Config " + name + " not found.");
-    }
-    else
-    {
-      const auto old_config = _shell.get_config().active_shell_config().name;
-      _shell.get_config().activate(name);
-      try
+      void restore_config(const data::shell_config_name& name_, shell& shell_)
       {
-        _shell.rebuild_environment();
-        displayer_.show_comment(data::text("Switched to config " + name));
+        shell_.get_config().activate(name_);
+        shell_.rebuild_environment();
       }
-      catch (const std::exception& e)
+    }
+
+    pragma_config_load::pragma_config_load(shell& shell_) : _shell(shell_) {}
+
+    iface::pragma_handler* pragma_config_load::clone() const
+    {
+      return new pragma_config_load(_shell);
+    }
+
+    std::string pragma_config_load::arguments() const { return "<name>"; }
+
+    std::string pragma_config_load::description() const
+    {
+      return "Loads the config in the shell (keeping the environment).";
+    }
+
+    void pragma_config_load::run(const data::command::iterator&,
+                                 const data::command::iterator&,
+                                 const data::command::iterator& args_begin_,
+                                 const data::command::iterator& args_end_,
+                                 iface::displayer& displayer_) const
+    {
+      const data::shell_config_name name = data::shell_config_name(
+          tokens_to_string(args_begin_, args_end_).value());
+
+      const auto& configs = _shell.get_config().shell_configs();
+
+      const auto cfg = std::find_if(configs.begin(), configs.end(),
+                                    [&name](const data::shell_config& cfg_) {
+                                      return cfg_.name == name;
+                                    });
+
+      if (cfg == configs.end())
       {
-        displayer_.show_error("Error loading config " + name + ": " + e.what());
-        restore_config(old_config, _shell);
+        throw exception("Config " + name + " not found.");
       }
-      catch (...)
+      else
       {
-        displayer_.show_error("Error loading config " + name +
-                              ": unknown exception");
-        restore_config(old_config, _shell);
+        const auto old_config = _shell.get_config().active_shell_config().name;
+        _shell.get_config().activate(name);
+        try
+        {
+          _shell.rebuild_environment();
+          displayer_.show_comment(data::text("Switched to config " + name));
+        }
+        catch (const std::exception& e)
+        {
+          displayer_.show_error("Error loading config " + name + ": " +
+                                e.what());
+          restore_config(old_config, _shell);
+        }
+        catch (...)
+        {
+          displayer_.show_error("Error loading config " + name +
+                                ": unknown exception");
+          restore_config(old_config, _shell);
+        }
       }
     }
   }

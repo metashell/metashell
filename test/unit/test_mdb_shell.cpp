@@ -34,8 +34,8 @@ TEST(mdb_shell, is_stopped_false_by_default)
 
 TEST(mdb_shell, empty_lines)
 {
-  in_memory_displayer d;
-  in_memory_history h;
+  core::in_memory_displayer d;
+  core::in_memory_history h;
   mdb_test_shell sh;
 
   ASSERT_EQ(empty_container, h.commands());
@@ -61,8 +61,8 @@ TEST(mdb_shell, empty_lines)
 
 TEST(mdb_shell, identical_lines_in_history)
 {
-  null_displayer d;
-  in_memory_history h;
+  core::null_displayer d;
+  core::in_memory_history h;
   mdb_test_shell sh;
 
   ASSERT_EQ(empty_container, h.commands());
@@ -82,8 +82,8 @@ TEST(mdb_shell, identical_lines_in_history)
 
 TEST(mdb_shell, identical_all_space_lines_in_history)
 {
-  null_displayer d;
-  in_memory_history h;
+  core::null_displayer d;
+  core::in_memory_history h;
   mdb_test_shell sh;
 
   ASSERT_EQ(empty_container, h.commands());
@@ -103,8 +103,8 @@ TEST(mdb_shell, identical_all_space_lines_in_history)
 
 TEST(mdb_shell, skips_empty_lines)
 {
-  null_displayer d;
-  in_memory_history h;
+  core::null_displayer d;
+  core::in_memory_history h;
   mdb_test_shell sh;
 
   ASSERT_EQ(empty_container, h.commands());
@@ -130,7 +130,7 @@ TEST(mdb_shell, display_splash)
 {
   mdb_test_shell sh;
 
-  in_memory_displayer d;
+  core::in_memory_displayer d;
   sh.display_splash(d);
 
   ASSERT_EQ(

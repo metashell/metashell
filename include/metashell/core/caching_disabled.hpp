@@ -23,11 +23,14 @@
 
 namespace metashell
 {
-  class caching_disabled : public exception
+  namespace core
   {
-  public:
-    explicit caching_disabled(const std::string& operation_);
-  };
+    class caching_disabled : public exception
+    {
+    public:
+      explicit caching_disabled(const std::string& operation_);
+    };
+  }
 }
 
 #endif

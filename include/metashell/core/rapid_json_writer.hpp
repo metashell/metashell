@@ -27,29 +27,32 @@
 
 namespace metashell
 {
-  class rapid_json_writer : public iface::json_writer
+  namespace core
   {
-  public:
-    explicit rapid_json_writer(std::ostream& out_);
+    class rapid_json_writer : public iface::json_writer
+    {
+    public:
+      explicit rapid_json_writer(std::ostream& out_);
 
-    virtual void string(const std::string& value_) override;
-    virtual void int_(int value_) override;
-    virtual void double_(double value_) override;
-    virtual void bool_(bool value_) override;
+      virtual void string(const std::string& value_) override;
+      virtual void int_(int value_) override;
+      virtual void double_(double value_) override;
+      virtual void bool_(bool value_) override;
 
-    virtual void start_object() override;
-    virtual void key(const std::string& key_) override;
-    virtual void end_object() override;
+      virtual void start_object() override;
+      virtual void key(const std::string& key_) override;
+      virtual void end_object() override;
 
-    virtual void start_array() override;
-    virtual void end_array() override;
+      virtual void start_array() override;
+      virtual void end_array() override;
 
-    virtual void end_document() override;
+      virtual void end_document() override;
 
-  private:
-    rapid_ostream_wrapper _os;
-    rapidjson::Writer<rapid_ostream_wrapper> _writer;
-  };
+    private:
+      rapid_ostream_wrapper _os;
+      rapidjson::Writer<rapid_ostream_wrapper> _writer;
+    };
+  }
 }
 
 #endif

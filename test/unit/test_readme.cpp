@@ -26,11 +26,11 @@ using namespace metashell;
 
 TEST(readme, continue_abbreviated_as_c)
 {
-  mdb_command command;
+  core::mdb_command command;
   std::string args;
 
   std::tie(command, args) =
-      get_command_from_map(mdb_shell::build_command_handler(false), "c");
+      get_command_from_map(core::mdb_shell::build_command_handler(false), "c");
 
   auto keys = command.get_keys();
 

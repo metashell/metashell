@@ -21,20 +21,23 @@
 
 namespace metashell
 {
-  class pragma_echo : public iface::pragma_handler
+  namespace core
   {
-  public:
-    virtual iface::pragma_handler* clone() const override;
+    class pragma_echo : public iface::pragma_handler
+    {
+    public:
+      virtual iface::pragma_handler* clone() const override;
 
-    virtual std::string arguments() const override;
-    virtual std::string description() const override;
+      virtual std::string arguments() const override;
+      virtual std::string description() const override;
 
-    virtual void run(const data::command::iterator& name_begin_,
-                     const data::command::iterator& name_end_,
-                     const data::command::iterator& args_begin_,
-                     const data::command::iterator& args_end_,
-                     iface::displayer& displayer_) const override;
-  };
+      virtual void run(const data::command::iterator& name_begin_,
+                       const data::command::iterator& name_end_,
+                       const data::command::iterator& args_begin_,
+                       const data::command::iterator& args_end_,
+                       iface::displayer& displayer_) const override;
+    };
+  }
 }
 
 #endif

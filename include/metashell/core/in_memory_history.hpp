@@ -24,16 +24,19 @@
 
 namespace metashell
 {
-  class in_memory_history : public iface::history
+  namespace core
   {
-  public:
-    virtual void add(const std::string& cmd_) override;
+    class in_memory_history : public iface::history
+    {
+    public:
+      virtual void add(const std::string& cmd_) override;
 
-    const std::vector<std::string>& commands() const;
+      const std::vector<std::string>& commands() const;
 
-  private:
-    std::vector<std::string> _cmds;
-  };
+    private:
+      std::vector<std::string> _cmds;
+    };
+  }
 }
 
 #endif

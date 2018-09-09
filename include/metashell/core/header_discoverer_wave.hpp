@@ -23,20 +23,23 @@
 
 namespace metashell
 {
-  class header_discoverer_wave : public iface::header_discoverer
+  namespace core
   {
-  public:
-    explicit header_discoverer_wave(data::wave_config config_);
+    class header_discoverer_wave : public iface::header_discoverer
+    {
+    public:
+      explicit header_discoverer_wave(data::wave_config config_);
 
-    virtual std::vector<boost::filesystem::path>
-    include_path(data::include_type type_) override;
+      virtual std::vector<boost::filesystem::path>
+      include_path(data::include_type type_) override;
 
-    virtual std::set<boost::filesystem::path>
-    files_included_by(const data::cpp_code& exp_) override;
+      virtual std::set<boost::filesystem::path>
+      files_included_by(const data::cpp_code& exp_) override;
 
-  private:
-    data::wave_config _config;
-  };
+    private:
+      data::wave_config _config;
+    };
+  }
 }
 
 #endif

@@ -29,35 +29,38 @@
 
 namespace metashell
 {
-  struct parse_config_result
+  namespace core
   {
-    enum class action_t
+    struct parse_config_result
     {
-      run_shell,
-      exit_with_error,
-      exit_without_error
+      enum class action_t
+      {
+        run_shell,
+        exit_with_error,
+        exit_without_error
+      };
+
+      action_t action;
+      data::config cfg;
+
+      bool should_run_shell() const;
+      bool should_error_at_exit() const;
+
+      static parse_config_result exit(bool with_error_);
+      static parse_config_result start_shell(const data::config& cfg_);
     };
 
-    action_t action;
-    data::config cfg;
+    parse_config_result
+    parse_config(int argc_,
+                 const char* argv_[],
+                 const std::map<std::string, engine_entry>& engines_,
+                 iface::environment_detector& env_detector_,
+                 std::ostream* out_ = 0,
+                 std::ostream* err_ = 0);
 
-    bool should_run_shell() const;
-    bool should_error_at_exit() const;
-
-    static parse_config_result exit(bool with_error_);
-    static parse_config_result start_shell(const data::config& cfg_);
-  };
-
-  parse_config_result
-  parse_config(int argc_,
-               const char* argv_[],
-               const std::map<std::string, engine_entry>& engines_,
-               iface::environment_detector& env_detector_,
-               std::ostream* out_ = 0,
-               std::ostream* err_ = 0);
-
-  std::ostream& operator<<(std::ostream& out_,
-                           parse_config_result::action_t a_);
+    std::ostream& operator<<(std::ostream& out_,
+                             parse_config_result::action_t a_);
+  }
 }
 
 #endif

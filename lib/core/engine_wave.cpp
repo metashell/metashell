@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/engine_wave.hpp>
 #include <metashell/core/cpp_validator_wave.hpp>
 #include <metashell/core/engine.hpp>
+#include <metashell/core/engine_wave.hpp>
 #include <metashell/core/header_discoverer_wave.hpp>
 #include <metashell/core/macro_discovery_wave.hpp>
 #include <metashell/core/not_supported.hpp>
@@ -24,61 +24,64 @@
 #include <metashell/core/preprocessor_shell_wave.hpp>
 #include <metashell/core/preprocessor_tracer_wave.hpp>
 
-using namespace metashell;
-
-namespace
+namespace metashell
 {
-  std::vector<data::feature> supported_features()
+  namespace core
   {
-    return {data::feature::preprocessor_shell(),
-            data::feature::header_discoverer(), data::feature::cpp_validator(),
-            data::feature::macro_discovery(),
-            data::feature::preprocessor_tracer()};
+    namespace
+    {
+      std::vector<data::feature> supported_features()
+      {
+        return {data::feature::preprocessor_shell(),
+                data::feature::header_discoverer(),
+                data::feature::cpp_validator(),
+                data::feature::macro_discovery(),
+                data::feature::preprocessor_tracer()};
+      }
+
+      template <bool UseTemplightHeaders>
+      std::unique_ptr<iface::engine>
+      create_wave_engine(const data::config& config_,
+                         const boost::filesystem::path& internal_dir_,
+                         const boost::filesystem::path&,
+                         const boost::filesystem::path&,
+                         iface::environment_detector& env_detector_,
+                         iface::displayer& displayer_,
+                         logger* logger_)
+      {
+        const data::wave_config cfg = parse_wave_config(
+            UseTemplightHeaders, config_.active_shell_config().engine_args,
+            config_.metashell_binary, internal_dir_, env_detector_, displayer_,
+            logger_);
+        return make_engine(config_.active_shell_config().engine,
+                           not_supported(), preprocessor_shell_wave(cfg),
+                           not_supported(), header_discoverer_wave(cfg),
+                           not_supported(), cpp_validator_wave(cfg),
+                           macro_discovery_wave(cfg),
+                           preprocessor_tracer_wave(cfg), supported_features());
+      }
+
+      template <bool UseTemplightHeaders>
+      engine_entry get_engine_entry()
+      {
+        return engine_entry(
+            &create_wave_engine<UseTemplightHeaders>, "<Wave options>",
+            data::markdown_string(
+                "Uses [Boost.Wave](http://boost.org/libs/wave), which is a "
+                "preprocessor. Only the preprocessor shell is supported." +
+                (UseTemplightHeaders ? " It uses the headers of Templight "
+                                       "deployed with Metashell." :
+                                       std::string()) +
+                "<br /><br />" + wave_args(UseTemplightHeaders)),
+            supported_features());
+      }
+    } // anonymous namespace
+
+    engine_entry get_engine_wave_entry() { return get_engine_entry<false>(); }
+
+    engine_entry get_engine_wave_entry_with_templight_headers()
+    {
+      return get_engine_entry<true>();
+    }
   }
-
-  template <bool UseTemplightHeaders>
-  std::unique_ptr<iface::engine>
-  create_wave_engine(const data::config& config_,
-                     const boost::filesystem::path& internal_dir_,
-                     const boost::filesystem::path&,
-                     const boost::filesystem::path&,
-                     iface::environment_detector& env_detector_,
-                     iface::displayer& displayer_,
-                     logger* logger_)
-  {
-    const data::wave_config cfg = parse_wave_config(
-        UseTemplightHeaders, config_.active_shell_config().engine_args,
-        config_.metashell_binary, internal_dir_, env_detector_, displayer_,
-        logger_);
-    return make_engine(config_.active_shell_config().engine, not_supported(),
-                       preprocessor_shell_wave(cfg), not_supported(),
-                       header_discoverer_wave(cfg), not_supported(),
-                       cpp_validator_wave(cfg), macro_discovery_wave(cfg),
-                       preprocessor_tracer_wave(cfg), supported_features());
-  }
-
-  template <bool UseTemplightHeaders>
-  engine_entry get_engine_entry()
-  {
-    return engine_entry(
-        &create_wave_engine<UseTemplightHeaders>, "<Wave options>",
-        data::markdown_string(
-            "Uses [Boost.Wave](http://boost.org/libs/wave), which is a "
-            "preprocessor. Only the preprocessor shell is supported." +
-            (UseTemplightHeaders ?
-                 " It uses the headers of Templight deployed with Metashell." :
-                 std::string()) +
-            "<br /><br />" + wave_args(UseTemplightHeaders)),
-        supported_features());
-  }
-} // anonymous namespace
-
-engine_entry metashell::get_engine_wave_entry()
-{
-  return get_engine_entry<false>();
-}
-
-engine_entry metashell::get_engine_wave_entry_with_templight_headers()
-{
-  return get_engine_entry<true>();
 }

@@ -18,16 +18,20 @@
 
 namespace metashell
 {
-  cpp_validator_constant::cpp_validator_constant(data::result result_)
-    : _result(std::move(result_))
+  namespace core
   {
-  }
+    cpp_validator_constant::cpp_validator_constant(data::result result_)
+      : _result(std::move(result_))
+    {
+    }
 
-  data::result cpp_validator_constant::validate_code(const data::cpp_code&,
-                                                     const data::config&,
-                                                     const iface::environment&,
-                                                     bool)
-  {
-    return _result;
+    data::result
+    cpp_validator_constant::validate_code(const data::cpp_code&,
+                                          const data::config&,
+                                          const iface::environment&,
+                                          bool)
+    {
+      return _result;
+    }
   }
 }

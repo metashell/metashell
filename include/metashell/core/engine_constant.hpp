@@ -25,15 +25,18 @@
 
 namespace metashell
 {
-  std::function<std::unique_ptr<iface::engine>(const data::config&)>
-  create_failing_engine();
+  namespace core
+  {
+    std::function<std::unique_ptr<iface::engine>(const data::config&)>
+    create_failing_engine();
 
-  std::function<std::unique_ptr<iface::engine>(const data::config&)>
-  create_engine_returning_type(const std::string& type_);
+    std::function<std::unique_ptr<iface::engine>(const data::config&)>
+    create_engine_returning_type(const std::string& type_);
 
-  std::function<std::unique_ptr<iface::engine>(const data::config&)>
-  create_engine_with_include_path(data::include_type type_,
-                                  std::vector<boost::filesystem::path> path_);
+    std::function<std::unique_ptr<iface::engine>(const data::config&)>
+    create_engine_with_include_path(data::include_type type_,
+                                    std::vector<boost::filesystem::path> path_);
+  }
 }
 
 #endif

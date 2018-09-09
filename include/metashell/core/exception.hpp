@@ -22,10 +22,13 @@
 
 namespace metashell
 {
-  struct exception : std::runtime_error
+  namespace core
   {
-    explicit exception(const std::string& msg_);
-  };
+    struct exception : std::runtime_error
+    {
+      explicit exception(const std::string& msg_);
+    };
+  }
 }
 
 #endif

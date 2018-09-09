@@ -26,32 +26,36 @@
 
 namespace metashell
 {
-  class command_processor_queue
+  namespace core
   {
-  public:
-    typedef std::function<void(iface::displayer&)> cleanup_function;
+    class command_processor_queue
+    {
+    public:
+      typedef std::function<void(iface::displayer&)> cleanup_function;
 
-    bool empty() const;
-    void push(std::unique_ptr<iface::command_processor> item_,
-              cleanup_function cleanup_ = cleanup_function());
-    void pop(iface::displayer& displayer_);
-    void pop_stopped_processors(iface::displayer& displayer_);
+      bool empty() const;
+      void push(std::unique_ptr<iface::command_processor> item_,
+                cleanup_function cleanup_ = cleanup_function());
+      void pop(iface::displayer& displayer_);
+      void pop_stopped_processors(iface::displayer& displayer_);
 
-    void cancel_operation();
-    void line_available(const std::string& cmd_, iface::displayer& displayer_);
-    void code_complete(const std::string& s_,
-                       std::set<std::string>& out_) const;
+      void cancel_operation();
+      void line_available(const std::string& cmd_,
+                          iface::displayer& displayer_);
+      void code_complete(const std::string& s_,
+                         std::set<std::string>& out_) const;
 
-    std::string prompt() const;
+      std::string prompt() const;
 
-    void history(iface::history& history_);
+      void history(iface::history& history_);
 
-  private:
-    iface::history* _history; // not owning
-    std::vector<
-        std::pair<std::unique_ptr<iface::command_processor>, cleanup_function>>
-        _items;
-  };
+    private:
+      iface::history* _history; // not owning
+      std::vector<std::pair<std::unique_ptr<iface::command_processor>,
+                            cleanup_function>>
+          _items;
+    };
+  }
 }
 
 #endif

@@ -33,79 +33,82 @@
 
 namespace metashell
 {
-  class wave_trace_impl
+  namespace core
   {
-  public:
-    wave_trace_impl(const data::cpp_code& env_,
-                    const boost::optional<data::cpp_code>& exp_,
-                    const data::wave_config& config_);
+    class wave_trace_impl
+    {
+    public:
+      wave_trace_impl(const data::cpp_code& env_,
+                      const boost::optional<data::cpp_code>& exp_,
+                      const data::wave_config& config_);
 
-    boost::optional<data::event_data> next();
+      boost::optional<data::event_data> next();
 
-  private:
-    data::cpp_code _env;
-    bool _full_trace;
-    bool _ignore_macro_redefinition;
+    private:
+      data::cpp_code _env;
+      bool _full_trace;
+      bool _ignore_macro_redefinition;
 
-    std::vector<data::file_location> _macro_loc_stack;
-    data::file_location _point_of_event;
+      std::vector<data::file_location> _macro_loc_stack;
+      data::file_location _point_of_event;
 
-    data::cpp_code _input;
-    int _num_tokens_from_macro_call;
+      data::cpp_code _input;
+      int _num_tokens_from_macro_call;
 
-    wave_context _ctx;
-    boost::optional<wave_context::iterator_type> _pos;
+      wave_context _ctx;
+      boost::optional<wave_context::iterator_type> _pos;
 
-    std::ostringstream _output;
-    std::deque<data::event_data> _events;
+      std::ostringstream _output;
+      std::deque<data::event_data> _events;
 
-    void on_macro_expansion_begin(
-        const data::cpp_code& name_,
-        const boost::optional<std::vector<data::cpp_code>>& args_,
-        const data::file_location& point_of_event_,
-        const data::file_location& source_location_);
+      void on_macro_expansion_begin(
+          const data::cpp_code& name_,
+          const boost::optional<std::vector<data::cpp_code>>& args_,
+          const data::file_location& point_of_event_,
+          const data::file_location& source_location_);
 
-    void on_rescanning(const data::cpp_code& c_);
+      void on_rescanning(const data::cpp_code& c_);
 
-    void on_macro_expansion_end(const data::cpp_code& c_, int num_tokens_);
+      void on_macro_expansion_end(const data::cpp_code& c_, int num_tokens_);
 
-    void on_token_generated(const data::token& t_,
+      void on_token_generated(const data::token& t_,
+                              const data::file_location& source_location_);
+
+      void on_token_skipped(const data::token& t_,
                             const data::file_location& source_location_);
 
-    void on_token_skipped(const data::token& t_,
-                          const data::file_location& source_location_);
+      void on_include_begin(const data::include_argument& arg_,
+                            const data::file_location& point_of_event_);
 
-    void on_include_begin(const data::include_argument& arg_,
-                          const data::file_location& point_of_event_);
+      void on_include_end();
 
-    void on_include_end();
-
-    void on_define(const data::cpp_code& name_,
-                   const boost::optional<std::vector<data::cpp_code>>& args_,
-                   const data::cpp_code& body_,
-                   const data::file_location& point_of_event_);
-
-    void on_undefine(const data::cpp_code& name_,
+      void on_define(const data::cpp_code& name_,
+                     const boost::optional<std::vector<data::cpp_code>>& args_,
+                     const data::cpp_code& body_,
                      const data::file_location& point_of_event_);
 
-    void on_conditional(const data::cpp_code& expression_,
-                        const data::file_location& point_of_event_);
+      void on_undefine(const data::cpp_code& name_,
+                       const data::file_location& point_of_event_);
 
-    void on_evaluated_conditional_expression(bool result_);
+      void on_conditional(const data::cpp_code& expression_,
+                          const data::file_location& point_of_event_);
 
-    void on_else(const data::file_location& point_of_event_);
+      void on_evaluated_conditional_expression(bool result_);
 
-    void on_endif(const data::file_location& point_of_event_);
+      void on_else(const data::file_location& point_of_event_);
 
-    void on_error(const std::string& message_,
-                  const data::file_location& point_of_event_);
+      void on_endif(const data::file_location& point_of_event_);
 
-    void on_line(const data::cpp_code& arg_,
-                 const data::file_location& point_of_event_,
-                 const data::file_location& source_location_);
+      void on_error(const std::string& message_,
+                    const data::file_location& point_of_event_);
 
-    void record_point_of_event(const data::file_location& point_of_event_);
-  };
+      void on_line(const data::cpp_code& arg_,
+                   const data::file_location& point_of_event_,
+                   const data::file_location& source_location_);
+
+      void record_point_of_event(const data::file_location& point_of_event_);
+    };
+  }
 }
 
 #endif

@@ -21,11 +21,14 @@
 
 namespace metashell
 {
-  class macro_discovery_constant : public iface::macro_discovery
+  namespace core
   {
-  public:
-    virtual data::cpp_code macros(const iface::environment&) override;
-  };
+    class macro_discovery_constant : public iface::macro_discovery
+    {
+    public:
+      virtual data::cpp_code macros(const iface::environment&) override;
+    };
+  }
 }
 
 #endif

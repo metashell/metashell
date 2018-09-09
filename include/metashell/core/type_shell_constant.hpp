@@ -21,21 +21,24 @@
 
 namespace metashell
 {
-  class type_shell_constant : public iface::type_shell
+  namespace core
   {
-  public:
-    explicit type_shell_constant(data::result result_);
+    class type_shell_constant : public iface::type_shell
+    {
+    public:
+      explicit type_shell_constant(data::result result_);
 
-    virtual data::result eval(const iface::environment&,
-                              const boost::optional<data::cpp_code>&,
-                              bool) override;
+      virtual data::result eval(const iface::environment&,
+                                const boost::optional<data::cpp_code>&,
+                                bool) override;
 
-    virtual void
-    generate_precompiled_header(const boost::filesystem::path&) override;
+      virtual void
+      generate_precompiled_header(const boost::filesystem::path&) override;
 
-  private:
-    data::result _result;
-  };
+    private:
+      data::result _result;
+    };
+  }
 }
 
 #endif

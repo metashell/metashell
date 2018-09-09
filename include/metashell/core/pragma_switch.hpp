@@ -25,31 +25,34 @@
 
 namespace metashell
 {
-  class shell;
-
-  class pragma_switch : public iface::pragma_handler
+  namespace core
   {
-  public:
-    pragma_switch(const std::string& name_,
-                  const std::function<bool()>& query_,
-                  const std::function<void(bool)>& update_);
+    class shell;
 
-    virtual iface::pragma_handler* clone() const override;
+    class pragma_switch : public iface::pragma_handler
+    {
+    public:
+      pragma_switch(const std::string& name_,
+                    const std::function<bool()>& query_,
+                    const std::function<void(bool)>& update_);
 
-    virtual std::string arguments() const override;
-    virtual std::string description() const override;
+      virtual iface::pragma_handler* clone() const override;
 
-    virtual void run(const data::command::iterator& name_begin_,
-                     const data::command::iterator& name_end_,
-                     const data::command::iterator& args_begin_,
-                     const data::command::iterator& args_end_,
-                     iface::displayer& displayer_) const override;
+      virtual std::string arguments() const override;
+      virtual std::string description() const override;
 
-  private:
-    std::function<bool()> _query;
-    std::function<void(bool)> _update;
-    std::string _name;
-  };
+      virtual void run(const data::command::iterator& name_begin_,
+                       const data::command::iterator& name_end_,
+                       const data::command::iterator& args_begin_,
+                       const data::command::iterator& args_end_,
+                       iface::displayer& displayer_) const override;
+
+    private:
+      std::function<bool()> _query;
+      std::function<void(bool)> _update;
+      std::string _name;
+    };
+  }
 }
 
 #endif

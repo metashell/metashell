@@ -24,7 +24,10 @@
 
 namespace metashell
 {
-  cached<data::includes> includes_cache(clang_binary clang_binary_);
+  namespace core
+  {
+    cached<data::includes> includes_cache(clang_binary clang_binary_);
+  }
 }
 
 #endif

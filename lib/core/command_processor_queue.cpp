@@ -18,73 +18,79 @@
 
 #include <cassert>
 
-using namespace metashell;
-
-bool command_processor_queue::empty() const { return _items.empty(); }
-
-void command_processor_queue::code_complete(const std::string& s_,
-                                            std::set<std::string>& out_) const
+namespace metashell
 {
-  if (!empty())
+  namespace core
   {
-    _items.back().first->code_complete(s_, out_);
+    bool command_processor_queue::empty() const { return _items.empty(); }
+
+    void
+    command_processor_queue::code_complete(const std::string& s_,
+                                           std::set<std::string>& out_) const
+    {
+      if (!empty())
+      {
+        _items.back().first->code_complete(s_, out_);
+      }
+    }
+
+    void command_processor_queue::pop(iface::displayer& displayer_)
+    {
+      assert(!empty());
+
+      if (_items.back().second)
+      {
+        _items.back().second(displayer_);
+      }
+      _items.pop_back();
+      displayer_.show_raw_text("");
+    }
+
+    void command_processor_queue::cancel_operation()
+    {
+      if (!empty())
+      {
+        _items.back().first->cancel_operation();
+      }
+    }
+
+    void command_processor_queue::line_available(const std::string& cmd_,
+                                                 iface::displayer& displayer_)
+    {
+      assert(_history != nullptr);
+
+      if (!empty())
+      {
+        _items.back().first->line_available(cmd_, displayer_, *_history);
+      }
+    }
+
+    std::string command_processor_queue::prompt() const
+    {
+      assert(!empty());
+
+      return _items.back().first->prompt();
+    }
+
+    void command_processor_queue::pop_stopped_processors(
+        iface::displayer& displayer_)
+    {
+      while (!empty() && _items.back().first->stopped())
+      {
+        pop(displayer_);
+      }
+    }
+
+    void command_processor_queue::push(
+        std::unique_ptr<iface::command_processor> item_,
+        cleanup_function cleanup_)
+    {
+      _items.push_back({move(item_), move(cleanup_)});
+    }
+
+    void command_processor_queue::history(iface::history& history_)
+    {
+      _history = &history_;
+    }
   }
-}
-
-void command_processor_queue::pop(iface::displayer& displayer_)
-{
-  assert(!empty());
-
-  if (_items.back().second)
-  {
-    _items.back().second(displayer_);
-  }
-  _items.pop_back();
-  displayer_.show_raw_text("");
-}
-
-void command_processor_queue::cancel_operation()
-{
-  if (!empty())
-  {
-    _items.back().first->cancel_operation();
-  }
-}
-
-void command_processor_queue::line_available(const std::string& cmd_,
-                                             iface::displayer& displayer_)
-{
-  assert(_history != nullptr);
-
-  if (!empty())
-  {
-    _items.back().first->line_available(cmd_, displayer_, *_history);
-  }
-}
-
-std::string command_processor_queue::prompt() const
-{
-  assert(!empty());
-
-  return _items.back().first->prompt();
-}
-
-void command_processor_queue::pop_stopped_processors(
-    iface::displayer& displayer_)
-{
-  while (!empty() && _items.back().first->stopped())
-  {
-    pop(displayer_);
-  }
-}
-
-void command_processor_queue::push(
-    std::unique_ptr<iface::command_processor> item_, cleanup_function cleanup_)
-{
-  _items.push_back({move(item_), move(cleanup_)});
-}
-
-void command_processor_queue::history(iface::history& history_)
-{
-  _history = &history_;
 }

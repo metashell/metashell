@@ -22,47 +22,50 @@
 
 namespace metashell
 {
-  cpp_validator_clang::cpp_validator_clang(
-      const boost::filesystem::path& internal_dir_,
-      const boost::filesystem::path& env_filename_,
-      clang_binary clang_binary_,
-      logger* logger_)
-    : _clang_binary(clang_binary_),
-      _env_path(internal_dir_ / env_filename_),
-      _logger(logger_)
+  namespace core
   {
-  }
-
-  data::result
-  cpp_validator_clang::validate_code(const data::cpp_code& src_,
-                                     const data::config& config_,
-                                     const iface::environment& env_,
-                                     bool use_precompiled_headers_)
-  {
-    METASHELL_LOG(_logger, "Validating code " + src_.value());
-
-    try
+    cpp_validator_clang::cpp_validator_clang(
+        const boost::filesystem::path& internal_dir_,
+        const boost::filesystem::path& env_filename_,
+        clang_binary clang_binary_,
+        logger* logger_)
+      : _clang_binary(clang_binary_),
+        _env_path(internal_dir_ / env_filename_),
+        _logger(logger_)
     {
-      const data::cpp_code src = env_.get_appended(src_);
-      std::vector<std::string> clang_args{"-fsyntax-only"};
-      if (use_precompiled_headers_)
-      {
-        clang_args.push_back("-include");
-        clang_args.push_back(_env_path.string());
-      }
-
-      const data::process_output output =
-          run_clang(_clang_binary, clang_args, src);
-
-      const bool accept = output.exit_code == data::exit_code_t(0) &&
-                          output.standard_error.empty();
-
-      return data::result{accept, "", output.standard_error,
-                          accept && config_.verbose ? src.value() : ""};
     }
-    catch (const std::exception& e)
+
+    data::result
+    cpp_validator_clang::validate_code(const data::cpp_code& src_,
+                                       const data::config& config_,
+                                       const iface::environment& env_,
+                                       bool use_precompiled_headers_)
     {
-      return data::result(false, "", e.what(), "");
+      METASHELL_LOG(_logger, "Validating code " + src_.value());
+
+      try
+      {
+        const data::cpp_code src = env_.get_appended(src_);
+        std::vector<std::string> clang_args{"-fsyntax-only"};
+        if (use_precompiled_headers_)
+        {
+          clang_args.push_back("-include");
+          clang_args.push_back(_env_path.string());
+        }
+
+        const data::process_output output =
+            run_clang(_clang_binary, clang_args, src);
+
+        const bool accept = output.exit_code == data::exit_code_t(0) &&
+                            output.standard_error.empty();
+
+        return data::result{accept, "", output.standard_error,
+                            accept && config_.verbose ? src.value() : ""};
+      }
+      catch (const std::exception& e)
+      {
+        return data::result(false, "", e.what(), "");
+      }
     }
   }
 }

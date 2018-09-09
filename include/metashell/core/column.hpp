@@ -24,31 +24,34 @@
 
 namespace metashell
 {
-  class column : boost::equality_comparable<column>
+  namespace core
   {
-  public:
-    explicit column(int value_);
+    class column : boost::equality_comparable<column>
+    {
+    public:
+      explicit column(int value_);
 
-    int value() const;
+      int value() const;
 
-    column& operator+=(int n_);
-    column& operator-=(int n_);
+      column& operator+=(int n_);
+      column& operator-=(int n_);
 
-  private:
-    int _value;
+    private:
+      int _value;
 
-    bool invariant() const;
-  };
+      bool invariant() const;
+    };
 
-  std::string to_string(column l_);
+    std::string to_string(column l_);
 
-  std::ostream& operator<<(std::ostream& out_, column l_);
+    std::ostream& operator<<(std::ostream& out_, column l_);
 
-  bool operator==(column a_, column b_);
+    bool operator==(column a_, column b_);
 
-  inline column operator+(column a_, int b_) { return a_ += b_; }
-  inline column operator+(int a_, column b_) { return b_ += a_; }
-  inline column operator-(column a_, int b_) { return a_ -= b_; }
+    inline column operator+(column a_, int b_) { return a_ += b_; }
+    inline column operator+(int a_, column b_) { return b_ += a_; }
+    inline column operator-(column a_, int b_) { return a_ -= b_; }
+  }
 }
 
 #endif

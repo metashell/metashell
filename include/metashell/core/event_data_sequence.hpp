@@ -26,40 +26,43 @@
 
 namespace metashell
 {
-  template <class Wrapped>
-  class event_data_sequence : public iface::event_data_sequence
+  namespace core
   {
-  public:
-    explicit event_data_sequence(Wrapped&& wrapped_)
-      : _wrapped(std::move(wrapped_))
+    template <class Wrapped>
+    class event_data_sequence : public iface::event_data_sequence
     {
-    }
+    public:
+      explicit event_data_sequence(Wrapped&& wrapped_)
+        : _wrapped(std::move(wrapped_))
+      {
+      }
 
-    virtual boost::optional<data::event_data> next() override
+      virtual boost::optional<data::event_data> next() override
+      {
+        return _wrapped.next();
+      }
+
+      virtual data::cpp_code root_name() const override
+      {
+        return _wrapped.root_name();
+      }
+
+      virtual data::metaprogram_mode mode() const override
+      {
+        return _wrapped.mode();
+      }
+
+    private:
+      Wrapped _wrapped;
+    };
+
+    template <class Wrapped>
+    std::unique_ptr<iface::event_data_sequence>
+    make_event_data_sequence_ptr(Wrapped&& arg_)
     {
-      return _wrapped.next();
+      return std::unique_ptr<event_data_sequence<Wrapped>>(
+          new event_data_sequence<Wrapped>(std::move(arg_)));
     }
-
-    virtual data::cpp_code root_name() const override
-    {
-      return _wrapped.root_name();
-    }
-
-    virtual data::metaprogram_mode mode() const override
-    {
-      return _wrapped.mode();
-    }
-
-  private:
-    Wrapped _wrapped;
-  };
-
-  template <class Wrapped>
-  std::unique_ptr<iface::event_data_sequence>
-  make_event_data_sequence_ptr(Wrapped&& arg_)
-  {
-    return std::unique_ptr<event_data_sequence<Wrapped>>(
-        new event_data_sequence<Wrapped>(std::move(arg_)));
   }
 }
 

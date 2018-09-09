@@ -18,9 +18,12 @@
 
 namespace metashell
 {
-  caching_disabled::caching_disabled(const std::string& operation_)
-    : exception("Caching is disabled in the debugger and " + operation_ +
-                " requires caching.")
+  namespace core
   {
+    caching_disabled::caching_disabled(const std::string& operation_)
+      : exception("Caching is disabled in the debugger and " + operation_ +
+                  " requires caching.")
+    {
+    }
   }
 }

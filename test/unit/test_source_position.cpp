@@ -28,18 +28,21 @@ using namespace metashell;
 
 namespace
 {
-  source_position position_of(const std::initializer_list<std::string>& lines_,
-                              const std::string& line_separator_)
+  core::source_position
+  position_of(const std::initializer_list<std::string>& lines_,
+              const std::string& line_separator_)
   {
-    return source_position_of(boost::algorithm::join(lines_, line_separator_));
+    return core::source_position_of(
+        boost::algorithm::join(lines_, line_separator_));
   }
 
-  source_position position_of(const std::initializer_list<std::string>& lines_)
+  core::source_position
+  position_of(const std::initializer_list<std::string>& lines_)
   {
-    const std::vector<source_position> source_positions{
+    const std::vector<core::source_position> source_positions{
         position_of(lines_, "\n"), position_of(lines_, "\r"),
         position_of(lines_, "\r\n")};
-    for (const source_position& p : source_positions)
+    for (const core::source_position& p : source_positions)
     {
       if (p != source_positions[0])
       {
@@ -54,20 +57,20 @@ namespace
 
 TEST(source_position, tests)
 {
-  const line_number l1(1);
-  const line_number l2(2);
+  const core::line_number l1(1);
+  const core::line_number l2(2);
 
-  const column c1(1);
-  const column c2(2);
-  const column c3(3);
+  const core::column c1(1);
+  const core::column c2(2);
+  const core::column c3(3);
 
-  ASSERT_TRUE(source_position(l1, c2) == source_position(l1, c2));
-  ASSERT_TRUE(source_position(l2, c1) != source_position(l1, c2));
+  ASSERT_TRUE(core::source_position(l1, c2) == core::source_position(l1, c2));
+  ASSERT_TRUE(core::source_position(l2, c1) != core::source_position(l1, c2));
 
-  ASSERT_EQ("1:2", to_string(source_position(l1, c2)));
+  ASSERT_EQ("1:2", to_string(core::source_position(l1, c2)));
 
-  ASSERT_EQ(source_position(l1, c1), position_of({}));
-  ASSERT_EQ(source_position(l1, c2), position_of({"x"}));
-  ASSERT_EQ(source_position(l1, c3), position_of({"ab"}));
-  ASSERT_EQ(source_position(l2, c2), position_of({"ab", "c"}));
+  ASSERT_EQ(core::source_position(l1, c1), position_of({}));
+  ASSERT_EQ(core::source_position(l1, c2), position_of({"x"}));
+  ASSERT_EQ(core::source_position(l1, c3), position_of({"ab"}));
+  ASSERT_EQ(core::source_position(l2, c2), position_of({"ab", "c"}));
 }

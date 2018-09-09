@@ -34,7 +34,8 @@ TEST(shell_config, verbose_mode_is_disabled_from_config)
   cfg.push_back(metashell::data::shell_config());
   cfg.verbose = false;
 
-  metashell::shell sh(cfg, "", "", "", metashell::create_failing_engine());
+  metashell::core::shell sh(
+      cfg, "", "", "", metashell::core::create_failing_engine());
 
   ASSERT_FALSE(sh.verbose());
 }
@@ -45,7 +46,8 @@ TEST(shell_config, verbose_mode_is_enabled_from_config)
   cfg.push_back(metashell::data::shell_config());
   cfg.verbose = true;
 
-  metashell::shell sh(cfg, "", "", "", metashell::create_failing_engine());
+  metashell::core::shell sh(
+      cfg, "", "", "", metashell::core::create_failing_engine());
 
   ASSERT_TRUE(sh.verbose());
 }
@@ -56,7 +58,8 @@ TEST(shell_config, verbose_mode_is_enabled_at_runtime)
   cfg.push_back(metashell::data::shell_config());
   cfg.verbose = false;
 
-  metashell::shell sh(cfg, "", "", "", metashell::create_failing_engine());
+  metashell::core::shell sh(
+      cfg, "", "", "", metashell::core::create_failing_engine());
   sh.verbose(true);
 
   ASSERT_TRUE(sh.verbose());
@@ -68,7 +71,8 @@ TEST(shell_config, verbose_mode_is_disabled_at_runtime)
   cfg.push_back(metashell::data::shell_config());
   cfg.verbose = true;
 
-  metashell::shell sh(cfg, "", "", "", metashell::create_failing_engine());
+  metashell::core::shell sh(
+      cfg, "", "", "", metashell::core::create_failing_engine());
   sh.verbose(false);
 
   ASSERT_FALSE(sh.verbose());
@@ -76,16 +80,16 @@ TEST(shell_config, verbose_mode_is_disabled_at_runtime)
 
 TEST(shell_config, new_shell_not_stopped)
 {
-  metashell::shell sh(
-      metashell::test_config(), "", "", "", metashell::create_failing_engine());
+  metashell::core::shell sh(metashell::test_config(), "", "", "",
+                            metashell::core::create_failing_engine());
 
   ASSERT_FALSE(sh.stopped());
 }
 
 TEST(shell_config, shell_stopped_after_stop)
 {
-  metashell::shell sh(
-      metashell::test_config(), "", "", "", metashell::create_failing_engine());
+  metashell::core::shell sh(metashell::test_config(), "", "", "",
+                            metashell::core::create_failing_engine());
   sh.stop();
 
   ASSERT_TRUE(sh.stopped());
@@ -97,7 +101,8 @@ TEST(shell_config, shell_not_using_precompiled_headers)
   cfg.push_back(metashell::data::shell_config());
   cfg.active_shell_config().use_precompiled_headers = false;
 
-  metashell::shell sh(cfg, "", "", "", metashell::create_failing_engine());
+  metashell::core::shell sh(
+      cfg, "", "", "", metashell::core::create_failing_engine());
 
   ASSERT_FALSE(sh.using_precompiled_headers());
 }
@@ -108,8 +113,8 @@ TEST(shell_config, starting_shell_in_metaprogramming_mode)
   cfg.push_back(metashell::data::shell_config());
   cfg.active_shell_config().preprocessor_mode = false;
 
-  const metashell::shell sh(
-      cfg, "", "", "", metashell::create_failing_engine());
+  const metashell::core::shell sh(
+      cfg, "", "", "", metashell::core::create_failing_engine());
 
   ASSERT_FALSE(sh.echo());
   ASSERT_TRUE(sh.show_cpp_errors());
@@ -122,8 +127,8 @@ TEST(shell_config, starting_shell_in_preprocessor_mode)
   cfg.push_back(metashell::data::shell_config());
   cfg.active_shell_config().preprocessor_mode = true;
 
-  const metashell::shell sh(
-      cfg, "", "", "", metashell::create_failing_engine());
+  const metashell::core::shell sh(
+      cfg, "", "", "", metashell::core::create_failing_engine());
 
   ASSERT_TRUE(sh.echo());
   ASSERT_FALSE(sh.show_cpp_errors());

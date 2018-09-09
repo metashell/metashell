@@ -29,45 +29,46 @@ namespace
 
   boost::filesystem::path env_filename() { return boost::filesystem::path(); }
 
-  metashell::shell& get_shell()
+  metashell::core::shell& get_shell()
   {
-    static metashell::shell sh(metashell::test_config(), temp_dir(),
-                               env_filename(), mdb_temp_dir(),
-                               metashell::create_failing_engine());
+    static metashell::core::shell sh(metashell::test_config(), temp_dir(),
+                                     env_filename(), mdb_temp_dir(),
+                                     metashell::core::create_failing_engine());
     return sh;
   }
 }
 
 mdb_test_shell::mdb_test_shell(const std::string& line)
-  : metashell::mdb_shell(get_shell().env(),
-                         get_shell().engine(),
-                         get_shell().env_path(),
-                         mdb_temp_dir(),
-                         false,
-                         nullptr)
+  : metashell::core::mdb_shell(get_shell().env(),
+                               get_shell().engine(),
+                               get_shell().env_path(),
+                               mdb_temp_dir(),
+                               false,
+                               nullptr)
 {
   env.append(metashell::data::cpp_code(line));
 }
 
-mdb_test_shell::mdb_test_shell(metashell::shell& shell, const std::string& line)
-  : metashell::mdb_shell(shell.env(),
-                         shell.engine(),
-                         shell.env_path(),
-                         mdb_temp_dir(),
-                         false,
-                         nullptr)
+mdb_test_shell::mdb_test_shell(metashell::core::shell& shell,
+                               const std::string& line)
+  : metashell::core::mdb_shell(shell.env(),
+                               shell.engine(),
+                               shell.env_path(),
+                               mdb_temp_dir(),
+                               false,
+                               nullptr)
 {
   env.append(metashell::data::cpp_code(line));
 }
 
 bool mdb_test_shell::has_metaprogram() const { return static_cast<bool>(mp); }
 
-const metashell::metaprogram& mdb_test_shell::get_metaprogram() const
+const metashell::core::metaprogram& mdb_test_shell::get_metaprogram() const
 {
   return *mp;
 }
 
-const metashell::breakpoints_t& mdb_test_shell::get_breakpoints() const
+const metashell::core::breakpoints_t& mdb_test_shell::get_breakpoints() const
 {
   return breakpoints;
 }

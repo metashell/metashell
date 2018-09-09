@@ -21,58 +21,61 @@
 
 namespace metashell
 {
-  template <class F>
-  void for_each_line(const std::string& s_, F f_)
+  namespace core
   {
-    if (!s_.empty())
+    template <class F>
+    void for_each_line(const std::string& s_, F f_)
     {
-      bool was_13 = false;
-      auto line_start = s_.begin();
-      auto line_end = s_.begin();
-      for (auto i = s_.begin(), e = s_.end(); i != e; ++i)
+      if (!s_.empty())
       {
-        switch (*i)
+        bool was_13 = false;
+        auto line_start = s_.begin();
+        auto line_end = s_.begin();
+        for (auto i = s_.begin(), e = s_.end(); i != e; ++i)
         {
-        case 10:
-          f_(std::string(line_start, line_end));
-          line_start = i;
-          ++line_start;
-          line_end = line_start;
-          was_13 = false;
-          break;
-        case 13:
-          if (was_13)
+          switch (*i)
           {
+          case 10:
             f_(std::string(line_start, line_end));
             line_start = i;
             ++line_start;
             line_end = line_start;
-          }
-          else
-          {
-            was_13 = true;
-          }
-          break;
-        default:
-          if (was_13)
-          {
-            f_(std::string(line_start, line_end));
-            line_start = i;
-            line_end = line_start;
-            ++line_end;
             was_13 = false;
-          }
-          else
-          {
-            line_end = i;
-            ++line_end;
+            break;
+          case 13:
+            if (was_13)
+            {
+              f_(std::string(line_start, line_end));
+              line_start = i;
+              ++line_start;
+              line_end = line_start;
+            }
+            else
+            {
+              was_13 = true;
+            }
+            break;
+          default:
+            if (was_13)
+            {
+              f_(std::string(line_start, line_end));
+              line_start = i;
+              line_end = line_start;
+              ++line_end;
+              was_13 = false;
+            }
+            else
+            {
+              line_end = i;
+              ++line_end;
+            }
           }
         }
-      }
-      f_(std::string(line_start, line_end));
-      if (was_13)
-      {
-        f_(std::string());
+        f_(std::string(line_start, line_end));
+        if (was_13)
+        {
+          f_(std::string());
+        }
       }
     }
   }

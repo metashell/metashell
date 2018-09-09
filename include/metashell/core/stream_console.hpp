@@ -23,22 +23,25 @@
 
 namespace metashell
 {
-  class stream_console : public iface::console
+  namespace core
   {
-  public:
-    explicit stream_console(std::ostream& s_);
+    class stream_console : public iface::console
+    {
+    public:
+      explicit stream_console(std::ostream& s_);
 
-    virtual void show(const data::colored_string& s_) override;
-    virtual void new_line() override;
+      virtual void show(const data::colored_string& s_) override;
+      virtual void new_line() override;
 
-    virtual user_answer ask_for_continuation() override;
+      virtual user_answer ask_for_continuation() override;
 
-    virtual int width() const override;
-    virtual int height() const override;
+      virtual int width() const override;
+      virtual int height() const override;
 
-  private:
-    std::ostream* _s;
-  };
+    private:
+      std::ostream* _s;
+    };
+  }
 }
 
 #endif

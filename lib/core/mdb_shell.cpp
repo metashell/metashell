@@ -40,40 +40,40 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
-namespace
-{
-  std::function<void(
-      metashell::mdb_shell&, const std::string&, metashell::iface::displayer&)>
-  callback(void (metashell::mdb_shell::*f)(const std::string&,
-                                           metashell::iface::displayer&))
-  {
-    using namespace std::placeholders;
-    return std::bind(f, _1, _2, _3);
-  }
-}
-
 namespace metashell
 {
-  mdb_shell::mdb_shell(iface::environment& env_arg,
-                       iface::engine& engine_,
-                       const boost::filesystem::path& env_path_,
-                       const boost::filesystem::path& mdb_temp_dir_,
-                       bool preprocessor_,
-                       logger* logger_)
-    : command_handler(build_command_handler(preprocessor_)),
-      env(env_arg),
-      _logger(logger_),
-      _engine(engine_),
-      _env_path(env_path_),
-      _mdb_temp_dir(mdb_temp_dir_),
-      _preprocessor(preprocessor_)
+  namespace core
   {
-  }
+    namespace
+    {
+      std::function<void(mdb_shell&, const std::string&, iface::displayer&)>
+      callback(void (mdb_shell::*f)(const std::string&, iface::displayer&))
+      {
+        using namespace std::placeholders;
+        return std::bind(f, _1, _2, _3);
+      }
+    }
 
-  mdb_command_handler_map mdb_shell::build_command_handler(bool preprocessor_)
-  {
-    const std::string expr = preprocessor_ ? "<expression>" : "<type>";
-    // clang-format off
+    mdb_shell::mdb_shell(iface::environment& env_arg,
+                         iface::engine& engine_,
+                         const boost::filesystem::path& env_path_,
+                         const boost::filesystem::path& mdb_temp_dir_,
+                         bool preprocessor_,
+                         logger* logger_)
+      : command_handler(build_command_handler(preprocessor_)),
+        env(env_arg),
+        _logger(logger_),
+        _engine(engine_),
+        _env_path(env_path_),
+        _mdb_temp_dir(mdb_temp_dir_),
+        _preprocessor(preprocessor_)
+    {
+    }
+
+    mdb_command_handler_map mdb_shell::build_command_handler(bool preprocessor_)
+    {
+      const std::string expr = preprocessor_ ? "<expression>" : "<type>";
+      // clang-format off
     return
       mdb_command_handler_map({
         {{"evaluate"}, repeatable_t::non_repeatable,
@@ -166,833 +166,839 @@ namespace metashell
           "Quit metadebugger.",
           ""}
       });
-    // clang-format on
-  }
+      // clang-format on
+    }
 
-  std::string mdb_shell::prompt() const
-  {
-    return _preprocessor ? "(pdb)" : "(mdb)";
-  }
-
-  bool mdb_shell::stopped() const { return is_stopped; }
-
-  void mdb_shell::display_splash(iface::displayer& displayer_) const
-  {
-    displayer_.show_raw_text("For help, type \"help\".");
-  }
-
-  void mdb_shell::line_available(const std::string& line_arg,
-                                 iface::displayer& displayer_,
-                                 iface::history& history_)
-  {
-
-    try
+    std::string mdb_shell::prompt() const
     {
-      using boost::algorithm::all;
-      using boost::is_space;
+      return _preprocessor ? "(pdb)" : "(mdb)";
+    }
 
-      std::string line = line_arg;
+    bool mdb_shell::stopped() const { return is_stopped; }
 
-      if (line != prev_line && !line.empty())
+    void mdb_shell::display_splash(iface::displayer& displayer_) const
+    {
+      displayer_.show_raw_text("For help, type \"help\".");
+    }
+
+    void mdb_shell::line_available(const std::string& line_arg,
+                                   iface::displayer& displayer_,
+                                   iface::history& history_)
+    {
+
+      try
       {
-        history_.add(line);
-      }
+        using boost::algorithm::all;
+        using boost::is_space;
 
-      if (line.empty())
-      {
-        if (!last_command_repeatable)
+        std::string line = line_arg;
+
+        if (line != prev_line && !line.empty())
         {
-          return;
+          history_.add(line);
         }
-        line = prev_line;
-      }
-      else
-      {
-        prev_line = line;
-      }
 
-      if (all(line, is_space()))
-      {
-        return;
-      }
-
-      auto command_arg_pair = command_handler.get_command_for_line(line);
-      if (!command_arg_pair)
-      {
-        displayer_.show_error("Command parsing failed\n");
-        last_command_repeatable = false;
-        return;
-      }
-
-      mdb_command cmd;
-      std::string args;
-      std::tie(cmd, args) = *command_arg_pair;
-
-      last_command_repeatable = cmd.is_repeatable();
-
-      cmd.get_func()(*this, args, displayer_);
-    }
-    catch (const std::exception& ex)
-    {
-      displayer_.show_error(std::string("Error: ") + ex.what() + "\n");
-    }
-    catch (...)
-    {
-      displayer_.show_error("Unknown error\n");
-    }
-  }
-
-  bool mdb_shell::require_empty_args(const std::string& args,
-                                     iface::displayer& displayer_) const
-  {
-    if (!args.empty())
-    {
-      displayer_.show_error("This command doesn't accept arguments");
-      return false;
-    }
-    return true;
-  }
-
-  bool
-  mdb_shell::require_evaluated_metaprogram(iface::displayer& displayer_) const
-  {
-    if (!mp)
-    {
-      displayer_.show_error("Metaprogram not evaluated yet");
-      return false;
-    }
-    return true;
-  }
-
-  bool mdb_shell::require_running_metaprogram(iface::displayer& displayer_)
-  {
-    if (!require_evaluated_metaprogram(displayer_))
-    {
-      return false;
-    }
-
-    if (mp->is_finished())
-    {
-      display_metaprogram_finished(displayer_);
-      return false;
-    }
-    return true;
-  }
-
-  bool mdb_shell::require_running_or_errored_metaprogram(
-      iface::displayer& displayer_)
-  {
-    if (!require_evaluated_metaprogram(displayer_))
-    {
-      return false;
-    }
-
-    if (!mp->is_finished() || mp->get_evaluation_result().is_error())
-    {
-      return true;
-    }
-    else
-    {
-      display_metaprogram_finished(displayer_);
-      return false;
-    }
-  }
-
-  void mdb_shell::command_continue(const std::string& arg,
-                                   iface::displayer& displayer_)
-  {
-    if (!require_evaluated_metaprogram(displayer_))
-    {
-      return;
-    }
-
-    const auto continue_count = parse_defaultable_integer(arg, 1);
-    if (!continue_count)
-    {
-      display_argument_parsing_failed(displayer_);
-      return;
-    }
-
-    data::direction_t direction = *continue_count >= 0 ?
-                                      data::direction_t::forward :
-                                      data::direction_t::backwards;
-
-    const breakpoint* breakpoint_ptr = nullptr;
-    for (int i = 0;
-         i < std::abs(*continue_count) && !mp->is_at_endpoint(direction); ++i)
-    {
-      breakpoint_ptr = continue_metaprogram(direction);
-    }
-
-    if (breakpoint_ptr)
-    {
-      displayer_.show_raw_text(breakpoint_ptr->to_string() + " reached");
-    }
-    display_movement_info(*continue_count != 0, displayer_);
-  }
-
-  void mdb_shell::command_finish(const std::string& arg,
-                                 iface::displayer& displayer_)
-  {
-    if (!require_empty_args(arg, displayer_) ||
-        !require_evaluated_metaprogram(displayer_))
-    {
-      return;
-    }
-
-    auto steps = finish_metaprogram();
-
-    display_movement_info(steps > 0, displayer_);
-  }
-
-  void mdb_shell::command_step(const std::string& arg,
-                               iface::displayer& displayer_)
-  {
-    if (!require_evaluated_metaprogram(displayer_))
-    {
-      return;
-    }
-
-    using boost::spirit::qi::lit;
-    using boost::spirit::qi::int_;
-    using boost::spirit::ascii::space;
-    using boost::phoenix::ref;
-    using boost::spirit::qi::_1;
-
-    auto begin = arg.begin(), end = arg.end();
-
-    int step_count = 1;
-
-    enum class step_t
-    {
-      normal,
-      over,
-      out
-    };
-
-    step_t step_type = step_t::normal;
-
-    bool result = boost::spirit::qi::phrase_parse(
-        begin, end,
-
-        -(lit("over")[ref(step_type) = step_t::over] |
-          lit("out")[ref(step_type) = step_t::out]) >>
-            -int_[ref(step_count) = _1],
-
-        space);
-
-    if (!result || begin != end)
-    {
-      display_argument_parsing_failed(displayer_);
-      return;
-    }
-
-    data::direction_t direction = step_count >= 0 ?
-                                      data::direction_t::forward :
-                                      data::direction_t::backwards;
-
-    int iteration_count = std::abs(step_count);
-
-    switch (step_type)
-    {
-    case step_t::normal:
-      for (int i = 0; i < iteration_count && !mp->is_at_endpoint(direction);
-           ++i)
-      {
-        mp->step(direction);
-      }
-      break;
-    case step_t::over:
-      next_metaprogram(direction, iteration_count);
-      break;
-    case step_t::out:
-    {
-      for (int i = 0; i < iteration_count && !mp->is_at_endpoint(direction);
-           ++i)
-      {
-        const auto bt_depth = mp->get_backtrace().size();
-        while (!mp->is_at_endpoint(direction) &&
-               mp->get_backtrace().size() + 1 > bt_depth)
+        if (line.empty())
         {
-          mp->step(direction);
-        }
-      }
-    }
-    break;
-    default:
-      assert(false);
-      break;
-    }
-
-    display_movement_info(step_count != 0, displayer_);
-  }
-
-  void mdb_shell::command_next(const std::string& arg,
-                               iface::displayer& displayer_)
-  {
-    if (!require_evaluated_metaprogram(displayer_))
-    {
-      return;
-    }
-
-    const auto next_count = parse_defaultable_integer(arg, 1);
-    if (!next_count)
-    {
-      display_argument_parsing_failed(displayer_);
-      return;
-    }
-
-    next_metaprogram(next_count >= 0 ? data::direction_t::forward :
-                                       data::direction_t::backwards,
-                     std::abs(*next_count));
-
-    display_movement_info(next_count != 0, displayer_);
-  }
-
-  void mdb_shell::command_evaluate(const std::string& arg_copy,
-                                   iface::displayer& displayer_)
-  {
-    // Easier not to use spirit here (or probably not...)
-    // TODO OK. after -profile, this parsing really needs some refactoring
-    std::string arg = arg_copy;
-
-    const std::string full_flag = "-full";
-    const std::string profile_flag = "-profile";
-    const std::string nocache_flag = "-nocache";
-
-    bool has_full = false;
-    bool has_profile = false;
-    bool caching = true;
-
-    // Intentionally left really ugly for more motivation to refactor
-    while (true)
-    {
-      if (!_preprocessor && boost::starts_with(arg, full_flag) &&
-          (arg.size() == full_flag.size() ||
-           std::isspace(arg[full_flag.size()])))
-      {
-        has_full = true;
-        arg = boost::trim_left_copy(arg.substr(full_flag.size()));
-      }
-      else if (boost::starts_with(arg, profile_flag) &&
-               (arg.size() == profile_flag.size() ||
-                std::isspace(arg[profile_flag.size()])))
-      {
-        has_profile = true;
-        arg = boost::trim_left_copy(arg.substr(profile_flag.size()));
-      }
-      else if (boost::starts_with(arg, nocache_flag) &&
-               (arg.size() == nocache_flag.size() ||
-                std::isspace(arg[nocache_flag.size()])))
-      {
-        caching = false;
-        arg = boost::trim_left_copy(arg.substr(nocache_flag.size()));
-      }
-      else
-      {
-        break;
-      }
-    }
-
-    if (has_full && has_profile)
-    {
-      displayer_.show_error(
-          "-full and -profile flags cannot be used together.");
-      return;
-    }
-
-    if (has_profile && !caching)
-    {
-      displayer_.show_error(
-          "-profile and -noncache flags cannot be used together.");
-      return;
-    }
-
-    boost::optional<data::cpp_code> expression = data::cpp_code(arg);
-    if (expression->empty())
-    {
-      if (!mp)
-      {
-        displayer_.show_error("Nothing has been evaluated yet.");
-        return;
-      }
-      expression = last_evaluated_expression;
-    }
-    else if (*expression == "-")
-    {
-      expression = boost::none;
-    }
-
-    next_breakpoint_id = 1;
-    breakpoints.clear();
-
-    data::metaprogram_mode mode = [&] {
-      if (has_full)
-      {
-        return data::metaprogram_mode::full;
-      }
-      if (has_profile)
-      {
-        return data::metaprogram_mode::profile;
-      }
-      return data::metaprogram_mode::normal;
-    }();
-
-    last_evaluated_expression = expression;
-    if (run_metaprogram_with_templight(expression, mode, caching, displayer_))
-    {
-      displayer_.show_raw_text("Metaprogram started");
-      assert(mp);
-    }
-  }
-
-  void mdb_shell::command_forwardtrace(const std::string& arg,
-                                       iface::displayer& displayer_)
-  {
-    if (!require_running_metaprogram(displayer_))
-    {
-      return;
-    }
-
-    using boost::spirit::qi::lit;
-    using boost::spirit::qi::uint_;
-    using boost::spirit::ascii::space;
-    using boost::spirit::qi::_1;
-
-    namespace phx = boost::phoenix;
-
-    auto begin = arg.begin(), end = arg.end();
-
-    boost::optional<int> max_depth;
-
-    bool result =
-        boost::spirit::qi::phrase_parse(begin, end,
-
-                                        -uint_[phx::ref(max_depth) = _1],
-
-                                        space);
-
-    if (!result || begin != end)
-    {
-      display_argument_parsing_failed(displayer_);
-      return;
-    }
-    display_current_forwardtrace(max_depth, displayer_);
-  }
-
-  void mdb_shell::command_backtrace(const std::string& arg,
-                                    iface::displayer& displayer_)
-  {
-    if (require_empty_args(arg, displayer_) &&
-        require_running_or_errored_metaprogram(displayer_))
-    {
-      display_backtrace(displayer_);
-    }
-  }
-
-  void mdb_shell::command_frame(const std::string& arg,
-                                iface::displayer& displayer_)
-  {
-    if (!require_running_or_errored_metaprogram(displayer_))
-    {
-      return;
-    }
-
-    const auto frame_index = parse_mandatory_integer(arg);
-    if (!frame_index)
-    {
-      display_argument_parsing_failed(displayer_);
-      return;
-    }
-
-    auto backtrace = mp->get_backtrace();
-
-    if (frame_index < 0 || *frame_index >= static_cast<int>(backtrace.size()))
-    {
-      displayer_.show_error("Frame index out of range");
-      return;
-    }
-
-    display_frame(backtrace[*frame_index], displayer_);
-  }
-
-  void mdb_shell::command_rbreak(const std::string& arg,
-                                 iface::displayer& displayer_)
-  {
-    if (arg.empty())
-    {
-      displayer_.show_error("Argument expected");
-      return;
-    }
-    if (!require_evaluated_metaprogram(displayer_))
-    {
-      return;
-    }
-    try
-    {
-      breakpoint bp{next_breakpoint_id, boost::regex(arg)};
-      ++next_breakpoint_id;
-
-      if (mp->caching_enabled())
-      {
-        const auto match_count = std::count_if(
-            mp->begin(false), mp->end(), [&bp](const data::debugger_event& e) {
-              const auto p = mpark::get_if<data::frame>(&e);
-              return p && bp.match(p->node());
-            });
-
-        if (match_count == 0)
-        {
-          displayer_.show_raw_text("Breakpoint \"" + arg +
-                                   "\" will never stop the execution");
+          if (!last_command_repeatable)
+          {
+            return;
+          }
+          line = prev_line;
         }
         else
         {
-          displayer_.show_raw_text(
-              "Breakpoint \"" + arg + "\" will stop the execution on " +
-              std::to_string(match_count) +
-              (match_count > 1 ? " locations" : " location"));
+          prev_line = line;
+        }
+
+        if (all(line, is_space()))
+        {
+          return;
+        }
+
+        auto command_arg_pair = command_handler.get_command_for_line(line);
+        if (!command_arg_pair)
+        {
+          displayer_.show_error("Command parsing failed\n");
+          last_command_repeatable = false;
+          return;
+        }
+
+        mdb_command cmd;
+        std::string args;
+        std::tie(cmd, args) = *command_arg_pair;
+
+        last_command_repeatable = cmd.is_repeatable();
+
+        cmd.get_func()(*this, args, displayer_);
+      }
+      catch (const std::exception& ex)
+      {
+        displayer_.show_error(std::string("Error: ") + ex.what() + "\n");
+      }
+      catch (...)
+      {
+        displayer_.show_error("Unknown error\n");
+      }
+    }
+
+    bool mdb_shell::require_empty_args(const std::string& args,
+                                       iface::displayer& displayer_) const
+    {
+      if (!args.empty())
+      {
+        displayer_.show_error("This command doesn't accept arguments");
+        return false;
+      }
+      return true;
+    }
+
+    bool
+    mdb_shell::require_evaluated_metaprogram(iface::displayer& displayer_) const
+    {
+      if (!mp)
+      {
+        displayer_.show_error("Metaprogram not evaluated yet");
+        return false;
+      }
+      return true;
+    }
+
+    bool mdb_shell::require_running_metaprogram(iface::displayer& displayer_)
+    {
+      if (!require_evaluated_metaprogram(displayer_))
+      {
+        return false;
+      }
+
+      if (mp->is_finished())
+      {
+        display_metaprogram_finished(displayer_);
+        return false;
+      }
+      return true;
+    }
+
+    bool mdb_shell::require_running_or_errored_metaprogram(
+        iface::displayer& displayer_)
+    {
+      if (!require_evaluated_metaprogram(displayer_))
+      {
+        return false;
+      }
+
+      if (!mp->is_finished() || mp->get_evaluation_result().is_error())
+      {
+        return true;
+      }
+      else
+      {
+        display_metaprogram_finished(displayer_);
+        return false;
+      }
+    }
+
+    void mdb_shell::command_continue(const std::string& arg,
+                                     iface::displayer& displayer_)
+    {
+      if (!require_evaluated_metaprogram(displayer_))
+      {
+        return;
+      }
+
+      const auto continue_count = parse_defaultable_integer(arg, 1);
+      if (!continue_count)
+      {
+        display_argument_parsing_failed(displayer_);
+        return;
+      }
+
+      data::direction_t direction = *continue_count >= 0 ?
+                                        data::direction_t::forward :
+                                        data::direction_t::backwards;
+
+      const breakpoint* breakpoint_ptr = nullptr;
+      for (int i = 0;
+           i < std::abs(*continue_count) && !mp->is_at_endpoint(direction); ++i)
+      {
+        breakpoint_ptr = continue_metaprogram(direction);
+      }
+
+      if (breakpoint_ptr)
+      {
+        displayer_.show_raw_text(breakpoint_ptr->to_string() + " reached");
+      }
+      display_movement_info(*continue_count != 0, displayer_);
+    }
+
+    void mdb_shell::command_finish(const std::string& arg,
+                                   iface::displayer& displayer_)
+    {
+      if (!require_empty_args(arg, displayer_) ||
+          !require_evaluated_metaprogram(displayer_))
+      {
+        return;
+      }
+
+      auto steps = finish_metaprogram();
+
+      display_movement_info(steps > 0, displayer_);
+    }
+
+    void mdb_shell::command_step(const std::string& arg,
+                                 iface::displayer& displayer_)
+    {
+      if (!require_evaluated_metaprogram(displayer_))
+      {
+        return;
+      }
+
+      using boost::spirit::qi::lit;
+      using boost::spirit::qi::int_;
+      using boost::spirit::ascii::space;
+      using boost::phoenix::ref;
+      using boost::spirit::qi::_1;
+
+      auto begin = arg.begin(), end = arg.end();
+
+      int step_count = 1;
+
+      enum class step_t
+      {
+        normal,
+        over,
+        out
+      };
+
+      step_t step_type = step_t::normal;
+
+      bool result = boost::spirit::qi::phrase_parse(
+          begin, end,
+
+          -(lit("over")[ref(step_type) = step_t::over] |
+            lit("out")[ref(step_type) = step_t::out]) >>
+              -int_[ref(step_count) = _1],
+
+          space);
+
+      if (!result || begin != end)
+      {
+        display_argument_parsing_failed(displayer_);
+        return;
+      }
+
+      data::direction_t direction = step_count >= 0 ?
+                                        data::direction_t::forward :
+                                        data::direction_t::backwards;
+
+      int iteration_count = std::abs(step_count);
+
+      switch (step_type)
+      {
+      case step_t::normal:
+        for (int i = 0; i < iteration_count && !mp->is_at_endpoint(direction);
+             ++i)
+        {
+          mp->step(direction);
+        }
+        break;
+      case step_t::over:
+        next_metaprogram(direction, iteration_count);
+        break;
+      case step_t::out:
+      {
+        for (int i = 0; i < iteration_count && !mp->is_at_endpoint(direction);
+             ++i)
+        {
+          const auto bt_depth = mp->get_backtrace().size();
+          while (!mp->is_at_endpoint(direction) &&
+                 mp->get_backtrace().size() + 1 > bt_depth)
+          {
+            mp->step(direction);
+          }
+        }
+      }
+      break;
+      default:
+        assert(false);
+        break;
+      }
+
+      display_movement_info(step_count != 0, displayer_);
+    }
+
+    void mdb_shell::command_next(const std::string& arg,
+                                 iface::displayer& displayer_)
+    {
+      if (!require_evaluated_metaprogram(displayer_))
+      {
+        return;
+      }
+
+      const auto next_count = parse_defaultable_integer(arg, 1);
+      if (!next_count)
+      {
+        display_argument_parsing_failed(displayer_);
+        return;
+      }
+
+      next_metaprogram(next_count >= 0 ? data::direction_t::forward :
+                                         data::direction_t::backwards,
+                       std::abs(*next_count));
+
+      display_movement_info(next_count != 0, displayer_);
+    }
+
+    void mdb_shell::command_evaluate(const std::string& arg_copy,
+                                     iface::displayer& displayer_)
+    {
+      // Easier not to use spirit here (or probably not...)
+      // TODO OK. after -profile, this parsing really needs some refactoring
+      std::string arg = arg_copy;
+
+      const std::string full_flag = "-full";
+      const std::string profile_flag = "-profile";
+      const std::string nocache_flag = "-nocache";
+
+      bool has_full = false;
+      bool has_profile = false;
+      bool caching = true;
+
+      // Intentionally left really ugly for more motivation to refactor
+      while (true)
+      {
+        if (!_preprocessor && boost::starts_with(arg, full_flag) &&
+            (arg.size() == full_flag.size() ||
+             std::isspace(arg[full_flag.size()])))
+        {
+          has_full = true;
+          arg = boost::trim_left_copy(arg.substr(full_flag.size()));
+        }
+        else if (boost::starts_with(arg, profile_flag) &&
+                 (arg.size() == profile_flag.size() ||
+                  std::isspace(arg[profile_flag.size()])))
+        {
+          has_profile = true;
+          arg = boost::trim_left_copy(arg.substr(profile_flag.size()));
+        }
+        else if (boost::starts_with(arg, nocache_flag) &&
+                 (arg.size() == nocache_flag.size() ||
+                  std::isspace(arg[nocache_flag.size()])))
+        {
+          caching = false;
+          arg = boost::trim_left_copy(arg.substr(nocache_flag.size()));
+        }
+        else
+        {
+          break;
+        }
+      }
+
+      if (has_full && has_profile)
+      {
+        displayer_.show_error(
+            "-full and -profile flags cannot be used together.");
+        return;
+      }
+
+      if (has_profile && !caching)
+      {
+        displayer_.show_error(
+            "-profile and -noncache flags cannot be used together.");
+        return;
+      }
+
+      boost::optional<data::cpp_code> expression = data::cpp_code(arg);
+      if (expression->empty())
+      {
+        if (!mp)
+        {
+          displayer_.show_error("Nothing has been evaluated yet.");
+          return;
+        }
+        expression = last_evaluated_expression;
+      }
+      else if (*expression == "-")
+      {
+        expression = boost::none;
+      }
+
+      next_breakpoint_id = 1;
+      breakpoints.clear();
+
+      data::metaprogram_mode mode = [&] {
+        if (has_full)
+        {
+          return data::metaprogram_mode::full;
+        }
+        if (has_profile)
+        {
+          return data::metaprogram_mode::profile;
+        }
+        return data::metaprogram_mode::normal;
+      }();
+
+      last_evaluated_expression = expression;
+      if (run_metaprogram_with_templight(expression, mode, caching, displayer_))
+      {
+        displayer_.show_raw_text("Metaprogram started");
+        assert(mp);
+      }
+    }
+
+    void mdb_shell::command_forwardtrace(const std::string& arg,
+                                         iface::displayer& displayer_)
+    {
+      if (!require_running_metaprogram(displayer_))
+      {
+        return;
+      }
+
+      using boost::spirit::qi::lit;
+      using boost::spirit::qi::uint_;
+      using boost::spirit::ascii::space;
+      using boost::spirit::qi::_1;
+
+      namespace phx = boost::phoenix;
+
+      auto begin = arg.begin(), end = arg.end();
+
+      boost::optional<int> max_depth;
+
+      bool result =
+          boost::spirit::qi::phrase_parse(begin, end,
+
+                                          -uint_[phx::ref(max_depth) = _1],
+
+                                          space);
+
+      if (!result || begin != end)
+      {
+        display_argument_parsing_failed(displayer_);
+        return;
+      }
+      display_current_forwardtrace(max_depth, displayer_);
+    }
+
+    void mdb_shell::command_backtrace(const std::string& arg,
+                                      iface::displayer& displayer_)
+    {
+      if (require_empty_args(arg, displayer_) &&
+          require_running_or_errored_metaprogram(displayer_))
+      {
+        display_backtrace(displayer_);
+      }
+    }
+
+    void mdb_shell::command_frame(const std::string& arg,
+                                  iface::displayer& displayer_)
+    {
+      if (!require_running_or_errored_metaprogram(displayer_))
+      {
+        return;
+      }
+
+      const auto frame_index = parse_mandatory_integer(arg);
+      if (!frame_index)
+      {
+        display_argument_parsing_failed(displayer_);
+        return;
+      }
+
+      auto backtrace = mp->get_backtrace();
+
+      if (frame_index < 0 || *frame_index >= static_cast<int>(backtrace.size()))
+      {
+        displayer_.show_error("Frame index out of range");
+        return;
+      }
+
+      display_frame(backtrace[*frame_index], displayer_);
+    }
+
+    void mdb_shell::command_rbreak(const std::string& arg,
+                                   iface::displayer& displayer_)
+    {
+      if (arg.empty())
+      {
+        displayer_.show_error("Argument expected");
+        return;
+      }
+      if (!require_evaluated_metaprogram(displayer_))
+      {
+        return;
+      }
+      try
+      {
+        breakpoint bp{next_breakpoint_id, boost::regex(arg)};
+        ++next_breakpoint_id;
+
+        if (mp->caching_enabled())
+        {
+          const auto match_count =
+              std::count_if(mp->begin(false), mp->end(),
+                            [&bp](const data::debugger_event& e) {
+                              const auto p = mpark::get_if<data::frame>(&e);
+                              return p && bp.match(p->node());
+                            });
+
+          if (match_count == 0)
+          {
+            displayer_.show_raw_text("Breakpoint \"" + arg +
+                                     "\" will never stop the execution");
+          }
+          else
+          {
+            displayer_.show_raw_text(
+                "Breakpoint \"" + arg + "\" will stop the execution on " +
+                std::to_string(match_count) +
+                (match_count > 1 ? " locations" : " location"));
+            breakpoints.push_back(bp);
+          }
+        }
+        else
+        {
+          displayer_.show_raw_text("Breakpoint \"" + arg + "\" created");
           breakpoints.push_back(bp);
+        }
+      }
+      catch (const boost::regex_error&)
+      {
+        displayer_.show_error("\"" + arg + "\" is not a valid regex");
+      }
+    }
+
+    void mdb_shell::command_break(const std::string& arg,
+                                  iface::displayer& displayer_)
+    {
+      // TODO there will other more kinds of arguments here but needs a proper
+      // but
+      // it needs a proper command parser
+      if (arg != "list")
+      {
+        displayer_.show_error("Call break like this: \"break list\"");
+        return;
+      }
+
+      if (breakpoints.empty())
+      {
+        displayer_.show_raw_text("No breakpoints currently set");
+        return;
+      }
+
+      for (const breakpoint& bp : breakpoints)
+      {
+        displayer_.show_raw_text(bp.to_string());
+      }
+    }
+
+    void mdb_shell::command_help(const std::string& arg,
+                                 iface::displayer& displayer_)
+    {
+      if (arg.empty())
+      {
+        displayer_.show_raw_text("List of available commands:");
+        displayer_.show_raw_text("");
+        for (const mdb_command& cmd : command_handler.get_commands())
+        {
+          displayer_.show_raw_text(cmd.get_keys().front() + " -- " +
+                                   cmd.get_short_description());
+        }
+        displayer_.show_raw_text("");
+        displayer_.show_raw_text(
+            "Type \"help\" followed by a command name for more information.");
+        displayer_.show_raw_text(
+            "Command name abbreviations are allowed if unambiguous.");
+        displayer_.show_raw_text(
+            "A blank line as an input will repeat the last command,"
+            " if it makes sense.");
+        return;
+      }
+
+      auto command_arg_pair = command_handler.get_command_for_line(arg);
+      if (!command_arg_pair)
+      {
+        displayer_.show_error("Command not found\n");
+        return;
+      }
+
+      using boost::algorithm::join;
+
+      mdb_command cmd;
+      std::string command_args;
+      std::tie(cmd, command_args) = *command_arg_pair;
+
+      if (!command_args.empty())
+      {
+        displayer_.show_error("Only one argument expected\n");
+        return;
+      }
+
+      displayer_.show_raw_text(join(cmd.get_keys(), "|") + " " +
+                               cmd.get_usage());
+      displayer_.show_raw_text(cmd.get_full_description());
+    }
+
+    void mdb_shell::command_quit(const std::string& arg,
+                                 iface::displayer& displayer_)
+    {
+      if (!require_empty_args(arg, displayer_))
+      {
+        return;
+      }
+      is_stopped = true;
+    }
+
+    bool mdb_shell::run_metaprogram_with_templight(
+        const boost::optional<data::cpp_code>& expression,
+        data::metaprogram_mode mode,
+        bool caching_enabled,
+        iface::displayer& displayer_)
+    {
+      try
+      {
+        mp = metaprogram(
+            _preprocessor ?
+                _engine.preprocessor_tracer().eval(env, expression, mode) :
+                _engine.metaprogram_tracer().eval(
+                    env, _mdb_temp_dir, expression, mode, displayer_),
+            caching_enabled);
+        if (mp && mp->is_empty() && mp->get_evaluation_result().is_error())
+        {
+          // Most errors will cause templight to generate an empty trace
+          // We're only interested in non-empty traces
+          // Throwing here to ensure this error is handled the same way as other
+          // ones thrown by eval()
+          throw exception(mp->get_evaluation_result().get_error());
+        }
+      }
+      catch (const some_feature_not_supported&)
+      {
+        throw;
+      }
+      catch (const std::exception& error)
+      {
+        displayer_.show_error(error.what());
+        mp = boost::none;
+        return false;
+      }
+      return true;
+    }
+
+    boost::optional<int>
+    mdb_shell::parse_defaultable_integer(const std::string& arg,
+                                         int default_value)
+    {
+      using boost::spirit::qi::int_;
+      using boost::spirit::ascii::space;
+      using boost::phoenix::ref;
+      using boost::spirit::qi::_1;
+
+      auto begin = arg.begin(), end = arg.end();
+
+      int value = default_value;
+
+      bool result = boost::spirit::qi::phrase_parse(begin, end,
+
+                                                    -int_[ref(value) = _1],
+
+                                                    space);
+
+      if (!result || begin != end)
+      {
+        return boost::none;
+      }
+      return value;
+    }
+
+    boost::optional<int>
+    mdb_shell::parse_mandatory_integer(const std::string& arg)
+    {
+      using boost::spirit::qi::int_;
+      using boost::spirit::ascii::space;
+      using boost::phoenix::ref;
+      using boost::spirit::qi::_1;
+
+      auto begin = arg.begin(), end = arg.end();
+
+      int value = 0;
+
+      bool result = boost::spirit::qi::phrase_parse(begin, end,
+
+                                                    int_[ref(value) = _1],
+
+                                                    space);
+
+      if (!result || begin != end)
+      {
+        return boost::none;
+      }
+      return value;
+    }
+
+    const breakpoint*
+    mdb_shell::continue_metaprogram(data::direction_t direction)
+    {
+      assert(!mp->is_at_endpoint(direction));
+
+      while (true)
+      {
+        mp->step(direction);
+        if (mp->is_at_endpoint(direction))
+        {
+          return nullptr;
+        }
+        for (const breakpoint& bp : breakpoints)
+        {
+          if (bp.match(mp->get_current_frame().node()))
+          {
+            return &bp;
+          }
+        }
+      }
+    }
+
+    unsigned mdb_shell::finish_metaprogram()
+    {
+      unsigned steps = 0;
+      for (; !mp->is_finished(); ++steps)
+      {
+        mp->step();
+      }
+      return steps;
+    }
+
+    void mdb_shell::next_metaprogram(data::direction_t direction, int n)
+    {
+      assert(n >= 0);
+      for (int i = 0; i < n && !mp->is_at_endpoint(direction); ++i)
+      {
+        const auto bt_depth = mp->get_backtrace().size();
+        do
+        {
+          mp->step(direction);
+        } while (!mp->is_at_endpoint(direction) &&
+                 mp->get_backtrace().size() > bt_depth);
+      }
+    }
+
+    void mdb_shell::display_frame(const data::frame& frame,
+                                  iface::displayer& displayer_) const
+    {
+      displayer_.show_frame(frame);
+
+      data::file_location source_location = frame.source_location();
+      if (source_location.name == _env_path)
+      {
+        // We don't want to show stuff from the internal header
+        source_location = data::file_location();
+      }
+      // TODO: we should somehow compensate the file_locations returned by
+      // clang for the <stdin> file. This is hard because the file clang sees
+      // is just two lines (an include for the PCH and the current line)
+      // Until this is figured out, printing file sections for <stdin> is
+      // turned off
+      // displayer_.show_file_section(source_location, env.get());
+      displayer_.show_file_section(source_location, "");
+    }
+
+    void mdb_shell::display_current_frame(iface::displayer& displayer_) const
+    {
+      assert(mp);
+      assert(!mp->is_at_start());
+      assert(!mp->is_finished());
+
+      display_frame(mp->get_current_frame(), displayer_);
+    }
+
+    void mdb_shell::display_current_forwardtrace(boost::optional<int> max_depth,
+                                                 iface::displayer& displayer_)
+    {
+      if (mp->caching_enabled())
+      {
+        displayer_.show_call_graph(boost::make_iterator_range(
+            forward_trace_iterator(
+                mp->current_position(), mp->end(), max_depth),
+            forward_trace_iterator()));
+      }
+      else
+      {
+        throw caching_disabled("displaying forward trace");
+      }
+    }
+
+    void mdb_shell::display_backtrace(iface::displayer& displayer_)
+    {
+      if (!mp)
+      {
+        displayer_.show_error("Metaprogram not evaluated yet");
+      }
+      else if (mp->is_finished() && !mp->get_evaluation_result().is_error())
+      {
+        display_metaprogram_finished(displayer_);
+      }
+      else
+      {
+        displayer_.show_backtrace(mp->get_backtrace());
+      }
+    }
+
+    void mdb_shell::display_argument_parsing_failed(
+        iface::displayer& displayer_) const
+    {
+      displayer_.show_error("Argument parsing failed");
+    }
+
+    void mdb_shell::display_metaprogram_reached_the_beginning(
+        iface::displayer& displayer_) const
+    {
+      displayer_.show_raw_text("Metaprogram reached the beginning");
+    }
+
+    void mdb_shell::display_metaprogram_finished(iface::displayer& displayer_)
+    {
+      displayer_.show_raw_text("Metaprogram finished");
+      displayer_.show_type_or_code_or_error(mp->get_evaluation_result());
+    }
+
+    void mdb_shell::display_movement_info(bool moved,
+                                          iface::displayer& displayer_)
+    {
+      if (mp->is_finished())
+      {
+        if (moved)
+        {
+          display_metaprogram_finished(displayer_);
+        }
+      }
+      else if (mp->is_at_start())
+      {
+        if (moved)
+        {
+          display_metaprogram_reached_the_beginning(displayer_);
         }
       }
       else
       {
-        displayer_.show_raw_text("Breakpoint \"" + arg + "\" created");
-        breakpoints.push_back(bp);
+        display_current_frame(displayer_);
       }
     }
-    catch (const boost::regex_error&)
-    {
-      displayer_.show_error("\"" + arg + "\" is not a valid regex");
-    }
-  }
 
-  void mdb_shell::command_break(const std::string& arg,
-                                iface::displayer& displayer_)
-  {
-    // TODO there will other more kinds of arguments here but needs a proper but
-    // it needs a proper command parser
-    if (arg != "list")
+    void mdb_shell::cancel_operation()
     {
-      displayer_.show_error("Call break like this: \"break list\"");
-      return;
+      // TODO
     }
 
-    if (breakpoints.empty())
+    void mdb_shell::code_complete(const std::string&, std::set<std::string>&)
     {
-      displayer_.show_raw_text("No breakpoints currently set");
-      return;
+      // TODO
     }
 
-    for (const breakpoint& bp : breakpoints)
+    void mdb_shell::line_available(const std::string& line,
+                                   iface::displayer& displayer_)
     {
-      displayer_.show_raw_text(bp.to_string());
+      null_history h;
+      line_available(line, displayer_, h);
     }
-  }
-
-  void mdb_shell::command_help(const std::string& arg,
-                               iface::displayer& displayer_)
-  {
-    if (arg.empty())
-    {
-      displayer_.show_raw_text("List of available commands:");
-      displayer_.show_raw_text("");
-      for (const mdb_command& cmd : command_handler.get_commands())
-      {
-        displayer_.show_raw_text(cmd.get_keys().front() + " -- " +
-                                 cmd.get_short_description());
-      }
-      displayer_.show_raw_text("");
-      displayer_.show_raw_text(
-          "Type \"help\" followed by a command name for more information.");
-      displayer_.show_raw_text(
-          "Command name abbreviations are allowed if unambiguous.");
-      displayer_.show_raw_text(
-          "A blank line as an input will repeat the last command,"
-          " if it makes sense.");
-      return;
-    }
-
-    auto command_arg_pair = command_handler.get_command_for_line(arg);
-    if (!command_arg_pair)
-    {
-      displayer_.show_error("Command not found\n");
-      return;
-    }
-
-    using boost::algorithm::join;
-
-    mdb_command cmd;
-    std::string command_args;
-    std::tie(cmd, command_args) = *command_arg_pair;
-
-    if (!command_args.empty())
-    {
-      displayer_.show_error("Only one argument expected\n");
-      return;
-    }
-
-    displayer_.show_raw_text(join(cmd.get_keys(), "|") + " " + cmd.get_usage());
-    displayer_.show_raw_text(cmd.get_full_description());
-  }
-
-  void mdb_shell::command_quit(const std::string& arg,
-                               iface::displayer& displayer_)
-  {
-    if (!require_empty_args(arg, displayer_))
-    {
-      return;
-    }
-    is_stopped = true;
-  }
-
-  bool mdb_shell::run_metaprogram_with_templight(
-      const boost::optional<data::cpp_code>& expression,
-      data::metaprogram_mode mode,
-      bool caching_enabled,
-      iface::displayer& displayer_)
-  {
-    try
-    {
-      mp = metaprogram(
-          _preprocessor ?
-              _engine.preprocessor_tracer().eval(env, expression, mode) :
-              _engine.metaprogram_tracer().eval(
-                  env, _mdb_temp_dir, expression, mode, displayer_),
-          caching_enabled);
-      if (mp && mp->is_empty() && mp->get_evaluation_result().is_error())
-      {
-        // Most errors will cause templight to generate an empty trace
-        // We're only interested in non-empty traces
-        // Throwing here to ensure this error is handled the same way as other
-        // ones thrown by eval()
-        throw exception(mp->get_evaluation_result().get_error());
-      }
-    }
-    catch (const some_feature_not_supported&)
-    {
-      throw;
-    }
-    catch (const std::exception& error)
-    {
-      displayer_.show_error(error.what());
-      mp = boost::none;
-      return false;
-    }
-    return true;
-  }
-
-  boost::optional<int>
-  mdb_shell::parse_defaultable_integer(const std::string& arg,
-                                       int default_value)
-  {
-    using boost::spirit::qi::int_;
-    using boost::spirit::ascii::space;
-    using boost::phoenix::ref;
-    using boost::spirit::qi::_1;
-
-    auto begin = arg.begin(), end = arg.end();
-
-    int value = default_value;
-
-    bool result = boost::spirit::qi::phrase_parse(begin, end,
-
-                                                  -int_[ref(value) = _1],
-
-                                                  space);
-
-    if (!result || begin != end)
-    {
-      return boost::none;
-    }
-    return value;
-  }
-
-  boost::optional<int>
-  mdb_shell::parse_mandatory_integer(const std::string& arg)
-  {
-    using boost::spirit::qi::int_;
-    using boost::spirit::ascii::space;
-    using boost::phoenix::ref;
-    using boost::spirit::qi::_1;
-
-    auto begin = arg.begin(), end = arg.end();
-
-    int value = 0;
-
-    bool result = boost::spirit::qi::phrase_parse(begin, end,
-
-                                                  int_[ref(value) = _1],
-
-                                                  space);
-
-    if (!result || begin != end)
-    {
-      return boost::none;
-    }
-    return value;
-  }
-
-  const breakpoint* mdb_shell::continue_metaprogram(data::direction_t direction)
-  {
-    assert(!mp->is_at_endpoint(direction));
-
-    while (true)
-    {
-      mp->step(direction);
-      if (mp->is_at_endpoint(direction))
-      {
-        return nullptr;
-      }
-      for (const breakpoint& bp : breakpoints)
-      {
-        if (bp.match(mp->get_current_frame().node()))
-        {
-          return &bp;
-        }
-      }
-    }
-  }
-
-  unsigned mdb_shell::finish_metaprogram()
-  {
-    unsigned steps = 0;
-    for (; !mp->is_finished(); ++steps)
-    {
-      mp->step();
-    }
-    return steps;
-  }
-
-  void mdb_shell::next_metaprogram(data::direction_t direction, int n)
-  {
-    assert(n >= 0);
-    for (int i = 0; i < n && !mp->is_at_endpoint(direction); ++i)
-    {
-      const auto bt_depth = mp->get_backtrace().size();
-      do
-      {
-        mp->step(direction);
-      } while (!mp->is_at_endpoint(direction) &&
-               mp->get_backtrace().size() > bt_depth);
-    }
-  }
-
-  void mdb_shell::display_frame(const data::frame& frame,
-                                iface::displayer& displayer_) const
-  {
-    displayer_.show_frame(frame);
-
-    data::file_location source_location = frame.source_location();
-    if (source_location.name == _env_path)
-    {
-      // We don't want to show stuff from the internal header
-      source_location = data::file_location();
-    }
-    // TODO: we should somehow compensate the file_locations returned by
-    // clang for the <stdin> file. This is hard because the file clang sees
-    // is just two lines (an include for the PCH and the current line)
-    // Until this is figured out, printing file sections for <stdin> is
-    // turned off
-    // displayer_.show_file_section(source_location, env.get());
-    displayer_.show_file_section(source_location, "");
-  }
-
-  void mdb_shell::display_current_frame(iface::displayer& displayer_) const
-  {
-    assert(mp);
-    assert(!mp->is_at_start());
-    assert(!mp->is_finished());
-
-    display_frame(mp->get_current_frame(), displayer_);
-  }
-
-  void mdb_shell::display_current_forwardtrace(boost::optional<int> max_depth,
-                                               iface::displayer& displayer_)
-  {
-    if (mp->caching_enabled())
-    {
-      displayer_.show_call_graph(boost::make_iterator_range(
-          forward_trace_iterator(mp->current_position(), mp->end(), max_depth),
-          forward_trace_iterator()));
-    }
-    else
-    {
-      throw caching_disabled("displaying forward trace");
-    }
-  }
-
-  void mdb_shell::display_backtrace(iface::displayer& displayer_)
-  {
-    if (!mp)
-    {
-      displayer_.show_error("Metaprogram not evaluated yet");
-    }
-    else if (mp->is_finished() && !mp->get_evaluation_result().is_error())
-    {
-      display_metaprogram_finished(displayer_);
-    }
-    else
-    {
-      displayer_.show_backtrace(mp->get_backtrace());
-    }
-  }
-
-  void
-  mdb_shell::display_argument_parsing_failed(iface::displayer& displayer_) const
-  {
-    displayer_.show_error("Argument parsing failed");
-  }
-
-  void mdb_shell::display_metaprogram_reached_the_beginning(
-      iface::displayer& displayer_) const
-  {
-    displayer_.show_raw_text("Metaprogram reached the beginning");
-  }
-
-  void mdb_shell::display_metaprogram_finished(iface::displayer& displayer_)
-  {
-    displayer_.show_raw_text("Metaprogram finished");
-    displayer_.show_type_or_code_or_error(mp->get_evaluation_result());
-  }
-
-  void mdb_shell::display_movement_info(bool moved,
-                                        iface::displayer& displayer_)
-  {
-    if (mp->is_finished())
-    {
-      if (moved)
-      {
-        display_metaprogram_finished(displayer_);
-      }
-    }
-    else if (mp->is_at_start())
-    {
-      if (moved)
-      {
-        display_metaprogram_reached_the_beginning(displayer_);
-      }
-    }
-    else
-    {
-      display_current_frame(displayer_);
-    }
-  }
-
-  void mdb_shell::cancel_operation()
-  {
-    // TODO
-  }
-
-  void mdb_shell::code_complete(const std::string&, std::set<std::string>&)
-  {
-    // TODO
-  }
-
-  void mdb_shell::line_available(const std::string& line,
-                                 iface::displayer& displayer_)
-  {
-    null_history h;
-    line_available(line, displayer_, h);
   }
 }

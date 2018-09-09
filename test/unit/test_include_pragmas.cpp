@@ -37,10 +37,9 @@ namespace
   template <data::include_type Type>
   std::vector<std::vector<boost::filesystem::path>> pragma_includes_displays()
   {
-    in_memory_displayer d;
-    metashell::shell sh(
-        metashell::test_config(), "", "", "",
-        metashell::create_engine_with_include_path(Type, {"foo", "bar"}));
+    core::in_memory_displayer d;
+    core::shell sh(metashell::test_config(), "", "", "",
+                   core::create_engine_with_include_path(Type, {"foo", "bar"}));
     sh.line_available("#msh " + to_string(Type) + "includes", d);
 
     return d.filename_lists();

@@ -16,28 +16,32 @@
 
 #include <metashell/core/pragma_pp.hpp>
 
-using namespace metashell;
-
-pragma_pp::pragma_pp(shell& shell_) : _shell(shell_) {}
-
-iface::pragma_handler* pragma_pp::clone() const
+namespace metashell
 {
-  return new pragma_pp(_shell);
-}
+  namespace core
+  {
+    pragma_pp::pragma_pp(shell& shell_) : _shell(shell_) {}
 
-std::string pragma_pp::arguments() const { return "<exp>"; }
+    iface::pragma_handler* pragma_pp::clone() const
+    {
+      return new pragma_pp(_shell);
+    }
 
-std::string pragma_pp::description() const
-{
-  return "Displays the preprocessed expression.";
-}
+    std::string pragma_pp::arguments() const { return "<exp>"; }
 
-void pragma_pp::run(const data::command::iterator&,
-                    const data::command::iterator&,
-                    const data::command::iterator& args_begin_,
-                    const data::command::iterator& args_end_,
-                    iface::displayer& displayer_) const
-{
-  _shell.preprocess(
-      displayer_, tokens_to_string(args_begin_, args_end_), false);
+    std::string pragma_pp::description() const
+    {
+      return "Displays the preprocessed expression.";
+    }
+
+    void pragma_pp::run(const data::command::iterator&,
+                        const data::command::iterator&,
+                        const data::command::iterator& args_begin_,
+                        const data::command::iterator& args_end_,
+                        iface::displayer& displayer_) const
+    {
+      _shell.preprocess(
+          displayer_, tokens_to_string(args_begin_, args_end_), false);
+    }
+  }
 }

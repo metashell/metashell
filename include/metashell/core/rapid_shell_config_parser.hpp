@@ -27,30 +27,33 @@
 
 namespace metashell
 {
-  class rapid_shell_config_parser
-      : public rapid_handler<rapid_shell_config_parser, true>
+  namespace core
   {
-  public:
-    std::function<void(data::shell_config)> parsed_config_callback =
-        [](data::shell_config) { /* throw away */ };
+    class rapid_shell_config_parser
+        : public rapid_handler<rapid_shell_config_parser, true>
+    {
+    public:
+      std::function<void(data::shell_config)> parsed_config_callback =
+          [](data::shell_config) { /* throw away */ };
 
-    bool StartArray();
-    bool end_array();
+      bool StartArray();
+      bool end_array();
 
-    bool StartObject();
-    bool end_object();
+      bool StartObject();
+      bool end_object();
 
-    bool key(const std::string& str_);
+      bool key(const std::string& str_);
 
-    bool Bool(bool b_);
-    bool string(const std::string& str_);
+      bool Bool(bool b_);
+      bool string(const std::string& str_);
 
-  private:
-    bool _in_list = false;
-    boost::optional<data::shell_config> _config = boost::none;
-    boost::optional<std::string> _key = boost::none;
-    bool _in_engine_args = false;
-  };
+    private:
+      bool _in_list = false;
+      boost::optional<data::shell_config> _config = boost::none;
+      boost::optional<std::string> _key = boost::none;
+      bool _in_engine_args = false;
+    };
+  }
 }
 
 #endif

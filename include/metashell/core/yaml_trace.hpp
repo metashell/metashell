@@ -32,27 +32,30 @@
 
 namespace metashell
 {
-  class yaml_trace
+  namespace core
   {
-  public:
-    yaml_trace(const std::string& trace_,
-               data::type_or_code_or_error evaluation_result_,
-               data::cpp_code root_name_,
-               data::metaprogram_mode mode_);
+    class yaml_trace
+    {
+    public:
+      yaml_trace(const std::string& trace_,
+                 data::type_or_code_or_error evaluation_result_,
+                 data::cpp_code root_name_,
+                 data::metaprogram_mode mode_);
 
-    boost::optional<data::event_data> next();
+      boost::optional<data::event_data> next();
 
-    const data::cpp_code& root_name() const;
+      const data::cpp_code& root_name() const;
 
-    data::metaprogram_mode mode() const;
+      data::metaprogram_mode mode() const;
 
-  private:
-    std::vector<YAML::Node> _nodes;
-    std::vector<YAML::Node>::const_iterator _next;
-    boost::optional<data::event_data> _evaluation_result;
-    data::cpp_code _root_name;
-    data::metaprogram_mode _mode;
-  };
+    private:
+      std::vector<YAML::Node> _nodes;
+      std::vector<YAML::Node>::const_iterator _next;
+      boost::optional<data::event_data> _evaluation_result;
+      data::cpp_code _root_name;
+      data::metaprogram_mode _mode;
+    };
+  }
 }
 
 #endif

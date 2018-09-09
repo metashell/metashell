@@ -28,13 +28,13 @@ TEST(stream_console, width_is_max_int)
 {
   std::ostringstream s;
 
-  ASSERT_EQ(std::numeric_limits<int>::max(), stream_console(s).width());
+  ASSERT_EQ(std::numeric_limits<int>::max(), core::stream_console(s).width());
 }
 
 TEST(stream_console, displaying_new_line)
 {
   std::ostringstream s1;
-  stream_console(s1).new_line();
+  core::stream_console(s1).new_line();
 
   std::ostringstream s2;
   s2 << std::endl;
@@ -45,7 +45,7 @@ TEST(stream_console, displaying_new_line)
 TEST(stream_console, text_is_displayed_without_color)
 {
   std::ostringstream s;
-  stream_console(s).show(data::colored_string("hello", data::color::red));
+  core::stream_console(s).show(data::colored_string("hello", data::color::red));
 
   ASSERT_EQ("hello", s.str());
 }

@@ -18,18 +18,21 @@
 
 namespace metashell
 {
-  preprocessor_shell_vc::preprocessor_shell_vc(vc_binary vc_binary_)
-    : _vc_binary(vc_binary_)
+  namespace core
   {
-  }
+    preprocessor_shell_vc::preprocessor_shell_vc(vc_binary vc_binary_)
+      : _vc_binary(vc_binary_)
+    {
+    }
 
-  data::result preprocessor_shell_vc::precompile(const data::cpp_code& exp_)
-  {
-    const data::process_output output = run_vc(_vc_binary, {"/E"}, exp_);
+    data::result preprocessor_shell_vc::precompile(const data::cpp_code& exp_)
+    {
+      const data::process_output output = run_vc(_vc_binary, {"/E"}, exp_);
 
-    const bool success = output.exit_code == data::exit_code_t(0);
+      const bool success = output.exit_code == data::exit_code_t(0);
 
-    return data::result{success, success ? output.standard_output : "",
-                        success ? "" : vc_error_report_on_stderr(output), ""};
+      return data::result{success, success ? output.standard_output : "",
+                          success ? "" : vc_error_report_on_stderr(output), ""};
+    }
   }
 }

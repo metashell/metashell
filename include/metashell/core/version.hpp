@@ -21,7 +21,10 @@
 
 namespace metashell
 {
-  std::string version();
+  namespace core
+  {
+    std::string version();
+  }
 }
 
 #endif

@@ -31,33 +31,39 @@
 
 namespace metashell
 {
-  class vc_binary : public iface::executable
+  namespace core
   {
-  public:
-    vc_binary(boost::filesystem::path cl_path_,
-              std::vector<std::string> base_args_,
-              boost::filesystem::path temp_dir_,
-              logger* logger_);
+    class vc_binary : public iface::executable
+    {
+    public:
+      vc_binary(boost::filesystem::path cl_path_,
+                std::vector<std::string> base_args_,
+                boost::filesystem::path temp_dir_,
+                logger* logger_);
 
-    virtual data::process_output run(const std::vector<std::string>& args_,
-                                     const std::string& stdin_) const override;
+      virtual data::process_output
+      run(const std::vector<std::string>& args_,
+          const std::string& stdin_) const override;
 
-    const boost::filesystem::path& temp_dir() const;
-    const std::vector<std::string>& base_args() const;
+      const boost::filesystem::path& temp_dir() const;
+      const std::vector<std::string>& base_args() const;
 
-  private:
-    boost::filesystem::path _cl_path;
-    std::vector<std::string> _base_args;
-    boost::filesystem::path _temp_dir;
-    logger* _logger;
-  };
+    private:
+      boost::filesystem::path _cl_path;
+      std::vector<std::string> _base_args;
+      boost::filesystem::path _temp_dir;
+      logger* _logger;
+    };
 
-  data::process_output run_vc(const vc_binary& vc_binary_,
-                              std::vector<std::string> vc_args_,
-                              const data::cpp_code& input_);
+    data::process_output run_vc(const vc_binary& vc_binary_,
+                                std::vector<std::string> vc_args_,
+                                const data::cpp_code& input_);
 
-  std::string vc_error_report_on_stdout(const data::process_output& vc_output_);
-  std::string vc_error_report_on_stderr(const data::process_output& vc_output_);
+    std::string
+    vc_error_report_on_stdout(const data::process_output& vc_output_);
+    std::string
+    vc_error_report_on_stderr(const data::process_output& vc_output_);
+  }
 }
 
 #endif

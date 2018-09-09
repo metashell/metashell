@@ -25,55 +25,59 @@
 
 namespace metashell
 {
-  template <class Events>
-  class filter_unwrap_vertices_t
+  namespace core
   {
-  public:
-    explicit filter_unwrap_vertices_t(Events&& events_)
-      : _events(std::move(events_))
+    template <class Events>
+    class filter_unwrap_vertices_t
     {
-    }
-
-    boost::optional<data::event_data> next()
-    {
-      boost::optional<data::event_data> event = _events.next();
-
-      if (event)
+    public:
+      explicit filter_unwrap_vertices_t(Events&& events_)
+        : _events(std::move(events_))
       {
-        if (const boost::optional<data::type> type = type_of(*event))
+      }
+
+      boost::optional<data::event_data> next()
+      {
+        boost::optional<data::event_data> event = _events.next();
+
+        if (event)
         {
-          if (const auto t = trim_wrap_type(*type))
+          if (const boost::optional<data::type> type = type_of(*event))
           {
-            if (is_template_type(*t))
+            if (const auto t = trim_wrap_type(*type))
             {
-              set_type(*event, *t);
-            }
-            else
-            {
-              // All of the below optionals are expected to hold a value
-              event = data::event_details<data::event_kind::non_template_type>{
-                  {*t, *point_of_event(*event), *source_location(*event)},
-                  *timestamp(*event)};
+              if (is_template_type(*t))
+              {
+                set_type(*event, *t);
+              }
+              else
+              {
+                // All of the below optionals are expected to hold a value
+                event =
+                    data::event_details<data::event_kind::non_template_type>{
+                        {*t, *point_of_event(*event), *source_location(*event)},
+                        *timestamp(*event)};
+              }
             }
           }
         }
+
+        return event;
       }
 
-      return event;
+      data::cpp_code root_name() const { return _events.root_name(); }
+
+      data::metaprogram_mode mode() const { return _events.mode(); }
+
+    private:
+      Events _events;
+    };
+
+    template <class Events>
+    filter_unwrap_vertices_t<Events> filter_unwrap_vertices(Events&& events_)
+    {
+      return filter_unwrap_vertices_t<Events>(std::move(events_));
     }
-
-    data::cpp_code root_name() const { return _events.root_name(); }
-
-    data::metaprogram_mode mode() const { return _events.mode(); }
-
-  private:
-    Events _events;
-  };
-
-  template <class Events>
-  filter_unwrap_vertices_t<Events> filter_unwrap_vertices(Events&& events_)
-  {
-    return filter_unwrap_vertices_t<Events>(std::move(events_));
   }
 }
 

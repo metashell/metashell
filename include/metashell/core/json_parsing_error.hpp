@@ -21,10 +21,13 @@
 
 namespace metashell
 {
-  struct json_parsing_error : exception
+  namespace core
   {
-    explicit json_parsing_error(const std::string& msg_);
-  };
+    struct json_parsing_error : exception
+    {
+      explicit json_parsing_error(const std::string& msg_);
+    };
+  }
 }
 
 #endif

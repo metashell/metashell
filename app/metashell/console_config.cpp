@@ -57,9 +57,9 @@ namespace
     switch (type_)
     {
     case data::console_type::plain:
-      return metashell::make_unique<stream_console>(std::cout);
+      return metashell::core::make_unique<core::stream_console>(std::cout);
     case data::console_type::readline:
-      return make_unique<stdout_console>();
+      return core::make_unique<core::stdout_console>();
     case data::console_type::json:
       return nullptr;
     }
@@ -76,7 +76,7 @@ namespace
     case data::console_type::readline:
       return nullptr;
     case data::console_type::json:
-      return metashell::make_unique<rapid_json_writer>(std::cout);
+      return metashell::core::make_unique<core::rapid_json_writer>(std::cout);
     }
     return nullptr;
   }
@@ -91,12 +91,13 @@ namespace
     switch (type_)
     {
     case data::console_type::plain:
-      return make_unique<console_displayer>(*console_, false, false);
+      return core::make_unique<core::console_displayer>(
+          *console_, false, false);
     case data::console_type::readline:
-      return make_unique<console_displayer>(
+      return core::make_unique<core::console_displayer>(
           *console_, indent_, syntax_highlight_);
     case data::console_type::json:
-      return make_unique<json_displayer>(*json_writer_);
+      return core::make_unique<core::json_displayer>(*json_writer_);
     }
     return nullptr;
   }
@@ -106,19 +107,20 @@ namespace
     switch (type_)
     {
     case data::console_type::plain:
-      return make_unique<null_history>();
+      return core::make_unique<core::null_history>();
     case data::console_type::readline:
-      return make_unique<readline::history>();
+      return core::make_unique<readline::history>();
     case data::console_type::json:
-      return make_unique<null_history>();
+      return core::make_unique<core::null_history>();
     }
     return nullptr;
   }
 
-  line_reader create_reader(data::console_type type_,
-                            iface::displayer* displayer_,
-                            iface::json_writer* json_writer_,
-                            command_processor_queue& processor_queue_)
+  core::line_reader
+  create_reader(data::console_type type_,
+                iface::displayer* displayer_,
+                iface::json_writer* json_writer_,
+                core::command_processor_queue& processor_queue_)
   {
     switch (type_)
     {
@@ -153,9 +155,9 @@ iface::displayer& console_config::displayer() { return *_displayer; }
 
 iface::history& console_config::history() { return *_history; }
 
-line_reader& console_config::reader() { return _reader; }
+core::line_reader& console_config::reader() { return _reader; }
 
-command_processor_queue& console_config::processor_queue()
+core::command_processor_queue& console_config::processor_queue()
 {
   return _processor_queue;
 }

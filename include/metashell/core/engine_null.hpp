@@ -21,7 +21,10 @@
 
 namespace metashell
 {
-  engine_entry get_engine_null_entry();
+  namespace core
+  {
+    engine_entry get_engine_null_entry();
+  }
 }
 
 #endif

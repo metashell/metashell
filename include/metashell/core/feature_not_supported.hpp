@@ -23,14 +23,17 @@
 
 namespace metashell
 {
-  template <class Feature>
-  struct feature_not_supported : some_feature_not_supported
+  namespace core
   {
-    explicit feature_not_supported(const std::string& engine_name_)
-      : some_feature_not_supported(engine_name_, Feature::name_of_feature())
+    template <class Feature>
+    struct feature_not_supported : some_feature_not_supported
     {
-    }
-  };
+      explicit feature_not_supported(const std::string& engine_name_)
+        : some_feature_not_supported(engine_name_, Feature::name_of_feature())
+      {
+      }
+    };
+  }
 }
 
 #endif

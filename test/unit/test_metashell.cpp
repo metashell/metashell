@@ -22,62 +22,62 @@ using namespace metashell;
 
 TEST(metashell, repair_string_type_1)
 {
-  ASSERT_EQ("bool", repair_type_string("_Bool"));
+  ASSERT_EQ("bool", core::repair_type_string("_Bool"));
 }
 
 TEST(metashell, repair_string_type_2)
 {
-  ASSERT_EQ("<bool", repair_type_string("<_Bool"));
+  ASSERT_EQ("<bool", core::repair_type_string("<_Bool"));
 }
 
 TEST(metashell, repair_string_type_3)
 {
-  ASSERT_EQ("bool>", repair_type_string("_Bool>"));
+  ASSERT_EQ("bool>", core::repair_type_string("_Bool>"));
 }
 
 TEST(metashell, repair_string_type_4)
 {
-  ASSERT_EQ(" bool>", repair_type_string(" _Bool>"));
+  ASSERT_EQ(" bool>", core::repair_type_string(" _Bool>"));
 }
 
 TEST(metashell, repair_string_type_5)
 {
-  ASSERT_EQ("a_Bool", repair_type_string("a_Bool"));
+  ASSERT_EQ("a_Bool", core::repair_type_string("a_Bool"));
 }
 
 TEST(metashell, repair_string_type_6)
 {
-  ASSERT_EQ("_Boola", repair_type_string("_Boola"));
+  ASSERT_EQ("_Boola", core::repair_type_string("_Boola"));
 }
 
 TEST(metashell, repair_string_type_7)
 {
-  ASSERT_EQ("b_Boola", repair_type_string("b_Boola"));
+  ASSERT_EQ("b_Boola", core::repair_type_string("b_Boola"));
 }
 
 TEST(metashell, repair_string_type_8)
 {
-  ASSERT_EQ("X", repair_type_string("struct X"));
+  ASSERT_EQ("X", core::repair_type_string("struct X"));
 }
 
 TEST(metashell, repair_string_type_9)
 {
-  ASSERT_EQ("X", repair_type_string("class X"));
+  ASSERT_EQ("X", core::repair_type_string("class X"));
 }
 
 TEST(metashell, repair_string_type_10)
 {
-  ASSERT_EQ("X", repair_type_string("union X"));
+  ASSERT_EQ("X", core::repair_type_string("union X"));
 }
 
 TEST(metashell, repair_string_type_11)
 {
-  ASSERT_EQ("X", repair_type_string("enum X"));
+  ASSERT_EQ("X", core::repair_type_string("enum X"));
 }
 
 TEST(metashell, repair_string_type_12)
 {
-  ASSERT_EQ("X<Y>", repair_type_string("struct X<struct Y>"));
+  ASSERT_EQ("X<Y>", core::repair_type_string("struct X<struct Y>"));
 }
 
 TEST(metashell, type_from_ast_string_int)
@@ -88,7 +88,7 @@ TranslationUnitDecl 0x7feb540124c0 <<invalid sloc>> <invalid sloc>
 | `-CXXConstructExpr 0x7feb5300cbb8 <col:59> '::metashell::impl::wrap< ::metashell::format<int>::type>':'struct metashell::impl::wrap<int>' 'void (void) noexcept'
 `-<undeserialized declarations>
 )";
-  ASSERT_EQ("int", get_type_from_ast_string(ast));
+  ASSERT_EQ("int", core::get_type_from_ast_string(ast));
 }
 
 TEST(metashell, type_from_ast_string_int_no_noexcept)
@@ -99,7 +99,7 @@ TranslationUnitDecl 0x7feb540124c0 <<invalid sloc>> <invalid sloc>
 | `-CXXConstructExpr 0x7feb5300cbb8 <col:59> '::metashell::impl::wrap< ::metashell::format<int>::type>':'struct metashell::impl::wrap<int>' 'void (void)'
 `-<undeserialized declarations>
 )";
-  ASSERT_EQ("int", get_type_from_ast_string(ast));
+  ASSERT_EQ("int", core::get_type_from_ast_string(ast));
 }
 
 TEST(metashell, type_from_ast_string_bool)
@@ -110,7 +110,7 @@ TranslationUnitDecl 0x7f9c5c8278c0 <<invalid sloc>> <invalid sloc>
 | `-CXXConstructExpr 0x7f9c5d0009b8 <col:60> '::metashell::impl::wrap< ::metashell::format<_Bool>::type>':'struct metashell::impl::wrap<_Bool>' 'void (void) noexcept'
 `-<undeserialized declarations>
 )";
-  ASSERT_EQ("bool", get_type_from_ast_string(ast));
+  ASSERT_EQ("bool", core::get_type_from_ast_string(ast));
 }
 
 TEST(metashell, type_from_ast_string_int_int_struct)
@@ -121,7 +121,7 @@ TranslationUnitDecl 0x7f9cca00eac0 <<invalid sloc>> <invalid sloc>
 | `-CXXConstructExpr 0x7f9cca020518 <col:65> '::metashell::impl::wrap< ::metashell::format<int_<int> >::type>':'struct metashell::impl::wrap<struct int_<int> >' 'void (void) noexcept'
 `-<undeserialized declarations>
 )";
-  ASSERT_EQ("int_<int>", get_type_from_ast_string(ast));
+  ASSERT_EQ("int_<int>", core::get_type_from_ast_string(ast));
 }
 
 TEST(metashell, type_from_ast_string_int_int_class)
@@ -132,7 +132,7 @@ TranslationUnitDecl 0x7f9cca00eac0 <<invalid sloc>> <invalid sloc>
 | `-CXXConstructExpr 0x7f9cca020518 <col:65> '::metashell::impl::wrap< ::metashell::format<int_<int> >::type>':'struct metashell::impl::wrap<class int_<int> >' 'void (void) noexcept'
 `-<undeserialized declarations>
 )";
-  ASSERT_EQ("int_<int>", get_type_from_ast_string(ast));
+  ASSERT_EQ("int_<int>", core::get_type_from_ast_string(ast));
 }
 
 TEST(metashell, type_from_ast_string_enum)
@@ -143,7 +143,7 @@ TranslationUnitDecl 0x7fb81c0278c0 <<invalid sloc>> <invalid sloc>
 | `-CXXConstructExpr 0x7fb81d802908 <col:57> '::metashell::impl::wrap< ::metashell::format<X>::type>':'struct metashell::impl::wrap<enum X>' 'void (void) noexcept'
 `-<undeserialized declarations>
 )";
-  ASSERT_EQ("X", get_type_from_ast_string(ast));
+  ASSERT_EQ("X", core::get_type_from_ast_string(ast));
 }
 
 TEST(metashell, type_from_ast_string_union)
@@ -154,7 +154,7 @@ TranslationUnitDecl 0x7fd6c3031cc0 <<invalid sloc>> <invalid sloc>
 | `-CXXConstructExpr 0x7fd6c304e508 <col:57> '::metashell::impl::wrap< ::metashell::format<X>::type>':'struct metashell::impl::wrap<union X>' 'void (void) noexcept'
 `-<undeserialized declarations>
 )";
-  ASSERT_EQ("X", get_type_from_ast_string(ast));
+  ASSERT_EQ("X", core::get_type_from_ast_string(ast));
 }
 
 // This happens on windows
@@ -166,7 +166,7 @@ TranslationUnitDecl 0x7feb540124c0 <<invalid sloc>> <invalid sloc>
 | `-CXXConstructExpr 0x7feb5300cbb8 <col:59> '::metashell::impl::wrap< ::metashell::format<int>::type>':'struct metashell::impl::wrap<int>' 'void (void) __attribute__((thiscall)) noexcept'
 `-<undeserialized declarations>
 )";
-  ASSERT_EQ("int", get_type_from_ast_string(ast));
+  ASSERT_EQ("int", core::get_type_from_ast_string(ast));
 }
 
 TEST(metashell, type_from_ast_string_with_extra_trailing_lines)
@@ -190,7 +190,7 @@ TranslationUnitDecl 0x7fee54031cc0 <<invalid sloc>> <invalid sloc>
       "9223372036854775807, 9223372036854775807, 9223372036854775807, "
       "9223372036854775807, 9223372036854775807, 9223372036854775807, "
       "9223372036854775807>",
-      get_type_from_ast_string(ast));
+      core::get_type_from_ast_string(ast));
 }
 
 TEST(metashell, type_from_ast_string_no_pch)
@@ -266,5 +266,5 @@ TranslationUnitDecl 0x7febd883d2c0 <<invalid sloc>> <invalid sloc>
 `-VarDecl 0x7febd8881a30 <<stdin>:2:1, col:59> col:59 __metashell_v '::metashell::impl::wrap< ::metashell::format<int>::type>':'struct metashell::impl::wrap<int>' callinit
   `-CXXConstructExpr 0x7febd8881ad8 <col:59> '::metashell::impl::wrap< ::metashell::format<int>::type>':'struct metashell::impl::wrap<int>' 'void (void) noexcept'
 )";
-  ASSERT_EQ("int", get_type_from_ast_string(ast));
+  ASSERT_EQ("int", core::get_type_from_ast_string(ast));
 }

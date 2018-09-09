@@ -36,24 +36,24 @@ namespace
 
 TEST(pragma, parse)
 {
-  ASSERT_TRUE(bool(parse_pragma(command("#pragma metashell foo"))));
+  ASSERT_TRUE(bool(core::parse_pragma(command("#pragma metashell foo"))));
 }
 
-TEST(pragma, parse_no_pragma) { ASSERT_FALSE(parse_pragma(command(""))); }
+TEST(pragma, parse_no_pragma) { ASSERT_FALSE(core::parse_pragma(command(""))); }
 
 TEST(pragma, parse_with_inital_whitespace)
 {
-  ASSERT_TRUE(bool(parse_pragma(command(" \t #pragma metashell foo"))));
+  ASSERT_TRUE(bool(core::parse_pragma(command(" \t #pragma metashell foo"))));
 }
 
 TEST(pragma, whitespace_is_not_pragma)
 {
-  ASSERT_FALSE(parse_pragma(command(" ")));
+  ASSERT_FALSE(core::parse_pragma(command(" ")));
 }
 
 TEST(pragma, gcc_pragma_is_not_metashell_pragma)
 {
-  ASSERT_FALSE(parse_pragma(command("#pragma gcc foo")));
+  ASSERT_FALSE(core::parse_pragma(command("#pragma gcc foo")));
 }
 
 TEST(pragma, name_of_pragma)
@@ -61,8 +61,8 @@ TEST(pragma, name_of_pragma)
   const data::command c_foo = command("#pragma metashell foo");
   const data::command c_bar = command("#pragma metashell bar");
 
-  const data::command::iterator op_foo = *parse_pragma(c_foo),
-                                op_bar = *parse_pragma(c_bar);
+  const data::command::iterator op_foo = *core::parse_pragma(c_foo),
+                                op_bar = *core::parse_pragma(c_bar);
 
   ASSERT_EQ("foo", op_foo->value());
   ASSERT_EQ("bar", op_bar->value());
@@ -70,34 +70,34 @@ TEST(pragma, name_of_pragma)
 
 TEST(pragma, name_of_pragma_is_not_a_literal)
 {
-  ASSERT_ANY_THROW(parse_pragma(command("#pragma metashell 13")));
+  ASSERT_ANY_THROW(core::parse_pragma(command("#pragma metashell 13")));
 }
 
 TEST(pragma, name_of_pragma_is_missing)
 {
-  ASSERT_ANY_THROW(parse_pragma(command("#pragma metashell")));
+  ASSERT_ANY_THROW(core::parse_pragma(command("#pragma metashell")));
 }
 
 TEST(pragma, help_pragma_displays_message)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("#pragma metashell help", d);
   ASSERT_FALSE(d.comments().empty());
 }
 
 TEST(pragma, error_for_non_existing_pragma)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("#pragma metashell foo_bar", d);
   ASSERT_FALSE(d.errors().empty());
 }
 
 TEST(pragma, check_verbosity)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("#pragma metashell verbose", d);
   ASSERT_EQ(
       std::vector<data::text>{data::text("verbose mode is off")}, d.comments());
@@ -105,8 +105,8 @@ TEST(pragma, check_verbosity)
 
 TEST(pragma, check_enabling_verbosity)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("#pragma metashell verbose on", d);
   ASSERT_EQ(
       std::vector<data::text>{data::text("verbose mode is on")}, d.comments());
@@ -114,8 +114,8 @@ TEST(pragma, check_enabling_verbosity)
 
 TEST(pragma, pragma_metashell_does_not_kill_the_shell)
 {
-  null_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::null_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
 
   // should not throw
   sh.line_available("#pragma metashell", d);
@@ -123,29 +123,29 @@ TEST(pragma, pragma_metashell_does_not_kill_the_shell)
 
 TEST(pragma, quit)
 {
-  in_memory_displayer d;
-  shell sh(test_config(), "", "", "", create_failing_engine());
+  core::in_memory_displayer d;
+  core::shell sh(test_config(), "", "", "", core::create_failing_engine());
   sh.line_available("#pragma metashell quit", d);
   ASSERT_TRUE(sh.stopped());
 }
 
 TEST(pragma, accept_pound_msh_as_pragma_metashell)
 {
-  ASSERT_TRUE(bool(parse_pragma(command("#msh foo"))));
-  ASSERT_TRUE(bool(parse_pragma(command("# msh foo"))));
-  ASSERT_TRUE(bool(parse_pragma(command(" # msh foo"))));
+  ASSERT_TRUE(bool(core::parse_pragma(command("#msh foo"))));
+  ASSERT_TRUE(bool(core::parse_pragma(command("# msh foo"))));
+  ASSERT_TRUE(bool(core::parse_pragma(command(" # msh foo"))));
 }
 
 TEST(pragma, accept_pound_metashell_as_pragma_metashell)
 {
-  ASSERT_TRUE(bool(parse_pragma(command("#metashell foo"))));
-  ASSERT_TRUE(bool(parse_pragma(command("# metashell foo"))));
-  ASSERT_TRUE(bool(parse_pragma(command(" # metashell foo"))));
+  ASSERT_TRUE(bool(core::parse_pragma(command("#metashell foo"))));
+  ASSERT_TRUE(bool(core::parse_pragma(command("# metashell foo"))));
+  ASSERT_TRUE(bool(core::parse_pragma(command(" # metashell foo"))));
 }
 
 TEST(pragma, accept_pragma_msh_as_pragma_metashell)
 {
-  ASSERT_TRUE(bool(parse_pragma(command("#pragma msh foo"))));
-  ASSERT_TRUE(bool(parse_pragma(command("# pragma msh foo"))));
-  ASSERT_TRUE(bool(parse_pragma(command(" # pragma msh foo"))));
+  ASSERT_TRUE(bool(core::parse_pragma(command("#pragma msh foo"))));
+  ASSERT_TRUE(bool(core::parse_pragma(command("# pragma msh foo"))));
+  ASSERT_TRUE(bool(core::parse_pragma(command(" # pragma msh foo"))));
 }

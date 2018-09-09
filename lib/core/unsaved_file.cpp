@@ -21,21 +21,25 @@
 
 #include <fstream>
 
-using namespace metashell;
-
-void metashell::data::generate(const data::unsaved_file& f_)
+namespace metashell
 {
-  boost::filesystem::path p(f_.filename());
-  p.remove_filename();
-  create_directories(p); // Throws when fails to create the directory
-  const std::string filename = f_.filename().string();
-  std::ofstream f(filename.c_str());
-  if (f)
+  namespace core
   {
-    f << f_.content();
-  }
-  else
-  {
-    throw exception("Error creating file " + filename);
+    void generate(const data::unsaved_file& f_)
+    {
+      boost::filesystem::path p(f_.filename());
+      p.remove_filename();
+      create_directories(p); // Throws when fails to create the directory
+      const std::string filename = f_.filename().string();
+      std::ofstream f(filename.c_str());
+      if (f)
+      {
+        f << f_.content();
+      }
+      else
+      {
+        throw exception("Error creating file " + filename);
+      }
+    }
   }
 }

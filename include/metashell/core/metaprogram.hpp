@@ -41,109 +41,112 @@
 
 namespace metashell
 {
-  class metaprogram
+  namespace core
   {
-  public:
-    typedef debugger_history::size_type size_type;
-
-    class iterator
-        : boost::random_access_iteratable<iterator,
-                                          const data::debugger_event*,
-                                          std::ptrdiff_t,
-                                          data::debugger_event&>
+    class metaprogram
     {
     public:
-      typedef std::input_iterator_tag iterator_category;
-      typedef const data::debugger_event value_type;
-      typedef std::ptrdiff_t difference_type;
-      typedef value_type* pointer;
-      typedef value_type& reference;
+      typedef debugger_history::size_type size_type;
 
-      explicit iterator(metaprogram& mp_);
-      iterator(metaprogram& mp_, metaprogram::size_type at_);
+      class iterator
+          : boost::random_access_iteratable<iterator,
+                                            const data::debugger_event*,
+                                            std::ptrdiff_t,
+                                            data::debugger_event&>
+      {
+      public:
+        typedef std::input_iterator_tag iterator_category;
+        typedef const data::debugger_event value_type;
+        typedef std::ptrdiff_t difference_type;
+        typedef value_type* pointer;
+        typedef value_type& reference;
 
-      reference operator*() const;
+        explicit iterator(metaprogram& mp_);
+        iterator(metaprogram& mp_, metaprogram::size_type at_);
 
-      iterator& operator++();
-      iterator& operator--();
-      iterator& operator+=(difference_type n);
-      iterator& operator-=(difference_type n);
+        reference operator*() const;
 
-      bool operator==(const iterator& mi) const;
-      bool operator<(const iterator& mi) const;
+        iterator& operator++();
+        iterator& operator--();
+        iterator& operator+=(difference_type n);
+        iterator& operator-=(difference_type n);
 
-      reference operator[](difference_type n) const;
+        bool operator==(const iterator& mi) const;
+        bool operator<(const iterator& mi) const;
+
+        reference operator[](difference_type n) const;
+
+      private:
+        metaprogram* mp;
+        boost::optional<metaprogram::size_type> at;
+      };
+
+      friend iterator;
+
+      typedef iterator const_iterator;
+
+      metaprogram(std::unique_ptr<iface::event_data_sequence> trace,
+                  bool caching_enabled);
+
+      bool is_empty();
+
+      const data::type_or_code_or_error& get_evaluation_result();
+
+      data::metaprogram_mode get_mode() const;
+
+      bool is_at_endpoint(data::direction_t direction) const;
+      bool is_finished() const;
+      bool is_at_start() const;
+
+      void step(data::direction_t direction);
+      void step();
+      void step_back();
+
+      const data::frame& get_current_frame() const;
+      const data::backtrace& get_backtrace();
+
+      size_type size();
+
+      iterator begin(bool include_original_expression = true);
+      iterator current_position();
+      iterator end();
+
+      bool caching_enabled() const;
 
     private:
-      metaprogram* mp;
-      boost::optional<metaprogram::size_type> at;
+      std::unique_ptr<iface::event_data_sequence> event_source;
+      boost::optional<data::event_data> next_unread_event;
+
+      boost::optional<data::frame_only_event> current_frame;
+      bool read_open_or_flat = false;
+      bool has_unread_event = true;
+      size_type read_event_count = 1; // The root event
+      data::tree_depth tree_depth;
+
+      // using indices to avoid invalidation during copy/move
+      size_type next_event = 0;
+      boost::optional<data::backtrace> current_bt;
+      data::backtrace final_bt{true};
+
+      data::metaprogram_mode mode;
+
+      boost::optional<debugger_history> history;
+
+      data::type_or_code_or_error result;
+
+      void cache_current_frame();
+
+      boost::optional<data::debugger_event> read_next_event();
+
+      bool try_reading_until(
+          size_type pos,
+          boost::optional<data::debugger_event>* last_event_read_);
+
+      void read_remaining_events();
+
+      bool cached_ahead_of(size_type loc) const;
     };
-
-    friend iterator;
-
-    typedef iterator const_iterator;
-
-    metaprogram(std::unique_ptr<iface::event_data_sequence> trace,
-                bool caching_enabled);
-
-    bool is_empty();
-
-    const data::type_or_code_or_error& get_evaluation_result();
-
-    data::metaprogram_mode get_mode() const;
-
-    bool is_at_endpoint(data::direction_t direction) const;
-    bool is_finished() const;
-    bool is_at_start() const;
-
-    void step(data::direction_t direction);
-    void step();
-    void step_back();
-
-    const data::frame& get_current_frame() const;
-    const data::backtrace& get_backtrace();
-
-    size_type size();
-
-    iterator begin(bool include_original_expression = true);
-    iterator current_position();
-    iterator end();
-
-    bool caching_enabled() const;
-
-  private:
-    std::unique_ptr<iface::event_data_sequence> event_source;
-    boost::optional<data::event_data> next_unread_event;
-
-    boost::optional<data::frame_only_event> current_frame;
-    bool read_open_or_flat = false;
-    bool has_unread_event = true;
-    size_type read_event_count = 1; // The root event
-    data::tree_depth tree_depth;
-
-    // using indices to avoid invalidation during copy/move
-    size_type next_event = 0;
-    boost::optional<data::backtrace> current_bt;
-    data::backtrace final_bt{true};
-
-    data::metaprogram_mode mode;
-
-    boost::optional<debugger_history> history;
-
-    data::type_or_code_or_error result;
-
-    void cache_current_frame();
-
-    boost::optional<data::debugger_event> read_next_event();
-
-    bool
-    try_reading_until(size_type pos,
-                      boost::optional<data::debugger_event>* last_event_read_);
-
-    void read_remaining_events();
-
-    bool cached_ahead_of(size_type loc) const;
-  };
+  }
 }
 
 #endif

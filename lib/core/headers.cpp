@@ -17,12 +17,16 @@
 #include <metashell/core/headers.hpp>
 #include <metashell/core/unsaved_file.hpp>
 
-using namespace metashell;
-
-void metashell::data::generate(const headers& headers_)
+namespace metashell
 {
-  for (const unsaved_file& h : headers_)
+  namespace core
   {
-    generate(h);
+    void generate(const data::headers& headers_)
+    {
+      for (const data::unsaved_file& h : headers_)
+      {
+        generate(h);
+      }
+    }
   }
 }

@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/metaprogram.hpp>
 #include <metashell/core/event_data_sequence.hpp>
+#include <metashell/core/metaprogram.hpp>
 
 #include <metashell/data/in_memory_event_data_sequence.hpp>
 
@@ -33,7 +33,7 @@ namespace
   template <metaprogram_mode Mode>
   std::unique_ptr<iface::event_data_sequence> events()
   {
-    return make_event_data_sequence_ptr(in_memory_event_data_sequence(
+    return core::make_event_data_sequence_ptr(in_memory_event_data_sequence(
         cpp_code("some_type"), Mode,
         {event_details<event_kind::evaluation_end>{
             {type_or_code_or_error(type("the_result_type"))}}}));
@@ -60,7 +60,7 @@ namespace
 
 TEST(metaprogram, constructor)
 {
-  metaprogram mp(events<metaprogram_mode::normal>(), true);
+  core::metaprogram mp(events<metaprogram_mode::normal>(), true);
 
   ASSERT_EQ(mp.get_evaluation_result(),
             type_or_code_or_error(type("the_result_type")));
@@ -76,21 +76,21 @@ TEST(metaprogram, constructor)
 
 TEST(metaprogram, constructor_normal_mode)
 {
-  metaprogram mp(events<metaprogram_mode::normal>(), true);
+  core::metaprogram mp(events<metaprogram_mode::normal>(), true);
 
   ASSERT_EQ(mp.get_mode(), metaprogram_mode::normal);
 }
 
 TEST(metaprogram, constructor_full_mode)
 {
-  metaprogram mp(events<metaprogram_mode::full>(), true);
+  core::metaprogram mp(events<metaprogram_mode::full>(), true);
 
   ASSERT_EQ(mp.get_mode(), metaprogram_mode::full);
 }
 
 TEST(metaprogram, constructor_profile_mode)
 {
-  metaprogram mp(events<metaprogram_mode::profile>(), true);
+  core::metaprogram mp(events<metaprogram_mode::profile>(), true);
 
   ASSERT_EQ(mp.get_mode(), metaprogram_mode::profile);
 }
@@ -102,7 +102,7 @@ TEST(metaprogram, events_are_read_lazily)
   counting_event_data_sequence& in_seq = *in_seq_ptr;
 
   ASSERT_EQ(0, in_seq.next_called_times());
-  metaprogram mp(std::move(in_seq_ptr), true);
+  core::metaprogram mp(std::move(in_seq_ptr), true);
 
   ASSERT_EQ(1, in_seq.next_called_times());
 
@@ -132,13 +132,13 @@ TEST(metaprogram, metaprogram_iterator_reads_events_lazily)
   counting_event_data_sequence& in_seq = *in_seq_ptr;
 
   ASSERT_EQ(0, in_seq.next_called_times());
-  metaprogram mp(std::move(in_seq_ptr), true);
+  core::metaprogram mp(std::move(in_seq_ptr), true);
   ASSERT_EQ(1, in_seq.next_called_times());
 
-  metaprogram::iterator i = mp.begin();
+  core::metaprogram::iterator i = mp.begin();
   ASSERT_EQ(1, in_seq.next_called_times());
 
-  const metaprogram::iterator e = mp.end();
+  const core::metaprogram::iterator e = mp.end();
   ASSERT_EQ(1, in_seq.next_called_times());
 
   for (unsigned int j = 2; j != 6; ++j)
@@ -165,10 +165,10 @@ TEST(metaprogram, metaprogram_iterator_step_back_from_end_reads_everything)
   counting_event_data_sequence& in_seq = *in_seq_ptr;
 
   ASSERT_EQ(0, in_seq.next_called_times());
-  metaprogram mp(std::move(in_seq_ptr), true);
+  core::metaprogram mp(std::move(in_seq_ptr), true);
   ASSERT_EQ(1, in_seq.next_called_times());
 
-  metaprogram::iterator i = mp.end();
+  core::metaprogram::iterator i = mp.end();
   ASSERT_EQ(1, in_seq.next_called_times());
 
   --i;
@@ -177,9 +177,9 @@ TEST(metaprogram, metaprogram_iterator_step_back_from_end_reads_everything)
 
 TEST(metaprogram, profiling_information)
 {
-  metaprogram mp(build_counting_seq(metaprogram_mode::profile), true);
+  core::metaprogram mp(build_counting_seq(metaprogram_mode::profile), true);
 
-  metaprogram::iterator i = mp.begin();
+  core::metaprogram::iterator i = mp.begin();
   ASSERT_FALSE(i == mp.end());
 
   {

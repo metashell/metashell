@@ -16,22 +16,26 @@
 
 #include <metashell/core/pragma_macros.hpp>
 
-using namespace metashell;
-
-pragma_macros::pragma_macros(shell& shell_) : _shell(shell_) {}
-
-iface::pragma_handler* pragma_macros::clone() const
+namespace metashell
 {
-  return new pragma_macros(_shell);
-}
+  namespace core
+  {
+    pragma_macros::pragma_macros(shell& shell_) : _shell(shell_) {}
 
-std::string pragma_macros::description() const
-{
-  return "Displays the macro definitions";
-}
+    iface::pragma_handler* pragma_macros::clone() const
+    {
+      return new pragma_macros(_shell);
+    }
 
-void pragma_macros::run(iface::displayer& displayer_) const
-{
-  displayer_.show_cpp_code(
-      _shell.engine().macro_discovery().macros(_shell.env()));
+    std::string pragma_macros::description() const
+    {
+      return "Displays the macro definitions";
+    }
+
+    void pragma_macros::run(iface::displayer& displayer_) const
+    {
+      displayer_.show_cpp_code(
+          _shell.engine().macro_discovery().macros(_shell.env()));
+    }
+  }
 }

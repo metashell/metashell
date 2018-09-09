@@ -29,37 +29,41 @@
 
 namespace metashell
 {
-  class engine_entry
+  namespace core
   {
-  public:
-    engine_entry(engine_factory factory_,
-                 std::string args_,
-                 data::markdown_string description_,
-                 std::vector<data::feature> features_);
+    class engine_entry
+    {
+    public:
+      engine_entry(engine_factory factory_,
+                   std::string args_,
+                   data::markdown_string description_,
+                   std::vector<data::feature> features_);
 
-    std::unique_ptr<iface::engine>
-    build(const data::config& config_,
-          const boost::filesystem::path& internal_dir_,
-          const boost::filesystem::path& temp_dir_,
-          const boost::filesystem::path& env_filename_,
-          iface::environment_detector& env_detector_,
-          iface::displayer& displayer_,
-          logger* logger_) const;
+      std::unique_ptr<iface::engine>
+      build(const data::config& config_,
+            const boost::filesystem::path& internal_dir_,
+            const boost::filesystem::path& temp_dir_,
+            const boost::filesystem::path& env_filename_,
+            iface::environment_detector& env_detector_,
+            iface::displayer& displayer_,
+            logger* logger_) const;
 
-    const std::string& args() const;
-    const data::markdown_string& description() const;
+      const std::string& args() const;
+      const data::markdown_string& description() const;
 
-    const std::vector<data::feature>& features() const;
+      const std::vector<data::feature>& features() const;
 
-  private:
-    engine_factory _factory;
-    std::string _args;
-    data::markdown_string _description;
-    std::vector<data::feature> _features;
-  };
+    private:
+      engine_factory _factory;
+      std::string _args;
+      data::markdown_string _description;
+      std::vector<data::feature> _features;
+    };
 
-  std::string list_features(const engine_entry& engine_);
-  data::markdown_string list_features_in_markdown(const engine_entry& engine_);
+    std::string list_features(const engine_entry& engine_);
+    data::markdown_string
+    list_features_in_markdown(const engine_entry& engine_);
+  }
 }
 
 #endif

@@ -24,7 +24,10 @@
 
 namespace metashell
 {
-  std::map<std::string, engine_entry> available_engines();
+  namespace core
+  {
+    std::map<std::string, engine_entry> available_engines();
+  }
 }
 
 #endif

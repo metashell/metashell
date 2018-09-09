@@ -29,65 +29,70 @@
 
 namespace metashell
 {
-  template <class Events>
-  class filter_replay_instantiations_t
+  namespace core
   {
-  public:
-    explicit filter_replay_instantiations_t(
-        Events&& events_, boost::optional<data::file_location> from_)
-      : _events(std::move(events_)), _from(std::move(from_)), _replaying(false)
+    template <class Events>
+    class filter_replay_instantiations_t
     {
-    }
-
-    boost::optional<data::event_data> next()
-    {
-      boost::optional<data::event_data> event = _events.next();
-
-      if (_from && event)
+    public:
+      explicit filter_replay_instantiations_t(
+          Events&& events_, boost::optional<data::file_location> from_)
+        : _events(std::move(events_)),
+          _from(std::move(from_)),
+          _replaying(false)
       {
-        if (!_replaying && from_here(*event))
-        {
-          _replaying = true;
-        }
-        if (_replaying)
-        {
-          data::list<data::event_data> r = _cache.replay(*event);
-          event = std::move(r.head);
-          _events.queue(r.tail);
-          _cache.erase_related(*event);
-        }
-        else
-        {
-          _cache.record(*event);
-        }
       }
 
-      return event;
-    }
+      boost::optional<data::event_data> next()
+      {
+        boost::optional<data::event_data> event = _events.next();
 
-    data::cpp_code root_name() const { return _events.root_name(); }
+        if (_from && event)
+        {
+          if (!_replaying && from_here(*event))
+          {
+            _replaying = true;
+          }
+          if (_replaying)
+          {
+            data::list<data::event_data> r = _cache.replay(*event);
+            event = std::move(r.head);
+            _events.queue(r.tail);
+            _cache.erase_related(*event);
+          }
+          else
+          {
+            _cache.record(*event);
+          }
+        }
 
-    data::metaprogram_mode mode() const { return _events.mode(); }
+        return event;
+      }
 
-  private:
-    filter_with_queue<Events> _events;
-    boost::optional<data::file_location> _from;
-    bool _replaying;
-    event_cache _cache;
+      data::cpp_code root_name() const { return _events.root_name(); }
 
-    bool from_here(const data::event_data& event_) const
+      data::metaprogram_mode mode() const { return _events.mode(); }
+
+    private:
+      filter_with_queue<Events> _events;
+      boost::optional<data::file_location> _from;
+      bool _replaying;
+      event_cache _cache;
+
+      bool from_here(const data::event_data& event_) const
+      {
+        return !_from || from_line(event_, *_from);
+      }
+    };
+
+    template <class Events>
+    filter_replay_instantiations_t<Events>
+    filter_replay_instantiations(Events&& events_,
+                                 boost::optional<data::file_location> from_)
     {
-      return !_from || from_line(event_, *_from);
+      return filter_replay_instantiations_t<Events>(
+          std::move(events_), std::move(from_));
     }
-  };
-
-  template <class Events>
-  filter_replay_instantiations_t<Events>
-  filter_replay_instantiations(Events&& events_,
-                               boost::optional<data::file_location> from_)
-  {
-    return filter_replay_instantiations_t<Events>(
-        std::move(events_), std::move(from_));
   }
 }
 

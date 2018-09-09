@@ -36,12 +36,13 @@ namespace
   {
     bool was_called = false;
     bool arg = !ExpectedResult;
-    in_memory_displayer d;
+    core::in_memory_displayer d;
 
-    pragma_switch p("test", always<true>, [&was_called, &arg](bool value_) {
-      was_called = true;
-      arg = value_;
-    });
+    core::pragma_switch p(
+        "test", always<true>, [&was_called, &arg](bool value_) {
+          was_called = true;
+          arg = value_;
+        });
     run(p, data::cpp_code(arg_), d);
 
     ASSERT_TRUE(was_called);
@@ -60,9 +61,9 @@ TEST(pragma_switch, calls_updating_callback)
 
 TEST(pragma_switch, displays_error_when_extra_arguments_are_given)
 {
-  in_memory_displayer d;
+  core::in_memory_displayer d;
 
-  pragma_switch p("test", always<true>, [](bool) {});
+  core::pragma_switch p("test", always<true>, [](bool) {});
   run(p, data::cpp_code("on foo"), d);
 
   ASSERT_FALSE(d.errors().empty());
