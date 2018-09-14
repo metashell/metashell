@@ -1,5 +1,5 @@
-#ifndef METASHELL_READLINE_LINE_READER_HPP
-#define METASHELL_READLINE_LINE_READER_HPP
+#ifndef METASHELL_CORE_INPUT_LOOP_HPP
+#define METASHELL_CORE_INPUT_LOOP_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,14 +17,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/code_completer.hpp>
 #include <metashell/data/line_reader.hpp>
+
+#include <metashell/core/command_processor_queue.hpp>
+
+#include <metashell/iface/displayer.hpp>
 
 namespace metashell
 {
-  namespace readline
+  namespace core
   {
-    data::line_reader line_reader(const data::code_completer& completer_);
+    void input_loop(command_processor_queue& processor_queue_,
+                    iface::displayer& displayer_,
+                    const data::line_reader& line_reader_);
   }
 }
 

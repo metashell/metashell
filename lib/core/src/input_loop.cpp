@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/core/input_loop.hpp>
 #include <metashell/core/interrupt_handler_override.hpp>
-#include <metashell/core/line_reader.hpp>
 
 #include <cassert>
 
@@ -45,7 +45,7 @@ namespace metashell
 
     void input_loop(command_processor_queue& processor_queue_,
                     iface::displayer& displayer_,
-                    const line_reader& line_reader_)
+                    const data::line_reader& line_reader_)
     {
       single_entry_guard g;
 

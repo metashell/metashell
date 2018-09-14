@@ -22,11 +22,11 @@
 #include <metashell/core/metashell_pragma.hpp>
 #include <metashell/core/null_history.hpp>
 #include <metashell/core/shell.hpp>
-#include <metashell/core/to_string.hpp>
 #include <metashell/core/version.hpp>
 
 #include <metashell/data/command.hpp>
 #include <metashell/data/exception.hpp>
+#include <metashell/data/to_string.hpp>
 
 #include <algorithm>
 #include <cctype>

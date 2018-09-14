@@ -18,7 +18,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/core/command_processor_queue.hpp>
-#include <metashell/core/line_reader.hpp>
+
+#include <metashell/data/line_reader.hpp>
 
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/json_writer.hpp>
@@ -27,8 +28,8 @@ namespace metashell
 {
   namespace core
   {
-    line_reader
-    build_json_line_reader(const line_reader& line_reader_,
+    data::line_reader
+    build_json_line_reader(const data::line_reader& line_reader_,
                            iface::displayer& displayer_,
                            iface::json_writer& json_writer_,
                            command_processor_queue& command_processor_queue_);

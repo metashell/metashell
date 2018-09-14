@@ -18,9 +18,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/console_type.hpp>
+#include <metashell/data/line_reader.hpp>
 
 #include <metashell/core/command_processor_queue.hpp>
-#include <metashell/core/line_reader.hpp>
 
 #include <metashell/iface/console.hpp>
 #include <metashell/iface/displayer.hpp>
@@ -40,7 +40,7 @@ namespace metashell
 
     iface::displayer& displayer();
     iface::history& history();
-    core::line_reader& reader();
+    data::line_reader& reader();
     core::command_processor_queue& processor_queue();
 
   private:
@@ -49,7 +49,7 @@ namespace metashell
     std::unique_ptr<iface::json_writer> _json_writer;
     std::unique_ptr<iface::displayer> _displayer;
     std::unique_ptr<iface::history> _history;
-    core::line_reader _reader;
+    data::line_reader _reader;
   };
 }
 

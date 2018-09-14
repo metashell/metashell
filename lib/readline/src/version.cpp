@@ -16,7 +16,7 @@
 
 #include <metashell/readline/version.hpp>
 
-#include <metashell/core/to_string.hpp>
+#include <metashell/data/to_string.hpp>
 
 #ifdef USE_EDITLINE
 #include <editline/readline.h>

@@ -19,6 +19,7 @@
 #include <metashell/core/available_engines.hpp>
 #include <metashell/core/default_environment_detector.hpp>
 #include <metashell/core/fstream_file_writer.hpp>
+#include <metashell/core/input_loop.hpp>
 #include <metashell/core/logger.hpp>
 #include <metashell/core/make_unique.hpp>
 #include <metashell/core/parse_config.hpp>

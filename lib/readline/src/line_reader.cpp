@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/line_reader.hpp>
-
 #include <metashell/readline/line_reader.hpp>
 
 #ifdef USE_EDITLINE
@@ -27,6 +25,9 @@
 
 #include <algorithm>
 #include <cassert>
+#include <functional>
+#include <set>
+#include <string>
 
 namespace metashell
 {
@@ -36,8 +37,7 @@ namespace metashell
     {
       int completion_end = 0;
 
-      // not owning
-      core::command_processor_queue* processor_queue;
+      data::code_completer completer;
 
 #ifdef _WIN32
       template <class T>
@@ -69,7 +69,7 @@ namespace metashell
 
       char* tab_generator(const char* text_, int state_)
       {
-        assert(processor_queue != nullptr);
+        assert(bool(completer));
 
         static std::set<std::string> values;
         static std::set<std::string>::const_iterator pos;
@@ -79,8 +79,7 @@ namespace metashell
           const std::string edited_text = get_edited_text();
 
           const auto eb = edited_text.begin();
-          processor_queue->code_complete(
-              std::string(eb, eb + completion_end), values);
+          completer(std::string(eb, eb + completion_end), values);
           pos = values.begin();
         }
 
@@ -109,9 +108,9 @@ namespace metashell
 
       boost::optional<std::string>
       read_next_line(const std::string& prompt_,
-                     core::command_processor_queue& processor_queue_)
+                     const data::code_completer& completer_)
       {
-        processor_queue = &processor_queue_;
+        completer = completer_;
         rl_attempted_completion_function = tab_completion;
         rl_completion_append_character = '\0';
 
@@ -134,11 +133,10 @@ namespace metashell
       }
     }
 
-    core::line_reader
-    line_reader(core::command_processor_queue& processor_queue_)
+    data::line_reader line_reader(const data::code_completer& completer_)
     {
-      return [&processor_queue_](const std::string& prompt_) {
-        return read_next_line(prompt_ + " ", processor_queue_);
+      return [completer_](const std::string& prompt_) {
+        return read_next_line(prompt_ + " ", completer_);
       };
     }
   }

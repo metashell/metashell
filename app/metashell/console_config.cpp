@@ -116,7 +116,7 @@ namespace
     return nullptr;
   }
 
-  core::line_reader
+  data::line_reader
   create_reader(data::console_type type_,
                 iface::displayer* displayer_,
                 iface::json_writer* json_writer_,
@@ -127,7 +127,10 @@ namespace
     case data::console_type::plain:
       return plain_line_reader;
     case data::console_type::readline:
-      return metashell::readline::line_reader(processor_queue_);
+      return metashell::readline::line_reader([&processor_queue_](
+          const std::string& s_, std::set<std::string>& out_) {
+        processor_queue_.code_complete(s_, out_);
+      });
     case data::console_type::json:
       return build_json_line_reader(
           plain_line_reader, *displayer_, *json_writer_, processor_queue_);
@@ -155,7 +158,7 @@ iface::displayer& console_config::displayer() { return *_displayer; }
 
 iface::history& console_config::history() { return *_history; }
 
-core::line_reader& console_config::reader() { return _reader; }
+data::line_reader& console_config::reader() { return _reader; }
 
 core::command_processor_queue& console_config::processor_queue()
 {

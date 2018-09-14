@@ -33,7 +33,7 @@ TEST(json_line_reader, end_of_input)
   core::null_json_writer jw;
   core::null_displayer d;
   core::command_processor_queue cpq;
-  const core::line_reader r =
+  const data::line_reader r =
       build_json_line_reader(string_reader{}, d, jw, cpq);
 
   ASSERT_TRUE(boost::none == r(">"));
@@ -44,7 +44,7 @@ TEST(json_line_reader, empty_json)
   core::null_json_writer jw;
   core::null_displayer d;
   core::command_processor_queue cpq;
-  const core::line_reader r =
+  const data::line_reader r =
       build_json_line_reader(string_reader{""}, d, jw, cpq);
 
   const boost::optional<std::string> l = r(">");
@@ -58,7 +58,7 @@ TEST(json_line_reader, getting_line)
   core::null_json_writer jw;
   core::null_displayer d;
   core::command_processor_queue cpq;
-  const core::line_reader r = build_json_line_reader(
+  const data::line_reader r = build_json_line_reader(
       string_reader{"{\"type\":\"cmd\",\"cmd\":\"int\"}"}, d, jw, cpq);
 
   const boost::optional<std::string> l = r(">");
@@ -72,7 +72,7 @@ TEST(json_line_reader, rejected_json_is_skipped)
   core::null_json_writer jw;
   core::null_displayer d;
   core::command_processor_queue cpq;
-  const core::line_reader r = build_json_line_reader(
+  const data::line_reader r = build_json_line_reader(
       string_reader{"\"invalid_json\"", "{\"type\":\"cmd\",\"cmd\":\"int\"}"},
       d, jw, cpq);
 
@@ -87,7 +87,7 @@ TEST(json_line_reader, command_without_type)
   core::null_json_writer jw;
   core::in_memory_displayer d;
   core::command_processor_queue cpq;
-  const core::line_reader r = build_json_line_reader(
+  const data::line_reader r = build_json_line_reader(
       string_reader{"{}", "{\"type\":\"cmd\",\"cmd\":\"int\"}"}, d, jw, cpq);
 
   const boost::optional<std::string> l = r(">");
@@ -105,7 +105,7 @@ TEST(json_line_reader, command_of_unknown_type)
   core::null_json_writer jw;
   core::in_memory_displayer d;
   core::command_processor_queue cpq;
-  const core::line_reader r = build_json_line_reader(
+  const data::line_reader r = build_json_line_reader(
       string_reader{"{\"type\":\"some unknown type\"}",
                     "{\"type\":\"cmd\",\"cmd\":\"int\"}"},
       d, jw, cpq);
@@ -126,7 +126,7 @@ TEST(json_line_reader, cmd_command_without_cmd_field)
   core::null_json_writer jw;
   core::in_memory_displayer d;
   core::command_processor_queue cpq;
-  const core::line_reader r = build_json_line_reader(
+  const data::line_reader r = build_json_line_reader(
       string_reader{"{\"type\":\"cmd\"}", "{\"type\":\"cmd\",\"cmd\":\"int\"}"},
       d, jw, cpq);
 
@@ -148,7 +148,7 @@ TEST(json_line_reader, displays_prompt)
   core::null_displayer d;
   core::command_processor_queue cpq;
 
-  const core::line_reader r =
+  const data::line_reader r =
       build_json_line_reader(string_reader{}, d, w, cpq);
 
   {
@@ -171,7 +171,7 @@ TEST(json_line_reader, code_completion_without_code)
   core::null_json_writer jw;
   core::in_memory_displayer d;
   core::command_processor_queue cpq;
-  const core::line_reader r = build_json_line_reader(
+  const data::line_reader r = build_json_line_reader(
       string_reader{"{\"type\":\"code_completion\"}",
                     "{\"type\":\"cmd\",\"cmd\":\"int\"}"},
       d, jw, cpq);
@@ -201,7 +201,7 @@ TEST(json_line_reader, code_completion_gets_code_completion)
   core::command_processor_queue cpq;
   cpq.push(std::unique_ptr<iface::command_processor>(cp));
 
-  const core::line_reader r = build_json_line_reader(
+  const data::line_reader r = build_json_line_reader(
       string_reader{"{\"type\":\"code_completion\",\"code\":\"foo\"}"}, d, jw,
       cpq);
 
@@ -221,7 +221,7 @@ TEST(json_line_reader, code_completion_result)
   core::command_processor_queue cpq;
   cpq.push(std::unique_ptr<iface::command_processor>(cp));
 
-  const core::line_reader r = build_json_line_reader(
+  const data::line_reader r = build_json_line_reader(
       string_reader{"{\"type\":\"code_completion\",\"code\":\"foo\"}"}, d, w,
       cpq);
 

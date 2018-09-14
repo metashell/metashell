@@ -63,7 +63,7 @@ namespace metashell
       }
 
       boost::optional<std::string>
-      read_next_line(const line_reader& line_reader_,
+      read_next_line(const data::line_reader& line_reader_,
                      iface::json_writer& json_writer_,
                      const std::string& prompt_)
       {
@@ -72,7 +72,7 @@ namespace metashell
       }
 
       boost::optional<std::string>
-      json_line_reader(const line_reader& line_reader_,
+      json_line_reader(const data::line_reader& line_reader_,
                        iface::displayer& displayer_,
                        iface::json_writer& json_writer_,
                        command_processor_queue& command_processor_queue_,
@@ -135,8 +135,8 @@ namespace metashell
       }
     }
 
-    line_reader
-    build_json_line_reader(const line_reader& line_reader_,
+    data::line_reader
+    build_json_line_reader(const data::line_reader& line_reader_,
                            iface::displayer& displayer_,
                            iface::json_writer& json_writer_,
                            command_processor_queue& command_processor_queue_)

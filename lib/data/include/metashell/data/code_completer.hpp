@@ -1,8 +1,8 @@
-#ifndef METASHELL_LINE_READER_HPP
-#define METASHELL_LINE_READER_HPP
+#ifndef METASHELL_DATA_CODE_COMPLETER_HPP
+#define METASHELL_DATA_CODE_COMPLETER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,25 +17,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/command_processor_queue.hpp>
-
-#include <metashell/iface/displayer.hpp>
-
-#include <boost/optional.hpp>
-
 #include <functional>
+#include <set>
 #include <string>
 
 namespace metashell
 {
-  namespace core
+  namespace data
   {
-    typedef std::function<boost::optional<std::string>(const std::string&)>
-        line_reader;
-
-    void input_loop(command_processor_queue& processor_queue_,
-                    iface::displayer& displayer_,
-                    const line_reader& line_reader_);
+    typedef std::function<void(const std::string&, std::set<std::string>&)>
+        code_completer;
   }
 }
 
