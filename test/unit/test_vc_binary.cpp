@@ -14,8 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/exception.hpp>
 #include <metashell/core/vc_binary.hpp>
+
+#include <metashell/data/exception.hpp>
 
 #include <gtest/gtest.h>
 
@@ -56,14 +57,14 @@ TEST(test_vc_binary, test_vc_error_report)
 
 TEST(test_vc_binary, test_vc_error_report_not_supported)
 {
-  ASSERT_THROW(report_for("foo.cpp\nbar.cpp\n"), metashell::core::exception);
+  ASSERT_THROW(report_for("foo.cpp\nbar.cpp\n"), metashell::data::exception);
   ASSERT_THROW(
       report_for("foo.cpp\nfoo.cpp: error C1234: this is a problem.\n"),
-      metashell::core::exception);
+      metashell::data::exception);
   ASSERT_THROW(
       report_for("foo.cpp\nbar.cpp(1): error C1234: this is a problem.\n"),
-      metashell::core::exception);
+      metashell::data::exception);
   ASSERT_THROW(
       report_for("bar.cpp\nfoobar.cpp(1): error C1234: this is a problem.\n"),
-      metashell::core::exception);
+      metashell::data::exception);
 }

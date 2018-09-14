@@ -15,9 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/core/comment_json_writer.hpp>
-#include <metashell/core/exception.hpp>
 #include <metashell/core/pragma_config_load.hpp>
 #include <metashell/core/shell.hpp>
+
+#include <metashell/data/exception.hpp>
 
 #include <algorithm>
 
@@ -66,7 +67,7 @@ namespace metashell
 
       if (cfg == configs.end())
       {
-        throw exception("Config " + name + " not found.");
+        throw data::exception("Config " + name + " not found.");
       }
       else
       {

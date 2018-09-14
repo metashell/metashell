@@ -17,13 +17,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/exception.hpp>
+#include <metashell/data/exception.hpp>
 
 namespace metashell
 {
   namespace core
   {
-    struct json_parsing_error : exception
+    struct json_parsing_error : data::exception
     {
       explicit json_parsing_error(const std::string& msg_);
     };

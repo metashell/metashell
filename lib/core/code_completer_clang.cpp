@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/core/code_completer_clang.hpp>
+#include <metashell/core/command.hpp>
 #include <metashell/core/for_each_line.hpp>
 #include <metashell/core/source_position.hpp>
 #include <metashell/core/unsaved_file.hpp>
@@ -78,7 +79,7 @@ namespace metashell
       std::pair<std::string, std::string>
       find_completion_start(const std::string& s_)
       {
-        const data::command cmd{data::cpp_code(s_)};
+        const data::command cmd = to_command(data::cpp_code(s_));
 
         if (cmd.empty())
         {

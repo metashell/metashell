@@ -1,5 +1,5 @@
-#ifndef METASHELL_COMMAND_HPP
-#define METASHELL_COMMAND_HPP
+#ifndef METASHELL_DATA_COMMAND_HPP
+#define METASHELL_DATA_COMMAND_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -29,9 +29,9 @@ namespace metashell
     class command
     {
     public:
-      explicit command(const cpp_code& cmd_);
+      explicit command(std::vector<token> tokens_);
 
-      typedef std::vector<data::token>::const_iterator iterator;
+      typedef std::vector<token>::const_iterator iterator;
       typedef iterator const_iterator;
 
       iterator begin() const;
@@ -41,8 +41,7 @@ namespace metashell
       int size() const;
 
     private:
-      cpp_code _cmd;
-      std::vector<data::token> _tokens;
+      std::vector<token> _tokens;
     };
 
     command::iterator skip(command::iterator i_);
@@ -51,8 +50,8 @@ namespace metashell
     command::iterator skip_all_whitespace(const command::iterator& begin_,
                                           const command::iterator& end_);
 
-    data::cpp_code tokens_to_string(command::iterator begin_,
-                                    const command::iterator& end_);
+    cpp_code tokens_to_string(command::iterator begin_,
+                              const command::iterator& end_);
   }
 }
 

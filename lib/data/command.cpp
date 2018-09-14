@@ -16,8 +16,6 @@
 
 #include <metashell/data/command.hpp>
 
-#include <metashell/core/wave_tokeniser.hpp>
-
 #include <algorithm>
 
 namespace metashell
@@ -33,13 +31,8 @@ namespace metashell
       }
     }
 
-    command::command(const cpp_code& cmd_) : _cmd(cmd_), _tokens()
+    command::command(std::vector<token> tokens_) : _tokens(std::move(tokens_))
     {
-      for (auto t = core::create_wave_tokeniser(cmd_, "<command>");
-           t->has_further_tokens(); t->move_to_next_token())
-      {
-        _tokens.push_back(t->current_token());
-      }
     }
 
     command::iterator command::begin() const { return _tokens.begin(); }

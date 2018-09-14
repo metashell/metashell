@@ -18,6 +18,7 @@
 
 #include <metashell/iface/pragma_handler.hpp>
 
+#include <metashell/core/command.hpp>
 #include <metashell/core/metashell_pragma.hpp>
 #include <metashell/core/pragma_handler.hpp>
 
@@ -67,7 +68,7 @@ namespace metashell
              const data::cpp_code& args_,
              iface::displayer& displayer_)
     {
-      const data::command cmd(args_);
+      const data::command cmd = to_command(args_);
       handler_.run(cmd.begin(), cmd.begin(), cmd.begin(),
                    end_of_pragma_argument_list(cmd.begin(), cmd.end()),
                    displayer_);

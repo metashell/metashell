@@ -1,8 +1,8 @@
-#ifndef METASHELL_EXCEPTION_HPP
-#define METASHELL_EXCEPTION_HPP
+#ifndef METASHELL_CORE_TYPE_HPP
+#define METASHELL_CORE_TYPE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,17 +17,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <stdexcept>
-#include <string>
+#include <metashell/data/type.hpp>
 
 namespace metashell
 {
   namespace core
   {
-    struct exception : std::runtime_error
-    {
-      explicit exception(const std::string& msg_);
-    };
+    bool is_template_type(const data::type& type_);
   }
 }
 

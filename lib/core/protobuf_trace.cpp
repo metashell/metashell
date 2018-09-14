@@ -14,8 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/exception.hpp>
 #include <metashell/core/protobuf_trace.hpp>
+
+#include <metashell/data/exception.hpp>
 
 #include <fstream>
 #include <string>
@@ -55,7 +56,7 @@ namespace metashell
         case 10:
           return event_kind::memoization;
         default:
-          throw exception(
+          throw data::exception(
               "templight xml parse failed (invalid instantiation kind " +
               std::to_string(kind) + ")");
         }
@@ -82,12 +83,12 @@ namespace metashell
       {
         if (evaluation_result.is_error())
         {
-          throw exception(evaluation_result.get_error());
+          throw data::exception(evaluation_result.get_error());
         }
         else
         {
           // Shouldn't happen
-          throw exception("Unexpected type type_or_code_or_error result");
+          throw data::exception("Unexpected type type_or_code_or_error result");
         }
       }
       _reader.startOnBuffer(*_src);

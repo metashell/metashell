@@ -21,7 +21,6 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include <algorithm>
 #include <ostream>
 #include <sstream>
 
@@ -89,15 +88,6 @@ namespace metashell
       {
         return boost::none;
       }
-    }
-
-    bool is_template_type(const type& type_)
-    {
-      const command cmd(type_);
-      return std::find_if(cmd.begin(), cmd.end(), [](const token& t_) {
-               return t_.type() == token_type::operator_greater ||
-                      t_.type() == token_type::operator_less;
-             }) != cmd.end();
     }
 
     bool is_remove_ptr(const type& type_)

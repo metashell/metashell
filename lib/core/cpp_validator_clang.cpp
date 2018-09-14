@@ -15,10 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/core/cpp_validator_clang.hpp>
-#include <metashell/core/exception.hpp>
 #include <metashell/core/metashell.hpp>
 
 #include <boost/algorithm/string/trim.hpp>
+
+#include <stdexcept>
 
 namespace metashell
 {

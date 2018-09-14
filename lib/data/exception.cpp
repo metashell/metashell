@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/exception.hpp>
+#include <metashell/data/exception.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace data
   {
     exception::exception(const std::string& msg_) : std::runtime_error(msg_) {}
   }

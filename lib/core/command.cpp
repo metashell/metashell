@@ -1,8 +1,5 @@
-#ifndef METASHELL_SOME_FEATURE_NOT_SUPPORTED_HPP
-#define METASHELL_SOME_FEATURE_NOT_SUPPORTED_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,21 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/exception.hpp>
-#include <metashell/data/feature.hpp>
-
-#include <string>
+#include <metashell/core/command.hpp>
+#include <metashell/core/wave_tokeniser.hpp>
 
 namespace metashell
 {
   namespace core
   {
-    struct some_feature_not_supported : data::exception
+    data::command to_command(const data::cpp_code& code_)
     {
-      some_feature_not_supported(const std::string& engine_name_,
-                                 const data::feature& feature_);
-    };
+      std::vector<data::token> tokens;
+      for (auto t = core::create_wave_tokeniser(code_, "<command>");
+           t->has_further_tokens(); t->move_to_next_token())
+      {
+        tokens.push_back(t->current_token());
+      }
+      return data::command(std::move(tokens));
+    }
   }
 }
-
-#endif

@@ -14,7 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/exception.hpp>
+#include <metashell/data/exception.hpp>
+
 #include <metashell/core/metashell_pragma.hpp>
 
 #include <algorithm>
@@ -65,7 +66,8 @@ namespace metashell
           i = skip_whitespace(skip(i), cmd_.end());
           if (i == cmd_.end() || i->value().empty())
           {
-            throw exception("The name of the metashell pragma is missing.");
+            throw data::exception(
+                "The name of the metashell pragma is missing.");
           }
           else if (i->type() == data::token_type::identifier)
           {
@@ -75,7 +77,7 @@ namespace metashell
           {
             std::ostringstream s;
             s << "Invalid pragma name " << i->value();
-            throw exception(s.str());
+            throw data::exception(s.str());
           }
         }
       }

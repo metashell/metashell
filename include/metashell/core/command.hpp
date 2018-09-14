@@ -1,8 +1,8 @@
-#ifndef METASHELL_SOME_FEATURE_NOT_SUPPORTED_HPP
-#define METASHELL_SOME_FEATURE_NOT_SUPPORTED_HPP
+#ifndef METASHELL_CORE_COMMAND_HPP
+#define METASHELL_CORE_COMMAND_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,20 +17,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/exception.hpp>
-#include <metashell/data/feature.hpp>
-
-#include <string>
+#include <metashell/data/command.hpp>
+#include <metashell/data/cpp_code.hpp>
 
 namespace metashell
 {
   namespace core
   {
-    struct some_feature_not_supported : data::exception
-    {
-      some_feature_not_supported(const std::string& engine_name_,
-                                 const data::feature& feature_);
-    };
+    data::command to_command(const data::cpp_code& code_);
   }
 }
 

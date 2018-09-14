@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/exception.hpp>
 #include <metashell/data/include_argument.hpp>
 
-#include <metashell/core/exception.hpp>
 #include <metashell/core/include_path_cache.hpp>
 #include <metashell/core/pragma_ls.hpp>
 #include <metashell/core/shell.hpp>
@@ -53,9 +53,10 @@ namespace metashell
           {
             const std::string arguments =
                 data::tokens_to_string(begin_, end_).value();
-            throw exception("Argument of " + name_ +
-                            " is not a header to include. Did you mean <" +
-                            arguments + "> or \"" + arguments + "\"?");
+            throw data::exception(
+                "Argument of " + name_ +
+                " is not a header to include. Did you mean <" + arguments +
+                "> or \"" + arguments + "\"?");
           }
         }
 

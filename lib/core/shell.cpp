@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/exception.hpp>
+#include <metashell/core/command.hpp>
 #include <metashell/core/feature_not_supported.hpp>
 #include <metashell/core/header_file_environment.hpp>
 #include <metashell/core/make_unique.hpp>
@@ -26,6 +26,7 @@
 #include <metashell/core/version.hpp>
 
 #include <metashell/data/command.hpp>
+#include <metashell/data/exception.hpp>
 
 #include <algorithm>
 #include <cctype>
@@ -346,7 +347,7 @@ namespace metashell {
           const std::string s = _line_prefix + s_;
           _line_prefix.clear();
 
-          const data::command cmd{data::cpp_code(s)};
+          const data::command cmd = to_command(data::cpp_code(s));
 
           if (has_non_whitespace(s))
           {
@@ -498,7 +499,7 @@ namespace metashell {
     {
       if (_environment_stack.empty())
       {
-        throw exception("The environment stack is empty.");
+        throw data::exception("The environment stack is empty.");
       }
       else
       {

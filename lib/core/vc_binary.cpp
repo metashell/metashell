@@ -14,9 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/exception.hpp>
 #include <metashell/core/metashell.hpp>
 #include <metashell/core/vc_binary.hpp>
+
+#include <metashell/data/exception.hpp>
 
 #include <metashell/process/run.hpp>
 #include <metashell/process/util.hpp>
@@ -45,11 +46,11 @@ namespace metashell
         std::ofstream f(fn.c_str());
         if (!f)
         {
-          throw exception("Failed to create file " + fn);
+          throw data::exception("Failed to create file " + fn);
         }
         else if (!(f << s_))
         {
-          throw exception("Failed to write content to file " + fn);
+          throw data::exception("Failed to write content to file " + fn);
         }
       }
 
@@ -102,8 +103,8 @@ namespace metashell
               }
               else
               {
-                throw exception("Multiple filenames (" + filename + ", " + *i +
-                                ") in Visual C++ output.");
+                throw data::exception("Multiple filenames (" + filename + ", " +
+                                      *i + ") in Visual C++ output.");
               }
             }
             else if (const boost::optional<std::string> l =
@@ -113,7 +114,7 @@ namespace metashell
             }
             else
             {
-              throw exception("Unexpected output from Visual C++: " + *i);
+              throw data::exception("Unexpected output from Visual C++: " + *i);
             }
           }
         }

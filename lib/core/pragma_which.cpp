@@ -14,9 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/exception.hpp>
 #include <metashell/core/pragma_which.hpp>
 #include <metashell/core/shell.hpp>
+
+#include <metashell/data/exception.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptors.hpp>
@@ -67,9 +68,10 @@ namespace metashell
 
       if (files.empty())
       {
-        throw exception("Include file " +
-                        data::tokens_to_string(args_begin_, args_end_).value() +
-                        " not found.");
+        throw data::exception(
+            "Include file " +
+            data::tokens_to_string(args_begin_, args_end_).value() +
+            " not found.");
       }
       else if (args.all)
       {
@@ -89,7 +91,7 @@ namespace metashell
     {
       if (args_begin_ == args_end_)
       {
-        throw exception("No header is provided.");
+        throw data::exception("No header is provided.");
       }
 
       bool all = false;
@@ -101,7 +103,7 @@ namespace metashell
 
         if (i == args_end_)
         {
-          throw exception("Invalid argument: -");
+          throw data::exception("Invalid argument: -");
         }
         else if (i->type() == data::token_type::identifier &&
                  i->value() == "all")
@@ -111,16 +113,17 @@ namespace metashell
         }
         else
         {
-          throw exception("Invalid argument: -" +
-                          data::tokens_to_string(
-                              i, data::skip_all_whitespace(i + 1, args_end_))
-                              .value());
+          throw data::exception(
+              "Invalid argument: -" +
+              data::tokens_to_string(
+                  i, data::skip_all_whitespace(i + 1, args_end_))
+                  .value());
         }
       }
 
       if (i == args_end_)
       {
-        throw exception("No header is provided.");
+        throw data::exception("No header is provided.");
       }
       else
       {
@@ -129,9 +132,9 @@ namespace metashell
         {
           const std::string arguments =
               data::tokens_to_string(i, args_end_).value();
-          throw exception("Argument of " + name_ +
-                          " is not a header to include. Did you mean <" +
-                          arguments + "> or \"" + arguments + "\"?");
+          throw data::exception("Argument of " + name_ +
+                                " is not a header to include. Did you mean <" +
+                                arguments + "> or \"" + arguments + "\"?");
         }
         else if (include_arg.second == args_end_)
         {
@@ -139,7 +142,7 @@ namespace metashell
         }
         else
         {
-          throw exception("More than one arguments provided.");
+          throw data::exception("More than one arguments provided.");
         }
       }
     }

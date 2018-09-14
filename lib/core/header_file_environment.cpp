@@ -15,9 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/config.hpp>
+#include <metashell/data/exception.hpp>
 #include <metashell/data/headers.hpp>
 
-#include <metashell/core/exception.hpp>
 #include <metashell/core/header_file_environment.hpp>
 #include <metashell/core/headers.hpp>
 #include <metashell/core/unsaved_file.hpp>
@@ -227,7 +227,7 @@ namespace metashell
         }
         else
         {
-          throw exception("Error saving environment to " + filename);
+          throw data::exception("Error saving environment to " + filename);
         }
       }
 

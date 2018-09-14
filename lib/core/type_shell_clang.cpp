@@ -14,9 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/exception.hpp>
 #include <metashell/core/metashell.hpp>
 #include <metashell/core/type_shell_clang.hpp>
+
+#include <metashell/data/exception.hpp>
 
 #include <boost/algorithm/string/trim.hpp>
 
@@ -68,7 +69,8 @@ namespace metashell
           trim_copy(err) !=
               "warning: precompiled header used __DATE__ or __TIME__.")
       {
-        throw exception("Error precompiling header " + filename + ": " + err);
+        throw data::exception("Error precompiling header " + filename + ": " +
+                              err);
       }
     }
   }

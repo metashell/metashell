@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/exception.hpp>
+#include <metashell/data/exception.hpp>
 #include <metashell/data/include_argument.hpp>
 
 #include <iostream>
@@ -40,8 +40,7 @@ namespace metashell
         const auto path_end = std::find_if(begin_, end_, is_closing_token_);
         if (path_end == end_)
         {
-          throw core::exception(std::string("closing ") + Closing +
-                                " is missing.");
+          throw exception(std::string("closing ") + Closing + " is missing.");
         }
         else
         {

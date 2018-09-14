@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/core/command.hpp>
 #include <metashell/core/engine_constant.hpp>
 #include <metashell/core/in_memory_displayer.hpp>
 #include <metashell/core/metashell_pragma.hpp>
@@ -30,7 +31,7 @@ namespace
 {
   data::command command(const std::string& s_)
   {
-    return data::command(data::cpp_code(s_));
+    return core::to_command(data::cpp_code(s_));
   }
 }
 

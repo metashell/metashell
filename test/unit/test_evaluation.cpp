@@ -20,6 +20,7 @@
 #include "test_config.hpp"
 #include "util.hpp"
 
+#include <metashell/core/command.hpp>
 #include <metashell/core/engine_constant.hpp>
 #include <metashell/core/engine_templight.hpp>
 #include <metashell/core/in_memory_displayer.hpp>
@@ -230,29 +231,29 @@ TEST(evaluation, throwing_environment_not_breaking_validate)
 TEST(evaluation, variable_definition)
 {
   using data::command;
-  ASSERT_TRUE(
-      core::is_environment_setup_command(command(data::cpp_code("int x;"))));
+  ASSERT_TRUE(core::is_environment_setup_command(
+      core::to_command(data::cpp_code("int x;"))));
 }
 
 TEST(evaluation, function_definition)
 {
   using data::command;
   ASSERT_TRUE(core::is_environment_setup_command(
-      command(data::cpp_code("void f() {}"))));
+      core::to_command(data::cpp_code("void f() {}"))));
 }
 
 TEST(evaluation, is_environment_setup_with_leading_whitespace)
 {
   using data::command;
-  ASSERT_FALSE(
-      core::is_environment_setup_command(command(data::cpp_code(" int"))));
+  ASSERT_FALSE(core::is_environment_setup_command(
+      core::to_command(data::cpp_code(" int"))));
 }
 
 TEST(evaluation, is_environment_setup_without_leading_whitespace)
 {
   using data::command;
-  ASSERT_FALSE(
-      core::is_environment_setup_command(command(data::cpp_code("int"))));
+  ASSERT_FALSE(core::is_environment_setup_command(
+      core::to_command(data::cpp_code("int"))));
 }
 
 TEST(evaluation, prompt_is_different_in_multiline_input)
@@ -269,5 +270,5 @@ TEST(evaluation, command_macro_usage_with_semicolon_is_environment_setup)
   using data::command;
 
   ASSERT_TRUE(core::is_environment_setup_command(
-      command(data::cpp_code("SOME_MACRO(13);"))));
+      core::to_command(data::cpp_code("SOME_MACRO(13);"))));
 }

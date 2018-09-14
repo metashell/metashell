@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/exception.hpp>
 #include <metashell/core/metashell_pragma.hpp>
 #include <metashell/core/pragma_config.hpp>
 #include <metashell/core/pragma_config_load.hpp>
@@ -43,6 +42,8 @@
 #include <metashell/core/pragma_switch.hpp>
 #include <metashell/core/pragma_which.hpp>
 #include <metashell/core/shell.hpp>
+
+#include <metashell/data/exception.hpp>
 
 #include <cassert>
 #include <sstream>
@@ -170,7 +171,8 @@ namespace metashell
       }
       else
       {
-        throw exception("Pragma " + name_of_pragma(begin_, e) + " not found");
+        throw data::exception("Pragma " + name_of_pragma(begin_, e) +
+                              " not found");
       }
     }
 

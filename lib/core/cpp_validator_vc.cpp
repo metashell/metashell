@@ -15,8 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/core/cpp_validator_vc.hpp>
-#include <metashell/core/exception.hpp>
 #include <metashell/core/metashell.hpp>
+
+#include <stdexcept>
 
 namespace metashell
 {

@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/exception.hpp>
+#include <metashell/data/exception.hpp>
 
 #include <string>
 
@@ -25,7 +25,7 @@ namespace metashell
 {
   namespace core
   {
-    class caching_disabled : public exception
+    class caching_disabled : public data::exception
     {
     public:
       explicit caching_disabled(const std::string& operation_);

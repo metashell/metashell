@@ -1,8 +1,5 @@
-#ifndef METASHELL_SOME_FEATURE_NOT_SUPPORTED_HPP
-#define METASHELL_SOME_FEATURE_NOT_SUPPORTED_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,21 +14,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/exception.hpp>
-#include <metashell/data/feature.hpp>
+#include <metashell/core/command.hpp>
+#include <metashell/core/type.hpp>
 
-#include <string>
+#include <metashell/data/token.hpp>
+#include <metashell/data/token_type.hpp>
+
+#include <algorithm>
 
 namespace metashell
 {
   namespace core
   {
-    struct some_feature_not_supported : data::exception
+    bool is_template_type(const data::type& type_)
     {
-      some_feature_not_supported(const std::string& engine_name_,
-                                 const data::feature& feature_);
-    };
+      const data::command cmd = to_command(type_);
+      return std::find_if(cmd.begin(), cmd.end(), [](const data::token& t_) {
+               return t_.type() == data::token_type::operator_greater ||
+                      t_.type() == data::token_type::operator_less;
+             }) != cmd.end();
+    }
   }
 }
-
-#endif

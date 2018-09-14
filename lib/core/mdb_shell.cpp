@@ -23,6 +23,7 @@
 #include <metashell/core/null_history.hpp>
 #include <metashell/core/some_feature_not_supported.hpp>
 
+#include <metashell/data/exception.hpp>
 #include <metashell/data/mdb_usage.hpp>
 
 #include <cmath>
@@ -769,7 +770,7 @@ namespace metashell
           // We're only interested in non-empty traces
           // Throwing here to ensure this error is handled the same way as other
           // ones thrown by eval()
-          throw exception(mp->get_evaluation_result().get_error());
+          throw data::exception(mp->get_evaluation_result().get_error());
         }
       }
       catch (const some_feature_not_supported&)

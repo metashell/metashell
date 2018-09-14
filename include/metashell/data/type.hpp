@@ -1,5 +1,5 @@
-#ifndef METASHELL_TYPE_HPP
-#define METASHELL_TYPE_HPP
+#ifndef METASHELL_DATA_TYPE_HPP
+#define METASHELL_DATA_TYPE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -58,7 +58,6 @@ namespace metashell
     bool operator<(const type& a_, const type& b_);
 
     boost::optional<type> trim_wrap_type(const type& type_);
-    bool is_template_type(const type& type_);
     bool is_remove_ptr(const type& type_);
   }
 }

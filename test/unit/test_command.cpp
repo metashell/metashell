@@ -16,26 +16,28 @@
 
 #include <metashell/data/command.hpp>
 
+#include <metashell/core/command.hpp>
+
 #include <gtest/gtest.h>
 
 using namespace metashell::data;
 
 TEST(command, formatting_empty_token_list)
 {
-  const command cmd{cpp_code()};
+  const command cmd = metashell::core::to_command(cpp_code());
   ASSERT_EQ("", tokens_to_string(cmd.begin(), cmd.end()));
 }
 
 TEST(command, formatting_one_token)
 {
-  const command cmd{cpp_code("int hello")};
+  const command cmd = metashell::core::to_command(cpp_code("int hello"));
 
   ASSERT_EQ("int", tokens_to_string(cmd.begin(), skip(cmd.begin())));
 }
 
 TEST(command, formatting_more_tokens)
 {
-  const command cmd{cpp_code("int hello")};
+  const command cmd = metashell::core::to_command(cpp_code("int hello"));
 
   ASSERT_EQ("int hello", tokens_to_string(cmd.begin(), cmd.end()));
 }

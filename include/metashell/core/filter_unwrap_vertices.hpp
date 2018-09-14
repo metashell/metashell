@@ -21,6 +21,8 @@
 #include <metashell/data/event_data.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
 
+#include <metashell/core/type.hpp>
+
 #include <boost/optional.hpp>
 
 namespace metashell

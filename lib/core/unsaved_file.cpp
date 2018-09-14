@@ -14,8 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/exception.hpp>
 #include <metashell/core/unsaved_file.hpp>
+
+#include <metashell/data/exception.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -38,7 +39,7 @@ namespace metashell
       }
       else
       {
-        throw exception("Error creating file " + filename);
+        throw data::exception("Error creating file " + filename);
       }
     }
   }

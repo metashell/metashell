@@ -16,6 +16,7 @@
 
 #include <metashell/data/command.hpp>
 
+#include <metashell/core/command.hpp>
 #include <metashell/core/engine_constant.hpp>
 #include <metashell/core/in_memory_displayer.hpp>
 #include <metashell/core/pragma_which.hpp>
@@ -46,7 +47,8 @@ namespace
   core::pragma_which::parsed_arguments
   parse_arguments(const std::string& arguments_)
   {
-    const data::command arguments{data::cpp_code(arguments_)};
+    const data::command arguments =
+        core::to_command(data::cpp_code(arguments_));
     return core::pragma_which::parse_arguments(
         "which", arguments.begin(), arguments.end());
   }

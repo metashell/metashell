@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/core/debugger_history.hpp>
-#include <metashell/core/exception.hpp>
 
 namespace metashell
 {

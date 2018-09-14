@@ -17,11 +17,12 @@
 #include <metashell/core/cpp_validator_vc.hpp>
 #include <metashell/core/engine.hpp>
 #include <metashell/core/engine_vc.hpp>
-#include <metashell/core/exception.hpp>
 #include <metashell/core/header_discoverer_vc.hpp>
 #include <metashell/core/not_supported.hpp>
 #include <metashell/core/preprocessor_shell_vc.hpp>
 #include <metashell/core/vc_binary.hpp>
+
+#include <metashell/data/exception.hpp>
 
 #include <just/environment.hpp>
 
@@ -49,7 +50,7 @@ namespace metashell
           const std::string sample_path =
               "\"C:\\Program Files (x86)\\Microsoft Visual Studio "
               "14.0\\VC\\bin\\cl.exe\"";
-          throw exception(
+          throw data::exception(
               "The engine requires that you specify the path to cl.exe"
               " after --. For example: " +
               metashell_path_ + " --engine " + engine_name_ + " -- " +
@@ -64,8 +65,9 @@ namespace metashell
           }
           else
           {
-            throw exception("The path specified as the vc binary to use (" +
-                            path + ") does not exist.");
+            throw data::exception(
+                "The path specified as the vc binary to use (" + path +
+                ") does not exist.");
           }
         }
       }
@@ -96,7 +98,7 @@ namespace metashell
       {
         if (!just::environment::exists("INCLUDE"))
         {
-          throw exception(
+          throw data::exception(
               "To use the Visual C++ engine, please run Metashell "
               " from the Visual Studio Developer Prompt.");
         }

@@ -19,9 +19,8 @@
 
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/event_data.hpp>
+#include <metashell/data/exception.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
-
-#include <metashell/core/exception.hpp>
 
 #include <boost/optional.hpp>
 
@@ -94,7 +93,7 @@ namespace metashell
               }
               else
               {
-                throw exception(
+                throw data::exception(
                     "Missing template end event after memoization event.");
               }
             }

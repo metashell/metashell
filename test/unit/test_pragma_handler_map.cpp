@@ -16,6 +16,7 @@
 
 #include <metashell/iface/pragma_handler.hpp>
 
+#include <metashell/core/command.hpp>
 #include <metashell/core/null_displayer.hpp>
 #include <metashell/core/pragma_handler_map.hpp>
 
@@ -64,7 +65,8 @@ TEST(pragma_handler_map, handler_sets_run_flag)
 TEST(pragma_handler_map, processing_non_existing_handler)
 {
   core::pragma_handler_map m;
-  const data::command cmd{data::cpp_code(/* #pragma metashell */ "foo")};
+  const data::command cmd =
+      core::to_command(data::cpp_code(/* #pragma metashell */ "foo"));
 
   core::null_displayer d;
   ASSERT_ANY_THROW(m.process(cmd.begin(), cmd.end(), d));
@@ -75,7 +77,8 @@ TEST(pragma_handler_map, processing_existing_handler)
   bool foo_run = false;
   core::pragma_handler_map m;
   m.add("foo", test_handler(foo_run));
-  const data::command cmd{data::cpp_code(/* #pragma metashell */ "foo")};
+  const data::command cmd =
+      core::to_command(data::cpp_code(/* #pragma metashell */ "foo"));
 
   core::null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);
@@ -88,7 +91,8 @@ TEST(pragma_handler_map, pragma_with_two_token_name_is_called)
   bool foo_bar_run = false;
   core::pragma_handler_map m;
   m.add("foo", "bar", test_handler(foo_bar_run));
-  const data::command cmd{data::cpp_code(/* #pragma metashell */ "foo bar")};
+  const data::command cmd =
+      core::to_command(data::cpp_code(/* #pragma metashell */ "foo bar"));
 
   core::null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);
@@ -104,7 +108,8 @@ TEST(pragma_handler_map,
   core::pragma_handler_map m;
   m.add("foo", test_handler(foo_run));
   m.add("foo", "bar", test_handler(foo_bar_run));
-  const data::command cmd{data::cpp_code(/* #pragma metashell */ "foo bar")};
+  const data::command cmd =
+      core::to_command(data::cpp_code(/* #pragma metashell */ "foo bar"));
 
   core::null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);
@@ -121,7 +126,8 @@ TEST(pragma_handler_map,
   core::pragma_handler_map m;
   m.add("foo", test_handler(foo_run));
   m.add("foo", "bar", test_handler(foo_bar_run));
-  const data::command cmd{data::cpp_code(/* #pragma metashell */ "foo x")};
+  const data::command cmd =
+      core::to_command(data::cpp_code(/* #pragma metashell */ "foo x"));
 
   core::null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);

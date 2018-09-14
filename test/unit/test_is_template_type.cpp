@@ -16,45 +16,47 @@
 
 #include <gtest/gtest.h>
 
+#include <metashell/core/type.hpp>
+
 #include <metashell/data/type.hpp>
 
 using namespace metashell;
 
 TEST(is_template_type, primitive_types)
 {
-  ASSERT_FALSE(is_template_type(data::type("int")));
-  ASSERT_FALSE(is_template_type(data::type("void")));
-  ASSERT_FALSE(is_template_type(data::type("float")));
-  ASSERT_FALSE(is_template_type(data::type("unsigned long long")));
-  ASSERT_FALSE(is_template_type(data::type("const double")));
+  ASSERT_FALSE(core::is_template_type(data::type("int")));
+  ASSERT_FALSE(core::is_template_type(data::type("void")));
+  ASSERT_FALSE(core::is_template_type(data::type("float")));
+  ASSERT_FALSE(core::is_template_type(data::type("unsigned long long")));
+  ASSERT_FALSE(core::is_template_type(data::type("const double")));
 }
 
 TEST(is_template_type, array_type_of_non_template_types)
 {
-  ASSERT_FALSE(is_template_type(data::type("int[3]")));
-  ASSERT_FALSE(is_template_type(data::type("int&[3]")));
-  ASSERT_FALSE(is_template_type(data::type("char[0]")));
-  ASSERT_FALSE(is_template_type(data::type("char *[1]")));
-  ASSERT_FALSE(is_template_type(data::type("foo[100]")));
+  ASSERT_FALSE(core::is_template_type(data::type("int[3]")));
+  ASSERT_FALSE(core::is_template_type(data::type("int&[3]")));
+  ASSERT_FALSE(core::is_template_type(data::type("char[0]")));
+  ASSERT_FALSE(core::is_template_type(data::type("char *[1]")));
+  ASSERT_FALSE(core::is_template_type(data::type("foo[100]")));
 }
 
 TEST(is_template_type, pointer_to_non_template_types)
 {
-  ASSERT_FALSE(is_template_type(data::type("int*")));
-  ASSERT_FALSE(is_template_type(data::type("char *[1]")));
-  ASSERT_FALSE(is_template_type(data::type("foo ***")));
+  ASSERT_FALSE(core::is_template_type(data::type("int*")));
+  ASSERT_FALSE(core::is_template_type(data::type("char *[1]")));
+  ASSERT_FALSE(core::is_template_type(data::type("foo ***")));
 }
 
 TEST(is_template_type, templates)
 {
-  ASSERT_TRUE(is_template_type(data::type("std::vector<int>")));
-  ASSERT_TRUE(is_template_type(data::type("foo::bar::foobar<x>")));
-  ASSERT_TRUE(is_template_type(data::type("a<b<c, d> > >")));
+  ASSERT_TRUE(core::is_template_type(data::type("std::vector<int>")));
+  ASSERT_TRUE(core::is_template_type(data::type("foo::bar::foobar<x>")));
+  ASSERT_TRUE(core::is_template_type(data::type("a<b<c, d> > >")));
 }
 
 TEST(is_template_type, char_literals)
 {
-  ASSERT_TRUE(is_template_type(data::type("foo<'<'>")));
-  ASSERT_TRUE(is_template_type(data::type("foo<'>'>")));
-  ASSERT_TRUE(is_template_type(data::type("foo<'<','>'>")));
+  ASSERT_TRUE(core::is_template_type(data::type("foo<'<'>")));
+  ASSERT_TRUE(core::is_template_type(data::type("foo<'>'>")));
+  ASSERT_TRUE(core::is_template_type(data::type("foo<'<','>'>")));
 }
