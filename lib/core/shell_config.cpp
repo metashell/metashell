@@ -14,16 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://wwout_.gnu.org/licenses/>.
 
-#include <metashell/data/shell_config.hpp>
+#include <metashell/core/shell_config.hpp>
 
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
 
 namespace metashell
 {
-  namespace data
+  namespace core
   {
-    void display(iface::json_writer& out_, const shell_config& cfg_)
+    void display(iface::json_writer& out_, const data::shell_config& cfg_)
     {
       out_.start_object();
 

@@ -17,6 +17,7 @@
 #include <metashell/core/comment_json_writer.hpp>
 #include <metashell/core/pragma_config_show.hpp>
 #include <metashell/core/shell.hpp>
+#include <metashell/core/shell_config.hpp>
 
 #include <metashell/data/exception.hpp>
 
@@ -63,7 +64,7 @@ namespace metashell
       else
       {
         comment_json_writer w(displayer_);
-        display(w, *cfg);
+        core::display(w, *cfg);
       }
     }
   }
