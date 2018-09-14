@@ -2,6 +2,8 @@
 
 set -ex
 
+export BUILD_THREADS=2
+
 ./install_build_dependencies.sh
 
 # gcc 5 support
@@ -58,7 +60,7 @@ else
   [ "${COVERAGE}" = "true" ] && export CXXFLAGS="${CXXFLAGS} --coverage"
   [ "${COVERAGE}" = "true" ] && export BUILD_TYPE="Debug"
   
-  BUILD_THREADS=2 NO_TEMPLIGHT=1 METASHELL_NO_DOC_GENERATION=1 ./build.sh
+  NO_TEMPLIGHT=1 METASHELL_NO_DOC_GENERATION=1 ./build.sh
   
   # Collect and upload coverage data
   [ "${COVERAGE}" = "" ] || coveralls \

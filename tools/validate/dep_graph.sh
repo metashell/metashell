@@ -1,6 +1,6 @@
 #!/bin/bash
 # Metashell - Interactive C++ template metaprogramming shell
-# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+# Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,18 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-set -e
-
 if [ ! -d cmake ]
 then
   echo "Please run this script from the root directory of the Metashell source code"
   exit 1
 fi
 
-for c in format.sh pycodestyle.sh pylint.sh
-do
-  tools/validate/$c
-done
+if !(tools/list/dependencies.py --source_root . --out svg | diff docs/img/dependencies.svg -)
+then
+  echo
+  echo '************************************************************************************'
+  echo '* Please regenerate the dependency graph by running the following command:         *'
+  echo '* tools/list/dependencies.py --source_root . --out svg > docs/img/dependencies.svg *'
+  echo '************************************************************************************'
+  echo
+  exit 1
+fi
 
-tools/validate/mkdocs mkdocs.yml
-tools/validate/dep_graph.sh
