@@ -30,22 +30,13 @@ import sys
 import subprocess
 
 
-def try_listdir(path):
-    """Returns the content of the directory or an empty list if it does not
-    exist"""
-    try:
-        return os.listdir(path)
-    except FileNotFoundError:
-        return []
-
-
 def source_files_of_lib(source_root, lib_name):
     """Generator of the source files of the given library"""
-    for subdir in ('', 'lib', os.path.join('include', 'metashell')):
-        path = os.path.join(source_root, subdir, lib_name)
-        for filename in try_listdir(path):
-            if filename.endswith('.hpp') or filename.endswith('.cpp'):
-                yield os.path.join(path, filename)
+    for path_to_walk in (os.path.join(source_root, 'lib'), source_root):
+        for path, _, files in os.walk(os.path.join(path_to_walk, lib_name)):
+            for filename in files:
+                if filename.endswith('.hpp') or filename.endswith('.cpp'):
+                    yield os.path.join(path, filename)
 
 
 def source_lines_of_lib(source_root, lib_name):
@@ -72,7 +63,9 @@ def dependencies_of_lib(source_root, libs, lib_name):
     inc_lib = re.compile('^[<"](metashell[\\\\/])?([^\\\\/]*)[\\\\/].*$')
     for path in included_by_lib(source_root, lib_name):
         match = inc_lib.match(path)
-        if match and not path.startswith('boost'):
+        if \
+                match and \
+                not (path.startswith('<boost') or path.startswith('"boost')):
             dep_lib = match.group(2)
             if dep_lib != lib_name and dep_lib in libs:
                 yield dep_lib
@@ -90,11 +83,6 @@ def subpaths_containing_sources(path):
         p[len(path) + 1:] for p, _, fs in os.walk(path)
         if any(is_source.match(f) for f in fs)
     )
-
-
-def remove_metashell(path):
-    """Removes the metashell[\\\\/] prefix if exists"""
-    return re.match('^(metashell[\\\\/])?(.*)', path).group(2)
 
 
 def sublib_of(sub, outer):
@@ -123,13 +111,11 @@ def prefix_path(prefix, generator):
 
 def collect_dependencies(source_root):
     """Collect all the dependencies"""
-    libs = sorted(remove_nested(itertools.chain(
-        subpaths_containing_sources(os.path.join(source_root, 'lib')),
-        (
-            remove_metashell(p) for p in
-            subpaths_containing_sources(os.path.join(source_root, 'include'))
-        )
-    )))
+    lib_path = os.path.join(source_root, 'lib')
+    libs = sorted(
+        d for d in os.listdir(lib_path)
+        if os.path.isdir(os.path.join(lib_path, d))
+    )
     apps = sorted(remove_nested(itertools.chain(
         prefix_path(
             'app',

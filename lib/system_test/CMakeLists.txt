@@ -1,5 +1,5 @@
 # Metashell - Interactive C++ template metaprogramming shell
-# Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+# Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,17 +14,5 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-aux_source_directory(. SOURCES)
-add_library(metashell_system_test_lib STATIC ${SOURCES})
-
-enable_warnings()
-use_cpp14()
-
-# Gtest
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/googletest/include")
-
-# Just
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_temp/include")
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_lines/include")
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_environment/include")
+subdirs(src)
 

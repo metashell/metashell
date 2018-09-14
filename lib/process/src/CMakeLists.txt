@@ -1,4 +1,3 @@
-#!/bin/bash
 # Metashell - Interactive C++ template metaprogramming shell
 # Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 #
@@ -15,18 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-set -e
+aux_source_directory(. SOURCES)
+add_library(metashell_process_lib STATIC ${SOURCES})
 
-if [ ! -d cmake ]
-then
-  echo "Please run this script from the root directory of the Metashell source code"
-  exit 1
-fi
+enable_warnings()
+use_cpp14()
 
-find lib test app -type f -a '(' \
-  -name '*.hpp' -o \
-  -name '*.cpp' -o \
-  -name '*.cc' -o \
-  -name '*.c' -o \
-  -name '*.h' \
-')'
