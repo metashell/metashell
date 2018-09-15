@@ -18,7 +18,6 @@ aux_source_directory(. SOURCES)
 add_executable(metashell_system_test_self_test ${SOURCES})
 
 enable_warnings()
-use_cpp14()
 
 target_link_libraries(metashell_system_test_self_test
   metashell_system_test_lib

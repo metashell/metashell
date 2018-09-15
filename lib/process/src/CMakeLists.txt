@@ -18,5 +18,4 @@ aux_source_directory(. SOURCES)
 add_library(metashell_process_lib STATIC ${SOURCES})
 
 enable_warnings()
-use_cpp14()
 

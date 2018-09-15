@@ -41,6 +41,8 @@ endif()
 # Warnings, C++11, etc
 include(Compiler)
 
+use_cpp14()
+
 # Workaround on some systems (OSX + clang + Boost 1.55)
 add_definitions(-DBOOST_ATOMIC_FORCE_FALLBACK=1)
 

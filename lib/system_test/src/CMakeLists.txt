@@ -18,7 +18,6 @@ aux_source_directory(. SOURCES)
 add_library(metashell_system_test_lib STATIC ${SOURCES})
 
 enable_warnings()
-use_cpp14()
 
 # Gtest
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/googletest/include")

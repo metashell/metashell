@@ -14,8 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use_cpp11()
-
 include_directories(.)
 include_directories(include)
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/googletest/include")
