@@ -4,6 +4,11 @@ set -ex
 
 export BUILD_THREADS=2
 
+if [ "${STATIC_CHECKS}" != "true" ]
+then
+  export NO_GRAPHVIZ=1
+fi
+
 ./install_build_dependencies.sh
 
 # gcc 5 support

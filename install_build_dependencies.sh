@@ -94,19 +94,22 @@ ubuntu)
     mv ${CLANG_ARCHIVE} clang
     rm ${CLANG_ARCHIVE}.tar.xz
 
-    wget https://gitlab.com/graphviz/graphviz/-/archive/stable_release_${GRAPHVIZ_VERSION}/${GRAPHVIZ_ARCHIVE}.tar.bz2
-    tar -jxf ${GRAPHVIZ_ARCHIVE}.tar.bz2
-    rm -rf graphviz
-    mv ${GRAPHVIZ_ARCHIVE} graphviz
-    rm ${GRAPHVIZ_ARCHIVE}.tar.bz2
-    cd graphviz
-      mkdir prefix
+    if [ "${NO_GRAPHVIZ}" = "" ]
+    then
+      wget https://gitlab.com/graphviz/graphviz/-/archive/stable_release_${GRAPHVIZ_VERSION}/${GRAPHVIZ_ARCHIVE}.tar.bz2
+      tar -jxf ${GRAPHVIZ_ARCHIVE}.tar.bz2
+      rm -rf graphviz
+      mv ${GRAPHVIZ_ARCHIVE} graphviz
+      rm ${GRAPHVIZ_ARCHIVE}.tar.bz2
+      cd graphviz
+        mkdir prefix
 
-      ./autogen.sh
-      ./configure --prefix $(pwd)/prefix
-      make -j${BUILD_THREADS}
-      make install
-    cd ..
+        ./autogen.sh
+        ./configure --prefix $(pwd)/prefix
+        make -j${BUILD_THREADS}
+        make install
+      cd ..
+    fi
   cd ..
   ;;
 debian)
