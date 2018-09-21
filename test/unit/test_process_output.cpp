@@ -22,15 +22,15 @@ using namespace metashell::data;
 
 TEST(process_output, dos2unix)
 {
-  const std::string dos = "hello\r\ndos\rworld\n";
-  const std::string unix = "hello\ndos\rworld\n";
+  const std::string dos_str = "hello\r\ndos\rworld\n";
+  const std::string unix_str = "hello\ndos\rworld\n";
 
-  const process_output result1 = dos2unix({exit_code_t(1), dos, ""});
-  const process_output result2 = dos2unix({exit_code_t(1), "", dos});
+  const process_output result1 = dos2unix({exit_code_t(1), dos_str, ""});
+  const process_output result2 = dos2unix({exit_code_t(1), "", dos_str});
 
-  ASSERT_EQ(unix, result1.standard_output);
+  ASSERT_EQ(unix_str, result1.standard_output);
   ASSERT_EQ("", result1.standard_error);
 
   ASSERT_EQ("", result2.standard_output);
-  ASSERT_EQ(unix, result2.standard_error);
+  ASSERT_EQ(unix_str, result2.standard_error);
 }
