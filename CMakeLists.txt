@@ -33,6 +33,8 @@ project(
   LANGUAGES C CXX
 )
 
+set(CMAKE_CXX_STANDARD 14)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -51,8 +53,6 @@ endif()
 
 # Warnings, C++11, etc
 include(Compiler)
-
-use_cpp14()
 
 # Workaround on some systems (OSX + clang + Boost 1.55)
 add_definitions(-DBOOST_ATOMIC_FORCE_FALLBACK=1)
