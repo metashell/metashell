@@ -17,5 +17,5 @@
 aux_source_directory(. SOURCES)
 add_library(metashell_process_lib STATIC ${SOURCES})
 
-enable_warnings()
+enable_warnings(metashell_process_lib)
 

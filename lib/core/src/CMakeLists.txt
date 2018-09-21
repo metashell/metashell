@@ -17,7 +17,7 @@
 aux_source_directory(. SOURCES)
 add_library(metashell_core_lib STATIC ${SOURCES})
 
-enable_warnings()
+enable_warnings(metashell_core_lib)
 
 # mIndent
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mindent/include")

@@ -16,3 +16,6 @@
 
 aux_source_directory(. SOURCES)
 add_library(yaml_cpp_lib STATIC ${SOURCES})
+
+disable_warnings(yaml_cpp_lib)
+

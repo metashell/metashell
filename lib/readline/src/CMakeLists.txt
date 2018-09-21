@@ -17,7 +17,7 @@
 aux_source_directory(. SOURCES)
 add_library(metashell_readline_lib STATIC ${SOURCES})
 
-enable_warnings()
+enable_warnings(metashell_readline_lib)
 
 # Readline
 if (WIN32)

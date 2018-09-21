@@ -17,6 +17,8 @@
 aux_source_directory(. SOURCES)
 add_library(termcap_lib STATIC ${SOURCES})
 
+disable_warnings(termcap_lib)
+
 add_definitions(-DSTDC_HEADERS)
 add_definitions(-DHAVE_CONFIG_H)
 include_directories("../custom_include")

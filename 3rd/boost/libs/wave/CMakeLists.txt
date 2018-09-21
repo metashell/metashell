@@ -20,3 +20,5 @@ list(APPEND SOURCES ${SOURCES_CPPLEXER})
 
 add_library(boost_wave STATIC ${SOURCES})
 
+disable_warnings(boost_wave)
+

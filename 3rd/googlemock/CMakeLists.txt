@@ -22,3 +22,6 @@ aux_source_directory(src SOURCES)
 list(REMOVE_ITEM SOURCES src/gmock-all.cc)
 
 add_library(googlemock STATIC ${SOURCES})
+
+disable_warnings(googlemock)
+

@@ -21,3 +21,6 @@ aux_source_directory(src SOURCES)
 list(REMOVE_ITEM SOURCES src/gtest-all.cc)
 
 add_library(googletest STATIC ${SOURCES})
+
+disable_warnings(googletest)
+

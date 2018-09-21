@@ -29,3 +29,5 @@ endif()
 add_library(boost_thread STATIC ${SOURCES})
 target_link_libraries(boost_thread ${CMAKE_THREAD_LIBS_INIT})
 
+disable_warnings(boost_thread)
+

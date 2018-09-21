@@ -17,7 +17,7 @@
 aux_source_directory(. SOURCES)
 add_executable(metashell_unit_test ${SOURCES})
 
-enable_warnings()
+enable_warnings(metashell_unit_test)
 
 target_link_libraries(metashell_unit_test
   metashell_core_lib

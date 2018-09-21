@@ -16,3 +16,6 @@
 
 aux_source_directory(. SOURCES)
 add_library(protobuf STATIC ${SOURCES})
+
+disable_warnings(protobuf)
+

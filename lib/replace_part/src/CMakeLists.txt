@@ -17,7 +17,7 @@
 aux_source_directory(. SOURCES)
 add_library(replace_part_lib STATIC ${SOURCES})
 
-enable_warnings()
+enable_warnings(replace_part_lib)
 
 # Just
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_lines/include")

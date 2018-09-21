@@ -17,3 +17,5 @@
 aux_source_directory(. SOURCES)
 add_library(boost_program_options STATIC ${SOURCES})
 
+disable_warnings(boost_program_options)
+
