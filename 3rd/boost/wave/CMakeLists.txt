@@ -14,11 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+project(boost_wave)
+
 aux_source_directory(src SOURCES)
 aux_source_directory(src/cpplexer/re2clex SOURCES_CPPLEXER)
-list(APPEND SOURCES ${SOURCES_CPPLEXER})
+add_library(${PROJECT_NAME} STATIC ${SOURCES} ${SOURCES_CPPLEXER})
+add_library(boost::wave ALIAS ${PROJECT_NAME})
 
-add_library(boost_wave STATIC ${SOURCES})
+disable_warnings(${PROJECT_NAME})
 
-disable_warnings(boost_wave)
+target_include_directories(
+  ${PROJECT_NAME} SYSTEM
+  PUBLIC ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(
+  ${PROJECT_NAME}
+  
+  boost::assert
+  boost::config
+  boost::iterator
+  boost::multi_index
+  boost::pool
+  boost::smart_ptr
+  boost::spirit
+  boost::static_assert
+  boost::throw_exception
+)
 

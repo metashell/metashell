@@ -14,5 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subdirs(src)
+project(protobuf)
+
+aux_source_directory(src SOURCES)
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+
+disable_warnings(${PROJECT_NAME})
+
+target_include_directories(
+  ${PROJECT_NAME} SYSTEM
+  PUBLIC ${PROJECT_SOURCE_DIR}/include
+)
 

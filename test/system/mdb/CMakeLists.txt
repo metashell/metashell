@@ -14,33 +14,35 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+project(metashell_mdb_system_test)
+
+include(MetashellSystemTest)
+find_package(GCC)
+find_package(MSVC)
+
 aux_source_directory(. SOURCES)
-add_executable(metashell_mdb_system_test ${SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES})
 
-enable_warnings(metashell_mdb_system_test)
+enable_warnings(${PROJECT_NAME})
 
-target_link_libraries(metashell_mdb_system_test
-  metashell_system_test_lib
-  metashell_process_lib
-  metashell_data_lib
-  boost_regex)
+target_link_libraries(
+  ${PROJECT_NAME}
 
-# Gtest
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/googletest/include")
-target_link_libraries(metashell_mdb_system_test googletest)
+  boost::atomic
+  boost::filesystem
+  boost::regex
+  boost::system
+  boost::thread
 
-# Just
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_lines/include")
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_temp/include")
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_environment/include")
+  googletest
 
-# Boost
-target_link_libraries(metashell_mdb_system_test
-  boost_filesystem
-  boost_system
-  boost_thread
-  ${BOOST_ATOMIC_LIB}
+  just::environment
+  just::lines
+  just::temp
+
+  metashell::process
+  metashell::system_test
 )
 
-register_system_test(metashell_mdb_system_test)
+register_system_test(${PROJECT_NAME})
 

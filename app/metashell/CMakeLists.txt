@@ -14,67 +14,58 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+project(metashell)
+
 aux_source_directory(. SOURCES)
-add_executable(metashell ${SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES})
 
-enable_warnings(metashell)
+enable_warnings(${PROJECT_NAME})
 
-# Metashell
-target_link_libraries(metashell
-  metashell_core_lib
-  metashell_readline_lib
-  metashell_data_lib
-  metashell_process_lib
-)
+target_link_libraries(
+  ${PROJECT_NAME}
 
-# Wave
-target_link_libraries(metashell
-  boost_system
-  boost_thread
-  ${BOOST_ATOMIC_LIB}
-  boost_filesystem
-  boost_wave
+  boost::atomic
+  boost::filesystem
+  boost::program_options
+  boost::regex
+  boost::system
+  boost::thread
+  boost::wave
+
+  just::console
+  just::temp
+
+  metashell::core
+  metashell::process
+  metashell::readline
+
+  mpark::variant
+
+  protobuf
+
+  yaml_cpp
+
   ${CMAKE_THREAD_LIBS_INIT}
   ${RT_LIBRARY}
   ${PROTOBUF_LIBRARY}
-  protobuf
 )
 
 # Readline
 if (WIN32)
-  target_link_libraries(metashell edit_static)
-  add_definitions( -DUSE_EDITLINE )
-  include_directories("${CMAKE_SOURCE_DIR}/3rd/wineditline")
+  target_link_libraries(${PROJECT_NAME} wineditline)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE USE_EDITLINE)
+elseif (USE_EDITLINE)
+  include_directories(${EDITLINE_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} ${EDITLINE_LIBRARY})
+  target_compile_definitions(${PROJECT_NAME} PRIVATE USE_EDITLINE)
 else()
-  if (USE_EDITLINE)
-    include_directories(${EDITLINE_INCLUDE_DIR})
-    target_link_libraries(metashell ${EDITLINE_LIBRARY})
-    add_definitions( -DUSE_EDITLINE )
-  else()
-    include_directories(${READLINE_INCLUDE_DIR})
-    target_link_libraries(metashell ${READLINE_LIBRARY} termcap_lib)
-  endif()
+  include_directories(${READLINE_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} ${READLINE_LIBRARY} termcap)
 endif()
 
-# Just
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_console/include")
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_temp/include")
+install(TARGETS ${PROJECT_NAME} DESTINATION bin COMPONENT metashell)
 
-# Program_options
-target_link_libraries(metashell boost_program_options)
-
-# Regex
-target_link_libraries(metashell boost_regex)
-
-# yaml-cpp
-target_link_libraries(metashell yaml_cpp_lib)
-
-# Mpark.Variant
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mpark_variant/include")
-
-install(TARGETS metashell DESTINATION bin COMPONENT metashell)
-
-set_property(TARGET metashell PROPERTY INSTALL_RPATH_USE_LINK_PATH true)
+set_property(TARGET ${PROJECT_NAME} PROPERTY INSTALL_RPATH_USE_LINK_PATH true)
 
 if (TEMPLIGHT_FOUND)
   #############################################

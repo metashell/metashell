@@ -14,8 +14,34 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-aux_source_directory(src SOURCES)
-add_library(boost_program_options STATIC ${SOURCES})
+project(boost_program_options)
 
-disable_warnings(boost_program_options)
+aux_source_directory(src SOURCES)
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+add_library(boost::program_options ALIAS ${PROJECT_NAME})
+
+disable_warnings(${PROJECT_NAME})
+
+target_include_directories(
+  ${PROJECT_NAME} SYSTEM
+  PUBLIC ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(
+  ${PROJECT_NAME}
+  
+  boost::any
+  boost::assert
+  boost::bind
+  boost::core
+  boost::config
+  boost::detail
+  boost::function
+  boost::iterator
+  boost::lexical_cast
+  boost::range
+  boost::smart_ptr
+  boost::throw_exception
+  boost::tokenizer
+)
 

@@ -38,7 +38,7 @@ md bin
 cd bin
   if defined METASHELL_NO_DOC_GENERATION cmake .. -DMETASHELL_NO_DOC_GENERATION=1
   if not defined METASHELL_NO_DOC_GENERATION cmake ..
-  msbuild metashell.sln /p:Configuration=Release /p:Platform="Win32"
+  msbuild metashell_project.sln /p:Configuration=Release /p:Platform="Win32"
   if errorlevel 1 goto no_dev
 
   rem Run tests

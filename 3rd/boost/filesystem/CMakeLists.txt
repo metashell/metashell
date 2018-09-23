@@ -14,8 +14,27 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+project(boost_filesystem)
+
 aux_source_directory(src SOURCES)
-add_library(boost_filesystem STATIC ${SOURCES})
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+add_library(boost::filesystem ALIAS ${PROJECT_NAME})
 
-disable_warnings(boost_filesystem)
+disable_warnings(${PROJECT_NAME})
 
+target_include_directories(
+  ${PROJECT_NAME} SYSTEM
+  PUBLIC ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(
+  ${PROJECT_NAME}
+
+  boost::container_hash
+  boost::io
+  boost::iterator
+  boost::range
+  boost::smart_ptr
+  boost::system
+  boost::type_traits
+)

@@ -1,5 +1,5 @@
 # Metashell - Interactive C++ template metaprogramming shell
-# Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
+# Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,5 +14,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subdirs(src)
+project(metashell_system_test)
 
+aux_source_directory(src SOURCES)
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+add_library(metashell::system_test ALIAS ${PROJECT_NAME})
+
+enable_warnings(${PROJECT_NAME})
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+target_link_libraries(
+  ${PROJECT_NAME}
+
+  googletest
+
+  just::temp
+  just::lines
+  just::environment
+
+  metashell::core
+  metashell::data
+  metashell::pattern
+)

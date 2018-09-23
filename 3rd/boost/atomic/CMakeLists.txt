@@ -14,8 +14,39 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-aux_source_directory(src SOURCES)
-add_library(boost_atomic STATIC ${SOURCES})
+project(boost_atomic)
 
-disable_warnings(boost_atomic)
+if (WIN32)
+  add_library(${PROJECT_NAME} INTERFACE)
+  set(LIB_TYPE INTERFACE)
+else()
+  aux_source_directory(src SOURCES)
+  add_library(${PROJECT_NAME} STATIC ${SOURCES})
+  set(LIB_TYPE PUBLIC)
+endif()
+
+add_library(boost::atomic ALIAS ${PROJECT_NAME})
+
+disable_warnings(${PROJECT_NAME})
+
+target_include_directories(
+  ${PROJECT_NAME} SYSTEM
+  ${LIB_TYPE} ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(
+  ${PROJECT_NAME}
+  
+  ${LIB_TYPE}
+    boost::assert
+    boost::config
+)
+
+# Workaround on some systems (OSX + clang + Boost 1.55)
+target_compile_definitions(
+  ${PROJECT_NAME}
+  
+  ${LIB_TYPE}
+    BOOST_ATOMIC_FORCE_FALLBACK=1
+)
 

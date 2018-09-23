@@ -22,27 +22,17 @@ else()
   cmake_policy(VERSION 3.12)
 endif()
 
-set(CMAKE_PROJECT_NAME metashell)
+project(metashell_project)
+
 set(MAJOR_VERSION 4)
 set(MINOR_VERSION 0)
 set(PATCH_VERSION 0)
-
-project(
-  metashell
-  VERSION ${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_VERSION}
-  LANGUAGES C CXX
-)
 
 set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# Version macros
-add_definitions(-DMETASHELL_MAJOR=${MAJOR_VERSION})
-add_definitions(-DMETASHELL_MINOR=${MINOR_VERSION})
-add_definitions(-DMETASHELL_PATCH=${PATCH_VERSION})
 
 include(Platform)
 
@@ -53,9 +43,6 @@ endif()
 
 # Warnings, C++11, etc
 include(Compiler)
-
-# Workaround on some systems (OSX + clang + Boost 1.55)
-add_definitions(-DBOOST_ATOMIC_FORCE_FALLBACK=1)
 
 # Sanitizers
 if (ENABLE_SANITIZERS)
@@ -120,13 +107,10 @@ endif ()
 # Boost
 if (WIN32)
   add_definitions(-DBOOST_ALL_NO_LIB=1)
-else ()
-  set(BOOST_ATOMIC_LIB boost_atomic)
-  if (OPEN_BSD)
-    add_definitions(-DBOOST_HAS_STDINT_H)
-  elseif(NOT APPLE)
-    find_package(Rt)
-  endif()
+elseif (OPEN_BSD)
+  add_definitions(-DBOOST_HAS_STDINT_H)
+elseif(NOT APPLE)
+  find_package(Rt)
 endif ()
 
 # Pthreads
@@ -143,90 +127,147 @@ if (NOT WIN32)
   endif()
 endif()
 
-include_directories("lib/boost/include")
-include_directories("lib/core/include")
-include_directories("lib/data/include")
-include_directories("lib/iface/include")
-include_directories("lib/pattern/include")
-include_directories("lib/process/include")
-include_directories("lib/readline/include")
-include_directories("lib/replace_part/include")
-include_directories("lib/system_test/include")
-include_directories(SYSTEM "3rd/boost/algorithm/include")
-include_directories(SYSTEM "3rd/boost/align/include")
-include_directories(SYSTEM "3rd/boost/any/include")
-include_directories(SYSTEM "3rd/boost/array/include")
-include_directories(SYSTEM "3rd/boost/assert/include")
-include_directories(SYSTEM "3rd/boost/assign/include")
-include_directories(SYSTEM "3rd/boost/atomic/include")
-include_directories(SYSTEM "3rd/boost/bind/include")
-include_directories(SYSTEM "3rd/boost/chrono/include")
-include_directories(SYSTEM "3rd/boost/concept_check/include")
-include_directories(SYSTEM "3rd/boost/config/include")
-include_directories(SYSTEM "3rd/boost/container/include")
-include_directories(SYSTEM "3rd/boost/container_hash/include")
-include_directories(SYSTEM "3rd/boost/conversion/include")
-include_directories(SYSTEM "3rd/boost/core/include")
-include_directories(SYSTEM "3rd/boost/date_time/include")
-include_directories(SYSTEM "3rd/boost/detail/include")
-include_directories(SYSTEM "3rd/boost/exception/include")
-include_directories(SYSTEM "3rd/boost/filesystem/include")
-include_directories(SYSTEM "3rd/boost/foreach/include")
-include_directories(SYSTEM "3rd/boost/function/include")
-include_directories(SYSTEM "3rd/boost/functional/include")
-include_directories(SYSTEM "3rd/boost/function_types/include")
-include_directories(SYSTEM "3rd/boost/fusion/include")
-include_directories(SYSTEM "3rd/boost/graph/include")
-include_directories(SYSTEM "3rd/boost/integer/include")
-include_directories(SYSTEM "3rd/boost/intrusive/include")
-include_directories(SYSTEM "3rd/boost/io/include")
-include_directories(SYSTEM "3rd/boost/iostreams/include")
-include_directories(SYSTEM "3rd/boost/iterator/include")
-include_directories(SYSTEM "3rd/boost/lexical_cast/include")
-include_directories(SYSTEM "3rd/boost/math/include")
-include_directories(SYSTEM "3rd/boost/move/include")
-include_directories(SYSTEM "3rd/boost/mpl/include")
-include_directories(SYSTEM "3rd/boost/multi_index/include")
-include_directories(SYSTEM "3rd/boost/numeric_conversion/include")
-include_directories(SYSTEM "3rd/boost/optional/include")
-include_directories(SYSTEM "3rd/boost/phoenix/include")
-include_directories(SYSTEM "3rd/boost/pool/include")
-include_directories(SYSTEM "3rd/boost/predef/include")
-include_directories(SYSTEM "3rd/boost/preprocessor/include")
-include_directories(SYSTEM "3rd/boost/program_options/include")
-include_directories(SYSTEM "3rd/boost/property_map/include")
-include_directories(SYSTEM "3rd/boost/proto/include")
-include_directories(SYSTEM "3rd/boost/range/include")
-include_directories(SYSTEM "3rd/boost/ratio/include")
-include_directories(SYSTEM "3rd/boost/regex/include")
-include_directories(SYSTEM "3rd/boost/serialization/include")
-include_directories(SYSTEM "3rd/boost/smart_ptr/include")
-include_directories(SYSTEM "3rd/boost/spirit/include")
-include_directories(SYSTEM "3rd/boost/static_assert/include")
-include_directories(SYSTEM "3rd/boost/system/include")
-include_directories(SYSTEM "3rd/boost/thread/include")
-include_directories(SYSTEM "3rd/boost/throw_exception/include")
-include_directories(SYSTEM "3rd/boost/tokenizer/include")
-include_directories(SYSTEM "3rd/boost/tuple/include")
-include_directories(SYSTEM "3rd/boost/type_index/include")
-include_directories(SYSTEM "3rd/boost/typeof/include")
-include_directories(SYSTEM "3rd/boost/type_traits/include")
-include_directories(SYSTEM "3rd/boost/unordered/include")
-include_directories(SYSTEM "3rd/boost/utility/include")
-include_directories(SYSTEM "3rd/boost/variant/include")
-include_directories(SYSTEM "3rd/boost/wave/include")
-include_directories(SYSTEM "3rd/boost/winapi/include")
-include_directories(SYSTEM "3rd/boost/xpressive/include")
-include_directories(SYSTEM "3rd/rapidjson/include")
-include_directories(SYSTEM "3rd/protobuf/include")
-include_directories(SYSTEM "3rd/termcap/include")
-include_directories(SYSTEM "3rd/yaml-cpp/include")
-
-# Unit testing
 enable_testing()
 
+add_subdirectory(app/metashell)
+add_subdirectory(app/reference_gen)
+
+add_subdirectory(test/unit)
+add_subdirectory(test/system/core)
+add_subdirectory(test/system/mdb)
+add_subdirectory(test/system/pdb)
+add_subdirectory(test/system/pp)
+add_subdirectory(test/system/self)
+
+add_subdirectory(lib/boost)
+add_subdirectory(lib/core)
+add_subdirectory(lib/data)
+add_subdirectory(lib/iface)
+add_subdirectory(lib/pattern)
+add_subdirectory(lib/process)
+add_subdirectory(lib/readline)
+add_subdirectory(lib/replace_part)
+add_subdirectory(lib/system_test)
+
+add_subdirectory(3rd/boost/algorithm)
+add_subdirectory(3rd/boost/align)
+add_subdirectory(3rd/boost/any)
+add_subdirectory(3rd/boost/array)
+add_subdirectory(3rd/boost/assert)
+add_subdirectory(3rd/boost/assign)
+add_subdirectory(3rd/boost/atomic)
+add_subdirectory(3rd/boost/bind)
+add_subdirectory(3rd/boost/chrono)
+add_subdirectory(3rd/boost/concept_check)
+add_subdirectory(3rd/boost/config)
+add_subdirectory(3rd/boost/container)
+add_subdirectory(3rd/boost/container_hash)
+add_subdirectory(3rd/boost/conversion)
+add_subdirectory(3rd/boost/core)
+add_subdirectory(3rd/boost/date_time)
+add_subdirectory(3rd/boost/detail)
+add_subdirectory(3rd/boost/exception)
+add_subdirectory(3rd/boost/filesystem)
+add_subdirectory(3rd/boost/foreach)
+add_subdirectory(3rd/boost/function)
+add_subdirectory(3rd/boost/functional)
+add_subdirectory(3rd/boost/function_types)
+add_subdirectory(3rd/boost/fusion)
+add_subdirectory(3rd/boost/graph)
+add_subdirectory(3rd/boost/integer)
+add_subdirectory(3rd/boost/intrusive)
+add_subdirectory(3rd/boost/io)
+add_subdirectory(3rd/boost/iostreams)
+add_subdirectory(3rd/boost/iterator)
+add_subdirectory(3rd/boost/lexical_cast)
+add_subdirectory(3rd/boost/math)
+add_subdirectory(3rd/boost/move)
+add_subdirectory(3rd/boost/mpl)
+add_subdirectory(3rd/boost/multi_index)
+add_subdirectory(3rd/boost/numeric_conversion)
+add_subdirectory(3rd/boost/optional)
+add_subdirectory(3rd/boost/phoenix)
+add_subdirectory(3rd/boost/pool)
+add_subdirectory(3rd/boost/predef)
+add_subdirectory(3rd/boost/preprocessor)
+add_subdirectory(3rd/boost/program_options)
+add_subdirectory(3rd/boost/property_map)
+add_subdirectory(3rd/boost/proto)
+add_subdirectory(3rd/boost/range)
+add_subdirectory(3rd/boost/ratio)
+add_subdirectory(3rd/boost/regex)
+add_subdirectory(3rd/boost/serialization)
+add_subdirectory(3rd/boost/smart_ptr)
+add_subdirectory(3rd/boost/spirit)
+add_subdirectory(3rd/boost/static_assert)
+add_subdirectory(3rd/boost/system)
+add_subdirectory(3rd/boost/thread)
+add_subdirectory(3rd/boost/throw_exception)
+add_subdirectory(3rd/boost/tokenizer)
+add_subdirectory(3rd/boost/tuple)
+add_subdirectory(3rd/boost/type_index)
+add_subdirectory(3rd/boost/typeof)
+add_subdirectory(3rd/boost/type_traits)
+add_subdirectory(3rd/boost/unordered)
+add_subdirectory(3rd/boost/utility)
+add_subdirectory(3rd/boost/variant)
+add_subdirectory(3rd/boost/wave)
+add_subdirectory(3rd/boost/winapi)
+add_subdirectory(3rd/boost/xpressive)
+
+add_subdirectory(3rd/googlemock)
+add_subdirectory(3rd/googletest)
+
+add_subdirectory(3rd/just_console)
+add_subdirectory(3rd/just_environment)
+add_subdirectory(3rd/just_file)
+add_subdirectory(3rd/just_lines)
+add_subdirectory(3rd/just_temp)
+
+add_subdirectory(3rd/mindent)
+add_subdirectory(3rd/mpark_variant)
+add_subdirectory(3rd/protobuf)
+add_subdirectory(3rd/rapidjson)
+add_subdirectory(3rd/yaml-cpp)
+
+if (WIN32)
+  add_subdirectory(3rd/wineditline)
+else()
+  add_subdirectory(3rd/termcap)
+endif()
+
+target_compile_definitions(
+  metashell_core
+  
+  PUBLIC
+    METASHELL_MAJOR=${MAJOR_VERSION}
+    METASHELL_MINOR=${MINOR_VERSION}
+    METASHELL_PATCH=${PATCH_VERSION}
+)
+
+set(SYSTEM_TEST_TARGETS )
+set(SYSTEM_TEST_FILES )
+foreach(T core pp mdb pdb)
+  set(TARGET metashell_${T}_system_test)
+
+  list(APPEND SYSTEM_TEST_TARGETS ${TARGET})
+  list(APPEND SYSTEM_TEST_FILES "$<TARGET_FILE:${TARGET}>")
+endforeach(T)
+
+set(
+  SYSTEM_TEST_ARCHIVE
+  "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_system_test_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}${METASHELL_PACKAGE_PLATFORM}_${CMAKE_SYSTEM_PROCESSOR}.tar.gz"
+)
+
+add_custom_target(
+  system_test_zip DEPENDS ${SYSTEM_TEST_TARGETS}
+  COMMAND
+    ${CMAKE_COMMAND} -E
+    tar "cfz" "${SYSTEM_TEST_ARCHIVE}" ${SYSTEM_TEST_FILES}
+)
+
 # Recursing
-subdirs(lib app test 3rd tools)
+subdirs(tools)
 
 # Debian package
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)

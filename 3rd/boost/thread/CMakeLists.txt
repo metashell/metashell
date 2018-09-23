@@ -14,9 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-aux_source_directory(src SOURCES)
+project(boost_thread)
 
-add_definitions(-DBOOST_THREAD_BUILD_LIB)
+aux_source_directory(src SOURCES)
 
 if (WIN32)
   aux_source_directory(src/win32 SOURCES_WIN32)
@@ -26,8 +26,42 @@ else()
   list(APPEND SOURCES ${SOURCES_PTHREAD})
 endif()
 
-add_library(boost_thread STATIC ${SOURCES})
-target_link_libraries(boost_thread ${CMAKE_THREAD_LIBS_INIT})
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+add_library(boost::thread ALIAS ${PROJECT_NAME})
 
-disable_warnings(boost_thread)
+target_compile_definitions(${PROJECT_NAME} PRIVATE BOOST_THREAD_BUILD_LIB)
+
+target_link_libraries(
+  ${PROJECT_NAME}
+  
+  boost::algorithm
+  boost::atomic
+  boost::bind
+  boost::chrono
+  boost::container_hash
+  boost::core
+  boost::date_time
+  boost::exception
+  boost::function
+  boost::io
+  boost::iterator
+  boost::lexical_cast
+  boost::move
+  boost::mpl
+  boost::optional
+  boost::smart_ptr
+  boost::static_assert
+  boost::system
+  boost::tuple
+  boost::type_traits
+
+  ${CMAKE_THREAD_LIBS_INIT}
+)
+
+disable_warnings(${PROJECT_NAME})
+
+target_include_directories(
+  ${PROJECT_NAME} SYSTEM
+  PUBLIC ${PROJECT_SOURCE_DIR}/include
+)
 
