@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/process_execution.hpp>
+
 #include <stdexcept>
 #include <string>
 
@@ -27,7 +29,7 @@ namespace metashell
     class metashell_terminated : public std::runtime_error
     {
     public:
-      explicit metashell_terminated(std::string stderr_);
+      metashell_terminated(const process_execution& pe_, std::string stderr_);
 
       const std::string& standard_error() const;
 

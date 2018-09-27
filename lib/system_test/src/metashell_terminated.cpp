@@ -16,12 +16,19 @@
 
 #include <metashell/system_test/metashell_terminated.hpp>
 
+#include <boost/algorithm/string/join.hpp>
+
 namespace metashell
 {
   namespace system_test
   {
-    metashell_terminated::metashell_terminated(std::string stderr_)
-      : std::runtime_error("Metashell terminated. Standard error: " + stderr_),
+    metashell_terminated::metashell_terminated(const process_execution& pe_,
+                                               std::string stderr_)
+      : std::runtime_error("Metashell terminated. Command:\n" +
+                           boost::algorithm::join(pe_.cmd(), " ") +
+                           "\n\nStandard input:\n" + pe_.standard_input() +
+                           "\n\nStandard output:\n" + pe_.standard_output() +
+                           "\n\nStandard error:\n" + stderr_),
         _stderr(std::move(stderr_))
     {
     }

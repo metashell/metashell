@@ -131,7 +131,7 @@ namespace metashell
 
     metashell_instance::~metashell_instance()
     {
-      _child.standard_input().close();
+      close_stdin();
       _child.wait();
     }
 
@@ -180,7 +180,7 @@ namespace metashell
       {
         std::string err;
         read_all(std::tie(_child.standard_error(), err));
-        throw metashell_terminated(err);
+        throw metashell_terminated(_process_execution, err);
       }
       else
       {
