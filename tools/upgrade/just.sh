@@ -31,7 +31,7 @@ then
 fi
 
 COMPONENT="$1"
-COMPONENT_DIR="../3rd/just_${COMPONENT}"
+COMPONENT_DIR="../3rd/just/${COMPONENT}"
 
 rm -rf "${COMPONENT_DIR}"
 mkdir -p "${COMPONENT_DIR}/include/just"
