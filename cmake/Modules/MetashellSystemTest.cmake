@@ -45,7 +45,10 @@ function(register_system_test TEST_TARGET_NAME)
     NAME ${TEST_TARGET_NAME}_internal_templight
     COMMAND
       ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
       --
   )
 
@@ -58,7 +61,10 @@ function(register_system_test TEST_TARGET_NAME)
       -ftemplate-depth=256
       -Wfatal-errors
       ${CLANG_FLAGS}
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
       --
   )
 
@@ -71,7 +77,10 @@ function(register_system_test TEST_TARGET_NAME)
       -ftemplate-depth=256
       -Wfatal-errors
       ${CLANG_FLAGS}
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
       --
   )
 endfunction()
@@ -85,7 +94,10 @@ function(register_gcc_system_test TEST_TARGET_NAME)
         ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine gcc --
         "${GXX_BINARY}"
         -std=c++0x
-        "-I${CMAKE_SOURCE_DIR}/3rd/boost/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
         --
     )
   else()
@@ -103,7 +115,10 @@ function(register_msvc_system_test TEST_TARGET_NAME)
         COMMAND
           ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine msvc --
           "\"${MSVC_CL_BINARY}\""
-          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\include\""
+          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\config\\include\""
+          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\mpl\\include\""
+          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\preprocessor\\include\""
+          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\type_traits\\include\""
           "/EHsc"
           --
       )
@@ -118,7 +133,10 @@ function(register_wave_system_test TEST_TARGET_NAME)
     NAME ${TEST_TARGET_NAME}_wave
     COMMAND
       ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine wave --
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
       --
   )
 endfunction()

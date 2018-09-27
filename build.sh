@@ -83,23 +83,26 @@ mkdir -p bin; cd bin
     cmake .. -DMETASHELL_NO_DOC_GENERATION=1
   fi
   make -j${BUILD_THREADS}
-  make test || (cat Testing/Temporary/LastTest.log && false)
+  ctest -j${BUILD_THREADS} || (cat Testing/Temporary/LastTest.log && false)
+cd ..
 
-  if [ "${NO_INSTALLER}" = "" ]
-  then
+if [ "${NO_INSTALLER}" = "" ]
+then
+  cd bin
     cpack
     make system_test_zip
+  cd ..
 
-    cd ../3rd/boost
-      zip -qr ../../bin/system_test_boost.zip \
-        include/boost/config.hpp \
-        include/boost/config \
-        include/boost/detail \
-        include/boost/mpl \
-        include/boost/preprocessor \
-        include/boost/type_traits
-    cd ../../bin
-  else
-    echo "Skipping installer generation, because \$NO_INSTALLER = \"${NO_INSTALLER}\""
-  fi
-cd ..
+  SYSTEM_TEST_BOOST_ZIP=bin/system_test_boost.zip
+  rm -f ${SYSTEM_TEST_BOOST_ZIP}
+  cd 3rd/boost
+    for LIB in config mpl preprocessor type_traits
+    do
+      cd ${LIB}
+        zip -qr ../../../${SYSTEM_TEST_BOOST_ZIP} include
+      cd ..
+    done
+  cd ../..
+else
+  echo "Skipping installer generation, because \$NO_INSTALLER = \"${NO_INSTALLER}\""
+fi
