@@ -45,3 +45,4 @@ target_link_libraries(
   boost::type_traits
 )
 
+boost_lib(PUBLIC ${PROJECT_NAME})

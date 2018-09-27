@@ -42,3 +42,4 @@ target_link_libraries(
   boost::throw_exception
 )
 
+boost_lib(PUBLIC ${PROJECT_NAME})

@@ -14,14 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-project(boost_iostreams)
+function(boost_lib TYPE TARGET_NAME)
+  if (WIN32)
+    target_compile_definitions(${TARGET_NAME} ${TYPE} BOOST_ALL_NO_LIB=1)
+  elseif (OPEN_BSD)
+    target_compile_definitions(${TARGET_NAME} ${TYPE} BOOST_HAS_STDINT_H)
+  endif()
+endfunction()
 
-add_library(${PROJECT_NAME} INTERFACE)
-add_library(boost::iostreams ALIAS ${PROJECT_NAME})
-
-target_include_directories(
-  ${PROJECT_NAME} SYSTEM
-  INTERFACE ${PROJECT_SOURCE_DIR}/include
-)
-
-boost_lib(INTERFACE ${PROJECT_NAME})

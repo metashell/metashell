@@ -45,3 +45,4 @@ target_link_libraries(
   boost::tokenizer
 )
 
+boost_lib(PUBLIC ${PROJECT_NAME})

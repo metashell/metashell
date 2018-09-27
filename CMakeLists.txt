@@ -35,6 +35,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(Platform)
+include(MetashellBoost)
 
 # Windows workaround
 if (WIN32)
@@ -104,22 +105,16 @@ if (NOT DEFINED LIBCXX_HEADER_INSTALL_PATH)
   set(LIBCXX_HEADER_INSTALL_PATH "include/metashell/libcxx")
 endif ()
 
-# Boost
-if (WIN32)
-  add_definitions(-DBOOST_ALL_NO_LIB=1)
-elseif (OPEN_BSD)
-  add_definitions(-DBOOST_HAS_STDINT_H)
-elseif(NOT APPLE)
-  find_package(Rt)
-endif ()
-
-# Pthreads
 if (NOT WIN32)
+  # Boost
+  if(NOT OPEN_BSD AND NOT APPLE)
+    find_package(Rt)
+  endif ()
+
+  # Pthreads
   find_package(Threads)
-endif()
 
-# Readline
-if (NOT WIN32)
+  # Readline
   if (USE_EDITLINE)
     find_package(Editline)
   else()

@@ -32,3 +32,4 @@ target_link_libraries(
     boost::range
 )
 
+boost_lib(INTERFACE ${PROJECT_NAME})

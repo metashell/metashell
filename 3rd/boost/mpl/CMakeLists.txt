@@ -31,3 +31,4 @@ target_link_libraries(
     boost::preprocessor
 )
 
+boost_lib(INTERFACE ${PROJECT_NAME})

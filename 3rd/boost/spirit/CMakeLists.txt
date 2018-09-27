@@ -36,3 +36,4 @@ target_link_libraries(
     boost::utility
 )
 
+boost_lib(INTERFACE ${PROJECT_NAME})

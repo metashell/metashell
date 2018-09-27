@@ -31,3 +31,4 @@ target_link_libraries(
     boost::integer
 )
 
+boost_lib(INTERFACE ${PROJECT_NAME})

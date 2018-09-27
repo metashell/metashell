@@ -33,3 +33,4 @@ target_link_libraries(
     boost::type_index
 )
 
+boost_lib(INTERFACE ${PROJECT_NAME})

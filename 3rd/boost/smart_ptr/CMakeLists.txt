@@ -32,3 +32,5 @@ target_link_libraries(
     boost::predef
     boost::throw_exception
 )
+
+boost_lib(INTERFACE ${PROJECT_NAME})

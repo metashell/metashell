@@ -34,3 +34,5 @@ target_link_libraries(
     boost::static_assert
     boost::type_traits
 )
+
+boost_lib(INTERFACE ${PROJECT_NAME})

@@ -36,3 +36,5 @@ target_link_libraries(
   boost::predef
   boost::winapi
 )
+
+boost_lib(PUBLIC ${PROJECT_NAME})

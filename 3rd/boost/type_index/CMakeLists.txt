@@ -31,3 +31,4 @@ target_link_libraries(
     boost::container_hash
 )
 
+boost_lib(INTERFACE ${PROJECT_NAME})

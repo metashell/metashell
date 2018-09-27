@@ -65,3 +65,4 @@ target_include_directories(
   PUBLIC ${PROJECT_SOURCE_DIR}/include
 )
 
+boost_lib(PUBLIC ${PROJECT_NAME})

@@ -23,3 +23,5 @@ target_include_directories(
   ${PROJECT_NAME} SYSTEM
   INTERFACE ${PROJECT_SOURCE_DIR}/include
 )
+
+boost_lib(INTERFACE ${PROJECT_NAME})

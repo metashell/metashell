@@ -34,3 +34,4 @@ target_link_libraries(
     boost::numeric_conversion
 )
 
+boost_lib(INTERFACE ${PROJECT_NAME})

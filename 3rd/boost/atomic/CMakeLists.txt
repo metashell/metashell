@@ -50,3 +50,4 @@ target_compile_definitions(
     BOOST_ATOMIC_FORCE_FALLBACK=1
 )
 
+boost_lib(${LIB_TYPE} ${PROJECT_NAME})
