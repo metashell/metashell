@@ -30,6 +30,11 @@ then
   BUILD_THREADS=1
 fi
 
+if [ -z "${TEST_THREADS}" ]
+then
+  TEST_THREADS="${BUILD_THREADS}"
+fi
+
 if [ -z "${BUILD_TYPE}" ]
 then
   BUILD_TYPE="Release"
@@ -45,7 +50,8 @@ then
 fi
 
 # Show argument & config summary
-echo "Number of threads used: ${BUILD_THREADS}"
+echo "Number of threads used for building: ${BUILD_THREADS}"
+echo "Number of threads used for testing: ${TEST_THREADS}"
 echo "Platform: ${PLATFORM}"
 
 # Build Templight
@@ -83,7 +89,7 @@ mkdir -p bin; cd bin
     cmake .. -DMETASHELL_NO_DOC_GENERATION=1
   fi
   make -j${BUILD_THREADS}
-  ctest -j${BUILD_THREADS} || (cat Testing/Temporary/LastTest.log && false)
+  ctest -j${TEST_THREADS} || (cat Testing/Temporary/LastTest.log && false)
 cd ..
 
 if [ "${NO_INSTALLER}" = "" ]
