@@ -37,11 +37,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(Platform)
 include(MetashellBoost)
 
-# Windows workaround
-if (WIN32)
-  add_definitions( -DNOMINMAX )
-endif()
-
 # Warnings, C++11, etc
 include(Compiler)
 
