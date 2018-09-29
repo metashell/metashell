@@ -24,44 +24,18 @@ enable_warnings(${PROJECT_NAME})
 target_link_libraries(
   ${PROJECT_NAME}
 
-  boost::atomic
+  boost::algorithm
   boost::filesystem
-  boost::program_options
-  boost::regex
-  boost::system
-  boost::thread
-  boost::wave
+  boost::range
+  boost::utility
 
-  just::console
   just::temp
 
   metashell::core
-  metashell::process
+  metashell::data
+  metashell::iface
   metashell::readline
-
-  mpark::variant
-
-  protobuf
-
-  yaml_cpp
-
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${RT_LIBRARY}
-  ${PROTOBUF_LIBRARY}
 )
-
-# Readline
-if (WIN32)
-  target_link_libraries(${PROJECT_NAME} wineditline)
-  target_compile_definitions(${PROJECT_NAME} PRIVATE USE_EDITLINE)
-elseif (USE_EDITLINE)
-  include_directories(${EDITLINE_INCLUDE_DIR})
-  target_link_libraries(${PROJECT_NAME} ${EDITLINE_LIBRARY})
-  target_compile_definitions(${PROJECT_NAME} PRIVATE USE_EDITLINE)
-else()
-  include_directories(${READLINE_INCLUDE_DIR})
-  target_link_libraries(${PROJECT_NAME} ${READLINE_LIBRARY} termcap)
-endif()
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin COMPONENT metashell)
 

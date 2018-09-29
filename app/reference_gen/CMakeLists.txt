@@ -24,28 +24,16 @@ enable_warnings(${PROJECT_NAME})
 target_link_libraries(
   ${PROJECT_NAME}
 
-  boost::atomic
+  boost::algorithm
   boost::filesystem
   boost::program_options
-  boost::regex
-  boost::system
-  boost::thread
-  boost::wave
+  boost::range
 
   just::file
 
   metashell::core
-  metashell::process
+  metashell::data
   metashell::replace_part
-
-  mpark::variant
-
-  protobuf
-  yaml_cpp
-
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${RT_LIBRARY}
-  ${PROTOBUF_LIBRARY}
 )
 
 set(DOC_DIR "${CMAKE_SOURCE_DIR}/docs")

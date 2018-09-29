@@ -24,22 +24,22 @@ enable_warnings(${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
-# Readline
 if (WIN32)
-  target_compile_definitions(${PROJECT_NAME} PRIVATE USE_EDITLINE)
   target_link_libraries(${PROJECT_NAME} wineditline)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE USE_EDITLINE)
 elseif (USE_EDITLINE)
-  include_directories(${EDITLINE_INCLUDE_DIR})
+  target_include_directories(${PROJECT_NAME} PUBLIC ${EDITLINE_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} ${EDITLINE_LIBRARY})
   target_compile_definitions(${PROJECT_NAME} PRIVATE USE_EDITLINE)
 else()
-  include_directories(${READLINE_INCLUDE_DIR})
+  target_include_directories(${PROJECT_NAME} PUBLIC ${READLINE_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} ${READLINE_LIBRARY} termcap)
 endif()
+
 
 target_link_libraries(
   ${PROJECT_NAME}
 
   metashell::data
   metashell::iface
-
-  mpark::variant
 )

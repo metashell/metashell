@@ -28,12 +28,6 @@ enable_warnings(${PROJECT_NAME})
 target_link_libraries(
   ${PROJECT_NAME}
 
-  boost::atomic
-  boost::filesystem
-  boost::regex
-  boost::system
-  boost::thread
-
   googletest
 
   metashell::system_test

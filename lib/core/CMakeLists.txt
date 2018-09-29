@@ -27,23 +27,25 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(
   ${PROJECT_NAME}
 
-  boost::phoenix
+  boost::algorithm
+  boost::container
+  boost::filesystem
+  boost::optional
   boost::program_options
-  boost::regex
-  boost::thread
+  boost::range
+  boost::spirit
+  boost::utility
   boost::wave
+  boost::xpressive
 
-  just::console
   just::environment
-  just::lines
   just::file
+  just::lines
 
   metashell::boost
   metashell::data
   metashell::iface
   metashell::process
-
-  mpark::variant
 
   mindent
   protobuf

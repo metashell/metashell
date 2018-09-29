@@ -24,3 +24,12 @@ target_include_directories(
   INTERFACE ${PROJECT_SOURCE_DIR}/include
 )
 
+target_link_libraries(
+  ${PROJECT_NAME}
+
+  INTERFACE
+
+    boost::optional
+    boost::regex
+    boost::variant
+)

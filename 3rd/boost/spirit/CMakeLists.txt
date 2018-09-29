@@ -32,6 +32,7 @@ target_link_libraries(
     boost::function_types
     boost::iostreams
     boost::optional
+    boost::phoenix
     boost::thread
     boost::utility
 )

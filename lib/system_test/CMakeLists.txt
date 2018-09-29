@@ -27,13 +27,23 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(
   ${PROJECT_NAME}
 
+  boost::algorithm
+  boost::core
+  boost::filesystem
+  boost::optional
+  boost::range
+  boost::utility
+
   googletest
 
-  just::temp
-  just::lines
   just::environment
+  just::lines
+  just::temp
 
   metashell::core
-  metashell::data
   metashell::pattern
+  metashell::process
+  metashell::system_test
+
+  rapidjson
 )
