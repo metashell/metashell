@@ -16,6 +16,10 @@
 
 project(googletest)
 
+if (NOT WIN32)
+  find_package(Threads)
+endif()
+
 include_directories(.)
 include_directories(include)
 

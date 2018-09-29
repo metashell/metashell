@@ -100,23 +100,6 @@ if (NOT DEFINED LIBCXX_HEADER_INSTALL_PATH)
   set(LIBCXX_HEADER_INSTALL_PATH "include/metashell/libcxx")
 endif ()
 
-if (NOT WIN32)
-  # Boost
-  if(NOT OPEN_BSD AND NOT APPLE)
-    find_package(Rt)
-  endif ()
-
-  # Pthreads
-  find_package(Threads)
-
-  # Readline
-  if (USE_EDITLINE)
-    find_package(Editline)
-  else()
-    find_package(Readline)
-  endif()
-endif()
-
 enable_testing()
 
 add_subdirectory(app/metashell)

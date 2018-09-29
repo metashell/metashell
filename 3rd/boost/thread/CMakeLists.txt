@@ -22,6 +22,8 @@ if (WIN32)
   aux_source_directory(src/win32 SOURCES_WIN32)
   list(APPEND SOURCES ${SOURCES_WIN32})
 else()
+  find_package(Threads)
+
   aux_source_directory(src/pthread SOURCES_PTHREAD)
   list(APPEND SOURCES ${SOURCES_PTHREAD})
 endif()
