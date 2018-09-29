@@ -1,6 +1,3 @@
-#ifndef METASHELL_MOCK_FILE_WRITER_HPP
-#define METASHELL_MOCK_FILE_WRITER_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,18 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/file_writer.hpp>
+#include <gtest/gtest.h>
 
-#include <gmock/gmock.h>
-
-class mock_file_writer : public metashell::iface::file_writer
+int main(int argc_, char* argv_[])
 {
-public:
-  MOCK_METHOD1(open, bool(const std::string&));
-  MOCK_METHOD0(close, void());
-  MOCK_CONST_METHOD0(is_open, bool());
-
-  MOCK_METHOD1(write, bool(const std::string&));
-};
-
-#endif
+  ::testing::InitGoogleTest(&argc_, argv_);
+  return RUN_ALL_TESTS();
+}

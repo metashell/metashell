@@ -14,9 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/mock/environment_detector.hpp>
+
 #include "breaking_environment.hpp"
 #include "empty_container.hpp"
-#include "mock_environment_detector.hpp"
 #include "test_config.hpp"
 #include "util.hpp"
 
@@ -208,7 +209,7 @@ TEST(evaluation, throwing_environment_not_breaking_validate)
   data::config cfg;
   cfg.push_back(data::shell_config());
 
-  NiceMock<mock_environment_detector> det;
+  NiceMock<mock::environment_detector> det;
   breaking_environment e;
   e.get_appended_throw_from_now();
   core::null_displayer d;

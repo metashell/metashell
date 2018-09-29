@@ -1,3 +1,6 @@
+#ifndef METASHELL_TEST_UTIL_HPP
+#define METASHELL_TEST_UTIL_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,22 +17,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "util.hpp"
+#include <metashell/core/mdb_command_handler_map.hpp>
 
-#include <gtest/gtest.h>
-
-#include <stdexcept>
+#include <string>
+#include <tuple>
 
 std::tuple<metashell::core::mdb_command, std::string>
 get_command_from_map(const metashell::core::mdb_command_handler_map& map,
-                     const std::string& line)
-{
-  if (const auto opt_pair = map.get_command_for_line(line))
-  {
-    return *opt_pair;
-  }
-  else
-  {
-    throw std::logic_error("Command for " + line + " not found.");
-  }
-}
+                     const std::string& line);
+
+#endif

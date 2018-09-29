@@ -1,6 +1,3 @@
-#ifndef METASHELL_TEST_UTIL_HPP
-#define METASHELL_TEST_UTIL_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,33 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/type.hpp>
+#include "util.hpp"
 
-#include <metashell/core/mdb_command_handler_map.hpp>
-
-#include <string>
-#include <tuple>
+#include <stdexcept>
 
 std::tuple<metashell::core::mdb_command, std::string>
 get_command_from_map(const metashell::core::mdb_command_handler_map& map,
-                     const std::string& line);
-
-template <int N>
-metashell::data::type fib()
+                     const std::string& line)
 {
-  return metashell::data::type("fib<" + std::to_string(N) + ">");
+  if (const auto opt_pair = map.get_command_for_line(line))
+  {
+    return *opt_pair;
+  }
+  else
+  {
+    throw std::logic_error("Command for " + line + " not found.");
+  }
 }
-
-template <int N>
-metashell::data::type v1fib()
-{
-  return metashell::data::type("v1::fib<" + std::to_string(N) + ">");
-}
-
-template <int N>
-metashell::data::type v2fib()
-{
-  return metashell::data::type("v2::fib<" + std::to_string(N) + ">");
-}
-
-#endif

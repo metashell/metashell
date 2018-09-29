@@ -1,6 +1,3 @@
-#ifndef METASHELL_MOCK_CONSOLE_HPP
-#define METASHELL_MOCK_CONSOLE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,20 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/console.hpp>
+#include <gtest/gtest.h>
 
-#include <gmock/gmock.h>
-
-class mock_console : public metashell::iface::console
+int main(int argc_, char* argv_[])
 {
-public:
-  MOCK_METHOD1(show, void(const metashell::data::colored_string&));
-  MOCK_METHOD0(new_line, void());
-
-  MOCK_METHOD0(ask_for_continuation, user_answer());
-
-  MOCK_CONST_METHOD0(width, int());
-  MOCK_CONST_METHOD0(height, int());
-};
-
-#endif
+  ::testing::InitGoogleTest(&argc_, argv_);
+  return RUN_ALL_TESTS();
+}

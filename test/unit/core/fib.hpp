@@ -1,8 +1,8 @@
-#ifndef METASHELL_MOCK_JSON_WRITER_HPP
-#define METASHELL_MOCK_JSON_WRITER_HPP
+#ifndef METASHELL_TEST_FIB_HPP
+#define METASHELL_TEST_FIB_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,26 +17,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/json_writer.hpp>
+#include <metashell/data/type.hpp>
 
-#include <gmock/gmock.h>
+#include <string>
 
-class mock_json_writer : public metashell::iface::json_writer
+template <int N>
+metashell::data::type fib()
 {
-public:
-  MOCK_METHOD1(string, void(const std::string&));
-  MOCK_METHOD1(int_, void(int));
-  MOCK_METHOD1(double_, void(double));
-  MOCK_METHOD1(bool_, void(bool));
+  return metashell::data::type("fib<" + std::to_string(N) + ">");
+}
 
-  MOCK_METHOD0(start_object, void());
-  MOCK_METHOD1(key, void(const std::string&));
-  MOCK_METHOD0(end_object, void());
+template <int N>
+metashell::data::type v1fib()
+{
+  return metashell::data::type("v1::fib<" + std::to_string(N) + ">");
+}
 
-  MOCK_METHOD0(start_array, void());
-  MOCK_METHOD0(end_array, void());
-
-  MOCK_METHOD0(end_document, void());
-};
+template <int N>
+metashell::data::type v2fib()
+{
+  return metashell::data::type("v2::fib<" + std::to_string(N) + ">");
+}
 
 #endif

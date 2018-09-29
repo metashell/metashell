@@ -1,5 +1,5 @@
-#ifndef METASHELL_MOCK_ENVIRONMENT_DETECTOR_HPP
-#define METASHELL_MOCK_ENVIRONMENT_DETECTOR_HPP
+#ifndef METASHELL_MOCK_FILE_WRITER_HPP
+#define METASHELL_MOCK_FILE_WRITER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,20 +17,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/environment_detector.hpp>
+#include <metashell/iface/file_writer.hpp>
 
 #include <gmock/gmock.h>
 
-class mock_environment_detector : public metashell::iface::environment_detector
+namespace metashell
 {
-public:
-  MOCK_METHOD0(search_clang_binary, boost::filesystem::path());
-  MOCK_METHOD1(file_exists, bool(const boost::filesystem::path&));
+  namespace mock
+  {
+    class file_writer : public iface::file_writer
+    {
+    public:
+      MOCK_METHOD1(open, bool(const std::string&));
+      MOCK_METHOD0(close, void());
+      MOCK_CONST_METHOD0(is_open, bool());
 
-  MOCK_METHOD0(on_windows, bool());
-  MOCK_METHOD0(on_osx, bool());
-
-  MOCK_METHOD0(directory_of_executable, boost::filesystem::path());
-};
+      MOCK_METHOD1(write, bool(const std::string&));
+    };
+  }
+}
 
 #endif

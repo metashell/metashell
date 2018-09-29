@@ -1,3 +1,6 @@
+#ifndef METASHELL_MOCK_CONSOLE_HPP
+#define METASHELL_MOCK_CONSOLE_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,31 +17,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/type.hpp>
+#include <metashell/iface/console.hpp>
 
-#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
-#include "util.hpp"
-
-using namespace metashell::data;
-
-TEST(test_type, test_integral_constant)
+namespace metashell
 {
-  const type int_("int");
+  namespace mock
+  {
+    class console : public iface::console
+    {
+    public:
+      MOCK_METHOD1(show, void(const data::colored_string&));
+      MOCK_METHOD0(new_line, void());
 
-  ASSERT_FALSE(type("").is_integral_constant(int_, "13"));
+      MOCK_METHOD0(ask_for_continuation, user_answer());
 
-  ASSERT_TRUE(
-      type("std::integral_constant<int, 13>").is_integral_constant(int_, "13"));
-
-  ASSERT_FALSE(type("int").is_integral_constant(int_, "13"));
-
-  ASSERT_TRUE(
-      type("std::integral_constant<int, 21>").is_integral_constant(int_, "21"));
-
-  ASSERT_TRUE(type("std::integral_constant<unsigned int, 21>")
-                  .is_integral_constant(type("unsigned int"), "21"));
-
-  ASSERT_TRUE(type("std::_1::integral_constant<int, 13>")
-                  .is_integral_constant(int_, "13"));
+      MOCK_CONST_METHOD0(width, int());
+      MOCK_CONST_METHOD0(height, int());
+    };
+  }
 }
+
+#endif

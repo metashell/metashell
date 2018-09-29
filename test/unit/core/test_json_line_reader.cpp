@@ -20,8 +20,9 @@
 #include <metashell/core/null_displayer.hpp>
 #include <metashell/core/null_json_writer.hpp>
 
-#include "mock_command_processor.hpp"
-#include "mock_json_writer.hpp"
+#include <metashell/mock/command_processor.hpp>
+#include <metashell/mock/json_writer.hpp>
+
 #include "string_reader.hpp"
 
 #include <gtest/gtest.h>
@@ -144,7 +145,7 @@ TEST(json_line_reader, cmd_command_without_cmd_field)
 
 TEST(json_line_reader, displays_prompt)
 {
-  mock_json_writer w;
+  mock::json_writer w;
   core::null_displayer d;
   core::command_processor_queue cpq;
 
@@ -194,8 +195,8 @@ TEST(json_line_reader, code_completion_gets_code_completion)
   core::null_json_writer jw;
   core::null_displayer d;
 
-  mock_command_processor* cp =
-      new ::testing::StrictMock<mock_command_processor>;
+  mock::command_processor* cp =
+      new ::testing::StrictMock<mock::command_processor>;
   EXPECT_CALL(*cp, code_complete("foo", ::testing::_));
 
   core::command_processor_queue cpq;
@@ -210,10 +211,10 @@ TEST(json_line_reader, code_completion_gets_code_completion)
 
 TEST(json_line_reader, code_completion_result)
 {
-  mock_json_writer w;
+  mock::json_writer w;
   core::null_displayer d;
 
-  mock_command_processor* cp = new mock_command_processor;
+  mock::command_processor* cp = new mock::command_processor;
   EXPECT_CALL(*cp, code_complete("foo", ::testing::_))
       .WillOnce(
           testing::SetArgReferee<1>(std::set<std::string>{"hello", "world"}));

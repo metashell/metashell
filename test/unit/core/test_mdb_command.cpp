@@ -18,8 +18,6 @@
 
 #include <gtest/gtest.h>
 
-#include "util.hpp"
-
 using namespace metashell;
 
 TEST(mdb_command, repeatable_constructor)

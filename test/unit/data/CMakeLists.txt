@@ -1,5 +1,5 @@
 # Metashell - Interactive C++ template metaprogramming shell
-# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+# Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,26 +14,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-project(googletest)
+project(metashell_data_unit_test)
 
-include_directories(.)
-include_directories(include)
+aux_source_directory(. SOURCES)
+add_executable(${PROJECT_NAME} ${SOURCES})
 
-aux_source_directory(src SOURCES)
-list(REMOVE_ITEM SOURCES src/gtest-all.cc)
-
-add_library(${PROJECT_NAME} STATIC ${SOURCES})
-
-disable_warnings(${PROJECT_NAME})
-
-target_include_directories(
-  ${PROJECT_NAME} SYSTEM
-  PUBLIC ${PROJECT_SOURCE_DIR}/include
-)
+enable_warnings(${PROJECT_NAME})
 
 target_link_libraries(
   ${PROJECT_NAME}
 
-  ${CMAKE_THREAD_LIBS_INIT}
+  googletest
+
+  metashell::data
 )
+
+add_test(metashell_data_unit_test ${PROJECT_NAME})
+
+# Code coverage
+if (ENABLE_CODE_COVERAGE)
+  SETUP_TARGET_FOR_COVERAGE(
+    test_coverage
+    ${PROJECT_NAME}
+    coverage
+    "'/usr/*';'test/*';'3rd/*'"
+  )
+endif()
 

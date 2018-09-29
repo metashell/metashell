@@ -1,6 +1,3 @@
-#ifndef METASHELL_MOCK_COMMAND_PROCESSOR_HPP
-#define METASHELL_MOCK_COMMAND_PROCESSOR_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,23 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/command_processor.hpp>
+#include <metashell/data/type.hpp>
 
-#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
-class mock_command_processor : public metashell::iface::command_processor
+using namespace metashell::data;
+
+TEST(test_type, test_integral_constant)
 {
-public:
-  MOCK_METHOD3(line_available,
-               void(const std::string&,
-                    metashell::iface::displayer&,
-                    metashell::iface::history&));
-  MOCK_METHOD0(cancel_operation, void());
+  const type int_("int");
 
-  MOCK_CONST_METHOD0(prompt, std::string());
-  MOCK_CONST_METHOD0(stopped, bool());
+  ASSERT_FALSE(type("").is_integral_constant(int_, "13"));
 
-  MOCK_METHOD2(code_complete, void(const std::string&, std::set<std::string>&));
-};
+  ASSERT_TRUE(
+      type("std::integral_constant<int, 13>").is_integral_constant(int_, "13"));
 
-#endif
+  ASSERT_FALSE(type("int").is_integral_constant(int_, "13"));
+
+  ASSERT_TRUE(
+      type("std::integral_constant<int, 21>").is_integral_constant(int_, "21"));
+
+  ASSERT_TRUE(type("std::integral_constant<unsigned int, 21>")
+                  .is_integral_constant(type("unsigned int"), "21"));
+
+  ASSERT_TRUE(type("std::_1::integral_constant<int, 13>")
+                  .is_integral_constant(int_, "13"));
+}

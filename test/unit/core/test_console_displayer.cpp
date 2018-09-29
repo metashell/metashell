@@ -16,8 +16,9 @@
 
 #include <metashell/core/console_displayer.hpp>
 
-#include "mock_console.hpp"
-#include "util.hpp"
+#include <metashell/mock/console.hpp>
+
+#include "fib.hpp"
 
 #include <gtest/gtest.h>
 
@@ -75,13 +76,13 @@ namespace
 
 TEST(console_displayer, nothing_is_displayed_by_default)
 {
-  ::testing::StrictMock<mock_console> c;
+  ::testing::StrictMock<mock::console> c;
   core::console_displayer cd(c, false, false);
 }
 
 TEST(console_displayer, raw_text_is_printed)
 {
-  mock_console c;
+  mock::console c;
   core::console_displayer cd(c, false, false);
 
   EXPECT_CALL(c, show(data::colored_string("Hello world!")));
@@ -92,7 +93,7 @@ TEST(console_displayer, raw_text_is_printed)
 
 TEST(console_displayer, raw_text_with_new_line_is_printed)
 {
-  mock_console c;
+  mock::console c;
   core::console_displayer cd(c, false, false);
 
   EXPECT_CALL(c, show(data::colored_string("Hello\nworld!")));
@@ -103,7 +104,7 @@ TEST(console_displayer, raw_text_with_new_line_is_printed)
 
 TEST(console_displayer, error_with_no_colors_is_printed)
 {
-  mock_console c;
+  mock::console c;
   core::console_displayer cd(c, false, false);
 
   EXPECT_CALL(c, show(data::colored_string("Something went wrong")));
@@ -114,7 +115,7 @@ TEST(console_displayer, error_with_no_colors_is_printed)
 
 TEST(console_displayer, error_with_colors_is_printed_in_red)
 {
-  mock_console c;
+  mock::console c;
   core::console_displayer cd(c, false, true);
 
   EXPECT_CALL(c, show(data::colored_string(
@@ -126,7 +127,7 @@ TEST(console_displayer, error_with_colors_is_printed_in_red)
 
 TEST(console_displayer, mdb_forwardtrace_from_root_on_narrow_terminal)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(25));
   ON_CALL(c, height()).WillByDefault(Return(100));
@@ -297,7 +298,7 @@ TEST(console_displayer, mdb_forwardtrace_from_root_on_narrow_terminal)
 
 TEST(console_displayer, mdb_forwardtrace_on_extremely_narrow_terminal_w0)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(0));
   ON_CALL(c, height()).WillByDefault(Return(1000));
@@ -382,7 +383,7 @@ TEST(console_displayer, mdb_forwardtrace_on_extremely_narrow_terminal_w0)
 
 TEST(console_displayer, mdb_forwardtrace_on_extremely_narrow_terminal_w1)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(1));
   ON_CALL(c, height()).WillByDefault(Return(1000));
@@ -467,7 +468,7 @@ TEST(console_displayer, mdb_forwardtrace_on_extremely_narrow_terminal_w1)
 
 TEST(console_displayer, show_file_section_3_lines_1)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(0));
 
@@ -490,7 +491,7 @@ TEST(console_displayer, show_file_section_3_lines_1)
 
 TEST(console_displayer, show_file_section_3_lines_2)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(0));
 
@@ -513,7 +514,7 @@ TEST(console_displayer, show_file_section_3_lines_2)
 
 TEST(console_displayer, show_file_section_6_lines_1)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(0));
 
@@ -542,7 +543,7 @@ TEST(console_displayer, show_file_section_6_lines_1)
 
 TEST(console_displayer, show_file_section_6_lines_2)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(0));
 
@@ -574,7 +575,7 @@ TEST(console_displayer, show_file_section_6_lines_2)
 
 TEST(console_displayer, show_file_section_10_lines)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(0));
 

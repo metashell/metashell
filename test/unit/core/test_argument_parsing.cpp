@@ -16,7 +16,7 @@
 
 #include <metashell/core/parse_config.hpp>
 
-#include "mock_environment_detector.hpp"
+#include <metashell/mock/environment_detector.hpp>
 
 #include <gtest/gtest.h>
 
@@ -37,7 +37,7 @@ namespace
   {
     std::vector<const char*> args{"metashell"};
     args.insert(args.end(), args_.begin(), args_.end());
-    NiceMock<mock_environment_detector> env_detector;
+    NiceMock<mock::environment_detector> env_detector;
 
     ON_CALL(env_detector, on_windows()).WillByDefault(Return(false));
     ON_CALL(env_detector, on_osx()).WillByDefault(Return(false));
@@ -185,7 +185,7 @@ TEST(argument_parsing, specifying_the_engine)
 TEST(argument_parsing, metashell_path_is_filled)
 {
   std::vector<const char*> args{"the_path"};
-  NiceMock<mock_environment_detector> env_detector;
+  NiceMock<mock::environment_detector> env_detector;
 
   ON_CALL(env_detector, on_windows()).WillByDefault(Return(false));
   ON_CALL(env_detector, on_osx()).WillByDefault(Return(false));

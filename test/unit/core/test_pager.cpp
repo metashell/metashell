@@ -17,7 +17,7 @@
 #include <metashell/core/console_displayer.hpp>
 #include <metashell/core/pager.hpp>
 
-#include "mock_console.hpp"
+#include <metashell/mock/console.hpp>
 
 #include <gtest/gtest.h>
 
@@ -27,7 +27,7 @@ using ::testing::Return;
 
 TEST(pager, one_line)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(100));
@@ -48,7 +48,7 @@ TEST(pager, one_line)
 
 TEST(pager, non_full_page)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(5));
@@ -91,7 +91,7 @@ TEST(pager, non_full_page)
 
 TEST(pager, almost_full_page)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(4));
@@ -118,7 +118,7 @@ TEST(pager, almost_full_page)
 
 TEST(pager, full_page_by_one_line)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(4));
@@ -150,7 +150,7 @@ TEST(pager, full_page_by_one_line)
 
 TEST(pager, multi_page_next_page_answer)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(3));
@@ -189,7 +189,7 @@ TEST(pager, multi_page_next_page_answer)
 
 TEST(pager, multi_page_multiline_shows)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(3));
@@ -218,7 +218,7 @@ TEST(pager, multi_page_multiline_shows)
 
 TEST(pager, multi_page_narrow_terminal)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(5));
   ON_CALL(c, height()).WillByDefault(Return(3));
@@ -247,7 +247,7 @@ TEST(pager, multi_page_narrow_terminal)
 
 TEST(pager, multi_page_show_all_answer)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(3));
@@ -284,7 +284,7 @@ TEST(pager, multi_page_show_all_answer)
 
 TEST(pager, quit_answer)
 {
-  NiceMock<mock_console> c;
+  NiceMock<mock::console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(80));
   ON_CALL(c, height()).WillByDefault(Return(3));

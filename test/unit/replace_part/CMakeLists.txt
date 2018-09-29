@@ -1,5 +1,5 @@
 # Metashell - Interactive C++ template metaprogramming shell
-# Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+# Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,11 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-project(metashell_system_test_self_test)
-
-include(MetashellSystemTest)
-find_package(GCC)
-find_package(MSVC)
+project(metashell_replace_part_unit_test)
 
 aux_source_directory(. SOURCES)
 add_executable(${PROJECT_NAME} ${SOURCES})
@@ -28,24 +24,18 @@ enable_warnings(${PROJECT_NAME})
 target_link_libraries(
   ${PROJECT_NAME}
 
-  boost::atomic
-  boost::filesystem
-  boost::regex
-  boost::system
-  boost::thread
-
   googletest
 
-  metashell::system_test
+  metashell::replace_part
 )
 
-add_test(metashell_system_test_self_test ${PROJECT_NAME})
+add_test(metashell_replace_part_unit_tests ${PROJECT_NAME})
 
 # Code coverage
 if (ENABLE_CODE_COVERAGE)
   SETUP_TARGET_FOR_COVERAGE(
     test_coverage
-    metashell_system_test_self_test
+    ${PROJECT_NAME}
     coverage
     "'/usr/*';'test/*';'3rd/*'"
   )

@@ -18,7 +18,7 @@
 #include <metashell/core/logger.hpp>
 #include <metashell/core/null_displayer.hpp>
 
-#include "mock_file_writer.hpp"
+#include <metashell/mock/file_writer.hpp>
 
 #include <gtest/gtest.h>
 
@@ -34,7 +34,7 @@ using ::testing::_;
 TEST(logger, logging_is_disabled_by_default)
 {
   core::null_displayer d;
-  mock_file_writer w;
+  mock::file_writer w;
   core::logger l(d, w);
 
   ASSERT_FALSE(l.logging());
@@ -43,7 +43,7 @@ TEST(logger, logging_is_disabled_by_default)
 TEST(logger, logging_is_enabled_when_logging_to_console)
 {
   core::null_displayer d;
-  NiceMock<mock_file_writer> w;
+  NiceMock<mock::file_writer> w;
   ON_CALL(w, is_open()).WillByDefault(Return(true));
   core::logger l(d, w);
   l.log_to_console();
@@ -54,7 +54,7 @@ TEST(logger, logging_is_enabled_when_logging_to_console)
 TEST(logger, logging_is_disabled_after_logging_is_stopped)
 {
   core::null_displayer d;
-  NiceMock<mock_file_writer> w;
+  NiceMock<mock::file_writer> w;
   ON_CALL(w, is_open()).WillByDefault(Return(true));
   core::logger l(d, w);
   l.log_to_console();
@@ -66,7 +66,7 @@ TEST(logger, logging_is_disabled_after_logging_is_stopped)
 TEST(logger, log_is_displayed_on_console_when_logging_to_console)
 {
   core::in_memory_displayer d;
-  NiceMock<mock_file_writer> w;
+  NiceMock<mock::file_writer> w;
   ON_CALL(w, is_open()).WillByDefault(Return(true));
   core::logger l(d, w);
   l.log_to_console();
@@ -79,7 +79,7 @@ TEST(logger, log_is_displayed_on_console_when_logging_to_console)
 TEST(logger, log_into_file_tries_to_open_the_file)
 {
   core::null_displayer d;
-  NiceMock<mock_file_writer> w;
+  NiceMock<mock::file_writer> w;
 
   ON_CALL(w, is_open()).WillByDefault(Return(true));
   EXPECT_CALL(w, open("/tmp/foo.txt")).WillOnce(Return(true));
@@ -94,7 +94,7 @@ TEST(logger, log_into_file_tries_to_open_the_file)
 TEST(logger, failure_when_opening_log_file)
 {
   core::null_displayer d;
-  NiceMock<mock_file_writer> w;
+  NiceMock<mock::file_writer> w;
 
   ON_CALL(w, is_open()).WillByDefault(Return(true));
   EXPECT_CALL(w, open(_)).WillOnce(Return(false));
@@ -109,7 +109,7 @@ TEST(logger, failure_when_opening_log_file)
 TEST(logger, logging_into_a_different_file)
 {
   core::null_displayer d;
-  NiceMock<mock_file_writer> w;
+  NiceMock<mock::file_writer> w;
 
   EXPECT_CALL(w, open(_)).WillOnce(Return(true)).WillOnce(Return(true));
   ON_CALL(w, is_open()).WillByDefault(Return(true));
@@ -126,7 +126,7 @@ TEST(
     logging_is_disabled_when_trying_to_log_into_a_different_file_but_fails_to_open_it)
 {
   core::null_displayer d;
-  NiceMock<mock_file_writer> w;
+  NiceMock<mock::file_writer> w;
 
   ON_CALL(w, is_open()).WillByDefault(Return(true));
   EXPECT_CALL(w, open(_)).WillOnce(Return(true));
@@ -145,7 +145,7 @@ TEST(
 TEST(logger, log_file_is_closed_when_starting_to_log_to_console)
 {
   core::null_displayer d;
-  NiceMock<mock_file_writer> w;
+  NiceMock<mock::file_writer> w;
 
   EXPECT_CALL(w, open(_)).WillOnce(Return(true));
   ON_CALL(w, is_open()).WillByDefault(Return(true));
@@ -160,7 +160,7 @@ TEST(logger, log_file_is_closed_when_starting_to_log_to_console)
 TEST(logger, log_file_is_closed_when_logging_is_stopped)
 {
   core::null_displayer d;
-  NiceMock<mock_file_writer> w;
+  NiceMock<mock::file_writer> w;
 
   EXPECT_CALL(w, open(_)).WillOnce(Return(true));
   ON_CALL(w, is_open()).WillByDefault(Return(true));
@@ -175,7 +175,7 @@ TEST(logger, log_file_is_closed_when_logging_is_stopped)
 TEST(logger, log_is_written_to_file)
 {
   core::null_displayer d;
-  NiceMock<mock_file_writer> w;
+  NiceMock<mock::file_writer> w;
 
   EXPECT_CALL(w, open(_)).WillOnce(Return(true));
   ON_CALL(w, is_open()).WillByDefault(Return(true));
