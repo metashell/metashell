@@ -14,13 +14,27 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use_cpp11()
+project(googlemock)
 
 include_directories(.)
 include_directories(include)
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/googletest/include")
 
 aux_source_directory(src SOURCES)
 list(REMOVE_ITEM SOURCES src/gmock-all.cc)
 
-add_library(googlemock STATIC ${SOURCES})
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+
+disable_warnings(${PROJECT_NAME})
+
+target_include_directories(
+  ${PROJECT_NAME} SYSTEM
+  PUBLIC ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(
+  ${PROJECT_NAME}
+
+  googletest
+)
+
+

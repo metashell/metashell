@@ -17,9 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/command_processor_queue.hpp>
 #include <metashell/data/console_type.hpp>
-#include <metashell/line_reader.hpp>
+#include <metashell/data/line_reader.hpp>
+
+#include <metashell/core/command_processor_queue.hpp>
 
 #include <metashell/iface/console.hpp>
 #include <metashell/iface/displayer.hpp>
@@ -39,16 +40,16 @@ namespace metashell
 
     iface::displayer& displayer();
     iface::history& history();
-    line_reader& reader();
-    command_processor_queue& processor_queue();
+    data::line_reader& reader();
+    core::command_processor_queue& processor_queue();
 
   private:
-    command_processor_queue _processor_queue;
+    core::command_processor_queue _processor_queue;
     std::unique_ptr<iface::console> _console;
     std::unique_ptr<iface::json_writer> _json_writer;
     std::unique_ptr<iface::displayer> _displayer;
     std::unique_ptr<iface::history> _history;
-    line_reader _reader;
+    data::line_reader _reader;
   };
 }
 

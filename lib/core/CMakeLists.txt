@@ -14,20 +14,41 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-aux_source_directory(. SOURCES)
-add_library(metashell_core_lib STATIC ${SOURCES})
+project(metashell_core)
 
-enable_warnings()
-use_cpp14()
+aux_source_directory(src SOURCES)
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+add_library(metashell::core ALIAS ${PROJECT_NAME})
 
-# mIndent
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mindent/include")
+enable_warnings(${PROJECT_NAME})
 
-# Just
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_console/include")
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_environment/include")
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_lines/include")
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_file/include")
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
-# Mpark.Variant
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mpark_variant/include")
+target_link_libraries(
+  ${PROJECT_NAME}
+
+  boost::algorithm
+  boost::container
+  boost::filesystem
+  boost::optional
+  boost::program_options
+  boost::range
+  boost::spirit
+  boost::utility
+  boost::wave
+  boost::xpressive
+
+  just::environment
+  just::file
+  just::lines
+
+  metashell::boost
+  metashell::data
+  metashell::iface
+  metashell::process
+
+  mindent
+  protobuf
+  rapidjson
+  yaml_cpp
+)

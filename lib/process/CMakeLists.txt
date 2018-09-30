@@ -14,9 +14,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-aux_source_directory(. SOURCES)
-add_library(metashell_process_lib STATIC ${SOURCES})
+project(metashell_process)
 
-enable_warnings()
-use_cpp14()
+aux_source_directory(src SOURCES)
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+add_library(metashell::process ALIAS ${PROJECT_NAME})
 
+enable_warnings(${PROJECT_NAME})
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+target_link_libraries(
+  ${PROJECT_NAME}
+
+  boost::algorithm
+  boost::filesystem
+  boost::thread
+  boost::utility
+
+  metashell::data
+)

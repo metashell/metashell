@@ -14,25 +14,36 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-aux_source_directory(. SOURCES)
-add_library(metashell_readline_lib STATIC ${SOURCES})
+project(metashell_readline)
 
-enable_warnings()
-use_cpp14()
+aux_source_directory(src SOURCES)
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+add_library(metashell::readline ALIAS ${PROJECT_NAME})
 
-# Readline
+enable_warnings(${PROJECT_NAME})
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
 if (WIN32)
-  add_definitions( -DUSE_EDITLINE )
-  include_directories("${CMAKE_SOURCE_DIR}/3rd/wineditline")
+  target_link_libraries(${PROJECT_NAME} wineditline)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE USE_EDITLINE)
+elseif (USE_EDITLINE)
+  find_package(Editline)
+
+  target_include_directories(${PROJECT_NAME} PUBLIC ${EDITLINE_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} ${EDITLINE_LIBRARY})
+  target_compile_definitions(${PROJECT_NAME} PRIVATE USE_EDITLINE)
 else()
-  if (USE_EDITLINE)
-    include_directories(${EDITLINE_INCLUDE_DIR})
-    add_definitions( -DUSE_EDITLINE )
-  else()
-    include_directories(${READLINE_INCLUDE_DIR})
-  endif()
+  find_package(Readline)
+
+  target_include_directories(${PROJECT_NAME} PUBLIC ${READLINE_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} ${READLINE_LIBRARY} termcap)
 endif()
 
-# Mpark.Variant
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mpark_variant/include")
 
+target_link_libraries(
+  ${PROJECT_NAME}
+
+  metashell::data
+  metashell::iface
+)

@@ -14,15 +14,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-aux_source_directory(. SOURCES)
-add_library(metashell_data_lib STATIC ${SOURCES})
+project(metashell_data)
 
-enable_warnings()
-use_cpp14()
+aux_source_directory(src SOURCES)
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+add_library(metashell::data ALIAS ${PROJECT_NAME})
 
-# Just
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_console/include")
+enable_warnings(${PROJECT_NAME})
 
-# Mpark.Variant
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mpark_variant/include")
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
+target_link_libraries(
+  ${PROJECT_NAME}
+
+  boost::algorithm
+  boost::filesystem
+  boost::optional
+  boost::preprocessor
+  boost::range
+  boost::regex
+  boost::tuple
+  boost::utility
+  boost::variant
+  boost::xpressive
+
+  just::console
+
+  metashell::boost
+
+  mpark::variant
+)

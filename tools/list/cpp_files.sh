@@ -23,7 +23,7 @@ then
   exit 1
 fi
 
-find include lib test app -type f -a '(' \
+find lib test app -type f -a '(' \
   -name '*.hpp' -o \
   -name '*.cpp' -o \
   -name '*.cc' -o \

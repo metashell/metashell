@@ -14,7 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use_cpp11()
+project(googletest)
+
+if (NOT WIN32)
+  find_package(Threads)
+endif()
 
 include_directories(.)
 include_directories(include)
@@ -22,4 +26,18 @@ include_directories(include)
 aux_source_directory(src SOURCES)
 list(REMOVE_ITEM SOURCES src/gtest-all.cc)
 
-add_library(googletest STATIC ${SOURCES})
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+
+disable_warnings(${PROJECT_NAME})
+
+target_include_directories(
+  ${PROJECT_NAME} SYSTEM
+  PUBLIC ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(
+  ${PROJECT_NAME}
+
+  ${CMAKE_THREAD_LIBS_INIT}
+)
+

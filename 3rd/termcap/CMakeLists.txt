@@ -14,5 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subdirs(src)
+project(termcap)
+
+aux_source_directory(src SOURCES)
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+
+disable_warnings(${PROJECT_NAME})
+
+target_include_directories(
+  ${PROJECT_NAME} SYSTEM
+  INTERFACE ${PROJECT_SOURCE_DIR}/include
+  PRIVATE ${PROJECT_SOURCE_DIR}/custom_include
+)
+
+target_compile_definitions(
+  ${PROJECT_NAME}
+  
+  PRIVATE
+    STDC_HEADERS
+    HAVE_CONFIG_H
+)
 

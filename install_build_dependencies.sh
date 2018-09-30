@@ -22,9 +22,18 @@ then
   exit 1
 fi
 
+# Arguments
+if [ -z "${BUILD_THREADS}" ]
+then
+  BUILD_THREADS=1
+fi
+
 PLATFORM="$(tools/detect_platform.sh)"
 CLANG_VERSION=3.8.0
+GRAPHVIZ_VERSION=2.40.1
 
+# Show argument & config summary
+echo "Number of threads used: ${BUILD_THREADS}"
 echo "Platform: ${PLATFORM}"
 
 case "${PLATFORM}" in
@@ -67,7 +76,9 @@ ubuntu)
   then
     sudo apt-add-repository universe
   fi
-  sudo apt-get -y install git g++ cmake libreadline-dev python-pip zip
+  sudo apt-get -y install \
+      git g++ cmake libreadline-dev python-pip zip python3-pip \
+      libtool automake autoconf libltdl-dev pkg-config bison flex
   sudo -H pip install pycodestyle pylint gitpython daemonize mkdocs cheetah
   UBUNTU_VERSION="$(tools/detect_platform.sh --version)"
   if [ "${UBUNTU_VERSION}" = "18.04" ]
@@ -75,12 +86,30 @@ ubuntu)
     UBUNTU_VERSION="16.04"
   fi
   CLANG_ARCHIVE="clang+llvm-${CLANG_VERSION}-x86_64-linux-gnu-ubuntu-${UBUNTU_VERSION}"
+  GRAPHVIZ_ARCHIVE="graphviz-stable_release_${GRAPHVIZ_VERSION}"
   cd 3rd
     wget http://llvm.org/releases/${CLANG_VERSION}/${CLANG_ARCHIVE}.tar.xz
     tar -xf ${CLANG_ARCHIVE}.tar.xz
     rm -rf clang
     mv ${CLANG_ARCHIVE} clang
     rm ${CLANG_ARCHIVE}.tar.xz
+
+    if [ "${NO_GRAPHVIZ}" = "" ]
+    then
+      wget https://gitlab.com/graphviz/graphviz/-/archive/stable_release_${GRAPHVIZ_VERSION}/${GRAPHVIZ_ARCHIVE}.tar.bz2
+      tar -jxf ${GRAPHVIZ_ARCHIVE}.tar.bz2
+      rm -rf graphviz
+      mv ${GRAPHVIZ_ARCHIVE} graphviz
+      rm ${GRAPHVIZ_ARCHIVE}.tar.bz2
+      cd graphviz
+        mkdir prefix
+
+        ./autogen.sh
+        ./configure --prefix $(pwd)/prefix
+        make -j${BUILD_THREADS}
+        make install
+      cd ..
+    fi
   cd ..
   ;;
 debian)

@@ -14,35 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.1)
 
-project(metashell)
-set(CMAKE_PROJECT_NAME metashell)
+if(${CMAKE_VERSION} VERSION_LESS 3.12)
+  cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
+else()
+  cmake_policy(VERSION 3.12)
+endif()
+
+project(metashell_project)
+
 set(MAJOR_VERSION 4)
 set(MINOR_VERSION 0)
 set(PATCH_VERSION 0)
+
+set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Version macros
-add_definitions(-DMETASHELL_MAJOR=${MAJOR_VERSION})
-add_definitions(-DMETASHELL_MINOR=${MINOR_VERSION})
-add_definitions(-DMETASHELL_PATCH=${PATCH_VERSION})
-
 include(Platform)
-
-# Windows workaround
-if (WIN32)
-  add_definitions( -DNOMINMAX )
-endif()
+include(MetashellBoost)
 
 # Warnings, C++11, etc
 include(Compiler)
-
-# Workaround on some systems (OSX + clang + Boost 1.55)
-add_definitions(-DBOOST_ATOMIC_FORCE_FALLBACK=1)
 
 # Sanitizers
 if (ENABLE_SANITIZERS)
@@ -104,44 +100,150 @@ if (NOT DEFINED LIBCXX_HEADER_INSTALL_PATH)
   set(LIBCXX_HEADER_INSTALL_PATH "include/metashell/libcxx")
 endif ()
 
-# Boost
-if (WIN32)
-  add_definitions(-DBOOST_ALL_NO_LIB=1)
-else ()
-  set(BOOST_ATOMIC_LIB boost_atomic)
-  if (OPEN_BSD)
-    add_definitions(-DBOOST_HAS_STDINT_H)
-  elseif(NOT APPLE)
-    find_package(Rt)
-  endif()
-endif ()
-
-# Pthreads
-if (NOT WIN32)
-  find_package(Threads)
-endif()
-
-# Readline
-if (NOT WIN32)
-  if (USE_EDITLINE)
-    find_package(Editline)
-  else()
-    find_package(Readline)
-  endif()
-endif()
-
-include_directories("include")
-include_directories(SYSTEM "3rd/boost/include")
-include_directories(SYSTEM "3rd/rapidjson/include")
-include_directories(SYSTEM "3rd/protobuf/include")
-include_directories(SYSTEM "3rd/termcap/include")
-include_directories(SYSTEM "3rd/yaml-cpp/include")
-
-# Unit testing
 enable_testing()
 
+add_subdirectory(app/metashell)
+add_subdirectory(app/reference_gen)
+
+add_subdirectory(test/system/core)
+add_subdirectory(test/system/mdb)
+add_subdirectory(test/system/pdb)
+add_subdirectory(test/system/pp)
+add_subdirectory(test/unit/core)
+add_subdirectory(test/unit/data)
+add_subdirectory(test/unit/replace_part)
+add_subdirectory(test/unit/system_test)
+
+add_subdirectory(lib/boost)
+add_subdirectory(lib/core)
+add_subdirectory(lib/data)
+add_subdirectory(lib/iface)
+add_subdirectory(lib/mock)
+add_subdirectory(lib/pattern)
+add_subdirectory(lib/process)
+add_subdirectory(lib/readline)
+add_subdirectory(lib/replace_part)
+add_subdirectory(lib/system_test)
+
+add_subdirectory(3rd/boost/algorithm)
+add_subdirectory(3rd/boost/align)
+add_subdirectory(3rd/boost/any)
+add_subdirectory(3rd/boost/array)
+add_subdirectory(3rd/boost/assert)
+add_subdirectory(3rd/boost/assign)
+add_subdirectory(3rd/boost/atomic)
+add_subdirectory(3rd/boost/bind)
+add_subdirectory(3rd/boost/chrono)
+add_subdirectory(3rd/boost/concept_check)
+add_subdirectory(3rd/boost/config)
+add_subdirectory(3rd/boost/container)
+add_subdirectory(3rd/boost/container_hash)
+add_subdirectory(3rd/boost/conversion)
+add_subdirectory(3rd/boost/core)
+add_subdirectory(3rd/boost/date_time)
+add_subdirectory(3rd/boost/detail)
+add_subdirectory(3rd/boost/exception)
+add_subdirectory(3rd/boost/filesystem)
+add_subdirectory(3rd/boost/foreach)
+add_subdirectory(3rd/boost/function)
+add_subdirectory(3rd/boost/functional)
+add_subdirectory(3rd/boost/function_types)
+add_subdirectory(3rd/boost/fusion)
+add_subdirectory(3rd/boost/graph)
+add_subdirectory(3rd/boost/integer)
+add_subdirectory(3rd/boost/intrusive)
+add_subdirectory(3rd/boost/io)
+add_subdirectory(3rd/boost/iostreams)
+add_subdirectory(3rd/boost/iterator)
+add_subdirectory(3rd/boost/lexical_cast)
+add_subdirectory(3rd/boost/math)
+add_subdirectory(3rd/boost/move)
+add_subdirectory(3rd/boost/mpl)
+add_subdirectory(3rd/boost/multi_index)
+add_subdirectory(3rd/boost/numeric_conversion)
+add_subdirectory(3rd/boost/optional)
+add_subdirectory(3rd/boost/phoenix)
+add_subdirectory(3rd/boost/pool)
+add_subdirectory(3rd/boost/predef)
+add_subdirectory(3rd/boost/preprocessor)
+add_subdirectory(3rd/boost/program_options)
+add_subdirectory(3rd/boost/property_map)
+add_subdirectory(3rd/boost/proto)
+add_subdirectory(3rd/boost/range)
+add_subdirectory(3rd/boost/ratio)
+add_subdirectory(3rd/boost/regex)
+add_subdirectory(3rd/boost/serialization)
+add_subdirectory(3rd/boost/smart_ptr)
+add_subdirectory(3rd/boost/spirit)
+add_subdirectory(3rd/boost/static_assert)
+add_subdirectory(3rd/boost/system)
+add_subdirectory(3rd/boost/thread)
+add_subdirectory(3rd/boost/throw_exception)
+add_subdirectory(3rd/boost/tokenizer)
+add_subdirectory(3rd/boost/tuple)
+add_subdirectory(3rd/boost/type_index)
+add_subdirectory(3rd/boost/typeof)
+add_subdirectory(3rd/boost/type_traits)
+add_subdirectory(3rd/boost/unordered)
+add_subdirectory(3rd/boost/utility)
+add_subdirectory(3rd/boost/variant)
+add_subdirectory(3rd/boost/wave)
+add_subdirectory(3rd/boost/winapi)
+add_subdirectory(3rd/boost/xpressive)
+
+add_subdirectory(3rd/googlemock)
+add_subdirectory(3rd/googletest)
+
+add_subdirectory(3rd/just/console)
+add_subdirectory(3rd/just/environment)
+add_subdirectory(3rd/just/file)
+add_subdirectory(3rd/just/lines)
+add_subdirectory(3rd/just/temp)
+
+add_subdirectory(3rd/mindent)
+add_subdirectory(3rd/mpark_variant)
+add_subdirectory(3rd/protobuf)
+add_subdirectory(3rd/rapidjson)
+add_subdirectory(3rd/yaml-cpp)
+
+if (WIN32)
+  add_subdirectory(3rd/wineditline)
+else()
+  add_subdirectory(3rd/termcap)
+endif()
+
+target_compile_definitions(
+  metashell_core
+  
+  PUBLIC
+    METASHELL_MAJOR=${MAJOR_VERSION}
+    METASHELL_MINOR=${MINOR_VERSION}
+    METASHELL_PATCH=${PATCH_VERSION}
+)
+
+set(SYSTEM_TEST_TARGETS )
+set(SYSTEM_TEST_FILES )
+foreach(T core pp mdb pdb)
+  set(TARGET metashell_${T}_system_test)
+
+  list(APPEND SYSTEM_TEST_TARGETS ${TARGET})
+  list(APPEND SYSTEM_TEST_FILES "$<TARGET_FILE:${TARGET}>")
+endforeach(T)
+
+set(
+  SYSTEM_TEST_ARCHIVE
+  "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_system_test_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}${METASHELL_PACKAGE_PLATFORM}_${CMAKE_SYSTEM_PROCESSOR}.tar.gz"
+)
+
+add_custom_target(
+  system_test_zip DEPENDS ${SYSTEM_TEST_TARGETS}
+  COMMAND
+    ${CMAKE_COMMAND} -E
+    tar "cfz" "${SYSTEM_TEST_ARCHIVE}" ${SYSTEM_TEST_FILES}
+)
+
 # Recursing
-subdirs(lib app test 3rd tools)
+subdirs(tools)
 
 # Debian package
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)

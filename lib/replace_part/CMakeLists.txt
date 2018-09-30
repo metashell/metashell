@@ -14,12 +14,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-aux_source_directory(. SOURCES)
-add_library(replace_part_lib STATIC ${SOURCES})
+project(metashell_replace_part)
 
-enable_warnings()
-use_cpp14()
+aux_source_directory(src SOURCES)
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+add_library(metashell::replace_part ALIAS ${PROJECT_NAME})
 
-# Just
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_lines/include")
+enable_warnings(${PROJECT_NAME})
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+target_link_libraries(
+  ${PROJECT_NAME}
+
+  boost::filesystem
+
+  just::lines
+)
 

@@ -29,6 +29,7 @@ pages:
         - 'Testing Metashell': 'develop/testing.md'
         - 'Demo server': 'develop/demo_server.md'
         - 'Rationales': 'develop/rationales.md'
+        - 'Dependencies': 'develop/idepends.md'
     - About:
         - 'Demo': 'about/demo.md'
         - 'Community': 'about/community.md'

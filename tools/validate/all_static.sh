@@ -29,3 +29,4 @@ do
 done
 
 tools/validate/mkdocs mkdocs.yml
+tools/validate/dep_graph.sh
