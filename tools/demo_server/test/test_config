@@ -77,12 +77,12 @@ def paths_to_copy(config):
     """Generator for the list of paths to copy based on a config"""
     if 'bin' in config:
         for path in config['bin']:
-            yield path
+            yield MODULE_UNDER_TEST.path_substitutions(path)
 
     for key in ('include', 'share'):
         if key in config:
             for entry in config[key]:
-                yield entry['src']
+                yield MODULE_UNDER_TEST.path_substitutions(entry['src'])
 
 
 # pylint: disable=missing-docstring

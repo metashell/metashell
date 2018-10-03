@@ -13,16 +13,20 @@ If you'd like to build it quickly, you can use the
     * Termcap
     * CMake
     * Clang (with clang-tidy, clang-format)
+    * Graphviz
+* Create the build directory
+    * `mkdir -p "bin/$(tools/detect_platform.sh --id)"`
 * Build Clang with [Templight](https://github.com/mikael-s-persson/templight)
-    * `cd 3rd/templight`
-    * `mkdir build`
-    * `cd build`
-    * `cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_TERMINFO=OFF`
+    * `cd "bin/$(tools/detect_platform.sh --id)"`
+    * `mkdir templight`
+    * `cd templight`
+    * `cmake ../../../3rd/templight/llvm -DLIBCLANG_BUILD_STATIC=ON -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_TERMINFO=OFF`
     * `make clang libclang libclang_static templight`
 * Now compile Metashell. In the source directory run the following commands:
-    * `mkdir bin`
-    * `cd bin`
-    * `cmake ..`
+    * `cd ..`
+    * `mkdir metashell`
+    * `cd metashell`
+    * `cmake ../../..`
         * Note: to use
           [libedit](http://thrysoee.dk/editline/) instead
           of [Readline](http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html)
@@ -35,17 +39,17 @@ If you'd like to build it quickly, you can use the
     * To package it for OpenSUSE or Fedora run `cpack -G RPM`
 * To generate code-coverage statistics for unit tests run the following commands
   in the source directory instead the above ones:
-    * `mkdir bin`
-    * `cd bin`
-    * `cmake .. -DENABLE_CODE_COVERAGE=true -DCMAKE_BUILD_TYPE=Debug`
+    * `cd "bin/$(tools/detect_platform.sh --id)"`
+    * `mkdir metashell`
+    * `cd metashell`
+    * `cmake ../../.. -DENABLE_CODE_COVERAGE=true -DCMAKE_BUILD_TYPE=Debug`
     * `make`
     * `make test_coverage`
-    * You can find the test coverage statistics in the `bin/coverage` directory.
+    * You can find the test coverage statistics in the `bin/$(tools/detect_platform.sh --id)/metashell/coverage` directory.
 * To compile the source for profiling using
   [gprof](https://www.cs.utah.edu/dept/old/texinfo/as/gprof.html) (g++ only):
-    * `mkdir bin`
-    * `cd bin`
-    * `cmake .. -DENABLE_PROFILING=true`
+    * `cd "bin/$(tools/detect_platform.sh --id)/metashell"`
+    * `cmake ../../.. -DENABLE_PROFILING=true`
     * `make`
     * The binaries will now generate profiling data to gmon.out.
       Please see the gprof documentation for further information.
@@ -69,10 +73,9 @@ used:
 * First you need to build Clang with
   [Templight](https://github.com/mikael-s-persson/templight).
     * Start a command line on your Windows host and go into the source directory
-    * Run `cd 3rd\templight`
-    * Run `md build`
-    * Run `cd build`
-    * Run `cmake ..\llvm`
+    * Run `md bin\windows_Win32\templight`
+    * Run `cd bin\windows_Win32\templight`
+    * Run `cmake ..\..\..\3rd\templight\llvm`
     * Start Visual Studio 2013 and open the generated solution
       (`3rd\templight\build\LLVM.sln`)
     * In the _BUILD_ menu choose _Configuration Manager..._. As
@@ -84,15 +87,15 @@ used:
       does not need them.
 * Now you can build Metashell
     * Start a command line on your Windows host and go into the source directory
-    * Run `md bin`
-    * Run `cd bin`
-    * Run `cmake .. -G "Visual Studio 12 2013"`.
+    * Run `md bin\windows_Win32\metashell`
+    * Run `cd bin\windows_Win32\metashell`
+    * Run `cmake ..\..\.. -G "Visual Studio 12 2013"`.
     * CMake will generate a solution file for Metashell in the `bin` directory.
       Open it with Visual Studio 2013 and build it. You can do a debug or a
       release build (or both) against the release build of Templight.
     * After a successful build you can find the Metashell executables in
-      `bin/app/metashell/Release/metashell.exe` or
-      `bin/app/metashell/Debug/metashell.exe` depending on the build type.
+      `bin\windows_Win32\metashell\app\metashell\Release\metashell.exe` or
+      `bin\windows_Win32\metashell\app\metashell\Debug\metashell.exe` depending on the build type.
     * Note that the system tests run lots of Metashell processes which create
       lots of temporary directories and files. Some anti-virus software seems to
       consider it harmful and block some these operations causing a number of
@@ -130,16 +133,19 @@ upgrade WinEditLine to a newer version, you need to update these files.
     * XCode
     * The appropriate version of "Auxiliary tools for Xcode" which contains the
       PackageMaker compiler.
+* Create the build directory
+    * `mkdir -p "bin/$(tools/detect_platform.sh --id)"`
 * Build Clang with [Templight](https://github.com/mikael-s-persson/templight)
-    * `cd 3rd/templight`
-    * `mkdir build`
-    * `cd build`
-    * `cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON -DCMAKE_BUILD_TYPE=Release`
+    * `cd "bin/$(tools/detect_platform.sh --id)"`
+    * `mkdir templight`
+    * `cd templight`
+    * `cmake ../../../3rd/templight/llvm -DLIBCLANG_BUILD_STATIC=ON -DCMAKE_BUILD_TYPE=Release`
     * `make clang libclang libclang_static templight`
 * Now compile Metashell. In the source directory run the following commands:
-    * `mkdir bin`
-    * `cd bin`
-    * `cmake ..`
+    * `cd ..`
+    * `mkdir metashell`
+    * `cd metashell`
+    * `cmake ../../..`
         * Note: if you don't want to link statically against libclang, you need to
           add `-DCLANG_STATIC=false` to the above command line.
     * `make`

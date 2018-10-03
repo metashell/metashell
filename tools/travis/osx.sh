@@ -26,12 +26,16 @@ git tag
 egrep $(tools/latest_release --no_dots --prefix=version-) README.md
 egrep $(tools/latest_release --no_dots --prefix=version-) docs/index.md
 
+PLATFORM_ID="$(tools/detect_platform.sh --id)"
+
 # Get the templight binary
 
-cd 3rd/templight
+mkdir -p "bin/${PLATFORM_ID}"
+cd "bin/${PLATFORM_ID}"
   ARCHIVE_NAME=templight_osx10.13.4_x86_64.tar.bz2
   wget https://github.com/metashell/templight_binary/releases/download/templight_9732a7/${ARCHIVE_NAME}
   tar -xvjf ${ARCHIVE_NAME}
+  mv build templight
 cd ../..
 
 # Test the code

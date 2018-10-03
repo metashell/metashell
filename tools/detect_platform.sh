@@ -18,51 +18,72 @@
 
 set -e
 
-if [ -e /etc/redhat-release ] || [ -e /etc/fedora-release ]
+if [ "${PLATFORM}${VERSION}${SYSTEM_PROCESSOR}" = "" ]
 then
-  PLATFORM="fedora"
-elif [ -e /etc/SuSE-release ]
-then
-  PLATFORM="opensuse"
-elif [ -e /etc/gentoo-release ]
-then
-  PLATFORM="gentoo"
-elif [ "$(uname)" = "Darwin" ]
-then
-  PLATFORM="osx"
-elif [ "`cat /etc/lsb-release 2>/dev/null | grep DISTRIB_ID`" = "DISTRIB_ID=Ubuntu" ]
-then
-  PLATFORM="ubuntu"
-elif [ -e /etc/debian_version ]
-then
-  PLATFORM="debian"
-elif [ -e /etc/arch-release ]
-then
-  PLATFORM="arch"
-elif [ "$(uname)" = "FreeBSD" ]
-then
-  PLATFORM="freebsd"
-elif [ "$(uname)" = "OpenBSD" ]
-then
-  PLATFORM="openbsd"
-elif [ -e /etc/os-release ] && grep openSUSE /etc/os-release > /dev/null
-then
-  PLATFORM="opensuse"
-else
-  PLATFORM="unknown"
+  if [ -e /etc/redhat-release ] || [ -e /etc/fedora-release ]
+  then
+    PLATFORM="fedora"
+    VERSION=$(rpm -q --queryformat '%{VERSION}\n' fedora-release | egrep -o '[0-9.]+')
+  elif [ -e /etc/SuSE-release ]
+  then
+    PLATFORM="opensuse"
+    VERSION=$(egrep -o 'VERSION[ ]*=[^\n]*' /etc/SuSE-release | egrep -o '[0-9.]*')
+  elif [ -e /etc/gentoo-release ]
+  then
+    PLATFORM="gentoo"
+  elif [ "$(uname)" = "Darwin" ]
+  then
+    PLATFORM="osx"
+    VERSION=$(sw_vers -productVersion)
+  elif [ "`cat /etc/lsb-release 2>/dev/null | grep DISTRIB_ID`" = "DISTRIB_ID=Ubuntu" ]
+  then
+    PLATFORM="ubuntu"
+    VERSION=$(lsb_release -a 2>/dev/null | grep Release | sed 's/^Release:[ \t]*//')
+  elif [ -e /etc/debian_version ]
+  then
+    PLATFORM="debian"
+    VERSION=$(cat /etc/debian_version)
+  elif [ -e /etc/arch-release ]
+  then
+    PLATFORM="arch"
+  elif [ "$(uname)" = "FreeBSD" ]
+  then
+    PLATFORM="freebsd"
+  elif [ "$(uname)" = "OpenBSD" ]
+  then
+    PLATFORM="openbsd"
+    VERSION=$(uname -a | cut -d ' ' -f 3)
+  elif [ -e /etc/os-release ] && grep openSUSE /etc/os-release > /dev/null
+  then
+    PLATFORM="opensuse"
+    VERSION=$(egrep -o 'VERSION[ ]*=[^\n]*' /etc/os-release | egrep -o '[0-9.]*')
+  else
+    PLATFORM="unknown"
+  fi
+  SYSTEM_PROCESSOR=$(uname -m)
 fi
 
 if [ "$1" = "--version" ]
 then
-  if [ "$PLATFORM" = "ubuntu" ]
+  if [ "$VERSION" = "" ]
   then
-    lsb_release -a 2>/dev/null | grep Release | sed 's/^Release:[ \t]*//'
-  elif [ "$PLATFORM" = "openbsd" ]
-  then
-    uname -a | cut -d ' ' -f 3
-  else
     echo "Detecting version of this platform has not been implemented"
     exit 1
+  else
+    echo "$VERSION"
+  fi
+elif [ "$1" = "--id" ]
+then
+  if [ "$VERSION" = "" ]
+  then
+    echo "Detecting version (needed for id) of this platform has not been implemented"
+    exit 1
+  elif [ "${SYSTEM_PROCESSOR}" = "" ]
+  then
+    echo "Detecting system processor (needed for id) of this platform has not been implemented"
+    exit 1
+  else
+    echo "${PLATFORM}${VERSION}_${SYSTEM_PROCESSOR}"
   fi
 else
   echo $PLATFORM

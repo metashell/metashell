@@ -18,26 +18,26 @@ rem along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if not defined INCLUDE goto no_dev
 
+set PLATFORM_ID="windows_Win32"
+
 rem Build Templight
 if defined no_templight goto skip_templight
-  cd 3rd\templight
-    md build
-    cd build
-      cmake ..\llvm
-      msbuild LLVM.sln /p:Configuration=Release /p:Platform="Win32" "/t:Clang executables\templight"
-      if errorlevel 1 goto no_dev
-    cd ..
-  cd ..\..
+  md bin\%PLATFORM_ID%\templight
+  cd bin\%PLATFORM_ID%\templight
+    cmake ..\..\..\3rd\templight\llvm
+    msbuild LLVM.sln /p:Configuration=Release /p:Platform="Win32" "/t:Clang executables\templight"
+    if errorlevel 1 goto no_dev
+  cd ..\..\..
   goto build_metashell
 :skip_templight
   echo Skipping Templight build, because %%NO_TEMPLIGHT%% = "%NO_TEMPLIGHT%"
 :build_metashell
 
 rem Build Metashell
-md bin
-cd bin
-  if defined METASHELL_NO_DOC_GENERATION cmake .. -DMETASHELL_NO_DOC_GENERATION=1
-  if not defined METASHELL_NO_DOC_GENERATION cmake ..
+md bin\%PLATFORM_ID%\metashell
+cd bin\%PLATFORM_ID%\metashell
+  if defined METASHELL_NO_DOC_GENERATION cmake ..\..\.. -DMETASHELL_NO_DOC_GENERATION=1
+  if not defined METASHELL_NO_DOC_GENERATION cmake ..\..\..
   msbuild metashell_project.sln /p:Configuration=Release /p:Platform="Win32"
   if errorlevel 1 goto no_dev
 
@@ -52,7 +52,7 @@ cd bin
   :skip_cpack
     echo Skipping installer generation, because %%NO_INSTALLER%% = "%NO_INSTALLER%"
   :after_cpack
-cd ..
+cd ..\..\..
 
 exit /B 0
 

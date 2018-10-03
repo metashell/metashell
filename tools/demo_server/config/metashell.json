@@ -3,7 +3,11 @@
     "name": "metashell",
     "git": "https://github.com/metashell/metashell.git",
     "build": [
-      ["rm", "-rf", "bin", "3rd/templight/build"],
+      [
+        "/bin/bash",
+        "-c",
+        "rm -rf \"bin/$(tools/detect_platform.sh --id)/metashell\" \"bin/$(tools/detect_platform.sh --id)/templight\""
+      ],
       [
         "/bin/bash",
         "-c",
@@ -17,8 +21,8 @@
       ["/usr/local/bin/mkdocs", "build", "--clean"]
     ],
     "bin": [
-      "bin/app/metashell/metashell",
-      "bin/app/metashell/templight_metashell",
+      "bin/${PLATFORM_ID}/metashell/app/metashell/metashell",
+      "bin/${PLATFORM_ID}/metashell/app/metashell/templight_metashell",
       "tools/demo_server/bin/deploy",
       "tools/demo_server/bin/deploy_log",
       "tools/demo_server/bin/upgrade",
@@ -26,7 +30,7 @@
       "tools/demo_server/bin/run"
     ],
     "include" : [
-      { "src": "3rd/templight/build/lib/clang/6.0.1/include", "dst": "" }
+      { "src": "bin/${PLATFORM_ID}/templight/lib/clang/6.0.1/include", "dst": "" }
     ],
     "share" : [ { "src": "tools/demo_server/share", "dst": "" } ],
     "launcher" : {

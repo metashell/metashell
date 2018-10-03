@@ -32,6 +32,25 @@ import Cheetah.Template
 # pylint: disable=broad-except
 
 
+def platform_id():
+    """Determine the PLATFORM_ID"""
+    tools_demo_server_bin = os.path.dirname(os.path.realpath(__file__))
+    tools_demo_server = os.path.dirname(tools_demo_server_bin)
+    tools = os.path.dirname(tools_demo_server)
+
+    return subprocess.check_output(
+        [os.path.join(tools, 'detect_platform.sh'), '--id']
+    ).decode('utf-8').strip()
+
+
+PLATFORM_ID = platform_id()
+
+
+def path_substitutions(path):
+    """Does the path substitutions"""
+    return path.replace('${PLATFORM_ID}', PLATFORM_ID)
+
+
 def no_logging(_):
     """Ignore log messages"""
     pass
@@ -533,9 +552,10 @@ class Deployer(object):
 
     def _complex_deploy_info(self, entry_config, to_path):
         """Deploy one or more files in a (user) configurable way"""
-        if '*' in entry_config['src']:
+        src = path_substitutions(entry_config['src'])
+        if '*' in src:
             commit_mode = False
-            from_path_pre, from_path_suff = entry_config['src'].split('*')
+            from_path_pre, from_path_suff = src.split('*')
             from_paths = [
                 from_path_pre + v
                 for v in os.listdir(
@@ -547,7 +567,7 @@ class Deployer(object):
             ]
         else:
             commit_mode = True
-            from_path_suff = entry_config['src']
+            from_path_suff = src
             from_paths = ['']
 
         results = []
@@ -578,16 +598,18 @@ class Deployer(object):
         if to_path in ['include', 'share']:
             return self._complex_deploy_info(entry_config, to_path)
 
+        src_path = path_substitutions(entry_config)
+
         abs_to_path = os.path.join(
             self.relative(to_path),
-            os.path.basename(entry_config)
+            os.path.basename(src_path)
         )
         return [
             FileDeployment(
                 self.name,
                 abs_to_path + '_' + self.branch.last_commit,
                 (
-                    self.in_src_dir(entry_config),
+                    self.in_src_dir(src_path),
                     abs_to_path + '_' + self.branch.last_commit
                 ),
                 abs_to_path + '_' + escape_branch_name(self.branch.name)

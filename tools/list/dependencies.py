@@ -287,9 +287,18 @@ class Dependencies(object):
         return '\n'.join(result)
 
 
+def platform_id(source_root):
+    """Determine the PLATFORM_ID"""
+    return subprocess.check_output(
+        [os.path.join(source_root, 'tools', 'detect_platform.sh'), '--id']
+    ).decode('utf-8').strip()
+
+
 def path_of_dot(source_root):
     """Determines the path of the dot command"""
-    return os.path.join(source_root, '3rd', 'graphviz', 'prefix', 'bin', 'dot')
+    return os.path.join(
+        source_root, 'bin', platform_id(source_root), 'graphviz', 'bin', 'dot'
+    )
 
 
 def main():
