@@ -54,6 +54,8 @@ namespace metashell
     };
 
     std::ostream& operator<<(std::ostream& o_, const type& t_);
+    std::string to_string(const type&);
+
     bool operator==(const type& a_, const type& b_);
     bool operator<(const type& a_, const type& b_);
 

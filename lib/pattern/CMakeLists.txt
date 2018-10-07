@@ -30,5 +30,6 @@ target_link_libraries(
   INTERFACE
 
     boost::optional
-    boost::variant
+
+    mpark::variant
 )

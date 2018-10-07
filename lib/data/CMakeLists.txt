@@ -34,7 +34,6 @@ target_link_libraries(
   boost::range
   boost::tuple
   boost::utility
-  boost::variant
 
   just::console
 

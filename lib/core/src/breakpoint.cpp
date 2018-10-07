@@ -24,7 +24,7 @@ namespace metashell
   {
     namespace
     {
-      class match_visitor : public boost::static_visitor<>
+      class match_visitor
       {
       public:
         explicit match_visitor(std::regex regex_) : _regex(std::move(regex_)) {}
@@ -75,7 +75,7 @@ namespace metashell
     bool breakpoint::match(const data::metaprogram_node& node) const
     {
       match_visitor v(name_regex.as_regex());
-      boost::apply_visitor(v, node);
+      visit(v, node);
       return v.last_result();
     }
 

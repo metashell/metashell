@@ -35,6 +35,7 @@ target_link_libraries(
     boost::phoenix
     boost::thread
     boost::utility
+    boost::variant
 )
 
 boost_lib(INTERFACE ${PROJECT_NAME})

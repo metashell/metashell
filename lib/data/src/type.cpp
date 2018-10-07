@@ -54,6 +54,8 @@ namespace metashell
       return o_ << t_.name();
     }
 
+    std::string to_string(const type& t_) { return to_string(t_.name()); }
+
     bool operator==(const type& a_, const type& b_)
     {
       return a_.name() == b_.name();
