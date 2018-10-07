@@ -25,12 +25,12 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/optional.hpp>
-#include <boost/xpressive/xpressive.hpp>
 
 #include <just/lines.hpp>
 
 #include <algorithm>
 #include <fstream>
+#include <regex>
 #include <sstream>
 
 namespace metashell
@@ -57,11 +57,7 @@ namespace metashell
       boost::optional<std::string> output_line_of(const std::string& filename_,
                                                   const std::string& line_)
       {
-        using boost::xpressive::bos;
-        using boost::xpressive::_d;
-
-        const boost::xpressive::sregex error_report =
-            bos >> '(' >> +_d >> "): ";
+        const std::regex error_report("^\\([0-9]+\\): ");
 
         for (auto i = line_.find(filename_); i != std::string::npos;
              i = line_.find(filename_, i + 1))
@@ -70,7 +66,7 @@ namespace metashell
           {
             const std::string after_filename =
                 line_.substr(i + filename_.size());
-            boost::xpressive::smatch what;
+            std::smatch what;
             if (regex_search(after_filename, what, error_report))
             {
               return what.suffix().str() + "\n";
@@ -83,11 +79,7 @@ namespace metashell
       template <class LineIt>
       std::string error_report(LineIt begin_, LineIt end_)
       {
-        using boost::xpressive::alpha;
-        using boost::xpressive::as_xpr;
-
-        const boost::xpressive::sregex is_filename =
-            !(alpha >> ':' >> (as_xpr('\\') | '/')) >> *~as_xpr(':');
+        const std::regex is_filename("([a-zA-Z0-9]:[\\\\/])?[^:]*");
 
         std::ostringstream o;
         std::string filename;

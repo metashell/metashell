@@ -189,7 +189,6 @@ add_subdirectory(3rd/boost/utility)
 add_subdirectory(3rd/boost/variant)
 add_subdirectory(3rd/boost/wave)
 add_subdirectory(3rd/boost/winapi)
-add_subdirectory(3rd/boost/xpressive)
 
 add_subdirectory(3rd/googlemock)
 add_subdirectory(3rd/googletest)

@@ -21,12 +21,12 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/optional.hpp>
-#include <boost/xpressive/xpressive.hpp>
 
 #include <just/environment.hpp>
 #include <just/lines.hpp>
 
 #include <algorithm>
+#include <regex>
 
 namespace metashell
 {
@@ -100,21 +100,16 @@ namespace metashell
     std::set<boost::filesystem::path>
     header_discoverer_vc::files_included_by(const data::cpp_code& exp_)
     {
-      using boost::xpressive::bos;
-      using boost::xpressive::as_xpr;
-      using boost::xpressive::set;
-
       const data::process_output output =
           run_vc(_vc_binary, {"/c", "/showIncludes"}, exp_);
 
-      const boost::xpressive::sregex included_header =
-          bos >> +~(set = ':') >> ": " >> +~(set = ':') >> ":" >> *as_xpr(' ');
+      const std::regex included_header("^[^:]+: [^:]+: *");
 
       std::set<boost::filesystem::path> result;
 
       for (const std::string line : just::lines::view(output.standard_output))
       {
-        boost::xpressive::smatch what;
+        std::smatch what;
         if (regex_search(line, what, included_header))
         {
           result.insert(what.suffix().str());

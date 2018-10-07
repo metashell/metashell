@@ -19,9 +19,10 @@
 
 #include <boost/range/adaptor/filtered.hpp>
 #include <boost/range/adaptor/transformed.hpp>
-#include <boost/xpressive/xpressive.hpp>
 
 #include <just/lines.hpp>
+
+#include <regex>
 
 namespace metashell
 {
@@ -66,8 +67,7 @@ namespace metashell
       const data::process_output output =
           run_clang(_clang_binary, {"-H", "-E"}, exp_);
 
-      const boost::xpressive::sregex included_header =
-          boost::xpressive::bos >> +boost::xpressive::as_xpr('.') >> ' ';
+      const std::regex included_header("^\\.+ ");
 
       const just::lines::view lines(output.standard_error);
 

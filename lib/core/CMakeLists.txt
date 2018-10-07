@@ -36,7 +36,6 @@ target_link_libraries(
   boost::spirit
   boost::utility
   boost::wave
-  boost::xpressive
 
   just::environment
   just::file

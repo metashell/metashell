@@ -35,7 +35,6 @@ target_link_libraries(
   boost::tuple
   boost::utility
   boost::variant
-  boost::xpressive
 
   just::console
 
