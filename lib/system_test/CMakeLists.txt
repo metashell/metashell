@@ -43,7 +43,6 @@ target_link_libraries(
   metashell::core
   metashell::pattern
   metashell::process
-  metashell::system_test
 
   rapidjson
 )

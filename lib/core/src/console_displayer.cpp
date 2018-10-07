@@ -116,7 +116,7 @@ namespace metashell
         }
       }
 
-      class format_visitor : public boost::static_visitor<>
+      class format_visitor
       {
       public:
         typedef std::function<data::colored_string(const data::cpp_code&)>
@@ -299,17 +299,17 @@ namespace metashell
     {
       data::colored_string result;
 
-      boost::apply_visitor(
-          format_visitor(
-              result,
-              [this](const data::cpp_code& s_) {
-                return this->format_code(s_);
-              },
-              [this](const data::token& t_) { return this->format_token(t_); },
-              [](const boost::filesystem::path& p_) {
-                return data::colored_string(p_.string());
-              }),
-          n_);
+      visit(format_visitor(result,
+                           [this](const data::cpp_code& s_) {
+                             return this->format_code(s_);
+                           },
+                           [this](const data::token& t_) {
+                             return this->format_token(t_);
+                           },
+                           [](const boost::filesystem::path& p_) {
+                             return data::colored_string(p_.string());
+                           }),
+            n_);
 
       return result;
     }

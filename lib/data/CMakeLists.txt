@@ -32,11 +32,8 @@ target_link_libraries(
   boost::optional
   boost::preprocessor
   boost::range
-  boost::regex
   boost::tuple
   boost::utility
-  boost::variant
-  boost::xpressive
 
   just::console
 

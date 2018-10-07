@@ -19,15 +19,15 @@
 
 #include <ostream>
 
-#include <boost/variant.hpp>
+#include <variant.hpp>
 
+#include <metashell/data/blank.hpp>
 #include <metashell/data/type.hpp>
 
 namespace metashell
 {
   namespace data
   {
-
     class type_or_code_or_error
     {
     public:
@@ -56,8 +56,7 @@ namespace metashell
       bool operator==(const type_or_code_or_error& other) const;
 
     private:
-      typedef boost::variant<boost::blank, type_type, code_type, error_type>
-          data_type;
+      typedef mpark::variant<blank, type_type, code_type, error_type> data_type;
       data_type data;
     };
 

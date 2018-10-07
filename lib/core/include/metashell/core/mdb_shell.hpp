@@ -17,8 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/boost/regex.hpp>
-
 #include <metashell/core/breakpoint.hpp>
 #include <metashell/core/logger.hpp>
 #include <metashell/core/mdb_command_handler_map.hpp>

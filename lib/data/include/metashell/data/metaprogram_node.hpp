@@ -22,14 +22,43 @@
 #include <metashell/data/type.hpp>
 
 #include <boost/filesystem/path.hpp>
-#include <boost/variant.hpp>
+#include <boost/operators.hpp>
+
+#include <variant.hpp>
+
+#include <iosfwd>
+#include <string>
 
 namespace metashell
 {
   namespace data
   {
-    typedef boost::variant<type, token, cpp_code, boost::filesystem::path>
-        metaprogram_node;
+    class metaprogram_node : boost::equality_comparable<metaprogram_node>
+    {
+    public:
+      metaprogram_node();
+      metaprogram_node(type);
+      metaprogram_node(token);
+      metaprogram_node(cpp_code);
+      metaprogram_node(boost::filesystem::path);
+
+      const mpark::variant<type, token, cpp_code, boost::filesystem::path>&
+      variant() const;
+
+    private:
+      mpark::variant<type, token, cpp_code, boost::filesystem::path> _value;
+    };
+
+    std::string to_string(const metaprogram_node&);
+    std::ostream& operator<<(std::ostream&, const metaprogram_node&);
+
+    bool operator==(const metaprogram_node&, const metaprogram_node&);
+
+    template <class Visitor>
+    void visit(Visitor&& visitor_, const metaprogram_node& n_)
+    {
+      mpark::visit(std::forward<Visitor>(visitor_), n_.variant());
+    }
   }
 }
 

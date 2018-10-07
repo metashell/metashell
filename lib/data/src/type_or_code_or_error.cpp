@@ -24,7 +24,7 @@ namespace metashell
   namespace data
   {
 
-    type_or_code_or_error::type_or_code_or_error() : data(boost::blank{}) {}
+    type_or_code_or_error::type_or_code_or_error() : data(blank{}) {}
 
     type_or_code_or_error::type_or_code_or_error(const type_type& t) : data(t)
     {
@@ -55,43 +55,43 @@ namespace metashell
 
     bool type_or_code_or_error::is_none() const
     {
-      return boost::get<boost::blank>(&data) != nullptr;
+      return mpark::get_if<blank>(&data) != nullptr;
     }
 
     bool type_or_code_or_error::is_type() const
     {
-      return boost::get<type_type>(&data) != nullptr;
+      return mpark::get_if<type_type>(&data) != nullptr;
     }
 
     bool type_or_code_or_error::is_code() const
     {
-      return boost::get<code_type>(&data) != nullptr;
+      return mpark::get_if<code_type>(&data) != nullptr;
     }
 
     bool type_or_code_or_error::is_error() const
     {
-      return boost::get<error_type>(&data) != nullptr;
+      return mpark::get_if<error_type>(&data) != nullptr;
     }
 
     const type_or_code_or_error::type_type&
     type_or_code_or_error::get_type() const
     {
       assert(is_type());
-      return boost::get<type_type>(data);
+      return mpark::get<type_type>(data);
     }
 
     const type_or_code_or_error::code_type&
     type_or_code_or_error::get_code() const
     {
       assert(is_code());
-      return boost::get<code_type>(data);
+      return mpark::get<code_type>(data);
     }
 
     const type_or_code_or_error::error_type&
     type_or_code_or_error::get_error() const
     {
       assert(is_error());
-      return boost::get<error_type>(data);
+      return mpark::get<error_type>(data);
     }
 
     bool type_or_code_or_error::

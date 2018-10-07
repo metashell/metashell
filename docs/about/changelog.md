@@ -1,5 +1,14 @@
 # Changelog
 
+## Not in any release yet
+
+* Changes to existing behaviour
+    * **Breaking change** Regular expression syntax for breakpoints changes
+    from
+    [Perl syntax](https://www.boost.org/doc/libs/1_68_0/libs/regex/doc/html/boost_regex/syntax/perl_syntax.html)
+    to
+    [ECMAScript](https://en.cppreference.com/w/cpp/regex/ecmascript).
+
 ## Version 4.0.0
 
 * New features

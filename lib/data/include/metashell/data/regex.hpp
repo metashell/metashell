@@ -1,8 +1,8 @@
-#ifndef METASHELL_BREAKPOINT_HPP
-#define METASHELL_BREAKPOINT_HPP
+#ifndef METASHELL_DATA_REGEX_HPP
+#define METASHELL_DATA_REGEX_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Andras Kucsma (andras.kucsma@gmail.com)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,35 +17,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <iosfwd>
+#include <regex>
 #include <string>
-#include <vector>
-
-#include <metashell/data/frame.hpp>
-#include <metashell/data/metaprogram_node.hpp>
-#include <metashell/data/regex.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace data
   {
-    class breakpoint
+    class regex
     {
     public:
-      explicit breakpoint(int id, data::regex name_regex);
+      explicit regex(std::string);
 
-      bool match(const data::metaprogram_node& node) const;
-
-      int get_id() const;
-
-      std::string to_string() const;
+      const std::string& as_string() const;
+      const std::regex& as_regex() const;
 
     private:
-      int id;
-      data::regex name_regex;
+      std::string _str;
+      std::regex _re;
     };
 
-    using breakpoints_t = std::vector<breakpoint>;
+    std::string to_string(const regex&);
+    std::ostream& operator<<(std::ostream&, const regex&);
   }
-} // namespace metashell { namespace core
+}
 
 #endif

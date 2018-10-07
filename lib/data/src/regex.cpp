@@ -1,8 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_INCLUDE_BOOST_REGEX_HPP
-#define METASHELL_SYSTEM_TEST_INCLUDE_BOOST_REGEX_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,15 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
+#include <metashell/data/regex.hpp>
 
-#include <boost/regex.hpp>
+namespace metashell
+{
+  namespace data
+  {
+    regex::regex(std::string value_) : _str(std::move(value_)), _re(_str) {}
 
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
+    const std::string& regex::as_string() const { return _str; }
 
-#endif
+    const std::regex& regex::as_regex() const { return _re; }
+
+    std::string to_string(const regex& re_) { return re_.as_string(); }
+
+    std::ostream& operator<<(std::ostream& out_, const regex& re_)
+    {
+      return out_ << re_.as_string();
+    }
+  }
+}

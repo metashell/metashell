@@ -25,7 +25,7 @@ namespace metashell
   {
     namespace
     {
-      class to_json_visitor : public boost::static_visitor<>
+      class to_json_visitor
       {
       public:
         explicit to_json_visitor(iface::json_writer& writer_) : _writer(writer_)
@@ -72,7 +72,7 @@ namespace metashell
                              const data::frame& frame_)
       {
         writer_.key("name");
-        boost::apply_visitor(to_json_visitor(writer_), frame_.node());
+        visit(to_json_visitor(writer_), frame_.node());
         writer_.key("source_location");
         writer_.string(to_string(frame_.source_location()));
 

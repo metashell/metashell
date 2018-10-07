@@ -16,7 +16,7 @@
 
 #include <metashell/core/breakpoint.hpp>
 
-#include <sstream>
+#include <regex>
 
 namespace metashell
 {
@@ -24,10 +24,10 @@ namespace metashell
   {
     namespace
     {
-      class match_visitor : public boost::static_visitor<>
+      class match_visitor
       {
       public:
-        explicit match_visitor(const boost::regex& regex_) : _regex(regex_) {}
+        explicit match_visitor(std::regex regex_) : _regex(std::move(regex_)) {}
 
         template <class T>
         void operator()(const T& t_)
@@ -37,12 +37,12 @@ namespace metashell
 
         bool last_result() const { return _last_result; }
       private:
-        boost::regex _regex;
+        std::regex _regex;
         bool _last_result;
 
         bool match(const std::string& s_) const
         {
-          return boost::regex_search(s_, _regex);
+          return std::regex_search(s_, _regex);
         }
 
         bool match(const data::cpp_code& code_) const
@@ -66,40 +66,25 @@ namespace metashell
         }
       };
     }
-    breakpoint::breakpoint(int id, const boost::regex& name_regex)
-      : id(id), name_regex(name_regex)
+
+    breakpoint::breakpoint(int id, data::regex name_regex)
+      : id(id), name_regex(std::move(name_regex))
     {
     }
 
     bool breakpoint::match(const data::metaprogram_node& node) const
     {
-      if (name_regex)
-      {
-        match_visitor v(*name_regex);
-        boost::apply_visitor(v, node);
-        return v.last_result();
-      }
-      else
-      {
-        return false;
-      }
+      match_visitor v(name_regex.as_regex());
+      visit(v, node);
+      return v.last_result();
     }
 
     int breakpoint::get_id() const { return id; }
 
     std::string breakpoint::to_string() const
     {
-      std::stringstream ss;
-      ss << "Breakpoint " << id << ": ";
-      if (name_regex)
-      {
-        ss << "regex(\"" + name_regex->str() + "\")";
-      }
-      else
-      {
-        ss << "unknown()";
-      }
-      return ss.str();
+      return "Breakpoint " + std::to_string(id) + ": regex(\"" +
+             data::to_string(name_regex) + "\")";
     }
   }
 } // namespace metashell

@@ -18,7 +18,7 @@
 
 #include <iostream>
 
-#include <pattern/boost_regex.hpp>
+#include <regex>
 
 namespace metashell
 {
@@ -31,17 +31,14 @@ namespace metashell
     bool operator==(const json_string& a_, const json_string& b_)
     {
       // Not testing point_of_event and source_location
-      auto flags = boost::match_default | boost::format_all;
-      boost::regex filter_poi(R"(,"point_of_event":"[^"]*")");
-      boost::regex filter_sl(R"(,"source_location":"[^"]*")");
+      const std::regex filter_poi(R"(,"point_of_event":"[^"]*")");
+      const std::regex filter_sl(R"(,"source_location":"[^"]*")");
 
-      auto filtered_a = boost::regex_replace(a_.get(), filter_poi, "", flags);
-      auto filtered_b = boost::regex_replace(b_.get(), filter_poi, "", flags);
+      const auto filtered_a = std::regex_replace(a_.get(), filter_poi, "");
+      const auto filtered_b = std::regex_replace(b_.get(), filter_poi, "");
 
-      filtered_a = boost::regex_replace(filtered_a, filter_sl, "", flags);
-      filtered_b = boost::regex_replace(filtered_b, filter_sl, "", flags);
-
-      return filtered_a == filtered_b;
+      return std::regex_replace(filtered_a, filter_sl, "") ==
+             std::regex_replace(filtered_b, filter_sl, "");
     }
 
     std::ostream& operator<<(std::ostream& out_, const json_string& s_)

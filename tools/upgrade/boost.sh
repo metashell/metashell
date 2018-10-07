@@ -122,7 +122,6 @@ cd tmp
   get_lib variant
   get_lib wave
   get_lib winapi
-  get_lib xpressive
 
  # These warnings can not be disabled
  sed -i 's/^[ \t]*#[ \t]*pragma[ \t]*message.*//' \

@@ -1,8 +1,8 @@
-#ifndef METASHELL_BOOST_REGEX_HPP
-#define METASHELL_BOOST_REGEX_HPP
+#ifndef METASHELL_DATA_BLANK_HPP
+#define METASHELL_DATA_BLANK_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,15 +17,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
+#include <boost/operators.hpp>
 
-#include <boost/regex.hpp>
+namespace metashell
+{
+  namespace data
+  {
+    class blank : boost::equality_comparable<blank>
+    {
+    };
 
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
+    bool operator==(blank, blank);
+  }
+}
 
 #endif

@@ -31,6 +31,7 @@ target_link_libraries(
     boost::concept_check
     boost::fusion
     boost::iterator
+    boost::regex
     boost::utility
 )
 
