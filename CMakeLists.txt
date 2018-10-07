@@ -70,7 +70,7 @@ if (ENABLE_PROFILING)
 endif()
 
 # The "internal" Templight build
-set(TEMPLIGHT_BUILD "${CMAKE_SOURCE_DIR}/3rd/templight/build")
+set(TEMPLIGHT_BUILD "${CMAKE_BINARY_DIR}/../templight")
 
 set(
   TEMPLIGHT_INCLUDEDIR

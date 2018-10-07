@@ -17,9 +17,11 @@
 
 set -e
 
-if [ -x 3rd/clang/bin/clang-format ]
+PLATFORM_ID="$(tools/detect_platform.sh --id)"
+
+if [ -x "bin/${PLATFORM_ID}/clang/bin/clang-format" ]
 then
-  echo 3rd/clang/bin/clang-format
+  echo "bin/${PLATFORM_ID}/clang/bin/clang-format"
 else
   for suffix in "-3.8" ""
   do

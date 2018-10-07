@@ -43,11 +43,13 @@ def bin_path(subpath=None):
 
 def load_from_bin(name):
     """Loads the file called name from the bin directory"""
+    module_path = bin_path(name)
     # Loading the code into a string and compiling that to avoid the automatic
     # bytecode file (ending with c) generation as a side-effect of testing.
-    with open(bin_path(name)) as modulefile:
+    with open(module_path) as modulefile:
         code = modulefile.read()
     module = imp.new_module(name)
+    module.__file__ = module_path
     # pylint: disable=exec-used
     exec code in module.__dict__
     # pylint: enable=exec-used

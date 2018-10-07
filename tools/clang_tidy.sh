@@ -23,9 +23,9 @@ then
   exit 1
 fi
 
-if [ -x "../3rd/clang/bin/clang-tidy" ]
+if [ -x "../clang/bin/clang-tidy" ]
 then
-  CLANG_TIDY="../3rd/clang/bin/clang-tidy"
+  CLANG_TIDY="../clang/bin/clang-tidy"
 elif command -v clang-tidy-3.8 >/dev/null 2>&1
 then
   CLANG_TIDY="clang-tidy-3.8"

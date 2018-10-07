@@ -80,6 +80,7 @@ ubuntu)
       git g++ cmake libreadline-dev python-pip zip python3-pip \
       libtool automake autoconf libltdl-dev pkg-config bison flex
   sudo -H pip install pycodestyle pylint gitpython daemonize mkdocs cheetah
+  PLATFORM_ID="$(tools/detect_platform.sh --id)"
   UBUNTU_VERSION="$(tools/detect_platform.sh --version)"
   if [ "${UBUNTU_VERSION}" = "18.04" ]
   then
@@ -87,7 +88,8 @@ ubuntu)
   fi
   CLANG_ARCHIVE="clang+llvm-${CLANG_VERSION}-x86_64-linux-gnu-ubuntu-${UBUNTU_VERSION}"
   GRAPHVIZ_ARCHIVE="graphviz-stable_release_${GRAPHVIZ_VERSION}"
-  cd 3rd
+  mkdir -p "bin/${PLATFORM_ID}"
+  cd "bin/${PLATFORM_ID}"
     wget http://llvm.org/releases/${CLANG_VERSION}/${CLANG_ARCHIVE}.tar.xz
     tar -xf ${CLANG_ARCHIVE}.tar.xz
     rm -rf clang
@@ -96,21 +98,23 @@ ubuntu)
 
     if [ "${NO_GRAPHVIZ}" = "" ]
     then
-      wget https://gitlab.com/graphviz/graphviz/-/archive/stable_release_${GRAPHVIZ_VERSION}/${GRAPHVIZ_ARCHIVE}.tar.bz2
-      tar -jxf ${GRAPHVIZ_ARCHIVE}.tar.bz2
       rm -rf graphviz
-      mv ${GRAPHVIZ_ARCHIVE} graphviz
-      rm ${GRAPHVIZ_ARCHIVE}.tar.bz2
+      mkdir graphviz
       cd graphviz
-        mkdir prefix
-
-        ./autogen.sh
-        ./configure --prefix $(pwd)/prefix
-        make -j${BUILD_THREADS}
-        make install
+        GRAPHVIZ_BIN="$(pwd)"
+        wget https://gitlab.com/graphviz/graphviz/-/archive/stable_release_${GRAPHVIZ_VERSION}/${GRAPHVIZ_ARCHIVE}.tar.bz2
+        tar -jxf ${GRAPHVIZ_ARCHIVE}.tar.bz2
+        mv ${GRAPHVIZ_ARCHIVE} src
+        rm ${GRAPHVIZ_ARCHIVE}.tar.bz2
+        cd src
+          ./autogen.sh
+          ./configure --prefix "${GRAPHVIZ_BIN}"
+          make -j${BUILD_THREADS}
+          make install
+        cd ..
       cd ..
     fi
-  cd ..
+  cd ../..
   ;;
 debian)
   sudo apt-get -y install git g++ cmake libreadline-dev zip

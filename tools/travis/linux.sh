@@ -17,7 +17,7 @@ sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-5 /usr/bin/g++
 
 [ "${COVERAGE}" = "true" ] && sudo pip install cpp-coveralls==0.3.12
 
-UBUNTU_VERSION="$(tools/detect_platform.sh --version)"
+PLATFORM_ID="$(tools/detect_platform.sh --id)"
 
 if [ "${STATIC_CHECKS}" = "true" ]
 then
@@ -39,22 +39,24 @@ then
 
   # Run clang-tidy
 
-  mkdir bin
-  cd bin
-    cmake ..
-    ../tools/still_working.py --period_sec 60 -- /bin/bash ../tools/clang_tidy.sh \
+  mkdir -p "bin/${PLATFORM_ID}/metashell"
+  cd "bin/${PLATFORM_ID}/metashell"
+    cmake ../../..
+    ../../..tools/still_working.py --period_sec 60 -- /bin/bash ../../../tools/clang_tidy.sh \
       | tee clang_tidy_output.txt
     [ ! -s clang_tidy_output.txt ]
-  cd ..
+  cd ../../..
 
 else
 
   # Get the templight binary
   
-  cd 3rd/templight
-    ARCHIVE_NAME=templight_ubuntu${UBUNTU_VERSION}_x86_64.tar.bz2
+  mkdir -p "bin/${PLATFORM_ID}"
+  cd "bin/${PLATFORM_ID}"
+    ARCHIVE_NAME=templight_${PLATFORM_ID}.tar.bz2
     wget https://github.com/metashell/templight_binary/releases/download/templight_9732a7/${ARCHIVE_NAME}
     tar -xvjf ${ARCHIVE_NAME}
+    mv build templight
   cd ../..
   
   # Test the code
@@ -72,10 +74,10 @@ else
     -b "bin" \
     --exclude "3rd" \
     --exclude "test" \
-    --exclude "bin/3rd" \
-    --exclude "bin/test" \
-    --exclude "bin/app/include/metashell/" \
-    --exclude "bin/_CPack_Packages" \
+    --exclude "bin/${PLATFORM_ID}/metashell/3rd" \
+    --exclude "bin/${PLATFORM_ID}/metashell/test" \
+    --exclude "bin/${PLATFORM_ID}/metashell/app/include/metashell/" \
+    --exclude "bin/${PLATFORM_ID}/metashell/_CPack_Packages" \
     --exclude "windows_headers" \
     --gcov gcov-4.8 --gcov-options '\-lp'
 fi

@@ -41,6 +41,7 @@ then
 fi
 
 PLATFORM="$(tools/detect_platform.sh)"
+PLATFORM_ID="$(tools/detect_platform.sh --id)"
 
 # Config
 if [ "${PLATFORM}" = "openbsd" ]
@@ -52,7 +53,7 @@ fi
 # Show argument & config summary
 echo "Number of threads used for building: ${BUILD_THREADS}"
 echo "Number of threads used for testing: ${TEST_THREADS}"
-echo "Platform: ${PLATFORM}"
+echo "Platform: ${PLATFORM} (${PLATFORM_ID})"
 
 # Build Templight
 if [ "${NO_TEMPLIGHT}" = "" ]
@@ -65,41 +66,37 @@ then
     C_INCLUDE_DIRS=""
   fi
 
-  cd 3rd
-    cd templight
-      mkdir -p build; cd build
-        cmake \
-          -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
-          -DLLVM_ENABLE_TERMINFO=OFF \
-          "${C_INCLUDE_DIRS}" \
-          ../llvm
-          make templight -j${BUILD_THREADS}
-      cd ..
-    cd ..
-  cd ..
+  mkdir -p "bin/${PLATFORM_ID}/templight"; cd "bin/${PLATFORM_ID}/templight"
+    cmake \
+      -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
+      -DLLVM_ENABLE_TERMINFO=OFF \
+      "${C_INCLUDE_DIRS}" \
+      ../../../3rd/templight/llvm
+    make templight -j${BUILD_THREADS}
+  cd ../../..
 else
   echo "Skipping Templight build, because \$NO_TEMPLIGHT = \"${NO_TEMPLIGHT}\""
 fi
 
-mkdir -p bin; cd bin
+mkdir -p "bin/${PLATFORM_ID}/metashell"; cd "bin/${PLATFORM_ID}/metashell"
   if [ -z "${METASHELL_NO_DOC_GENERATION}" ]
   then
-    cmake ..
+    cmake ../../..
   else
-    cmake .. -DMETASHELL_NO_DOC_GENERATION=1
+    cmake ../../.. -DMETASHELL_NO_DOC_GENERATION=1
   fi
   make -j${BUILD_THREADS}
   ctest -j${TEST_THREADS} || (cat Testing/Temporary/LastTest.log && false)
-cd ..
+cd ../../..
 
 if [ "${NO_INSTALLER}" = "" ]
 then
-  cd bin
+  cd "bin/${PLATFORM_ID}/metashell"
     cpack
     make system_test_zip
-  cd ..
+  cd ../../..
 
-  SYSTEM_TEST_BOOST_ZIP=bin/system_test_boost.zip
+  SYSTEM_TEST_BOOST_ZIP="bin/${PLATFORM_ID}/metashell/system_test_boost.zip"
   rm -f ${SYSTEM_TEST_BOOST_ZIP}
   cd 3rd/boost
     for LIB in config mpl preprocessor type_traits

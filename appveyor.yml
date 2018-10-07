@@ -9,19 +9,21 @@ configuration:
   - Release
 
 install:
-  - cd 3rd\templight
+  - md bin\windows_%platform%
+  - cd bin\windows_%platform%
   - appveyor DownloadFile https://github.com/metashell/templight_binary/releases/download/templight_9732a7/templight_windows.zip
   - 7z -y x templight_windows.zip
+  - ren build templight
   - appveyor-retry choco install nsis -version 2.50.0.20160103
   - cd ..\..
 
 before_build:
-  - md bin
-  - cd bin
+  - md bin\windows_%platform%\metashell
+  - cd bin\windows_%platform%\metashell
   - if "%platform%"=="Win32" set CMAKE_GENERATOR_NAME=Visual Studio 15
   - if "%platform%"=="x64"   set CMAKE_GENERATOR_NAME=Visual Studio 15 Win64
-  - cmake -G "%CMAKE_GENERATOR_NAME%" ..
-  - cd ..
+  - cmake -G "%CMAKE_GENERATOR_NAME%" ..\..\..
+  - cd ..\..\..
 
 build_script:
   - set NO_TEMPLIGHT=1
