@@ -20,12 +20,9 @@
 #include <string>
 #include <vector>
 
-#include <metashell/boost/regex.hpp>
-
-#include <boost/optional.hpp>
-
 #include <metashell/data/frame.hpp>
 #include <metashell/data/metaprogram_node.hpp>
+#include <metashell/data/regex.hpp>
 
 namespace metashell
 {
@@ -34,7 +31,7 @@ namespace metashell
     class breakpoint
     {
     public:
-      explicit breakpoint(int id, const boost::regex& name_regex);
+      explicit breakpoint(int id, data::regex name_regex);
 
       bool match(const data::metaprogram_node& node) const;
 
@@ -44,7 +41,7 @@ namespace metashell
 
     private:
       int id;
-      boost::optional<boost::regex> name_regex;
+      data::regex name_regex;
     };
 
     using breakpoints_t = std::vector<breakpoint>;

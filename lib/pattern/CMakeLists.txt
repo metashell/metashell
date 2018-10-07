@@ -30,6 +30,5 @@ target_link_libraries(
   INTERFACE
 
     boost::optional
-    boost::regex
     boost::variant
 )

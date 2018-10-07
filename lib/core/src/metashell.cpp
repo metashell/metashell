@@ -26,10 +26,10 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
-#include <metashell/boost/regex.hpp>
 
 #include <fstream>
 #include <memory>
+#include <regex>
 
 namespace metashell
 {
@@ -65,15 +65,13 @@ namespace metashell
 
     std::string repair_type_string(const std::string& type)
     {
-      boost::regex bool_regex("(^|[^A-Za-z0-9_])_Bool([^A-Za-z0-9_]|$)");
-      boost::regex type_regex(
+      const std::regex bool_regex("(^|[^A-Za-z0-9_])_Bool([^A-Za-z0-9_]|$)");
+      const std::regex type_regex(
           "(^|[^A-Za-z0-9_])(?:class |struct |union |enum )");
 
-      auto tmp = boost::regex_replace(type, bool_regex, "\\1bool\\2",
-                                      boost::match_default | boost::format_all);
-
-      return boost::regex_replace(
-          tmp, type_regex, "\\1", boost::match_default | boost::format_all);
+      return std::regex_replace(
+          std::regex_replace(type, bool_regex, "$01bool$02"), type_regex,
+          "$01");
     }
 
     std::string get_type_from_ast_string(const std::string& ast)
@@ -84,7 +82,7 @@ namespace metashell
       std::size_t end_index = std::string::npos;
       std::size_t start_index = ast.find_last_of('\n');
 
-      boost::regex reg(
+      const std::regex reg(
           ".*':'(?:struct )?metashell::impl::wrap<?(.*)>' "
           "'void \\((?:void)?\\)"
           "(?: __attribute__\\(\\(thiscall\\)\\)|(?:))(?: noexcept|(?:))'.*");
@@ -102,8 +100,8 @@ namespace metashell
 
         line = ast.substr(start_index + 1, end_index - start_index - 1);
 
-        boost::smatch match;
-        if (boost::regex_match(line, match, reg))
+        std::smatch match;
+        if (std::regex_match(line, match, reg))
         {
           return repair_type_string(boost::trim_copy(std::string(match[1])));
         }

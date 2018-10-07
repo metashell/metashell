@@ -17,12 +17,10 @@
 #include <metashell/data/command.hpp>
 #include <metashell/data/type.hpp>
 
-#include <metashell/boost/regex.hpp>
-
 #include <boost/algorithm/string.hpp>
 
 #include <ostream>
-#include <sstream>
+#include <regex>
 
 namespace metashell
 {
@@ -40,13 +38,9 @@ namespace metashell
     bool type::is_integral_constant(const type& type_,
                                     const std::string& value_) const
     {
-      using boost::regex;
-      using boost::regex_match;
-
-      std::ostringstream s;
-      s << "std::(.*::|)integral_constant<" << type_ << ", " << value_ << ">";
-
-      return regex_match(name().value(), regex(s.str()));
+      return std::regex_match(
+          name().value(), std::regex("std::(.*::|)integral_constant<" +
+                                     to_string(type_) + ", " + value_ + ">"));
     }
 
     type::operator cpp_code() const { return cpp_code(_name); }

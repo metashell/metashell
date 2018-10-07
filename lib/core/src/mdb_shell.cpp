@@ -631,7 +631,7 @@ namespace metashell
       }
       try
       {
-        breakpoint bp{next_breakpoint_id, boost::regex(arg)};
+        breakpoint bp{next_breakpoint_id, data::regex(arg)};
         ++next_breakpoint_id;
 
         if (mp->caching_enabled())
@@ -663,7 +663,7 @@ namespace metashell
           breakpoints.push_back(bp);
         }
       }
-      catch (const boost::regex_error&)
+      catch (const std::regex_error&)
       {
         displayer_.show_error("\"" + arg + "\" is not a valid regex");
       }

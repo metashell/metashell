@@ -22,8 +22,8 @@
 
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
-#include <pattern/boost_regex.hpp>
 
+#include <regex>
 #include <string>
 
 namespace pattern
@@ -66,8 +66,8 @@ namespace pattern
       else if (const basic_regex<CharT>* re =
                    boost::get<basic_regex<CharT>>(&_pattern))
       {
-        return boost::regex_search(std::basic_string<CharT>(value_),
-                                   boost::basic_regex<CharT>(re->value()));
+        return std::regex_search(std::basic_string<CharT>(value_),
+                                 std::basic_regex<CharT>(re->value()));
       }
       else
       {
