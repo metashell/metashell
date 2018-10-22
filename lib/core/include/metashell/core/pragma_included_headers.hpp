@@ -23,13 +23,9 @@ namespace metashell
 {
   namespace core
   {
-    class shell;
-
     class pragma_included_headers : public iface::pragma_handler
     {
     public:
-      explicit pragma_included_headers(shell& shell_);
-
       virtual std::string arguments() const override;
       virtual std::string description() const override;
 
@@ -37,10 +33,8 @@ namespace metashell
                        const data::command::iterator& name_end_,
                        const data::command::iterator& args_begin_,
                        const data::command::iterator& args_end_,
+                       iface::shell& shell_,
                        iface::displayer& displayer_) const override;
-
-    private:
-      shell& _shell;
     };
   }
 }

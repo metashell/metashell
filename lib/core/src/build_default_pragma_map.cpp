@@ -55,8 +55,7 @@ namespace metashell
 
       std::unique_ptr<pragma_macro> shell_mode(const std::string& name_,
                                                const std::string& comment_,
-                                               bool preprocessing_mode_,
-                                               iface::command_processor& shell_)
+                                               bool preprocessing_mode_)
       {
         std::vector<std::string> cmds{
             "#msh preprocessed echo " + on_off(preprocessing_mode_),
@@ -69,7 +68,7 @@ namespace metashell
         }
 
         return std::make_unique<pragma_macro>(
-            "Set Metashell to " + name_ + " mode", move(cmds), shell_);
+            "Set Metashell to " + name_ + " mode", move(cmds));
       }
     }
 
@@ -83,8 +82,7 @@ namespace metashell
 
       std::map<sv, std::unique_ptr<iface::pragma_handler>> result;
 
-      result.emplace(
-          sv{"help"}, std::make_unique<pragma_help>(shell_.pragma_handlers()));
+      result.emplace(sv{"help"}, std::make_unique<pragma_help>());
 
       result.emplace(
           sv{"verbose"},
@@ -99,30 +97,28 @@ namespace metashell
               [&shell_]() { return shell_.using_precompiled_headers(); },
               [&shell_](bool v_) { shell_.using_precompiled_headers(v_); }));
 
-      result.emplace(sv{"environment"},
-                     std::make_unique<pragma_environment>(shell_.env()));
+      result.emplace(sv{"environment"}, std::make_unique<pragma_environment>());
 
       result.emplace(sv{"environment", "push"},
-                     std::make_unique<pragma_environment_push>(shell_));
-
-      result.emplace(sv{"environment", "pop"},
-                     std::make_unique<pragma_environment_pop>(shell_));
-
-      result.emplace(sv{"environment", "stack"},
-                     std::make_unique<pragma_environment_stack>(shell_));
-
-      result.emplace(sv{"environment", "add"},
-                     std::make_unique<pragma_environment_add>(shell_));
-
-      result.emplace(sv{"environment", "reset"},
-                     std::make_unique<pragma_environment_reset>(shell_));
-
-      result.emplace(sv{"environment", "reload"},
-                     std::make_unique<pragma_environment_reload>(shell_));
+                     std::make_unique<pragma_environment_push>());
 
       result.emplace(
-          sv{"environment", "save"}, std::make_unique<pragma_environment_save>(
-                                         shell_.get_config(), shell_.env()));
+          sv{"environment", "pop"}, std::make_unique<pragma_environment_pop>());
+
+      result.emplace(sv{"environment", "stack"},
+                     std::make_unique<pragma_environment_stack>());
+
+      result.emplace(
+          sv{"environment", "add"}, std::make_unique<pragma_environment_add>());
+
+      result.emplace(sv{"environment", "reset"},
+                     std::make_unique<pragma_environment_reset>());
+
+      result.emplace(sv{"environment", "reload"},
+                     std::make_unique<pragma_environment_reload>());
+
+      result.emplace(sv{"environment", "save"},
+                     std::make_unique<pragma_environment_save>());
 
       result.emplace(sv{"preprocessed", "echo"},
                      std::make_unique<pragma_switch>(
@@ -130,17 +126,15 @@ namespace metashell
                          [&shell_]() { return shell_.echo(); },
                          [&shell_](bool v_) { shell_.echo(v_); }));
 
-      result.emplace(
-          sv{"mdb"}, std::make_unique<pragma_mdb>(
-                         shell_, cpq_, mdb_temp_dir_, false, logger_));
+      result.emplace(sv{"mdb"}, std::make_unique<pragma_mdb>(
+                                    cpq_, mdb_temp_dir_, false, logger_));
 
-      result.emplace(sv{"evaluate"}, std::make_unique<pragma_evaluate>(shell_));
+      result.emplace(sv{"evaluate"}, std::make_unique<pragma_evaluate>());
 
-      result.emplace(
-          sv{"pdb"}, std::make_unique<pragma_mdb>(
-                         shell_, cpq_, mdb_temp_dir_, true, logger_));
+      result.emplace(sv{"pdb"}, std::make_unique<pragma_mdb>(
+                                    cpq_, mdb_temp_dir_, true, logger_));
 
-      result.emplace(sv{"pp"}, std::make_unique<pragma_pp>(shell_));
+      result.emplace(sv{"pp"}, std::make_unique<pragma_pp>());
 
       result.emplace(sv{"show", "cpp_errors"},
                      std::make_unique<pragma_switch>(
@@ -159,42 +153,42 @@ namespace metashell
                      shell_mode("preprocessor",
                                 "To switch back to the default mode, run #msh "
                                 "metaprogram mode",
-                                true, shell_));
+                                true));
 
-      result.emplace(sv{"metaprogram", "mode"},
-                     shell_mode("metaprogram", "", false, shell_));
+      result.emplace(
+          sv{"metaprogram", "mode"}, shell_mode("metaprogram", "", false));
 
       result.emplace(sv{"echo"}, std::make_unique<pragma_echo>());
 
-      result.emplace(sv{"macros"}, std::make_unique<pragma_macros>(shell_));
+      result.emplace(sv{"macros"}, std::make_unique<pragma_macros>());
 
       result.emplace(
-          sv{"macro", "names"}, std::make_unique<pragma_macro_names>(shell_));
+          sv{"macro", "names"}, std::make_unique<pragma_macro_names>());
 
       result.emplace(
           sv{"sysincludes"},
-          std::make_unique<pragma_includes<data::include_type::sys>>(shell_));
+          std::make_unique<pragma_includes<data::include_type::sys>>());
 
       result.emplace(
           sv{"quoteincludes"},
-          std::make_unique<pragma_includes<data::include_type::quote>>(shell_));
+          std::make_unique<pragma_includes<data::include_type::quote>>());
 
-      result.emplace(sv{"which"}, std::make_unique<pragma_which>(shell_));
+      result.emplace(sv{"which"}, std::make_unique<pragma_which>());
 
       result.emplace(sv{"included", "headers"},
-                     std::make_unique<pragma_included_headers>(shell_));
+                     std::make_unique<pragma_included_headers>());
 
-      result.emplace(sv{"ls"}, std::make_unique<pragma_ls>(shell_));
+      result.emplace(sv{"ls"}, std::make_unique<pragma_ls>());
 
-      result.emplace(sv{"config"}, std::make_unique<pragma_config>(shell_));
-
-      result.emplace(
-          sv{"config", "show"}, std::make_unique<pragma_config_show>(shell_));
+      result.emplace(sv{"config"}, std::make_unique<pragma_config>());
 
       result.emplace(
-          sv{"config", "load"}, std::make_unique<pragma_config_load>(shell_));
+          sv{"config", "show"}, std::make_unique<pragma_config_show>());
 
-      result.emplace(sv{"quit"}, std::make_unique<pragma_quit>(shell_));
+      result.emplace(
+          sv{"config", "load"}, std::make_unique<pragma_config_load>());
+
+      result.emplace(sv{"quit"}, std::make_unique<pragma_quit>());
 
       return result;
     }

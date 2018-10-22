@@ -17,9 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/config.hpp>
-#include <metashell/iface/displayer.hpp>
-#include <metashell/iface/environment.hpp>
 #include <metashell/iface/pragma_handler.hpp>
 
 #include <string>
@@ -31,9 +28,6 @@ namespace metashell
     class pragma_environment_save : public iface::pragma_handler
     {
     public:
-      pragma_environment_save(const data::config& config_,
-                              const iface::environment& env_);
-
       virtual std::string arguments() const override;
       virtual std::string description() const override;
 
@@ -41,11 +35,8 @@ namespace metashell
                        const data::command::iterator& name_end_,
                        const data::command::iterator& args_begin_,
                        const data::command::iterator& args_end_,
+                       iface::shell& shell_,
                        iface::displayer& displayer_) const override;
-
-    private:
-      const data::config& _config;
-      const iface::environment& _env;
     };
   }
 }

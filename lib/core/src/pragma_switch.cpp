@@ -17,7 +17,6 @@
 #include <metashell/core/metashell.hpp>
 #include <metashell/core/metashell_pragma.hpp>
 #include <metashell/core/pragma_switch.hpp>
-#include <metashell/core/shell.hpp>
 #include <metashell/core/version.hpp>
 
 #include <boost/algorithm/string/join.hpp>
@@ -74,6 +73,7 @@ namespace metashell
                             const data::command::iterator&,
                             const data::command::iterator& args_begin_,
                             const data::command::iterator& args_end_,
+                            iface::shell&,
                             iface::displayer& displayer_) const
     {
       auto i = args_begin_;

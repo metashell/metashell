@@ -15,25 +15,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/core/pragma_environment_reload.hpp>
-#include <metashell/core/shell.hpp>
 
 namespace metashell
 {
   namespace core
   {
-    pragma_environment_reload::pragma_environment_reload(shell& shell_)
-      : _shell(shell_)
-    {
-    }
-
     std::string pragma_environment_reload::description() const
     {
       return "Re-reads the included header files from disc.";
     }
 
-    void pragma_environment_reload::run(iface::displayer&) const
+    void pragma_environment_reload::run(iface::shell& shell_,
+                                        iface::displayer&) const
     {
-      _shell.rebuild_environment();
+      shell_.rebuild_environment();
     }
   }
 }

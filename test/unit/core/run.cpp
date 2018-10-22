@@ -19,13 +19,17 @@
 #include <metashell/core/command.hpp>
 #include <metashell/core/metashell_pragma.hpp>
 
+#include <metashell/mock/shell.hpp>
+
 void run(const metashell::iface::pragma_handler& handler_,
          const metashell::data::cpp_code& args_,
          metashell::iface::displayer& displayer_)
 {
+  metashell::mock::shell sh;
+
   const metashell::data::command cmd = metashell::core::to_command(args_);
   handler_.run(
       cmd.begin(), cmd.begin(), cmd.begin(),
-      metashell::core::end_of_pragma_argument_list(cmd.begin(), cmd.end()),
+      metashell::core::end_of_pragma_argument_list(cmd.begin(), cmd.end()), sh,
       displayer_);
 }

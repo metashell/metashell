@@ -16,14 +16,11 @@
 
 #include <metashell/core/metashell.hpp>
 #include <metashell/core/pragma_evaluate.hpp>
-#include <metashell/core/shell.hpp>
 
 namespace metashell
 {
   namespace core
   {
-    pragma_evaluate::pragma_evaluate(shell& shell_) : _shell(shell_) {}
-
     std::string pragma_evaluate::arguments() const { return "<code>"; }
 
     std::string pragma_evaluate::description() const
@@ -38,11 +35,12 @@ namespace metashell
                               const data::command::iterator&,
                               const data::command::iterator& args_begin_,
                               const data::command::iterator& args_end_,
+                              iface::shell& shell_,
                               iface::displayer& displayer_) const
     {
       const data::cpp_code cmd = tokens_to_string(args_begin_, args_end_);
 
-      _shell.run_metaprogram(cmd, displayer_);
+      shell_.run_metaprogram(cmd, displayer_);
 
       if (!is_environment_setup_command(args_begin_, args_end_))
       {

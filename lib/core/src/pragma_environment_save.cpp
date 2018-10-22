@@ -25,12 +25,6 @@ namespace metashell
 {
   namespace core
   {
-    pragma_environment_save::pragma_environment_save(
-        const data::config& config_, const iface::environment& env_)
-      : _config(config_), _env(env_)
-    {
-    }
-
     std::string pragma_environment_save::arguments() const { return "<path>"; }
 
     std::string pragma_environment_save::description() const
@@ -46,9 +40,10 @@ namespace metashell
                                  const data::command::iterator&,
                                  const data::command::iterator& args_begin_,
                                  const data::command::iterator& args_end_,
+                                 iface::shell& shell_,
                                  iface::displayer& displayer_) const
     {
-      if (_config.saving_enabled)
+      if (shell_.get_config().saving_enabled)
       {
         const std::string fn =
             boost::trim_copy(tokens_to_string(args_begin_, args_end_)).value();
@@ -61,7 +56,7 @@ namespace metashell
         else
         {
           std::ofstream f(fn.c_str());
-          f << _env.get_all() << std::endl;
+          f << shell_.env().get_all() << std::endl;
           if (f.fail() || f.bad())
           {
             displayer_.show_error("Failed to save the environment into file " +

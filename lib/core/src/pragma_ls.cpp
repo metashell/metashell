@@ -19,7 +19,6 @@
 
 #include <metashell/core/include_path_cache.hpp>
 #include <metashell/core/pragma_ls.hpp>
-#include <metashell/core/shell.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/filesystem.hpp>
@@ -104,8 +103,6 @@ namespace metashell
       }
     }
 
-    pragma_ls::pragma_ls(shell& shell_) : _shell(shell_) {}
-
     std::string pragma_ls::arguments() const
     {
       return "{<include file>|\"include file\"}";
@@ -122,12 +119,13 @@ namespace metashell
                         const data::command::iterator& name_end_,
                         const data::command::iterator& args_begin_,
                         const data::command::iterator& args_end_,
+                        iface::shell& shell_,
                         iface::displayer& displayer_) const
     {
       std::set<data::include_argument> dirs;
       std::set<data::include_argument> headers;
 
-      include_path_cache paths(_shell.engine().header_discoverer());
+      include_path_cache paths(shell_.engine().header_discoverer());
 
       const boost::filesystem::directory_iterator end;
 

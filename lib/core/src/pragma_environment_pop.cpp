@@ -15,26 +15,21 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/core/pragma_environment_pop.hpp>
-#include <metashell/core/shell.hpp>
 
 namespace metashell
 {
   namespace core
   {
-    pragma_environment_pop::pragma_environment_pop(shell& shell_)
-      : _shell(shell_)
-    {
-    }
-
     std::string pragma_environment_pop::description() const
     {
       return "Pops the last environment from the environment stack.";
     }
 
-    void pragma_environment_pop::run(iface::displayer& displayer_) const
+    void pragma_environment_pop::run(iface::shell& shell_,
+                                     iface::displayer& displayer_) const
     {
-      _shell.pop_environment();
-      _shell.display_environment_stack_size(displayer_);
+      shell_.pop_environment();
+      shell_.display_environment_stack_size(displayer_);
     }
   }
 }

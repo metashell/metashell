@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/core/pragma_which.hpp>
-#include <metashell/core/shell.hpp>
 
 #include <metashell/data/exception.hpp>
 
@@ -26,8 +25,6 @@ namespace metashell
 {
   namespace core
   {
-    pragma_which::pragma_which(shell& shell_) : _shell(shell_) {}
-
     std::string pragma_which::arguments() const
     {
       return "[-all] <include file>|\"include file\"";
@@ -44,6 +41,7 @@ namespace metashell
                            const data::command::iterator& name_end_,
                            const data::command::iterator& args_begin_,
                            const data::command::iterator& args_end_,
+                           iface::shell& shell_,
                            iface::displayer& displayer_) const
     {
       using boost::filesystem::path;
@@ -54,7 +52,7 @@ namespace metashell
           data::tokens_to_string(name_begin_, name_end_).value(), args_begin_,
           args_end_);
       const auto include_path =
-          _shell.engine().header_discoverer().include_path(args.header.type);
+          shell_.engine().header_discoverer().include_path(args.header.type);
       const auto files =
           include_path |
           transformed(std::function<path(const path&)>([&args](

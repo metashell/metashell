@@ -20,8 +20,6 @@ namespace metashell
 {
   namespace core
   {
-    pragma_pp::pragma_pp(shell& shell_) : _shell(shell_) {}
-
     std::string pragma_pp::arguments() const { return "<exp>"; }
 
     std::string pragma_pp::description() const
@@ -33,9 +31,10 @@ namespace metashell
                         const data::command::iterator&,
                         const data::command::iterator& args_begin_,
                         const data::command::iterator& args_end_,
+                        iface::shell& shell_,
                         iface::displayer& displayer_) const
     {
-      _shell.preprocess(
+      shell_.preprocess(
           displayer_, tokens_to_string(args_begin_, args_end_), false);
     }
   }

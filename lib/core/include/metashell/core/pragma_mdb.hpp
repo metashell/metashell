@@ -19,7 +19,6 @@
 
 #include <metashell/core/command_processor_queue.hpp>
 #include <metashell/core/logger.hpp>
-#include <metashell/core/shell.hpp>
 
 #include <metashell/iface/pragma_handler.hpp>
 
@@ -34,8 +33,7 @@ namespace metashell
     class pragma_mdb : public iface::pragma_handler
     {
     public:
-      pragma_mdb(shell& shell_,
-                 command_processor_queue* cpq_,
+      pragma_mdb(command_processor_queue* cpq_,
                  const boost::filesystem::path& mdb_temp_dir_,
                  bool preprocessor_,
                  logger* logger_);
@@ -47,11 +45,11 @@ namespace metashell
                        const data::command::iterator& name_end_,
                        const data::command::iterator& args_begin_,
                        const data::command::iterator& args_end_,
+                       iface::shell& shell_,
                        iface::displayer& displayer_) const override;
 
     private:
       bool _preprocessor;
-      shell& _shell;
       command_processor_queue* _cpq;
       boost::filesystem::path _mdb_temp_dir;
       logger* _logger;

@@ -20,19 +20,15 @@ namespace metashell
 {
   namespace core
   {
-    pragma_environment::pragma_environment(iface::environment& env_)
-      : _env(env_)
-    {
-    }
-
     std::string pragma_environment::description() const
     {
       return "Displays the entire content of the environment.";
     }
 
-    void pragma_environment::run(iface::displayer& displayer_) const
+    void pragma_environment::run(iface::shell& shell_,
+                                 iface::displayer& displayer_) const
     {
-      displayer_.show_cpp_code(_env.get_all());
+      displayer_.show_cpp_code(shell_.env().get_all());
     }
   }
 }

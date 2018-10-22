@@ -73,17 +73,16 @@ namespace metashell
       }
     }
 
-    pragma_macro_names::pragma_macro_names(shell& shell_) : _shell(shell_) {}
-
     std::string pragma_macro_names::description() const
     {
       return "Displays the names of the defined macros";
     }
 
-    void pragma_macro_names::run(iface::displayer& displayer_) const
+    void pragma_macro_names::run(iface::shell& shell_,
+                                 iface::displayer& displayer_) const
     {
       displayer_.show_cpp_code(extract_macro_names(
-          _shell.engine().macro_discovery().macros(_shell.env())));
+          shell_.engine().macro_discovery().macros(shell_.env())));
     }
   }
 }

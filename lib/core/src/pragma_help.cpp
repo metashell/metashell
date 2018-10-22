@@ -16,7 +16,6 @@
 
 #include <metashell/core/metashell.hpp>
 #include <metashell/core/pragma_help.hpp>
-#include <metashell/core/shell.hpp>
 #include <metashell/core/version.hpp>
 
 #include <boost/algorithm/string/join.hpp>
@@ -77,14 +76,6 @@ namespace metashell
       }
     }
 
-    pragma_help::pragma_help(
-        const std::map<std::vector<std::string>,
-                       std::unique_ptr<iface::pragma_handler>>&
-            pragma_handlers_)
-      : _pragma_handlers(pragma_handlers_)
-    {
-    }
-
     std::string pragma_help::arguments() const { return "[<command>]"; }
 
     std::string pragma_help::description() const
@@ -96,13 +87,14 @@ namespace metashell
                           const data::command::iterator&,
                           const data::command::iterator& args_begin_,
                           const data::command::iterator& args_end_,
+                          iface::shell& shell_,
                           iface::displayer& displayer_) const
     {
       using boost::algorithm::join;
 
       if (args_begin_ == args_end_)
       {
-        display_all(displayer_, _pragma_handlers);
+        display_all(displayer_, shell_.pragma_handlers());
       }
       else
       {
@@ -123,7 +115,7 @@ namespace metashell
         data::text help_text;
         bool was_pragma = false;
 
-        for (const auto& h : _pragma_handlers)
+        for (const auto& h : shell_.pragma_handlers())
         {
           assert(h.second);
 

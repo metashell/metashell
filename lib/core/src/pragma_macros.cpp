@@ -20,17 +20,16 @@ namespace metashell
 {
   namespace core
   {
-    pragma_macros::pragma_macros(shell& shell_) : _shell(shell_) {}
-
     std::string pragma_macros::description() const
     {
       return "Displays the macro definitions";
     }
 
-    void pragma_macros::run(iface::displayer& displayer_) const
+    void pragma_macros::run(iface::shell& shell_,
+                            iface::displayer& displayer_) const
     {
       displayer_.show_cpp_code(
-          _shell.engine().macro_discovery().macros(_shell.env()));
+          shell_.engine().macro_discovery().macros(shell_.env()));
     }
   }
 }

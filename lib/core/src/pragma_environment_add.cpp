@@ -22,11 +22,6 @@ namespace metashell
 {
   namespace core
   {
-    pragma_environment_add::pragma_environment_add(shell& shell_)
-      : _shell(shell_)
-    {
-    }
-
     std::string pragma_environment_add::arguments() const { return "<code>"; }
 
     std::string pragma_environment_add::description() const
@@ -41,11 +36,12 @@ namespace metashell
                                      const data::command::iterator&,
                                      const data::command::iterator& args_begin_,
                                      const data::command::iterator& args_end_,
+                                     iface::shell& shell_,
                                      iface::displayer& displayer_) const
     {
       const data::cpp_code cmd = tokens_to_string(args_begin_, args_end_);
 
-      _shell.store_in_buffer(cmd, displayer_);
+      shell_.store_in_buffer(cmd, displayer_);
 
       if (is_environment_setup_command(args_begin_, args_end_))
       {

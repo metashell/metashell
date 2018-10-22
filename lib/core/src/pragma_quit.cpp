@@ -15,19 +15,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/core/pragma_quit.hpp>
-#include <metashell/core/shell.hpp>
 
 namespace metashell
 {
   namespace core
   {
-    pragma_quit::pragma_quit(shell& shell_) : _shell(shell_) {}
-
     std::string pragma_quit::description() const
     {
       return "Terminates the shell.";
     }
 
-    void pragma_quit::run(iface::displayer&) const { _shell.stop(); }
+    void pragma_quit::run(iface::shell& shell_, iface::displayer&) const
+    {
+      shell_.stop();
+    }
   }
 }

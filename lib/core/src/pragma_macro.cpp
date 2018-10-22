@@ -22,23 +22,21 @@ namespace metashell
   namespace core
   {
     pragma_macro::pragma_macro(std::string description_,
-                               std::vector<std::string> commands_,
-                               iface::command_processor& shell_)
-      : _shell(shell_),
-        _commands(move(commands_)),
-        _description(move(description_))
+                               std::vector<std::string> commands_)
+      : _commands(move(commands_)), _description(move(description_))
     {
     }
 
     std::string pragma_macro::description() const { return _description; }
 
-    void pragma_macro::run(iface::displayer& displayer_) const
+    void pragma_macro::run(iface::shell& shell_,
+                           iface::displayer& displayer_) const
     {
       null_history ignore;
 
       for (const std::string& cmd : _commands)
       {
-        _shell.line_available(cmd, displayer_, ignore);
+        shell_.line_available(cmd, displayer_, ignore);
       }
     }
   }

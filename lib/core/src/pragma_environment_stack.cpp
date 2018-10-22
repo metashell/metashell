@@ -15,25 +15,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/core/pragma_environment_stack.hpp>
-#include <metashell/core/shell.hpp>
 
 namespace metashell
 {
   namespace core
   {
-    pragma_environment_stack::pragma_environment_stack(shell& shell_)
-      : _shell(shell_)
-    {
-    }
-
     std::string pragma_environment_stack::description() const
     {
       return "Displays the size of the environment stack.";
     }
 
-    void pragma_environment_stack::run(iface::displayer& displayer_) const
+    void pragma_environment_stack::run(iface::shell& shell_,
+                                       iface::displayer& displayer_) const
     {
-      _shell.display_environment_stack_size(displayer_);
+      shell_.display_environment_stack_size(displayer_);
     }
   }
 }

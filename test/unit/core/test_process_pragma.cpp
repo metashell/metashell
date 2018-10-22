@@ -20,6 +20,8 @@
 #include <metashell/core/null_displayer.hpp>
 #include <metashell/core/process_pragma.hpp>
 
+#include <metashell/mock/shell.hpp>
+
 #include "run.hpp"
 
 #include <gtest/gtest.h>
@@ -40,6 +42,7 @@ namespace
                      const data::command::iterator&,
                      const data::command::iterator&,
                      const data::command::iterator&,
+                     iface::shell&,
                      iface::displayer&) const override
     {
       _run_flag = true;
@@ -65,7 +68,8 @@ TEST(process_pragma, processing_non_existing_handler)
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo"));
 
   core::null_displayer d;
-  ASSERT_ANY_THROW(process_pragma({}, cmd.begin(), cmd.end(), d));
+  mock::shell sh;
+  ASSERT_ANY_THROW(process_pragma({}, cmd.begin(), cmd.end(), sh, d));
 }
 
 TEST(process_pragma, processing_existing_handler)
@@ -80,7 +84,8 @@ TEST(process_pragma, processing_existing_handler)
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo"));
 
   core::null_displayer d;
-  process_pragma(m, cmd.begin(), cmd.end(), d);
+  mock::shell sh;
+  process_pragma(m, cmd.begin(), cmd.end(), sh, d);
 
   ASSERT_TRUE(foo_run);
 }
@@ -97,7 +102,8 @@ TEST(process_pragma, pragma_with_two_token_name_is_called)
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo bar"));
 
   core::null_displayer d;
-  process_pragma(m, cmd.begin(), cmd.end(), d);
+  mock::shell sh;
+  process_pragma(m, cmd.begin(), cmd.end(), sh, d);
 
   ASSERT_TRUE(foo_bar_run);
 }
@@ -118,7 +124,8 @@ TEST(process_pragma,
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo bar"));
 
   core::null_displayer d;
-  process_pragma(m, cmd.begin(), cmd.end(), d);
+  mock::shell sh;
+  process_pragma(m, cmd.begin(), cmd.end(), sh, d);
 
   ASSERT_FALSE(foo_run);
   ASSERT_TRUE(foo_bar_run);
@@ -139,7 +146,8 @@ TEST(process_pragma, pragma_prefix_is_selected_when_longer_version_is_available)
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo x"));
 
   core::null_displayer d;
-  process_pragma(m, cmd.begin(), cmd.end(), d);
+  mock::shell sh;
+  process_pragma(m, cmd.begin(), cmd.end(), sh, d);
 
   ASSERT_TRUE(foo_run);
   ASSERT_FALSE(foo_bar_run);

@@ -17,8 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/environment.hpp>
-
 #include <metashell/core/pragma_without_arguments.hpp>
 
 namespace metashell
@@ -28,14 +26,10 @@ namespace metashell
     class pragma_environment : public pragma_without_arguments
     {
     public:
-      explicit pragma_environment(iface::environment& env_);
-
       virtual std::string description() const override;
 
-      virtual void run(iface::displayer& displayer_) const override;
-
-    private:
-      iface::environment& _env;
+      virtual void run(iface::shell& shell_,
+                       iface::displayer& displayer_) const override;
     };
   }
 }

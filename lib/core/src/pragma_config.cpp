@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/core/pragma_config.hpp>
-#include <metashell/core/shell.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/transformed.hpp>
@@ -24,19 +23,18 @@ namespace metashell
 {
   namespace core
   {
-    pragma_config::pragma_config(shell& shell_) : _shell(shell_) {}
-
     std::string pragma_config::description() const
     {
       return "Lists all available configs.";
     }
 
-    void pragma_config::run(iface::displayer& displayer_) const
+    void pragma_config::run(iface::shell& shell_,
+                            iface::displayer& displayer_) const
     {
       using boost::algorithm::join;
       using boost::adaptors::transformed;
 
-      const data::config& cfg = _shell.get_config();
+      const data::config& cfg = shell_.get_config();
       const data::shell_config* active = &cfg.active_shell_config();
 
       displayer_.show_comment(data::text(

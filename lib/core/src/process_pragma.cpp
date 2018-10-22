@@ -90,6 +90,7 @@ namespace metashell
                        std::unique_ptr<iface::pragma_handler>>& handlers_,
         const data::command::iterator& begin_,
         const data::command::iterator& end_,
+        iface::shell& shell_,
         iface::displayer& displayer_)
     {
       using boost::optional;
@@ -125,7 +126,7 @@ namespace metashell
                                           data::token_category::whitespace;
                                  }) +
                         1,
-            longest_fit_begin, e, displayer_);
+            longest_fit_begin, e, shell_, displayer_);
       }
       else
       {

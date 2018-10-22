@@ -19,25 +19,17 @@
 
 #include <metashell/core/pragma_without_arguments.hpp>
 
-#include <string>
-
 namespace metashell
 {
   namespace core
   {
-    class shell;
-
     class pragma_quit : public pragma_without_arguments
     {
     public:
-      explicit pragma_quit(shell& shell_);
-
       virtual std::string description() const override;
 
-      virtual void run(iface::displayer& displayer_) const override;
-
-    private:
-      shell& _shell;
+      virtual void run(iface::shell& shell_,
+                       iface::displayer& displayer_) const override;
     };
   }
 }

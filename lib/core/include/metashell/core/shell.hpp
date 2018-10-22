@@ -22,12 +22,12 @@
 
 #include <metashell/data/config.hpp>
 
-#include <metashell/iface/command_processor.hpp>
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/engine.hpp>
 #include <metashell/iface/environment.hpp>
 #include <metashell/iface/history.hpp>
 #include <metashell/iface/pragma_handler.hpp>
+#include <metashell/iface/shell.hpp>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/optional.hpp>
@@ -43,7 +43,7 @@ namespace metashell
 {
   namespace core
   {
-    class shell : public iface::command_processor
+    class shell : public iface::shell
     {
     public:
       shell(const data::config& config_,
@@ -85,45 +85,47 @@ namespace metashell
       virtual void cancel_operation() override;
 
       bool store_in_buffer(const data::cpp_code& s_,
-                           iface::displayer& displayer_);
+                           iface::displayer& displayer_) override;
+
       void run_metaprogram(const data::cpp_code& s_,
-                           iface::displayer& displayer_);
+                           iface::displayer& displayer_) override;
 
       virtual void code_complete(const std::string& s_,
                                  std::set<std::string>& out_) override;
 
       const std::map<std::vector<std::string>,
                      std::unique_ptr<iface::pragma_handler>>&
-      pragma_handlers() const;
+      pragma_handlers() const override;
 
       void verbose(bool enabled_);
       bool verbose() const;
 
       virtual bool stopped() const override;
-      void stop();
+      void stop() override;
 
-      void using_precompiled_headers(bool enabled_);
-      bool using_precompiled_headers() const;
+      void using_precompiled_headers(bool enabled_) override;
+      bool using_precompiled_headers() const override;
 
-      const iface::environment& env() const;
-      iface::environment& env();
+      const iface::environment& env() const override;
+      iface::environment& env() override;
 
-      void reset_environment();
-      void push_environment();
-      void pop_environment();
-      void display_environment_stack_size(iface::displayer& displayer_);
-      void rebuild_environment();
+      void reset_environment() override;
+      void push_environment() override;
+      void pop_environment() override;
+      void
+      display_environment_stack_size(iface::displayer& displayer_) override;
+      void rebuild_environment() override;
 
-      const data::config& get_config() const;
-      data::config& get_config();
+      const data::config& get_config() const override;
+      data::config& get_config() override;
 
-      iface::engine& engine();
+      iface::engine& engine() override;
 
-      boost::filesystem::path env_path() const;
+      boost::filesystem::path env_path() const override;
 
       bool preprocess(iface::displayer& displayer_,
                       const data::cpp_code& exp_,
-                      bool process_directives_);
+                      bool process_directives_) override;
 
       void echo(bool enabled_);
       bool echo() const;

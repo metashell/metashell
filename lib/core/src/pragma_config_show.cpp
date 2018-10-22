@@ -16,7 +16,6 @@
 
 #include <metashell/core/comment_json_writer.hpp>
 #include <metashell/core/pragma_config_show.hpp>
-#include <metashell/core/shell.hpp>
 #include <metashell/core/shell_config.hpp>
 
 #include <metashell/data/exception.hpp>
@@ -27,8 +26,6 @@ namespace metashell
 {
   namespace core
   {
-    pragma_config_show::pragma_config_show(shell& shell_) : _shell(shell_) {}
-
     std::string pragma_config_show::arguments() const { return "<name>"; }
 
     std::string pragma_config_show::description() const
@@ -40,12 +37,13 @@ namespace metashell
                                  const data::command::iterator&,
                                  const data::command::iterator& args_begin_,
                                  const data::command::iterator& args_end_,
+                                 iface::shell& shell_,
                                  iface::displayer& displayer_) const
     {
       const data::shell_config_name name = data::shell_config_name(
           tokens_to_string(args_begin_, args_end_).value());
 
-      const auto& configs = _shell.get_config().shell_configs();
+      const auto& configs = shell_.get_config().shell_configs();
 
       const auto cfg = std::find_if(configs.begin(), configs.end(),
                                     [&name](const data::shell_config& cfg_) {

@@ -17,7 +17,6 @@
 
 #include <metashell/core/mdb_shell.hpp>
 #include <metashell/core/pragma_mdb.hpp>
-#include <metashell/core/shell.hpp>
 
 #include <metashell/data/mdb_usage.hpp>
 
@@ -27,13 +26,11 @@ namespace metashell
 {
   namespace core
   {
-    pragma_mdb::pragma_mdb(shell& shell_,
-                           command_processor_queue* cpq_,
+    pragma_mdb::pragma_mdb(command_processor_queue* cpq_,
                            const boost::filesystem::path& mdb_temp_dir_,
                            bool preprocessor_,
                            logger* logger_)
       : _preprocessor(preprocessor_),
-        _shell(shell_),
         _cpq(cpq_),
         _mdb_temp_dir(mdb_temp_dir_),
         _logger(logger_)
@@ -58,6 +55,7 @@ namespace metashell
                          const data::command::iterator&,
                          const data::command::iterator& args_begin_,
                          const data::command::iterator& args_end_,
+                         iface::shell& shell_,
                          iface::displayer& displayer_) const
     {
       assert(_cpq != nullptr);
@@ -65,14 +63,13 @@ namespace metashell
       std::string args = tokens_to_string(args_begin_, args_end_).value();
 
       command_processor_queue::cleanup_function restore;
-      if (_shell.using_precompiled_headers())
+      if (shell_.using_precompiled_headers())
       {
-        _shell.using_precompiled_headers(false);
-        shell* sh = &_shell;
-        restore = [sh](iface::displayer& displayer_) {
+        shell_.using_precompiled_headers(false);
+        restore = [&shell_](iface::displayer& displayer_) {
           try
           {
-            sh->using_precompiled_headers(true);
+            shell_.using_precompiled_headers(true);
           }
           catch (const std::exception& e_)
           {
@@ -82,10 +79,10 @@ namespace metashell
       }
 
       std::unique_ptr<mdb_shell> sh(
-          new mdb_shell(_shell.env(), _shell.engine(), _shell.env_path(),
+          new mdb_shell(shell_.env(), shell_.engine(), shell_.env_path(),
                         _mdb_temp_dir, _preprocessor, _logger));
 
-      if (_shell.get_config().splash_enabled)
+      if (shell_.get_config().splash_enabled)
       {
         sh->display_splash(displayer_);
       }

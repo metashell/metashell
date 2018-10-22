@@ -364,7 +364,8 @@ namespace metashell {
               if (boost::optional<data::command::iterator> p =
                       parse_pragma(cmd))
               {
-                process_pragma(_pragma_handlers, *p, cmd.end(), displayer_);
+                process_pragma(
+                    _pragma_handlers, *p, cmd.end(), *this, displayer_);
               }
               else if (!_echo ||
                        preprocess(displayer_, data::cpp_code(s), true))

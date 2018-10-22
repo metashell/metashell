@@ -16,7 +16,6 @@
 
 #include <metashell/core/comment_json_writer.hpp>
 #include <metashell/core/pragma_config_load.hpp>
-#include <metashell/core/shell.hpp>
 
 #include <metashell/data/exception.hpp>
 
@@ -28,14 +27,13 @@ namespace metashell
   {
     namespace
     {
-      void restore_config(const data::shell_config_name& name_, shell& shell_)
+      void restore_config(const data::shell_config_name& name_,
+                          iface::shell& shell_)
       {
         shell_.get_config().activate(name_);
         shell_.rebuild_environment();
       }
     }
-
-    pragma_config_load::pragma_config_load(shell& shell_) : _shell(shell_) {}
 
     std::string pragma_config_load::arguments() const { return "<name>"; }
 
@@ -48,12 +46,13 @@ namespace metashell
                                  const data::command::iterator&,
                                  const data::command::iterator& args_begin_,
                                  const data::command::iterator& args_end_,
+                                 iface::shell& shell_,
                                  iface::displayer& displayer_) const
     {
       const data::shell_config_name name = data::shell_config_name(
           tokens_to_string(args_begin_, args_end_).value());
 
-      const auto& configs = _shell.get_config().shell_configs();
+      const auto& configs = shell_.get_config().shell_configs();
 
       const auto cfg = std::find_if(configs.begin(), configs.end(),
                                     [&name](const data::shell_config& cfg_) {
@@ -66,24 +65,24 @@ namespace metashell
       }
       else
       {
-        const auto old_config = _shell.get_config().active_shell_config().name;
-        _shell.get_config().activate(name);
+        const auto old_config = shell_.get_config().active_shell_config().name;
+        shell_.get_config().activate(name);
         try
         {
-          _shell.rebuild_environment();
+          shell_.rebuild_environment();
           displayer_.show_comment(data::text("Switched to config " + name));
         }
         catch (const std::exception& e)
         {
           displayer_.show_error("Error loading config " + name + ": " +
                                 e.what());
-          restore_config(old_config, _shell);
+          restore_config(old_config, shell_);
         }
         catch (...)
         {
           displayer_.show_error("Error loading config " + name +
                                 ": unknown exception");
-          restore_config(old_config, _shell);
+          restore_config(old_config, shell_);
         }
       }
     }

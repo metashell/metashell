@@ -43,6 +43,7 @@ namespace metashell
                        const data::command::iterator& name_end_,
                        const data::command::iterator& args_begin_,
                        const data::command::iterator& args_end_,
+                       iface::shell& shell_,
                        iface::displayer& displayer_) const override;
 
     private:

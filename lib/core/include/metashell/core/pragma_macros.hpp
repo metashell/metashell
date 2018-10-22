@@ -18,9 +18,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/core/pragma_without_arguments.hpp>
-#include <metashell/core/shell.hpp>
-
-#include <string>
 
 namespace metashell
 {
@@ -29,14 +26,10 @@ namespace metashell
     class pragma_macros : public pragma_without_arguments
     {
     public:
-      explicit pragma_macros(shell& shell_);
-
       virtual std::string description() const override;
 
-      virtual void run(iface::displayer& displayer_) const override;
-
-    private:
-      shell& _shell;
+      virtual void run(iface::shell& shell_,
+                       iface::displayer& displayer_) const override;
     };
   }
 }

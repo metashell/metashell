@@ -17,8 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/command_processor.hpp>
-
 #include <metashell/core/pragma_without_arguments.hpp>
 
 #include <string>
@@ -32,15 +30,14 @@ namespace metashell
     {
     public:
       pragma_macro(std::string description_,
-                   std::vector<std::string> commands_,
-                   iface::command_processor& shell_);
+                   std::vector<std::string> commands_);
 
       virtual std::string description() const override;
 
-      virtual void run(iface::displayer& displayer_) const override;
+      virtual void run(iface::shell& shell_,
+                       iface::displayer& displayer_) const override;
 
     private:
-      iface::command_processor& _shell;
       std::vector<std::string> _commands;
       std::string _description;
     };

@@ -17,13 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/displayer.hpp>
 #include <metashell/iface/pragma_handler.hpp>
-
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
 
 namespace metashell
 {
@@ -32,11 +26,6 @@ namespace metashell
     class pragma_help : public iface::pragma_handler
     {
     public:
-      explicit pragma_help(
-          const std::map<std::vector<std::string>,
-                         std::unique_ptr<iface::pragma_handler>>&
-              pragma_handlers_);
-
       virtual std::string arguments() const override;
       virtual std::string description() const override;
 
@@ -44,11 +33,8 @@ namespace metashell
                        const data::command::iterator& name_end_,
                        const data::command::iterator& args_begin_,
                        const data::command::iterator& args_end_,
+                       iface::shell& shell_,
                        iface::displayer& displayer_) const override;
-
-    private:
-      const std::map<std::vector<std::string>,
-                     std::unique_ptr<iface::pragma_handler>>& _pragma_handlers;
     };
   }
 }

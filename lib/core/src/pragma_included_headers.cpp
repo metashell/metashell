@@ -21,15 +21,11 @@ namespace metashell
 {
   namespace core
   {
-    pragma_included_headers::pragma_included_headers(shell& shell_)
-      : _shell(shell_)
-    {
-    }
-
     std::string pragma_included_headers::arguments() const
     {
       return "[<expression>]";
     }
+
     std::string pragma_included_headers::description() const
     {
       return "Displays the list of header files (recursively) included into "
@@ -49,11 +45,12 @@ namespace metashell
                                  const data::command::iterator&,
                                  const data::command::iterator& args_begin_,
                                  const data::command::iterator& args_end_,
+                                 iface::shell& shell_,
                                  iface::displayer& displayer_) const
     {
-      const data::cpp_code env = _shell.env().get_all();
+      const data::cpp_code env = shell_.env().get_all();
 
-      auto& header_discoverer = _shell.engine().header_discoverer();
+      auto& header_discoverer = shell_.engine().header_discoverer();
 
       const auto by_current_env = header_discoverer.files_included_by(env);
 
