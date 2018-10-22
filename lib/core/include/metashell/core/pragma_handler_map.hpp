@@ -19,14 +19,17 @@
 
 #include <metashell/core/command_processor_queue.hpp>
 #include <metashell/core/logger.hpp>
-#include <metashell/core/pragma_handler.hpp>
+#include <metashell/core/make_unique.hpp>
 
 #include <metashell/data/command.hpp>
+
+#include <metashell/iface/pragma_handler.hpp>
 
 #include <boost/filesystem/path.hpp>
 
 #include <cassert>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -39,64 +42,58 @@ namespace metashell
     class pragma_handler_map
     {
     public:
+      pragma_handler_map() = default;
+
+      pragma_handler_map(pragma_handler_map&&) = default;
+      pragma_handler_map& operator=(pragma_handler_map&&) = default;
+
+      pragma_handler_map(const pragma_handler_map&) = delete;
+      pragma_handler_map& operator=(const pragma_handler_map&) = delete;
+
       template <class Handler>
       // requires: Handler implements iface::pragma_handler
-      pragma_handler_map& add(const std::string& name_, Handler handler_)
+      pragma_handler_map&& add(const std::string& name_, Handler handler_) &&
       {
-        add(std::vector<std::string>(1, name_), handler_);
-        return *this;
+        return std::move(*this).add(std::vector<std::string>{name_}, handler_);
       }
 
       template <class Handler>
       // requires: Handler implements iface::pragma_handler
-      pragma_handler_map& add(const std::string& name1_,
-                              const std::string& name2_,
-                              Handler handler_)
+      pragma_handler_map&& add(const std::string& name1_,
+                               const std::string& name2_,
+                               Handler handler_) &&
       {
-        std::vector<std::string> params;
-        params.reserve(2);
-
-        params.push_back(name1_);
-        params.push_back(name2_);
-
-        add(params, handler_);
-        return *this;
+        return std::move(*this).add({name1_, name2_}, handler_);
       }
 
       template <class Handler>
       // requires: Handler implements iface::pragma_handler
-      pragma_handler_map& add(const std::string& name1_,
-                              const std::string& name2_,
-                              const std::string& name3_,
-                              Handler handler_)
+      pragma_handler_map&& add(const std::string& name1_,
+                               const std::string& name2_,
+                               const std::string& name3_,
+                               Handler handler_) &&
       {
-        std::vector<std::string> params;
-        params.reserve(3);
-
-        params.push_back(name1_);
-        params.push_back(name2_);
-        params.push_back(name3_);
-
-        add(params, handler_);
-        return *this;
+        return std::move(*this).add({name1_, name2_, name3_}, handler_);
       }
 
       template <class Handler>
       // requires: Handler implements iface::pragma_handler
-      pragma_handler_map& add(const std::vector<std::string>& names_,
-                              Handler handler_)
+      pragma_handler_map&& add(const std::vector<std::string>& names_,
+                               Handler handler_) &&
       {
         assert(!names_.empty());
 
-        _handlers.insert(std::make_pair(names_, pragma_handler(handler_)));
-        return *this;
+        _handlers.insert(
+            std::make_pair(names_, core::make_unique<Handler>(handler_)));
+        return std::move(*this);
       }
 
       void process(const data::command::iterator& p_,
                    const data::command::iterator& end_,
                    iface::displayer& displayer_) const;
 
-      typedef std::map<std::vector<std::string>, pragma_handler>::const_iterator
+      typedef std::map<std::vector<std::string>,
+                       std::unique_ptr<iface::pragma_handler>>::const_iterator
           iterator;
       typedef iterator const_iterator;
 
@@ -111,7 +108,8 @@ namespace metashell
                     logger* logger_);
 
     private:
-      std::map<std::vector<std::string>, pragma_handler> _handlers;
+      std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>>
+          _handlers;
     };
   }
 }

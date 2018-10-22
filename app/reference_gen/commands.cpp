@@ -28,12 +28,13 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>
 
+#include <cassert>
 #include <iostream>
 
 namespace
 {
   void show_markdown(const std::vector<std::string>& name_,
-                     const metashell::core::pragma_handler& h_,
+                     const metashell::iface::pragma_handler& h_,
                      std::ostream& out_)
   {
     using boost::algorithm::join;
@@ -61,7 +62,9 @@ namespace
 
     for (const auto& p : m)
     {
-      show_markdown(p.first, p.second, out_);
+      assert(p.second);
+
+      show_markdown(p.first, *p.second, out_);
     }
   }
 

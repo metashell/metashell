@@ -21,6 +21,8 @@
 
 #include <boost/algorithm/string/join.hpp>
 
+#include <cassert>
+
 namespace metashell
 {
   namespace core
@@ -38,7 +40,9 @@ namespace metashell
 
         for (const auto& p : pragma_handlers_)
         {
-          const std::string args = p.second.arguments();
+          assert(p.second);
+
+          const std::string args = p.second->arguments();
           t.paragraphs.push_back(
               data::paragraph("#msh " + join(p.first, " ") +
                                   (args.empty() ? std::string() : " " + args),
@@ -121,6 +125,8 @@ namespace metashell
 
         for (const auto& h : _pragma_handlers)
         {
+          assert(h.second);
+
           if (prefix_of(
                   args.begin(), args.end(), h.first.begin(), h.first.end()))
           {
@@ -132,12 +138,12 @@ namespace metashell
             {
               was_pragma = true;
             }
-            const std::string p_args = h.second.arguments();
+            const std::string p_args = h.second->arguments();
             help_text.paragraphs.push_back(data::paragraph(
                 "#msh " + join(h.first, " ") +
                 (p_args.empty() ? std::string() : " " + p_args)));
             help_text.paragraphs.push_back(
-                data::paragraph(h.second.description(), "    "));
+                data::paragraph(h.second->description(), "    "));
           }
         }
         if (was_pragma)

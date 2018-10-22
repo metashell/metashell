@@ -20,6 +20,8 @@
 #include <metashell/core/null_displayer.hpp>
 #include <metashell/core/pragma_handler_map.hpp>
 
+#include "run.hpp"
+
 #include <gtest/gtest.h>
 
 using namespace metashell;
@@ -75,8 +77,8 @@ TEST(pragma_handler_map, processing_non_existing_handler)
 TEST(pragma_handler_map, processing_existing_handler)
 {
   bool foo_run = false;
-  core::pragma_handler_map m;
-  m.add("foo", test_handler(foo_run));
+  auto m = core::pragma_handler_map().add("foo", test_handler(foo_run));
+
   const data::command cmd =
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo"));
 
@@ -89,8 +91,8 @@ TEST(pragma_handler_map, processing_existing_handler)
 TEST(pragma_handler_map, pragma_with_two_token_name_is_called)
 {
   bool foo_bar_run = false;
-  core::pragma_handler_map m;
-  m.add("foo", "bar", test_handler(foo_bar_run));
+  auto m =
+      core::pragma_handler_map().add("foo", "bar", test_handler(foo_bar_run));
   const data::command cmd =
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo bar"));
 
@@ -105,9 +107,9 @@ TEST(pragma_handler_map,
 {
   bool foo_bar_run = false;
   bool foo_run = false;
-  core::pragma_handler_map m;
-  m.add("foo", test_handler(foo_run));
-  m.add("foo", "bar", test_handler(foo_bar_run));
+  auto m = core::pragma_handler_map()
+               .add("foo", test_handler(foo_run))
+               .add("foo", "bar", test_handler(foo_bar_run));
   const data::command cmd =
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo bar"));
 
@@ -123,9 +125,9 @@ TEST(pragma_handler_map,
 {
   bool foo_bar_run = false;
   bool foo_run = false;
-  core::pragma_handler_map m;
-  m.add("foo", test_handler(foo_run));
-  m.add("foo", "bar", test_handler(foo_bar_run));
+  auto m = core::pragma_handler_map()
+               .add("foo", test_handler(foo_run))
+               .add("foo", "bar", test_handler(foo_bar_run));
   const data::command cmd =
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo x"));
 

@@ -141,19 +141,20 @@ namespace metashell
           end_of_pragma_argument_list(begin_, end_);
 
       auto longest_fit_begin = e;
-      const pragma_handler* longest_fit_handler = 0;
+      const iface::pragma_handler* longest_fit_handler = 0;
       int longest_fit_len = -1;
 
-      typedef std::pair<const std::vector<std::string>, pragma_handler> np;
-      for (const np& p : _handlers)
+      for (const auto& p : _handlers)
       {
+        assert(p.second);
+
         if (const optional<data::command::iterator> i =
                 is_this_pragma(p.first, begin_, e))
         {
           if (longest_fit_len < int(p.first.size()))
           {
             longest_fit_begin = *i;
-            longest_fit_handler = &p.second;
+            longest_fit_handler = p.second.get();
             longest_fit_len = p.first.size();
           }
         }

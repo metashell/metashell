@@ -16,8 +16,9 @@
 
 #include <metashell/core/in_memory_displayer.hpp>
 #include <metashell/core/metashell_pragma.hpp>
-#include <metashell/core/pragma_handler.hpp>
 #include <metashell/core/pragma_switch.hpp>
+
+#include "run.hpp"
 
 #include <gtest/gtest.h>
 
