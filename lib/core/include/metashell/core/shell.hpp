@@ -19,7 +19,6 @@
 
 #include <metashell/core/command_processor_queue.hpp>
 #include <metashell/core/logger.hpp>
-#include <metashell/core/pragma_handler_map.hpp>
 
 #include <metashell/data/config.hpp>
 
@@ -28,6 +27,7 @@
 #include <metashell/iface/engine.hpp>
 #include <metashell/iface/environment.hpp>
 #include <metashell/iface/history.hpp>
+#include <metashell/iface/pragma_handler.hpp>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/optional.hpp>
@@ -37,6 +37,7 @@
 #include <set>
 #include <stack>
 #include <string>
+#include <vector>
 
 namespace metashell
 {
@@ -91,7 +92,9 @@ namespace metashell
       virtual void code_complete(const std::string& s_,
                                  std::set<std::string>& out_) override;
 
-      const pragma_handler_map& pragma_handlers() const;
+      const std::map<std::vector<std::string>,
+                     std::unique_ptr<iface::pragma_handler>>&
+      pragma_handlers() const;
 
       void verbose(bool enabled_);
       bool verbose() const;
@@ -138,7 +141,8 @@ namespace metashell
       std::unique_ptr<iface::environment> _env;
       data::config _config;
       std::string _prev_line;
-      pragma_handler_map _pragma_handlers;
+      std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>>
+          _pragma_handlers;
       bool _stopped;
       std::stack<data::cpp_code> _environment_stack;
       logger* _logger;

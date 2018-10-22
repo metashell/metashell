@@ -20,9 +20,10 @@
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/pragma_handler.hpp>
 
-#include <metashell/core/pragma_handler_map.hpp>
-
+#include <map>
+#include <memory>
 #include <string>
+#include <vector>
 
 namespace metashell
 {
@@ -31,7 +32,10 @@ namespace metashell
     class pragma_help : public iface::pragma_handler
     {
     public:
-      explicit pragma_help(const pragma_handler_map& pragma_handlers_);
+      explicit pragma_help(
+          const std::map<std::vector<std::string>,
+                         std::unique_ptr<iface::pragma_handler>>&
+              pragma_handlers_);
 
       virtual iface::pragma_handler* clone() const override;
 
@@ -45,7 +49,8 @@ namespace metashell
                        iface::displayer& displayer_) const override;
 
     private:
-      const pragma_handler_map& _pragma_handlers;
+      const std::map<std::vector<std::string>,
+                     std::unique_ptr<iface::pragma_handler>>& _pragma_handlers;
     };
   }
 }

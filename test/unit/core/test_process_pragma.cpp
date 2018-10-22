@@ -18,7 +18,7 @@
 
 #include <metashell/core/command.hpp>
 #include <metashell/core/null_displayer.hpp>
-#include <metashell/core/pragma_handler_map.hpp>
+#include <metashell/core/process_pragma.hpp>
 
 #include "run.hpp"
 
@@ -55,7 +55,7 @@ namespace
   };
 }
 
-TEST(pragma_handler_map, handler_sets_run_flag)
+TEST(process_pragma, handler_sets_run_flag)
 {
   core::null_displayer d;
   bool flag = false;
@@ -64,75 +64,87 @@ TEST(pragma_handler_map, handler_sets_run_flag)
   ASSERT_TRUE(flag);
 }
 
-TEST(pragma_handler_map, processing_non_existing_handler)
+TEST(process_pragma, processing_non_existing_handler)
 {
-  core::pragma_handler_map m;
   const data::command cmd =
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo"));
 
   core::null_displayer d;
-  ASSERT_ANY_THROW(m.process(cmd.begin(), cmd.end(), d));
+  ASSERT_ANY_THROW(process_pragma({}, cmd.begin(), cmd.end(), d));
 }
 
-TEST(pragma_handler_map, processing_existing_handler)
+TEST(process_pragma, processing_existing_handler)
 {
   bool foo_run = false;
-  auto m = core::pragma_handler_map().add("foo", test_handler(foo_run));
+
+  std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>> m;
+  m.emplace(
+      std::vector<std::string>{"foo"}, std::make_unique<test_handler>(foo_run));
 
   const data::command cmd =
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo"));
 
   core::null_displayer d;
-  m.process(cmd.begin(), cmd.end(), d);
+  process_pragma(m, cmd.begin(), cmd.end(), d);
 
   ASSERT_TRUE(foo_run);
 }
 
-TEST(pragma_handler_map, pragma_with_two_token_name_is_called)
+TEST(process_pragma, pragma_with_two_token_name_is_called)
 {
   bool foo_bar_run = false;
-  auto m =
-      core::pragma_handler_map().add("foo", "bar", test_handler(foo_bar_run));
+
+  std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>> m;
+  m.emplace(std::vector<std::string>{"foo", "bar"},
+            std::make_unique<test_handler>(foo_bar_run));
+
   const data::command cmd =
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo bar"));
 
   core::null_displayer d;
-  m.process(cmd.begin(), cmd.end(), d);
+  process_pragma(m, cmd.begin(), cmd.end(), d);
 
   ASSERT_TRUE(foo_bar_run);
 }
 
-TEST(pragma_handler_map,
+TEST(process_pragma,
      pragma_with_two_token_name_is_called_when_prefix_is_available)
 {
   bool foo_bar_run = false;
   bool foo_run = false;
-  auto m = core::pragma_handler_map()
-               .add("foo", test_handler(foo_run))
-               .add("foo", "bar", test_handler(foo_bar_run));
+
+  std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>> m;
+  m.emplace(
+      std::vector<std::string>{"foo"}, std::make_unique<test_handler>(foo_run));
+  m.emplace(std::vector<std::string>{"foo", "bar"},
+            std::make_unique<test_handler>(foo_bar_run));
+
   const data::command cmd =
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo bar"));
 
   core::null_displayer d;
-  m.process(cmd.begin(), cmd.end(), d);
+  process_pragma(m, cmd.begin(), cmd.end(), d);
 
   ASSERT_FALSE(foo_run);
   ASSERT_TRUE(foo_bar_run);
 }
 
-TEST(pragma_handler_map,
-     pragma_prefix_is_selected_when_longer_version_is_available)
+TEST(process_pragma, pragma_prefix_is_selected_when_longer_version_is_available)
 {
   bool foo_bar_run = false;
   bool foo_run = false;
-  auto m = core::pragma_handler_map()
-               .add("foo", test_handler(foo_run))
-               .add("foo", "bar", test_handler(foo_bar_run));
+
+  std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>> m;
+  m.emplace(
+      std::vector<std::string>{"foo"}, std::make_unique<test_handler>(foo_run));
+  m.emplace(std::vector<std::string>{"foo", "bar"},
+            std::make_unique<test_handler>(foo_bar_run));
+
   const data::command cmd =
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo x"));
 
   core::null_displayer d;
-  m.process(cmd.begin(), cmd.end(), d);
+  process_pragma(m, cmd.begin(), cmd.end(), d);
 
   ASSERT_TRUE(foo_run);
   ASSERT_FALSE(foo_bar_run);

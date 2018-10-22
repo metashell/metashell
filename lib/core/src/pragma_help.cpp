@@ -30,7 +30,9 @@ namespace metashell
     namespace
     {
       void display_all(iface::displayer& displayer_,
-                       const pragma_handler_map& pragma_handlers_)
+                       const std::map<std::vector<std::string>,
+                                      std::unique_ptr<iface::pragma_handler>>&
+                           pragma_handlers_)
       {
         using boost::algorithm::join;
 
@@ -75,7 +77,10 @@ namespace metashell
       }
     }
 
-    pragma_help::pragma_help(const pragma_handler_map& pragma_handlers_)
+    pragma_help::pragma_help(
+        const std::map<std::vector<std::string>,
+                       std::unique_ptr<iface::pragma_handler>>&
+            pragma_handlers_)
       : _pragma_handlers(pragma_handlers_)
     {
     }

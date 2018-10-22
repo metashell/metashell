@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/core/build_default_pragma_map.hpp>
 #include <metashell/core/command.hpp>
 #include <metashell/core/feature_not_supported.hpp>
 #include <metashell/core/header_file_environment.hpp>
@@ -21,6 +22,7 @@
 #include <metashell/core/metashell.hpp>
 #include <metashell/core/metashell_pragma.hpp>
 #include <metashell/core/null_history.hpp>
+#include <metashell/core/process_pragma.hpp>
 #include <metashell/core/shell.hpp>
 #include <metashell/core/version.hpp>
 
@@ -362,7 +364,7 @@ namespace metashell {
               if (boost::optional<data::command::iterator> p =
                       parse_pragma(cmd))
               {
-                _pragma_handlers.process(*p, cmd.end(), displayer_);
+                process_pragma(_pragma_handlers, *p, cmd.end(), displayer_);
               }
               else if (!_echo ||
                        preprocess(displayer_, data::cpp_code(s), true))
@@ -444,11 +446,13 @@ namespace metashell {
       _env->append(data::cpp_code(default_env));
 
       // TODO: move it to initialisation later
-      _pragma_handlers = pragma_handler_map::build_default(
-          *this, cpq_, mdb_temp_dir_, _logger);
+      _pragma_handlers =
+          build_default_pragma_map(*this, cpq_, mdb_temp_dir_, _logger);
     }
 
-    const pragma_handler_map& shell::pragma_handlers() const
+    const std::map<std::vector<std::string>,
+                   std::unique_ptr<iface::pragma_handler>>&
+    shell::pragma_handlers() const
     {
       return _pragma_handlers;
     }

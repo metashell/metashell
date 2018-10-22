@@ -19,10 +19,10 @@
 #include <metashell/data/markdown_string.hpp>
 
 #include <metashell/core/available_engines.hpp>
+#include <metashell/core/build_default_pragma_map.hpp>
 #include <metashell/core/engine_constant.hpp>
 #include <metashell/core/mdb_command_handler_map.hpp>
 #include <metashell/core/mdb_shell.hpp>
-#include <metashell/core/pragma_handler_map.hpp>
 #include <metashell/core/shell.hpp>
 
 #include <boost/algorithm/string/join.hpp>
@@ -56,11 +56,8 @@ namespace
     const boost::filesystem::path mdb_temp_dir;
     metashell::core::shell sh(cfg, cpq, internal_dir, "", mdb_temp_dir,
                               metashell::core::create_failing_engine());
-    const metashell::core::pragma_handler_map m =
-        metashell::core::pragma_handler_map::build_default(
-            sh, &cpq, mdb_temp_dir, nullptr);
-
-    for (const auto& p : m)
+    for (const auto& p : metashell::core::build_default_pragma_map(
+             sh, &cpq, mdb_temp_dir, nullptr))
     {
       assert(p.second);
 
