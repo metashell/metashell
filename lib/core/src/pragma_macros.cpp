@@ -22,11 +22,6 @@ namespace metashell
   {
     pragma_macros::pragma_macros(shell& shell_) : _shell(shell_) {}
 
-    iface::pragma_handler* pragma_macros::clone() const
-    {
-      return new pragma_macros(_shell);
-    }
-
     std::string pragma_macros::description() const
     {
       return "Displays the macro definitions";

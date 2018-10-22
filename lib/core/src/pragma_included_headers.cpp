@@ -26,11 +26,6 @@ namespace metashell
     {
     }
 
-    iface::pragma_handler* pragma_included_headers::clone() const
-    {
-      return new pragma_included_headers(_shell);
-    }
-
     std::string pragma_included_headers::arguments() const
     {
       return "[<expression>]";

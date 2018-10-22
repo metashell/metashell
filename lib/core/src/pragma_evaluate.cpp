@@ -24,11 +24,6 @@ namespace metashell
   {
     pragma_evaluate::pragma_evaluate(shell& shell_) : _shell(shell_) {}
 
-    iface::pragma_handler* pragma_evaluate::clone() const
-    {
-      return new pragma_evaluate(_shell);
-    }
-
     std::string pragma_evaluate::arguments() const { return "<code>"; }
 
     std::string pragma_evaluate::description() const

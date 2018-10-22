@@ -22,11 +22,6 @@ namespace metashell
   {
     pragma_pp::pragma_pp(shell& shell_) : _shell(shell_) {}
 
-    iface::pragma_handler* pragma_pp::clone() const
-    {
-      return new pragma_pp(_shell);
-    }
-
     std::string pragma_pp::arguments() const { return "<exp>"; }
 
     std::string pragma_pp::description() const

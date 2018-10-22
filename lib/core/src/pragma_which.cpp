@@ -28,11 +28,6 @@ namespace metashell
   {
     pragma_which::pragma_which(shell& shell_) : _shell(shell_) {}
 
-    iface::pragma_handler* pragma_which::clone() const
-    {
-      return new pragma_which(_shell);
-    }
-
     std::string pragma_which::arguments() const
     {
       return "[-all] <include file>|\"include file\"";

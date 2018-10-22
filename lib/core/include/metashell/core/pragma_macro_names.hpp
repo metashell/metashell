@@ -31,8 +31,6 @@ namespace metashell
     public:
       explicit pragma_macro_names(shell& shell_);
 
-      virtual iface::pragma_handler* clone() const override;
-
       virtual std::string description() const override;
 
       virtual void run(iface::displayer& displayer_) const override;

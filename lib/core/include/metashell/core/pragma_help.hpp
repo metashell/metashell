@@ -37,8 +37,6 @@ namespace metashell
                          std::unique_ptr<iface::pragma_handler>>&
               pragma_handlers_);
 
-      virtual iface::pragma_handler* clone() const override;
-
       virtual std::string arguments() const override;
       virtual std::string description() const override;
 

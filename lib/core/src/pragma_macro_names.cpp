@@ -75,11 +75,6 @@ namespace metashell
 
     pragma_macro_names::pragma_macro_names(shell& shell_) : _shell(shell_) {}
 
-    iface::pragma_handler* pragma_macro_names::clone() const
-    {
-      return new pragma_macro_names(_shell);
-    }
-
     std::string pragma_macro_names::description() const
     {
       return "Displays the names of the defined macros";

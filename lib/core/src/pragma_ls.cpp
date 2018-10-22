@@ -106,11 +106,6 @@ namespace metashell
 
     pragma_ls::pragma_ls(shell& shell_) : _shell(shell_) {}
 
-    iface::pragma_handler* pragma_ls::clone() const
-    {
-      return new pragma_ls(_shell);
-    }
-
     std::string pragma_ls::arguments() const
     {
       return "{<include file>|\"include file\"}";

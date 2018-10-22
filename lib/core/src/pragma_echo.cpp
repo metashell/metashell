@@ -20,11 +20,6 @@ namespace metashell
 {
   namespace core
   {
-    iface::pragma_handler* pragma_echo::clone() const
-    {
-      return new pragma_echo();
-    }
-
     std::string pragma_echo::arguments() const { return "<text>"; }
 
     std::string pragma_echo::description() const

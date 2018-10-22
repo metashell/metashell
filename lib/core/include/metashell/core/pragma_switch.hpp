@@ -36,8 +36,6 @@ namespace metashell
                     const std::function<bool()>& query_,
                     const std::function<void(bool)>& update_);
 
-      virtual iface::pragma_handler* clone() const override;
-
       virtual std::string arguments() const override;
       virtual std::string description() const override;
 

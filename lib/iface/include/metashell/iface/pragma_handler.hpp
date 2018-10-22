@@ -32,8 +32,6 @@ namespace metashell
     public:
       virtual ~pragma_handler() {}
 
-      virtual pragma_handler* clone() const = 0;
-
       virtual std::string arguments() const = 0;
       virtual std::string description() const = 0;
 

@@ -85,11 +85,6 @@ namespace metashell
     {
     }
 
-    iface::pragma_handler* pragma_help::clone() const
-    {
-      return new pragma_help(_pragma_handlers);
-    }
-
     std::string pragma_help::arguments() const { return "[<command>]"; }
 
     std::string pragma_help::description() const

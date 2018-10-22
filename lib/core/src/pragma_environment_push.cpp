@@ -26,11 +26,6 @@ namespace metashell
     {
     }
 
-    iface::pragma_handler* pragma_environment_push::clone() const
-    {
-      return new pragma_environment_push(_shell);
-    }
-
     std::string pragma_environment_push::description() const
     {
       return "Pushes the current environment to the environment stack.";

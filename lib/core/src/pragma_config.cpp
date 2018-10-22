@@ -26,11 +26,6 @@ namespace metashell
   {
     pragma_config::pragma_config(shell& shell_) : _shell(shell_) {}
 
-    iface::pragma_handler* pragma_config::clone() const
-    {
-      return new pragma_config(_shell);
-    }
-
     std::string pragma_config::description() const
     {
       return "Lists all available configs.";

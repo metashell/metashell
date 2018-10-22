@@ -33,11 +33,6 @@ namespace
   public:
     explicit test_handler(bool& run_flag_) : _run_flag(run_flag_) {}
 
-    virtual iface::pragma_handler* clone() const override
-    {
-      return new test_handler(_run_flag);
-    }
-
     virtual std::string arguments() const override { return "a|b|c"; }
     virtual std::string description() const override { return "Foo bar"; }
 

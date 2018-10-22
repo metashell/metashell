@@ -27,11 +27,6 @@ namespace metashell
     {
     }
 
-    iface::pragma_handler* pragma_environment_add::clone() const
-    {
-      return new pragma_environment_add(_shell);
-    }
-
     std::string pragma_environment_add::arguments() const { return "<code>"; }
 
     std::string pragma_environment_add::description() const

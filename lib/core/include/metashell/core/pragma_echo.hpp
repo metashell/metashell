@@ -26,8 +26,6 @@ namespace metashell
     class pragma_echo : public iface::pragma_handler
     {
     public:
-      virtual iface::pragma_handler* clone() const override;
-
       virtual std::string arguments() const override;
       virtual std::string description() const override;
 

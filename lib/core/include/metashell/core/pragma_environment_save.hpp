@@ -34,8 +34,6 @@ namespace metashell
       pragma_environment_save(const data::config& config_,
                               const iface::environment& env_);
 
-      virtual iface::pragma_handler* clone() const override;
-
       virtual std::string arguments() const override;
       virtual std::string description() const override;
 

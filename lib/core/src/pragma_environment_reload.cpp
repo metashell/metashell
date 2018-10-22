@@ -26,11 +26,6 @@ namespace metashell
     {
     }
 
-    iface::pragma_handler* pragma_environment_reload::clone() const
-    {
-      return new pragma_environment_reload(_shell);
-    }
-
     std::string pragma_environment_reload::description() const
     {
       return "Re-reads the included header files from disc.";

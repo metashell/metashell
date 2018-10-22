@@ -34,8 +34,6 @@ namespace metashell
     public:
       explicit pragma_ls(shell& shell_);
 
-      virtual iface::pragma_handler* clone() const override;
-
       virtual std::string arguments() const override;
       virtual std::string description() const override;
 

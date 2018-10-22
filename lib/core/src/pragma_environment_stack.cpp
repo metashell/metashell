@@ -26,11 +26,6 @@ namespace metashell
     {
     }
 
-    iface::pragma_handler* pragma_environment_stack::clone() const
-    {
-      return new pragma_environment_stack(_shell);
-    }
-
     std::string pragma_environment_stack::description() const
     {
       return "Displays the size of the environment stack.";

@@ -34,11 +34,6 @@ namespace metashell
     public:
       explicit pragma_includes(shell& shell_) : _shell(shell_) {}
 
-      virtual iface::pragma_handler* clone() const override
-      {
-        return new pragma_includes(_shell);
-      }
-
       virtual std::string description() const override
       {
         return std::string("Displays the directories checked for ") +

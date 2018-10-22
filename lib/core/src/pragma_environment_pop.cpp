@@ -26,11 +26,6 @@ namespace metashell
     {
     }
 
-    iface::pragma_handler* pragma_environment_pop::clone() const
-    {
-      return new pragma_environment_pop(_shell);
-    }
-
     std::string pragma_environment_pop::description() const
     {
       return "Pops the last environment from the environment stack.";

@@ -58,11 +58,6 @@ namespace metashell
     {
     }
 
-    iface::pragma_handler* pragma_switch::clone() const
-    {
-      return new pragma_switch(_name, _query, _update);
-    }
-
     std::string pragma_switch::arguments() const
     {
       return "[" + valid_arguments() + "]";

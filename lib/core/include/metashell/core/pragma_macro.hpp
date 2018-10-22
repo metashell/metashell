@@ -35,8 +35,6 @@ namespace metashell
                    std::vector<std::string> commands_,
                    iface::command_processor& shell_);
 
-      virtual iface::pragma_handler* clone() const override;
-
       virtual std::string description() const override;
 
       virtual void run(iface::displayer& displayer_) const override;

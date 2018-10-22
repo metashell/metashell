@@ -40,12 +40,6 @@ namespace metashell
     {
     }
 
-    iface::pragma_handler* pragma_mdb::clone() const
-    {
-      return new pragma_mdb(
-          _shell, _cpq, _mdb_temp_dir, _preprocessor, _logger);
-    }
-
     std::string pragma_mdb::arguments() const
     {
       return data::mdb_usage(_preprocessor);

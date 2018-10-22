@@ -25,11 +25,6 @@ namespace metashell
     {
     }
 
-    iface::pragma_handler* pragma_environment::clone() const
-    {
-      return new pragma_environment(_env);
-    }
-
     std::string pragma_environment::description() const
     {
       return "Displays the entire content of the environment.";

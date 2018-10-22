@@ -26,11 +26,6 @@ namespace metashell
     {
     }
 
-    iface::pragma_handler* pragma_environment_reset::clone() const
-    {
-      return new pragma_environment_reset(_shell);
-    }
-
     std::string pragma_environment_reset::description() const
     {
       return "Resets the environment to its initial state."

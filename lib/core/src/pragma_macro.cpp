@@ -30,11 +30,6 @@ namespace metashell
     {
     }
 
-    iface::pragma_handler* pragma_macro::clone() const
-    {
-      return new pragma_macro(_description, _commands, _shell);
-    }
-
     std::string pragma_macro::description() const { return _description; }
 
     void pragma_macro::run(iface::displayer& displayer_) const

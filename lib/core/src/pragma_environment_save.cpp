@@ -31,11 +31,6 @@ namespace metashell
     {
     }
 
-    iface::pragma_handler* pragma_environment_save::clone() const
-    {
-      return new pragma_environment_save(_config, _env);
-    }
-
     std::string pragma_environment_save::arguments() const { return "<path>"; }
 
     std::string pragma_environment_save::description() const
