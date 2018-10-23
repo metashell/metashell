@@ -50,12 +50,7 @@ namespace metashell
       }
     }
 
-    pragma_switch::pragma_switch(const std::string& name_,
-                                 const std::function<bool()>& query_,
-                                 const std::function<void(bool)>& update_)
-      : _query(query_), _update(update_), _name(name_)
-    {
-    }
+    pragma_switch::pragma_switch(data::shell_flag flag_) : _flag(flag_) {}
 
     std::string pragma_switch::arguments() const
     {
@@ -64,16 +59,16 @@ namespace metashell
 
     std::string pragma_switch::description() const
     {
-      return "Turns " + _name +
-             " on or off. When no arguments are used, it displays if " + _name +
-             " is turned on.";
+      return "Turns " + to_string(_flag) +
+             " on or off. When no arguments are used, it displays if " +
+             to_string(_flag) + " is turned on.";
     }
 
     void pragma_switch::run(const data::command::iterator&,
                             const data::command::iterator&,
                             const data::command::iterator& args_begin_,
                             const data::command::iterator& args_end_,
-                            iface::shell&,
+                            iface::shell& shell_,
                             iface::displayer& displayer_) const
     {
       auto i = args_begin_;
@@ -86,7 +81,7 @@ namespace metashell
           ++i;
           if (i == args_end_)
           {
-            _update(element_of(true_values, v));
+            shell_.enabled(_flag, element_of(true_values, v));
           }
           else
           {
@@ -100,8 +95,8 @@ namespace metashell
                                 ". Valid values are: " + valid_arguments());
         }
       }
-      displayer_.show_comment(
-          data::text(_name + " is " + (_query() ? "on" : "off")));
+      displayer_.show_comment(data::text(
+          to_string(_flag) + " is " + (shell_.enabled(_flag) ? "on" : "off")));
     }
   }
 }

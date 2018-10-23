@@ -23,6 +23,7 @@
 #include <metashell/iface/environment.hpp>
 
 #include <metashell/data/cpp_code.hpp>
+#include <metashell/data/shell_flag.hpp>
 
 #include <boost/filesystem/path.hpp>
 
@@ -68,12 +69,12 @@ namespace metashell
                              std::unique_ptr<iface::pragma_handler>>&
       pragma_handlers() const = 0;
 
-      virtual void using_precompiled_headers(bool enabled_) = 0;
-      virtual bool using_precompiled_headers() const = 0;
-
       virtual boost::filesystem::path env_path() const = 0;
 
       virtual void stop() = 0;
+
+      virtual bool enabled(data::shell_flag) const = 0;
+      virtual void enabled(data::shell_flag, bool) = 0;
     };
   }
 }

@@ -23,7 +23,6 @@
 #include <metashell/core/engine_constant.hpp>
 #include <metashell/core/mdb_command_handler_map.hpp>
 #include <metashell/core/mdb_shell.hpp>
-#include <metashell/core/shell.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>
@@ -54,10 +53,8 @@ namespace
     metashell::core::command_processor_queue cpq;
     const std::string internal_dir;
     const boost::filesystem::path mdb_temp_dir;
-    metashell::core::shell sh(cfg, cpq, internal_dir, "", mdb_temp_dir,
-                              metashell::core::create_failing_engine());
-    for (const auto& p : metashell::core::build_default_pragma_map(
-             sh, &cpq, mdb_temp_dir, nullptr))
+    for (const auto& p :
+         metashell::core::build_default_pragma_map(&cpq, mdb_temp_dir, nullptr))
     {
       assert(p.second);
 

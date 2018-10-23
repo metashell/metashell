@@ -17,24 +17,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/displayer.hpp>
 #include <metashell/iface/pragma_handler.hpp>
 
-#include <functional>
-#include <string>
+#include <metashell/data/shell_flag.hpp>
 
 namespace metashell
 {
   namespace core
   {
-    class shell;
-
     class pragma_switch : public iface::pragma_handler
     {
     public:
-      pragma_switch(const std::string& name_,
-                    const std::function<bool()>& query_,
-                    const std::function<void(bool)>& update_);
+      explicit pragma_switch(data::shell_flag flag_);
 
       virtual std::string arguments() const override;
       virtual std::string description() const override;
@@ -47,9 +41,7 @@ namespace metashell
                        iface::displayer& displayer_) const override;
 
     private:
-      std::function<bool()> _query;
-      std::function<void(bool)> _update;
-      std::string _name;
+      data::shell_flag _flag;
     };
   }
 }

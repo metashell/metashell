@@ -69,12 +69,12 @@ namespace metashell
           const std::map<std::vector<std::string>,
                          std::unique_ptr<iface::pragma_handler>>&());
 
-      MOCK_METHOD1(using_precompiled_headers, void(bool));
-      MOCK_CONST_METHOD0(using_precompiled_headers, bool());
-
       MOCK_CONST_METHOD0(env_path, boost::filesystem::path());
 
       MOCK_METHOD0(stop, void());
+
+      MOCK_CONST_METHOD1(enabled, bool(data::shell_flag));
+      MOCK_METHOD2(enabled, void(data::shell_flag, bool));
     };
   }
 }

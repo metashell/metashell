@@ -63,13 +63,13 @@ namespace metashell
       std::string args = tokens_to_string(args_begin_, args_end_).value();
 
       command_processor_queue::cleanup_function restore;
-      if (shell_.using_precompiled_headers())
+      if (shell_.enabled(data::shell_flag::use_precompiled_headers))
       {
-        shell_.using_precompiled_headers(false);
+        shell_.enabled(data::shell_flag::use_precompiled_headers, false);
         restore = [&shell_](iface::displayer& displayer_) {
           try
           {
-            shell_.using_precompiled_headers(true);
+            shell_.enabled(data::shell_flag::use_precompiled_headers, true);
           }
           catch (const std::exception& e_)
           {

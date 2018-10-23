@@ -14,9 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/core/command.hpp>
 #include <metashell/core/in_memory_displayer.hpp>
 #include <metashell/core/metashell_pragma.hpp>
 #include <metashell/core/pragma_switch.hpp>
+
+#include <metashell/mock/shell.hpp>
 
 #include "run.hpp"
 
@@ -26,28 +29,23 @@ using namespace metashell;
 
 namespace
 {
-  template <bool B>
-  bool always()
-  {
-    return B;
-  }
-
   template <bool ExpectedResult>
   void test_callback_is_called(const std::string& arg_)
   {
-    bool was_called = false;
-    bool arg = !ExpectedResult;
+    constexpr data::shell_flag flag = data::shell_flag::echo;
+
+    mock::shell sh;
+
+    EXPECT_CALL(sh, enabled(flag, ExpectedResult));
+
     core::in_memory_displayer d;
+    const core::pragma_switch p(flag);
 
-    core::pragma_switch p(
-        "test", always<true>, [&was_called, &arg](bool value_) {
-          was_called = true;
-          arg = value_;
-        });
-    run(p, data::cpp_code(arg_), d);
-
-    ASSERT_TRUE(was_called);
-    ASSERT_EQ(ExpectedResult, arg);
+    const metashell::data::command cmd =
+        metashell::core::to_command(data::cpp_code(arg_));
+    p.run(cmd.begin(), cmd.begin(), cmd.begin(),
+          metashell::core::end_of_pragma_argument_list(cmd.begin(), cmd.end()),
+          sh, d);
   }
 }
 
@@ -64,7 +62,7 @@ TEST(pragma_switch, displays_error_when_extra_arguments_are_given)
 {
   core::in_memory_displayer d;
 
-  core::pragma_switch p("test", always<true>, [](bool) {});
+  const core::pragma_switch p(data::shell_flag::echo);
   run(p, data::cpp_code("on foo"), d);
 
   ASSERT_FALSE(d.errors().empty());

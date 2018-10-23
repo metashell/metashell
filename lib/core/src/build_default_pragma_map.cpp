@@ -41,7 +41,6 @@
 #include <metashell/core/pragma_quit.hpp>
 #include <metashell/core/pragma_switch.hpp>
 #include <metashell/core/pragma_which.hpp>
-#include <metashell/core/shell.hpp>
 
 #include <metashell/data/exception.hpp>
 
@@ -73,8 +72,7 @@ namespace metashell
     }
 
     std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>>
-    build_default_pragma_map(shell& shell_,
-                             command_processor_queue* cpq_,
+    build_default_pragma_map(command_processor_queue* cpq_,
                              const boost::filesystem::path& mdb_temp_dir_,
                              logger* logger_)
     {
@@ -84,18 +82,12 @@ namespace metashell
 
       result.emplace(sv{"help"}, std::make_unique<pragma_help>());
 
-      result.emplace(
-          sv{"verbose"},
-          std::make_unique<pragma_switch>(
-              "verbose mode", [&shell_]() { return shell_.verbose(); },
-              [&shell_](bool v_) { shell_.verbose(v_); }));
+      result.emplace(sv{"verbose"}, std::make_unique<pragma_switch>(
+                                        data::shell_flag::verbose));
 
-      result.emplace(
-          sv{"precompiled_headers"},
-          std::make_unique<pragma_switch>(
-              "precompiled header usage",
-              [&shell_]() { return shell_.using_precompiled_headers(); },
-              [&shell_](bool v_) { shell_.using_precompiled_headers(v_); }));
+      result.emplace(sv{"precompiled_headers"},
+                     std::make_unique<pragma_switch>(
+                         data::shell_flag::use_precompiled_headers));
 
       result.emplace(sv{"environment"}, std::make_unique<pragma_environment>());
 
@@ -121,10 +113,7 @@ namespace metashell
                      std::make_unique<pragma_environment_save>());
 
       result.emplace(sv{"preprocessed", "echo"},
-                     std::make_unique<pragma_switch>(
-                         "display preprocessed commands",
-                         [&shell_]() { return shell_.echo(); },
-                         [&shell_](bool v_) { shell_.echo(v_); }));
+                     std::make_unique<pragma_switch>(data::shell_flag::echo));
 
       result.emplace(sv{"mdb"}, std::make_unique<pragma_mdb>(
                                     cpq_, mdb_temp_dir_, false, logger_));
@@ -136,18 +125,13 @@ namespace metashell
 
       result.emplace(sv{"pp"}, std::make_unique<pragma_pp>());
 
-      result.emplace(sv{"show", "cpp_errors"},
-                     std::make_unique<pragma_switch>(
-                         "display C++ errors",
-                         [&shell_]() { return shell_.show_cpp_errors(); },
-                         [&shell_](bool v_) { shell_.show_cpp_errors(v_); }));
-
       result.emplace(
-          sv{"metaprogram", "evaluation"},
-          std::make_unique<pragma_switch>(
-              "evaluation of metaprograms",
-              [&shell_]() { return shell_.evaluate_metaprograms(); },
-              [&shell_](bool v_) { shell_.evaluate_metaprograms(v_); }));
+          sv{"show", "cpp_errors"},
+          std::make_unique<pragma_switch>(data::shell_flag::show_cpp_errors));
+
+      result.emplace(sv{"metaprogram", "evaluation"},
+                     std::make_unique<pragma_switch>(
+                         data::shell_flag::evaluate_metaprograms));
 
       result.emplace(sv{"preprocessor", "mode"},
                      shell_mode("preprocessor",

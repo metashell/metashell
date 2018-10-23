@@ -97,14 +97,8 @@ namespace metashell
                      std::unique_ptr<iface::pragma_handler>>&
       pragma_handlers() const override;
 
-      void verbose(bool enabled_);
-      bool verbose() const;
-
       virtual bool stopped() const override;
       void stop() override;
-
-      void using_precompiled_headers(bool enabled_) override;
-      bool using_precompiled_headers() const override;
 
       const iface::environment& env() const override;
       iface::environment& env() override;
@@ -127,14 +121,8 @@ namespace metashell
                       const data::cpp_code& exp_,
                       bool process_directives_) override;
 
-      void echo(bool enabled_);
-      bool echo() const;
-
-      void show_cpp_errors(bool enabled_);
-      bool show_cpp_errors() const;
-
-      void evaluate_metaprograms(bool enabled_);
-      bool evaluate_metaprograms() const;
+      bool enabled(data::shell_flag) const override;
+      void enabled(data::shell_flag, bool) override;
 
     private:
       boost::filesystem::path _internal_dir;

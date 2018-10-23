@@ -31,6 +31,7 @@
 #include <metashell/data/to_string.hpp>
 
 #include <algorithm>
+#include <cassert>
 #include <cctype>
 #include <sstream>
 
@@ -406,7 +407,8 @@ namespace metashell {
                                 iface::displayer& displayer_)
     {
       const data::result r = engine().cpp_validator().validate_code(
-          s_ + "\n", _config, *_env, using_precompiled_headers());
+          s_ + "\n", _config, *_env,
+          enabled(data::shell_flag::use_precompiled_headers));
 
       if (r.successful)
       {
@@ -433,7 +435,8 @@ namespace metashell {
       try
       {
         engine().code_completer().code_complete(
-            *_env, s_, out_, using_precompiled_headers());
+            *_env, s_, out_,
+            enabled(data::shell_flag::use_precompiled_headers));
       }
       catch (...)
       {
@@ -447,8 +450,7 @@ namespace metashell {
       _env->append(data::cpp_code(default_env));
 
       // TODO: move it to initialisation later
-      _pragma_handlers =
-          build_default_pragma_map(*this, cpq_, mdb_temp_dir_, _logger);
+      _pragma_handlers = build_default_pragma_map(cpq_, mdb_temp_dir_, _logger);
     }
 
     const std::map<std::vector<std::string>,
@@ -458,24 +460,9 @@ namespace metashell {
       return _pragma_handlers;
     }
 
-    void shell::verbose(bool enabled_) { _config.verbose = enabled_; }
-
-    bool shell::verbose() const { return _config.verbose; }
-
     bool shell::stopped() const { return _stopped; }
 
     void shell::stop() { _stopped = true; }
-
-    bool shell::using_precompiled_headers() const
-    {
-      return _config.active_shell_config().use_precompiled_headers;
-    }
-
-    void shell::using_precompiled_headers(bool enabled_)
-    {
-      _config.active_shell_config().use_precompiled_headers = enabled_;
-      rebuild_environment();
-    }
 
     iface::environment& shell::env() { return *_env; }
 
@@ -537,9 +524,9 @@ namespace metashell {
     {
       if (_evaluate_metaprograms)
       {
-        const data::result r =
-            eval_tmp_formatted(*_env, s_, using_precompiled_headers(),
-                               engine().type_shell(), _logger);
+        const data::result r = eval_tmp_formatted(
+            *_env, s_, enabled(data::shell_flag::use_precompiled_headers),
+            engine().type_shell(), _logger);
         if (_show_cpp_errors || r.successful)
         {
           display(r, displayer_, true);
@@ -611,19 +598,45 @@ namespace metashell {
       return r.successful;
     }
 
-    void shell::echo(bool enabled_) { _echo = enabled_; }
-
-    bool shell::echo() const { return _echo; }
-
-    void shell::show_cpp_errors(bool enabled_) { _show_cpp_errors = enabled_; }
-
-    bool shell::show_cpp_errors() const { return _show_cpp_errors; }
-
-    void shell::evaluate_metaprograms(bool enabled_)
+    bool shell::enabled(data::shell_flag flag_) const
     {
-      _evaluate_metaprograms = enabled_;
+      switch (flag_)
+      {
+      case data::shell_flag::echo:
+        return _echo;
+      case data::shell_flag::evaluate_metaprograms:
+        return _evaluate_metaprograms;
+      case data::shell_flag::show_cpp_errors:
+        return _show_cpp_errors;
+      case data::shell_flag::use_precompiled_headers:
+        return _config.active_shell_config().use_precompiled_headers;
+      case data::shell_flag::verbose:
+        return _config.verbose;
+      }
+      assert(!"Invalid flag");
     }
 
-    bool shell::evaluate_metaprograms() const { return _evaluate_metaprograms; }
+    void shell::enabled(data::shell_flag flag_, bool enabled_)
+    {
+      switch (flag_)
+      {
+      case data::shell_flag::echo:
+        _echo = enabled_;
+        break;
+      case data::shell_flag::evaluate_metaprograms:
+        _evaluate_metaprograms = enabled_;
+        break;
+      case data::shell_flag::show_cpp_errors:
+        _show_cpp_errors = enabled_;
+        break;
+      case data::shell_flag::use_precompiled_headers:
+        _config.active_shell_config().use_precompiled_headers = enabled_;
+        rebuild_environment();
+        break;
+      case data::shell_flag::verbose:
+        _config.verbose = enabled_;
+        break;
+      }
+    }
   }
 }
