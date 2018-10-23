@@ -49,29 +49,14 @@ namespace metashell
       shell(const data::config& config_,
             const boost::filesystem::path& internal_dir_,
             const boost::filesystem::path& env_filename_,
-            const boost::filesystem::path& mdb_temp_dir_,
             std::function<std::unique_ptr<iface::engine>(const data::config&)>
                 engine_builder_,
-            logger* logger_ = nullptr);
-
-      shell(const data::config& config_,
-            command_processor_queue& cpq_,
-            const boost::filesystem::path& internal_dir_,
-            const boost::filesystem::path& env_filename_,
-            const boost::filesystem::path& mdb_temp_dir_,
-            std::function<std::unique_ptr<iface::engine>(const data::config&)>
-                engine_builder_,
-            logger* logger_ = nullptr);
-
-      shell(const data::config& config_,
-            std::unique_ptr<iface::environment> env_,
-            command_processor_queue& cpq_,
-            const boost::filesystem::path& internal_dir_,
-            const boost::filesystem::path& env_filename_,
-            const boost::filesystem::path& mdb_temp_dir_,
-            std::function<std::unique_ptr<iface::engine>(const data::config&)>
-                engine_builder_,
-            logger* logger_ = nullptr);
+            std::map<std::vector<std::string>,
+                     std::unique_ptr<iface::pragma_handler>> pragma_handlers_ =
+                {},
+            logger* logger_ = nullptr,
+            std::unique_ptr<iface::environment> env_ =
+                std::unique_ptr<iface::environment>());
 
       void display_splash(
           iface::displayer& displayer_,
@@ -143,8 +128,6 @@ namespace metashell
       bool _show_cpp_errors = true;
       bool _evaluate_metaprograms = true;
 
-      void init(command_processor_queue* cpq_,
-                const boost::filesystem::path& mdb_temp_dir_);
       void rebuild_environment(const data::cpp_code& content_);
     };
   }

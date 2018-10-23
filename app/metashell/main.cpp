@@ -17,6 +17,7 @@
 #include "console_config.hpp"
 
 #include <metashell/core/available_engines.hpp>
+#include <metashell/core/build_default_pragma_map.hpp>
 #include <metashell/core/default_environment_detector.hpp>
 #include <metashell/core/fstream_file_writer.hpp>
 #include <metashell/core/input_loop.hpp>
@@ -115,7 +116,7 @@ int main(int argc_, const char* argv_[])
       create_directories(mdb_dir);
 
       auto shell = metashell::core::make_unique<metashell::core::shell>(
-          r.cfg, ccfg.processor_queue(), shell_dir, env_filename, mdb_dir,
+          r.cfg, shell_dir, env_filename,
           // The shell should be destroyed when this scope is left, capturing
           // locals by reference should be safe.
           [&engines, &shell_dir, &temp_dir, &env_filename, &det, &ccfg,
@@ -137,6 +138,7 @@ int main(int argc_, const char* argv_[])
                                           &logger);
             }
           },
+          build_default_pragma_map(&ccfg.processor_queue(), mdb_dir, &logger),
           &logger);
 
       if (r.cfg.splash_enabled)

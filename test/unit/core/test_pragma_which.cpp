@@ -16,6 +16,7 @@
 
 #include <metashell/data/command.hpp>
 
+#include <metashell/core/build_default_pragma_map.hpp>
 #include <metashell/core/command.hpp>
 #include <metashell/core/engine_constant.hpp>
 #include <metashell/core/in_memory_displayer.hpp>
@@ -36,7 +37,8 @@ using namespace metashell;
 #define CHECK_IF_DISPLAYS_ERROR(command_, error_message_)                      \
   {                                                                            \
     core::in_memory_displayer d;                                               \
-    core::shell sh(test_config(), "", "", "", core::create_failing_engine());  \
+    core::shell sh(test_config(), "", "", core::create_failing_engine(),       \
+                   core::build_default_pragma_map(nullptr, "", nullptr));      \
     sh.line_available((command_), d);                                          \
                                                                                \
     ASSERT_EQ(std::vector<std::string>{(error_message_)}, d.errors());         \

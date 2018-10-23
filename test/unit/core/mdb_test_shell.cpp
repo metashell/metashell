@@ -32,7 +32,7 @@ namespace
   metashell::core::shell& get_shell()
   {
     static metashell::core::shell sh(metashell::test_config(), temp_dir(),
-                                     env_filename(), mdb_temp_dir(),
+                                     env_filename(),
                                      metashell::core::create_failing_engine());
     return sh;
   }

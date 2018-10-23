@@ -207,68 +207,21 @@ namespace metashell {
       }
     }
 
-    shell::shell(const data::config& config_,
-                 const boost::filesystem::path& internal_dir_,
-                 const boost::filesystem::path& env_filename_,
-                 const boost::filesystem::path& mdb_temp_dir_,
-                 std::function<std::unique_ptr<iface::engine>(
-                     const data::config&)> engine_builder_,
-                 logger* logger_)
-      : _internal_dir(internal_dir_),
-        _env_filename(env_filename_),
-        _env(),
-        _config(config_),
-        _stopped(false),
-        _logger(logger_),
-        _engine_builder(std::move(engine_builder_)),
-        _echo(determine_echo(config_.active_shell_config())),
-        _show_cpp_errors(
-            determine_show_cpp_errors(config_.active_shell_config())),
-        _evaluate_metaprograms(
-            determine_evaluate_metaprograms(config_.active_shell_config()))
-    {
-      rebuild_environment();
-      init(nullptr, mdb_temp_dir_);
-    }
-
-    shell::shell(const data::config& config_,
-                 command_processor_queue& cpq_,
-                 const boost::filesystem::path& internal_dir_,
-                 const boost::filesystem::path& env_filename_,
-                 const boost::filesystem::path& mdb_temp_dir_,
-                 std::function<std::unique_ptr<iface::engine>(
-                     const data::config&)> engine_builder_,
-                 logger* logger_)
-      : _internal_dir(internal_dir_),
-        _env_filename(env_filename_),
-        _env(),
-        _config(config_),
-        _stopped(false),
-        _logger(logger_),
-        _engine_builder(std::move(engine_builder_)),
-        _echo(determine_echo(config_.active_shell_config())),
-        _show_cpp_errors(
-            determine_show_cpp_errors(config_.active_shell_config())),
-        _evaluate_metaprograms(
-            determine_evaluate_metaprograms(config_.active_shell_config()))
-    {
-      rebuild_environment();
-      init(&cpq_, mdb_temp_dir_);
-    }
-
-    shell::shell(const data::config& config_,
-                 std::unique_ptr<iface::environment> env_,
-                 command_processor_queue& cpq_,
-                 const boost::filesystem::path& internal_dir_,
-                 const boost::filesystem::path& env_filename_,
-                 const boost::filesystem::path& mdb_temp_dir_,
-                 std::function<std::unique_ptr<iface::engine>(
-                     const data::config&)> engine_builder_,
-                 logger* logger_)
+    shell::shell(
+        const data::config& config_,
+        const boost::filesystem::path& internal_dir_,
+        const boost::filesystem::path& env_filename_,
+        std::function<std::unique_ptr<iface::engine>(const data::config&)>
+            engine_builder_,
+        std::map<std::vector<std::string>,
+                 std::unique_ptr<iface::pragma_handler>> pragma_handlers_,
+        logger* logger_,
+        std::unique_ptr<iface::environment> env_)
       : _internal_dir(internal_dir_),
         _env_filename(env_filename_),
         _env(std::move(env_)),
         _config(config_),
+        _pragma_handlers(std::move(pragma_handlers_)),
         _stopped(false),
         _logger(logger_),
         _engine_builder(std::move(engine_builder_)),
@@ -278,7 +231,11 @@ namespace metashell {
         _evaluate_metaprograms(
             determine_evaluate_metaprograms(config_.active_shell_config()))
     {
-      init(&cpq_, mdb_temp_dir_);
+      if (!_env)
+      {
+        rebuild_environment();
+      }
+      _env->append(data::cpp_code(default_env));
     }
 
     void shell::cancel_operation() {}
@@ -442,15 +399,6 @@ namespace metashell {
       {
         // ignore
       }
-    }
-
-    void shell::init(command_processor_queue* cpq_,
-                     const boost::filesystem::path& mdb_temp_dir_)
-    {
-      _env->append(data::cpp_code(default_env));
-
-      // TODO: move it to initialisation later
-      _pragma_handlers = build_default_pragma_map(cpq_, mdb_temp_dir_, _logger);
     }
 
     const std::map<std::vector<std::string>,

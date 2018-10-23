@@ -26,6 +26,8 @@
 #include <gtest/gtest.h>
 
 using namespace metashell;
+using ::testing::Return;
+using ::testing::NiceMock;
 
 namespace
 {
@@ -34,8 +36,9 @@ namespace
   {
     constexpr data::shell_flag flag = data::shell_flag::echo;
 
-    mock::shell sh;
+    NiceMock<mock::shell> sh;
 
+    ON_CALL(sh, enabled(flag)).WillByDefault(Return(!ExpectedResult));
     EXPECT_CALL(sh, enabled(flag, ExpectedResult));
 
     core::in_memory_displayer d;

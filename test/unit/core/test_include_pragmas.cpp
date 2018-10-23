@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/core/build_default_pragma_map.hpp>
 #include <metashell/core/engine_constant.hpp>
 #include <metashell/core/in_memory_displayer.hpp>
 #include <metashell/core/shell.hpp>
@@ -38,8 +39,9 @@ namespace
   std::vector<std::vector<boost::filesystem::path>> pragma_includes_displays()
   {
     core::in_memory_displayer d;
-    core::shell sh(metashell::test_config(), "", "", "",
-                   core::create_engine_with_include_path(Type, {"foo", "bar"}));
+    core::shell sh(metashell::test_config(), "", "",
+                   core::create_engine_with_include_path(Type, {"foo", "bar"}),
+                   core::build_default_pragma_map(nullptr, "", nullptr));
     sh.line_available("#msh " + to_string(Type) + "includes", d);
 
     return d.filename_lists();
