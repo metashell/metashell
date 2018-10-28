@@ -14,27 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-project(boost_range)
+project(metashell_pragma_unit_test)
 
-add_library(${PROJECT_NAME} INTERFACE)
-add_library(boost::range ALIAS ${PROJECT_NAME})
+aux_source_directory(. SOURCES)
+add_executable(${PROJECT_NAME} ${SOURCES})
 
-target_include_directories(
-  ${PROJECT_NAME} SYSTEM
-  INTERFACE ${PROJECT_SOURCE_DIR}/include
-)
+enable_warnings(${PROJECT_NAME})
 
 target_link_libraries(
   ${PROJECT_NAME}
-  
-  INTERFACE
-    boost::array
-    boost::concept_check
-    boost::fusion
-    boost::iterator
-    boost::numeric_conversion
-    boost::regex
-    boost::utility
+
+  googletest
+
+  metashell::mock
+  metashell::pragma
 )
 
-boost_lib(INTERFACE ${PROJECT_NAME})
+add_test(metashell_pragma_unit_test ${PROJECT_NAME})
+
+# Code coverage
+if (ENABLE_CODE_COVERAGE)
+  SETUP_TARGET_FOR_COVERAGE(
+    test_coverage
+    ${PROJECT_NAME}
+    coverage
+    "'/usr/*';'test/*';'3rd/*'"
+  )
+endif()
+

@@ -14,27 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-project(boost_range)
+project(metashell_pragma)
 
-add_library(${PROJECT_NAME} INTERFACE)
-add_library(boost::range ALIAS ${PROJECT_NAME})
+aux_source_directory(src SOURCES)
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+add_library(metashell::pragma ALIAS ${PROJECT_NAME})
 
-target_include_directories(
-  ${PROJECT_NAME} SYSTEM
-  INTERFACE ${PROJECT_SOURCE_DIR}/include
-)
+enable_warnings(${PROJECT_NAME})
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 target_link_libraries(
   ${PROJECT_NAME}
-  
-  INTERFACE
-    boost::array
-    boost::concept_check
-    boost::fusion
-    boost::iterator
-    boost::numeric_conversion
-    boost::regex
-    boost::utility
-)
 
-boost_lib(INTERFACE ${PROJECT_NAME})
+  metashell::core
+  metashell::data
+  metashell::iface
+)
