@@ -16,10 +16,10 @@
 
 #include <metashell/mock/environment_detector.hpp>
 
+#include <metashell/data/empty_container.hpp>
+
 #include "breaking_environment.hpp"
-#include "empty_container.hpp"
 #include "test_config.hpp"
-#include "util.hpp"
 
 #include <metashell/core/command.hpp>
 #include <metashell/core/engine_constant.hpp>
@@ -43,8 +43,8 @@ TEST(evaluation, accept_empty_input)
   core::shell sh(test_config(), "", "", core::create_failing_engine());
   sh.line_available("", d);
 
-  ASSERT_EQ(empty_container, d.types());
-  ASSERT_EQ(empty_container, d.errors());
+  ASSERT_EQ(data::empty_container(), d.types());
+  ASSERT_EQ(data::empty_container(), d.errors());
 }
 
 TEST(evaluation, accept_space_input)
@@ -53,8 +53,8 @@ TEST(evaluation, accept_space_input)
   core::shell sh(test_config(), "", "", core::create_failing_engine());
   sh.line_available(" ", d);
 
-  ASSERT_EQ(empty_container, d.types());
-  ASSERT_EQ(empty_container, d.errors());
+  ASSERT_EQ(data::empty_container(), d.types());
+  ASSERT_EQ(data::empty_container(), d.errors());
 }
 
 TEST(evaluation, accept_tab_input)
@@ -63,8 +63,8 @@ TEST(evaluation, accept_tab_input)
   core::shell sh(test_config(), "", "", core::create_failing_engine());
   sh.line_available("\t", d);
 
-  ASSERT_EQ(empty_container, d.types());
-  ASSERT_EQ(empty_container, d.errors());
+  ASSERT_EQ(data::empty_container(), d.types());
+  ASSERT_EQ(data::empty_container(), d.errors());
 }
 
 TEST(evaluation, accept_vertical_tab_input)
@@ -73,8 +73,8 @@ TEST(evaluation, accept_vertical_tab_input)
   core::shell sh(test_config(), "", "", core::create_failing_engine());
   sh.line_available("\v", d);
 
-  ASSERT_EQ(empty_container, d.types());
-  ASSERT_EQ(empty_container, d.errors());
+  ASSERT_EQ(data::empty_container(), d.types());
+  ASSERT_EQ(data::empty_container(), d.errors());
 }
 
 TEST(evaluation, accept_new_line_input)
@@ -83,8 +83,8 @@ TEST(evaluation, accept_new_line_input)
   core::shell sh(test_config(), "", "", core::create_failing_engine());
   sh.line_available("\n", d);
 
-  ASSERT_EQ(empty_container, d.types());
-  ASSERT_EQ(empty_container, d.errors());
+  ASSERT_EQ(data::empty_container(), d.types());
+  ASSERT_EQ(data::empty_container(), d.errors());
 }
 
 TEST(evaluation, accept_carrige_return_input)
@@ -93,8 +93,8 @@ TEST(evaluation, accept_carrige_return_input)
   core::shell sh(test_config(), "", "", core::create_failing_engine());
   sh.line_available("\r", d);
 
-  ASSERT_EQ(empty_container, d.types());
-  ASSERT_EQ(empty_container, d.errors());
+  ASSERT_EQ(data::empty_container(), d.types());
+  ASSERT_EQ(data::empty_container(), d.errors());
 }
 
 TEST(evaluation, accept_two_space_input)
@@ -103,8 +103,8 @@ TEST(evaluation, accept_two_space_input)
   core::shell sh(test_config(), "", "", core::create_failing_engine());
   sh.line_available("  ", d);
 
-  ASSERT_EQ(empty_container, d.types());
-  ASSERT_EQ(empty_container, d.errors());
+  ASSERT_EQ(data::empty_container(), d.types());
+  ASSERT_EQ(data::empty_container(), d.errors());
 }
 
 TEST(evaluation, history_is_stored)
@@ -126,7 +126,7 @@ TEST(evaluation, empty_line_is_not_stored_in_history)
 
   sh.line_available("", d, h);
 
-  ASSERT_EQ(empty_container, h.commands());
+  ASSERT_EQ(data::empty_container(), h.commands());
 }
 
 TEST(evaluation, line_containing_just_whitespace_is_not_stored_in_history)
@@ -137,7 +137,7 @@ TEST(evaluation, line_containing_just_whitespace_is_not_stored_in_history)
 
   sh.line_available(" ", d, h);
 
-  ASSERT_EQ(empty_container, h.commands());
+  ASSERT_EQ(data::empty_container(), h.commands());
 }
 
 TEST(evaluation,
@@ -159,8 +159,8 @@ TEST(evaluation, accept_c_comment_input)
   core::shell sh(test_config(), "", "", core::create_failing_engine());
   sh.line_available("/* some comment */", d);
 
-  ASSERT_EQ(empty_container, d.types());
-  ASSERT_EQ(empty_container, d.errors());
+  ASSERT_EQ(data::empty_container(), d.types());
+  ASSERT_EQ(data::empty_container(), d.errors());
 }
 
 TEST(evaluation, accept_cpp_comment_input)
@@ -169,8 +169,8 @@ TEST(evaluation, accept_cpp_comment_input)
   core::shell sh(test_config(), "", "", core::create_failing_engine());
   sh.line_available("// some comment", d);
 
-  ASSERT_EQ(empty_container, d.types());
-  ASSERT_EQ(empty_container, d.errors());
+  ASSERT_EQ(data::empty_container(), d.types());
+  ASSERT_EQ(data::empty_container(), d.errors());
 }
 
 TEST(evaluation, comment_is_stored_in_history)

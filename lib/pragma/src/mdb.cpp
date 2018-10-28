@@ -17,7 +17,7 @@
 
 #include <metashell/pragma/mdb.hpp>
 
-#include <metashell/core/mdb_shell.hpp>
+#include <metashell/mdb/shell.hpp>
 
 #include <metashell/data/mdb_usage.hpp>
 
@@ -79,7 +79,7 @@ namespace metashell
         };
       }
 
-      auto sh = std::make_unique<core::mdb_shell>(
+      auto sh = std::make_unique<metashell::mdb::shell>(
           shell_.env(), shell_.engine(), shell_.env_path(), _mdb_temp_dir,
           _preprocessor, _logger);
 

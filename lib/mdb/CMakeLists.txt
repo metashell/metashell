@@ -14,11 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-project(metashell_pragma)
+project(metashell_mdb)
 
 aux_source_directory(src SOURCES)
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
-add_library(metashell::pragma ALIAS ${PROJECT_NAME})
+add_library(metashell::mdb ALIAS ${PROJECT_NAME})
 
 enable_warnings(${PROJECT_NAME})
 
@@ -30,5 +30,4 @@ target_link_libraries(
   metashell::core
   metashell::data
   metashell::iface
-  metashell::mdb
 )

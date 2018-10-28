@@ -21,9 +21,10 @@
 #include <metashell/defaults/available_engines.hpp>
 #include <metashell/defaults/pragma_map.hpp>
 
+#include <metashell/mdb/command_handler_map.hpp>
+#include <metashell/mdb/shell.hpp>
+
 #include <metashell/core/engine_constant.hpp>
-#include <metashell/core/mdb_command_handler_map.hpp>
-#include <metashell/core/mdb_shell.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>
@@ -69,11 +70,11 @@ namespace
     using boost::algorithm::join;
     using boost::algorithm::replace_all_copy;
 
-    metashell::core::mdb_command_handler_map::commands_t commands =
-        metashell::core::mdb_shell::build_command_handler(Preprocessor)
+    metashell::mdb::command_handler_map::commands_t commands =
+        metashell::mdb::shell::build_command_handler(Preprocessor)
             .get_commands();
 
-    for (const metashell::core::mdb_command& cmd : commands)
+    for (const metashell::mdb::command& cmd : commands)
     {
       out_ << "* __`" << join(cmd.get_keys(), "|") << " " << cmd.get_usage()
            << "`__ <br />\n"

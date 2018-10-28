@@ -1,5 +1,5 @@
-#ifndef METASHELL_IF_SUPPORTED_HPP
-#define METASHELL_IF_SUPPORTED_HPP
+#ifndef METASHELL_DATA_EMPTY_CONTAINER_HPP
+#define METASHELL_DATA_EMPTY_CONTAINER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,36 +17,43 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/not_supported.hpp>
-#include <metashell/core/supported.hpp>
-
-#include <metashell/data/feature_not_supported.hpp>
-
+#include <iosfwd>
 #include <string>
-#include <type_traits>
 
 namespace metashell
 {
-  namespace core
+  namespace data
   {
-    template <class Expected, class Real>
-    typename std::enable_if<supported<Real>::value, Expected&>::type
-    if_supported(Real& real_, const std::string&)
+    class empty_container
     {
-      return real_;
+    };
+
+    std::ostream& operator<<(std::ostream& out_, const empty_container&);
+
+    std::string to_string(const empty_container&);
+
+    template <class T>
+    bool operator==(const empty_container&, const T& c_)
+    {
+      return c_.empty();
     }
 
-    template <class Expected, class Real>
-    const Expected& if_supported(const Real& real_, const std::string&)
+    template <class T>
+    bool operator==(const T& c_, const empty_container& e_)
     {
-      return real_;
+      return e_ == c_;
     }
 
-    template <class Expected>
-    Expected& if_supported(const not_supported&,
-                           const std::string& engine_name_)
+    template <class T>
+    bool operator!=(const empty_container& e_, const T& c_)
     {
-      throw data::feature_not_supported<Expected>(engine_name_);
+      return !(e_ == c_);
+    }
+
+    template <class T>
+    bool operator!=(const T& c_, const empty_container& e_)
+    {
+      return !(e_ == c_);
     }
   }
 }

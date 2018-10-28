@@ -34,6 +34,7 @@ target_link_libraries(
   metashell::core
   metashell::data
   metashell::defaults
+  metashell::mdb
   metashell::replace_part
 )
 

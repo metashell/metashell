@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/core/command.hpp>
-#include <metashell/core/feature_not_supported.hpp>
 #include <metashell/core/header_file_environment.hpp>
 #include <metashell/core/make_unique.hpp>
 #include <metashell/core/metashell.hpp>
@@ -27,6 +26,7 @@
 
 #include <metashell/data/command.hpp>
 #include <metashell/data/exception.hpp>
+#include <metashell/data/feature_not_supported.hpp>
 #include <metashell/data/to_string.hpp>
 
 #include <algorithm>
@@ -199,7 +199,7 @@ namespace metashell {
         {
           return &engine_.type_shell();
         }
-        catch (const feature_not_supported<iface::type_shell>&)
+        catch (const data::feature_not_supported<iface::type_shell>&)
         {
           return nullptr;
         }
