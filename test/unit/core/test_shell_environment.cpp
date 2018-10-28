@@ -16,7 +16,6 @@
 
 #include "test_config.hpp"
 
-#include <metashell/core/build_default_pragma_map.hpp>
 #include <metashell/core/engine_constant.hpp>
 #include <metashell/core/in_memory_displayer.hpp>
 #include <metashell/core/shell.hpp>
@@ -28,13 +27,6 @@
 
 namespace
 {
-  std::string appended_since(const std::string& old_, const std::string& new_)
-  {
-    assert(new_.size() >= old_.size());
-    assert(new_.substr(0, old_.size()) == old_);
-    return new_.substr(old_.size());
-  }
-
   std::vector<metashell::data::text> text(const std::string& text_)
   {
     return std::vector<metashell::data::text>{metashell::data::text(text_)};
@@ -124,30 +116,4 @@ TEST(shell_environment, displaying_the_size_of_two_element_stack)
   sh.display_environment_stack_size(d);
 
   ASSERT_EQ(text("Environment stack has 2 entries"), d.comments());
-}
-
-TEST(shell_environment, appended_since_when_nothing_appended)
-{
-  ASSERT_EQ("", appended_since("", ""));
-}
-
-TEST(shell_environment, appended_since_when_something_appended)
-{
-  ASSERT_EQ(" world", appended_since("hello", "hello world"));
-}
-
-TEST(shell_environment, extending_environment_with_pragma)
-{
-  metashell::core::in_memory_displayer d;
-  metashell::core::shell sh(
-      metashell::test_config(), "", "",
-      metashell::core::create_engine_returning_type("void"),
-      metashell::core::build_default_pragma_map(nullptr, "", nullptr));
-  const metashell::data::cpp_code original_env = sh.env().get_all();
-
-  sh.line_available("#pragma metashell environment add typedef int x;", d);
-  sh.line_available("#pragma metashell environment", d);
-
-  ASSERT_EQ("typedef int x;\n",
-            appended_since(original_env.value(), sh.env().get_all().value()));
 }

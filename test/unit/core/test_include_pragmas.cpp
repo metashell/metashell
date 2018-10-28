@@ -14,10 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/build_default_pragma_map.hpp>
 #include <metashell/core/engine_constant.hpp>
 #include <metashell/core/in_memory_displayer.hpp>
-#include <metashell/core/shell.hpp>
+#include <metashell/core/pragma_includes.hpp>
+
+#include <metashell/mock/shell.hpp>
 
 #include "test_config.hpp"
 
@@ -30,6 +31,9 @@
 
 using namespace metashell;
 
+using ::testing::NiceMock;
+using ::testing::ReturnRef;
+
 namespace
 {
   const std::vector<std::vector<boost::filesystem::path>> foo_bar{
@@ -38,11 +42,14 @@ namespace
   template <data::include_type Type>
   std::vector<std::vector<boost::filesystem::path>> pragma_includes_displays()
   {
+    std::unique_ptr<iface::engine> engine =
+        core::create_engine_with_include_path(
+            Type, {"foo", "bar"})(metashell::test_config());
+    NiceMock<mock::shell> sh;
+    ON_CALL(sh, engine()).WillByDefault(ReturnRef(*engine));
+
     core::in_memory_displayer d;
-    core::shell sh(metashell::test_config(), "", "",
-                   core::create_engine_with_include_path(Type, {"foo", "bar"}),
-                   core::build_default_pragma_map(nullptr, "", nullptr));
-    sh.line_available("#msh " + to_string(Type) + "includes", d);
+    core::pragma_includes<Type>().run(sh, d);
 
     return d.filename_lists();
   }

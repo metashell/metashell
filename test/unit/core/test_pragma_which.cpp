@@ -15,13 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/command.hpp>
+#include <metashell/data/exception.hpp>
 
-#include <metashell/core/build_default_pragma_map.hpp>
 #include <metashell/core/command.hpp>
 #include <metashell/core/engine_constant.hpp>
 #include <metashell/core/in_memory_displayer.hpp>
 #include <metashell/core/pragma_which.hpp>
 #include <metashell/core/shell.hpp>
+
+#include <metashell/mock/shell.hpp>
 
 #include "test_config.hpp"
 
@@ -37,11 +39,20 @@ using namespace metashell;
 #define CHECK_IF_DISPLAYS_ERROR(command_, error_message_)                      \
   {                                                                            \
     core::in_memory_displayer d;                                               \
-    core::shell sh(test_config(), "", "", core::create_failing_engine(),       \
-                   core::build_default_pragma_map(nullptr, "", nullptr));      \
-    sh.line_available((command_), d);                                          \
+    mock::shell sh;                                                            \
+    const auto cmd = core::to_command(data::cpp_code("which"));                \
+    const auto carg = core::to_command(data::cpp_code(command_));              \
                                                                                \
-    ASSERT_EQ(std::vector<std::string>{(error_message_)}, d.errors());         \
+    try                                                                        \
+    {                                                                          \
+      core::pragma_which().run(                                                \
+          cmd.begin(), cmd.end(), carg.begin(), carg.end(), sh, d);            \
+      FAIL() << "Expected error.";                                             \
+    }                                                                          \
+    catch (const data::exception& err)                                         \
+    {                                                                          \
+      ASSERT_EQ(std::string(error_message_), err.what());                      \
+    }                                                                          \
   }
 
 namespace
@@ -69,19 +80,18 @@ namespace
 
   void test_invalid_arguments(const std::string& prefix_)
   {
-    CHECK_IF_DISPLAYS_ERROR(prefix_, "Error: No header is provided.")
-    CHECK_IF_DISPLAYS_ERROR(prefix_ + " hello",
-                            "Error: Argument of which is not a header to "
-                            "include. Did you mean <hello> or \"hello\"?")
-    CHECK_IF_DISPLAYS_ERROR(prefix_ + " <hello", "Error: closing > is missing.")
+    CHECK_IF_DISPLAYS_ERROR(prefix_, "No header is provided.")
+    CHECK_IF_DISPLAYS_ERROR(prefix_ + "hello",
+                            "Argument of which is not a header to include. Did "
+                            "you mean <hello> or \"hello\"?")
+    CHECK_IF_DISPLAYS_ERROR(prefix_ + "<hello", "closing > is missing.")
+    CHECK_IF_DISPLAYS_ERROR(prefix_ + "\"hello", "closing \" is missing.")
     CHECK_IF_DISPLAYS_ERROR(
-        prefix_ + " \"hello", "Error: closing \" is missing.")
-    CHECK_IF_DISPLAYS_ERROR(prefix_ + " <hello> \"world\"",
-                            "Error: More than one arguments provided.");
-    CHECK_IF_DISPLAYS_ERROR(prefix_ + " \"hello\" <world>",
-                            "Error: More than one arguments provided.");
-    CHECK_IF_DISPLAYS_ERROR(prefix_ + " -", "Error: Invalid argument: -")
-    CHECK_IF_DISPLAYS_ERROR(prefix_ + " -asd", "Error: Invalid argument: -asd")
+        prefix_ + "<hello> \"world\"", "More than one arguments provided.");
+    CHECK_IF_DISPLAYS_ERROR(
+        prefix_ + "\"hello\" <world>", "More than one arguments provided.");
+    CHECK_IF_DISPLAYS_ERROR(prefix_ + "-", "Invalid argument: -")
+    CHECK_IF_DISPLAYS_ERROR(prefix_ + "-asd", "Invalid argument: -asd")
   }
 
   template <bool All>
@@ -102,12 +112,9 @@ namespace
   }
 }
 
-TEST(pragma_which, invalid_arguments) { test_invalid_arguments("#msh which"); }
+TEST(pragma_which, invalid_arguments) { test_invalid_arguments(""); }
 
-TEST(pragma_which, all_invalid_arguments)
-{
-  test_invalid_arguments("#msh which -all");
-}
+TEST(pragma_which, all_invalid_arguments) { test_invalid_arguments("-all "); }
 
 TEST(pragma_which, path_parsing) { test_valid_arguments<false>(); }
 

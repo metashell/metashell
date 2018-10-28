@@ -14,13 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/build_default_pragma_map.hpp>
 #include <metashell/core/command.hpp>
-#include <metashell/core/engine_constant.hpp>
-#include <metashell/core/in_memory_displayer.hpp>
 #include <metashell/core/metashell_pragma.hpp>
-#include <metashell/core/null_displayer.hpp>
-#include <metashell/core/shell.hpp>
 
 #include "test_config.hpp"
 
@@ -78,61 +73,6 @@ TEST(pragma, name_of_pragma_is_not_a_literal)
 TEST(pragma, name_of_pragma_is_missing)
 {
   ASSERT_ANY_THROW(core::parse_pragma(command("#pragma metashell")));
-}
-
-TEST(pragma, help_pragma_displays_message)
-{
-  core::in_memory_displayer d;
-  core::shell sh(test_config(), "", "", core::create_failing_engine(),
-                 core::build_default_pragma_map(nullptr, "", nullptr));
-  sh.line_available("#pragma metashell help", d);
-  ASSERT_FALSE(d.comments().empty());
-}
-
-TEST(pragma, error_for_non_existing_pragma)
-{
-  core::in_memory_displayer d;
-  core::shell sh(test_config(), "", "", core::create_failing_engine());
-  sh.line_available("#pragma metashell foo_bar", d);
-  ASSERT_FALSE(d.errors().empty());
-}
-
-TEST(pragma, check_verbosity)
-{
-  core::in_memory_displayer d;
-  core::shell sh(test_config(), "", "", core::create_failing_engine(),
-                 core::build_default_pragma_map(nullptr, "", nullptr));
-  sh.line_available("#pragma metashell verbose", d);
-  ASSERT_EQ(
-      std::vector<data::text>{data::text("verbose mode is off")}, d.comments());
-}
-
-TEST(pragma, check_enabling_verbosity)
-{
-  core::in_memory_displayer d;
-  core::shell sh(test_config(), "", "", core::create_failing_engine(),
-                 core::build_default_pragma_map(nullptr, "", nullptr));
-  sh.line_available("#pragma metashell verbose on", d);
-  ASSERT_EQ(
-      std::vector<data::text>{data::text("verbose mode is on")}, d.comments());
-}
-
-TEST(pragma, pragma_metashell_does_not_kill_the_shell)
-{
-  core::null_displayer d;
-  core::shell sh(test_config(), "", "", core::create_failing_engine());
-
-  // should not throw
-  sh.line_available("#pragma metashell", d);
-}
-
-TEST(pragma, quit)
-{
-  core::in_memory_displayer d;
-  core::shell sh(test_config(), "", "", core::create_failing_engine(),
-                 core::build_default_pragma_map(nullptr, "", nullptr));
-  sh.line_available("#pragma metashell quit", d);
-  ASSERT_TRUE(sh.stopped());
 }
 
 TEST(pragma, accept_pound_msh_as_pragma_metashell)

@@ -25,9 +25,28 @@
 
 #include <gtest/gtest.h>
 
+#include <cassert>
+
 using namespace metashell::system_test;
 
 using pattern::_;
+
+namespace
+{
+  std::string appended_since(const std::string& old_, const std::string& new_)
+  {
+    assert(new_.size() >= old_.size());
+    assert(new_.substr(0, old_.size()) == old_);
+    return new_.substr(old_.size());
+  }
+
+  std::string current_env(metashell_instance& mi_)
+  {
+    return *cpp_code(mi_.command("#pragma metashell environment").front())
+                .code()
+                .value();
+  }
+}
 
 TEST(shell_environment, extending_with_pragma_warns)
 {
@@ -96,4 +115,25 @@ TEST(shell_environment,
   ASSERT_EQ(breaking, br[2]);
 
   ASSERT_EQ(original_env, mi.command("#pragma metashell environment"));
+}
+
+TEST(shell_environment, appended_since_when_nothing_appended)
+{
+  ASSERT_EQ("", appended_since("", ""));
+}
+
+TEST(shell_environment, appended_since_when_something_appended)
+{
+  ASSERT_EQ(" world", appended_since("hello", "hello world"));
+}
+
+TEST(shell_environment, extending_environment_with_pragma)
+{
+  metashell_instance mi;
+
+  const std::string original_env = current_env(mi);
+
+  mi.command("#pragma metashell environment add typedef int x;");
+
+  ASSERT_EQ("typedef int x;\n", appended_since(original_env, current_env(mi)));
 }
