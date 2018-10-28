@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/build_default_pragma_map.hpp>
 #include <metashell/core/metashell_pragma.hpp>
 #include <metashell/core/pragma_config.hpp>
 #include <metashell/core/pragma_config_load.hpp>
@@ -41,20 +40,22 @@
 #include <metashell/core/pragma_quit.hpp>
 #include <metashell/core/pragma_switch.hpp>
 #include <metashell/core/pragma_which.hpp>
+#include <metashell/defaults/pragma_map.hpp>
 
 #include <metashell/data/exception.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace defaults
   {
     namespace
     {
       std::string on_off(bool v_) { return v_ ? "on" : "off"; }
 
-      std::unique_ptr<pragma_macro> shell_mode(const std::string& name_,
-                                               const std::string& comment_,
-                                               bool preprocessing_mode_)
+      std::unique_ptr<core::pragma_macro>
+      shell_mode(const std::string& name_,
+                 const std::string& comment_,
+                 bool preprocessing_mode_)
       {
         std::vector<std::string> cmds{
             "#msh preprocessed echo " + on_off(preprocessing_mode_),
@@ -66,71 +67,73 @@ namespace metashell
           cmds.push_back("#msh echo " + comment_);
         }
 
-        return std::make_unique<pragma_macro>(
+        return std::make_unique<core::pragma_macro>(
             "Set Metashell to " + name_ + " mode", move(cmds));
       }
     }
 
     std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>>
-    build_default_pragma_map(command_processor_queue* cpq_,
-                             const boost::filesystem::path& mdb_temp_dir_,
-                             logger* logger_)
+    pragma_map(core::command_processor_queue* cpq_,
+               const boost::filesystem::path& mdb_temp_dir_,
+               core::logger* logger_)
     {
       typedef std::vector<std::string> sv;
 
       std::map<sv, std::unique_ptr<iface::pragma_handler>> result;
 
-      result.emplace(sv{"help"}, std::make_unique<pragma_help>());
+      result.emplace(sv{"help"}, std::make_unique<core::pragma_help>());
 
-      result.emplace(sv{"verbose"}, std::make_unique<pragma_switch>(
+      result.emplace(sv{"verbose"}, std::make_unique<core::pragma_switch>(
                                         data::shell_flag::verbose));
 
       result.emplace(sv{"precompiled_headers"},
-                     std::make_unique<pragma_switch>(
+                     std::make_unique<core::pragma_switch>(
                          data::shell_flag::use_precompiled_headers));
 
-      result.emplace(sv{"environment"}, std::make_unique<pragma_environment>());
+      result.emplace(
+          sv{"environment"}, std::make_unique<core::pragma_environment>());
 
       result.emplace(sv{"environment", "push"},
-                     std::make_unique<pragma_environment_push>());
+                     std::make_unique<core::pragma_environment_push>());
 
-      result.emplace(
-          sv{"environment", "pop"}, std::make_unique<pragma_environment_pop>());
+      result.emplace(sv{"environment", "pop"},
+                     std::make_unique<core::pragma_environment_pop>());
 
       result.emplace(sv{"environment", "stack"},
-                     std::make_unique<pragma_environment_stack>());
+                     std::make_unique<core::pragma_environment_stack>());
 
-      result.emplace(
-          sv{"environment", "add"}, std::make_unique<pragma_environment_add>());
+      result.emplace(sv{"environment", "add"},
+                     std::make_unique<core::pragma_environment_add>());
 
       result.emplace(sv{"environment", "reset"},
-                     std::make_unique<pragma_environment_reset>());
+                     std::make_unique<core::pragma_environment_reset>());
 
       result.emplace(sv{"environment", "reload"},
-                     std::make_unique<pragma_environment_reload>());
+                     std::make_unique<core::pragma_environment_reload>());
 
       result.emplace(sv{"environment", "save"},
-                     std::make_unique<pragma_environment_save>());
-
-      result.emplace(sv{"preprocessed", "echo"},
-                     std::make_unique<pragma_switch>(data::shell_flag::echo));
-
-      result.emplace(sv{"mdb"}, std::make_unique<pragma_mdb>(
-                                    cpq_, mdb_temp_dir_, false, logger_));
-
-      result.emplace(sv{"evaluate"}, std::make_unique<pragma_evaluate>());
-
-      result.emplace(sv{"pdb"}, std::make_unique<pragma_mdb>(
-                                    cpq_, mdb_temp_dir_, true, logger_));
-
-      result.emplace(sv{"pp"}, std::make_unique<pragma_pp>());
+                     std::make_unique<core::pragma_environment_save>());
 
       result.emplace(
-          sv{"show", "cpp_errors"},
-          std::make_unique<pragma_switch>(data::shell_flag::show_cpp_errors));
+          sv{"preprocessed", "echo"},
+          std::make_unique<core::pragma_switch>(data::shell_flag::echo));
+
+      result.emplace(sv{"mdb"}, std::make_unique<core::pragma_mdb>(
+                                    cpq_, mdb_temp_dir_, false, logger_));
+
+      result.emplace(sv{"evaluate"}, std::make_unique<core::pragma_evaluate>());
+
+      result.emplace(sv{"pdb"}, std::make_unique<core::pragma_mdb>(
+                                    cpq_, mdb_temp_dir_, true, logger_));
+
+      result.emplace(sv{"pp"}, std::make_unique<core::pragma_pp>());
+
+      result.emplace(
+          sv{"show", "cpp_errors"}, std::make_unique<core::pragma_switch>(
+                                        data::shell_flag::show_cpp_errors));
 
       result.emplace(sv{"metaprogram", "evaluation"},
-                     std::make_unique<pragma_switch>(
+                     std::make_unique<core::pragma_switch>(
                          data::shell_flag::evaluate_metaprograms));
 
       result.emplace(sv{"preprocessor", "mode"},
@@ -142,37 +145,37 @@ namespace metashell
       result.emplace(
           sv{"metaprogram", "mode"}, shell_mode("metaprogram", "", false));
 
-      result.emplace(sv{"echo"}, std::make_unique<pragma_echo>());
+      result.emplace(sv{"echo"}, std::make_unique<core::pragma_echo>());
 
-      result.emplace(sv{"macros"}, std::make_unique<pragma_macros>());
+      result.emplace(sv{"macros"}, std::make_unique<core::pragma_macros>());
 
       result.emplace(
-          sv{"macro", "names"}, std::make_unique<pragma_macro_names>());
+          sv{"macro", "names"}, std::make_unique<core::pragma_macro_names>());
 
       result.emplace(
           sv{"sysincludes"},
-          std::make_unique<pragma_includes<data::include_type::sys>>());
+          std::make_unique<core::pragma_includes<data::include_type::sys>>());
 
       result.emplace(
           sv{"quoteincludes"},
-          std::make_unique<pragma_includes<data::include_type::quote>>());
+          std::make_unique<core::pragma_includes<data::include_type::quote>>());
 
-      result.emplace(sv{"which"}, std::make_unique<pragma_which>());
+      result.emplace(sv{"which"}, std::make_unique<core::pragma_which>());
 
       result.emplace(sv{"included", "headers"},
-                     std::make_unique<pragma_included_headers>());
+                     std::make_unique<core::pragma_included_headers>());
 
-      result.emplace(sv{"ls"}, std::make_unique<pragma_ls>());
+      result.emplace(sv{"ls"}, std::make_unique<core::pragma_ls>());
 
-      result.emplace(sv{"config"}, std::make_unique<pragma_config>());
-
-      result.emplace(
-          sv{"config", "show"}, std::make_unique<pragma_config_show>());
+      result.emplace(sv{"config"}, std::make_unique<core::pragma_config>());
 
       result.emplace(
-          sv{"config", "load"}, std::make_unique<pragma_config_load>());
+          sv{"config", "show"}, std::make_unique<core::pragma_config_show>());
 
-      result.emplace(sv{"quit"}, std::make_unique<pragma_quit>());
+      result.emplace(
+          sv{"config", "load"}, std::make_unique<core::pragma_config_load>());
+
+      result.emplace(sv{"quit"}, std::make_unique<core::pragma_quit>());
 
       return result;
     }

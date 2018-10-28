@@ -1,5 +1,5 @@
-#ifndef METASHELL_AVAILABLE_ENGINES_HPP
-#define METASHELL_AVAILABLE_ENGINES_HPP
+#ifndef METASHELL_DEFAULTS_AVAILABLE_ENGINES_HPP
+#define METASHELL_DEFAULTS_AVAILABLE_ENGINES_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
@@ -24,9 +24,9 @@
 
 namespace metashell
 {
-  namespace core
+  namespace defaults
   {
-    std::map<std::string, engine_entry> available_engines();
+    std::map<std::string, core::engine_entry> available_engines();
   }
 }
 

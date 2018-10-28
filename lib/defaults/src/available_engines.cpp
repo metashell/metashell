@@ -14,7 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/available_engines.hpp>
+#include <metashell/defaults/available_engines.hpp>
+
 #include <metashell/core/engine_clang.hpp>
 #include <metashell/core/engine_entry.hpp>
 #include <metashell/core/engine_gcc.hpp>
@@ -25,18 +26,18 @@
 
 namespace metashell
 {
-  namespace core
+  namespace defaults
   {
-    std::map<std::string, engine_entry> available_engines()
+    std::map<std::string, core::engine_entry> available_engines()
     {
-      return {{"internal", get_internal_templight_entry()},
-              {"clang", get_engine_clang_entry()},
-              {"templight", get_engine_templight_entry()},
-              {"null", get_engine_null_entry()},
-              {"gcc", get_engine_gcc_entry()},
-              {"msvc", get_engine_vc_entry()},
-              {"wave", get_engine_wave_entry_with_templight_headers()},
-              {"pure_wave", get_engine_wave_entry()}};
+      return {{"internal", core::get_internal_templight_entry()},
+              {"clang", core::get_engine_clang_entry()},
+              {"templight", core::get_engine_templight_entry()},
+              {"null", core::get_engine_null_entry()},
+              {"gcc", core::get_engine_gcc_entry()},
+              {"msvc", core::get_engine_vc_entry()},
+              {"wave", core::get_engine_wave_entry_with_templight_headers()},
+              {"pure_wave", core::get_engine_wave_entry()}};
     }
   }
 }

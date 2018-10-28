@@ -18,8 +18,9 @@
 
 #include <metashell/data/markdown_string.hpp>
 
-#include <metashell/core/available_engines.hpp>
-#include <metashell/core/build_default_pragma_map.hpp>
+#include <metashell/defaults/available_engines.hpp>
+#include <metashell/defaults/pragma_map.hpp>
+
 #include <metashell/core/engine_constant.hpp>
 #include <metashell/core/mdb_command_handler_map.hpp>
 #include <metashell/core/mdb_shell.hpp>
@@ -54,7 +55,7 @@ namespace
     const std::string internal_dir;
     const boost::filesystem::path mdb_temp_dir;
     for (const auto& p :
-         metashell::core::build_default_pragma_map(&cpq, mdb_temp_dir, nullptr))
+         metashell::defaults::pragma_map(&cpq, mdb_temp_dir, nullptr))
     {
       assert(p.second);
 
@@ -88,7 +89,7 @@ namespace
 
   void show_engine_help(std::ostream& out_)
   {
-    const auto engines = metashell::core::available_engines();
+    const auto engines = metashell::defaults::available_engines();
 
     for (const auto& engine : engines)
     {
@@ -107,7 +108,7 @@ namespace
 
   void show_engine_features(std::ostream& out_)
   {
-    const auto engines = metashell::core::available_engines();
+    const auto engines = metashell::defaults::available_engines();
     const auto features = metashell::data::feature::all();
 
     std::vector<metashell::data::markdown_string> header{

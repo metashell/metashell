@@ -1,5 +1,5 @@
-#ifndef METASHELL_CORE_BUILD_DEFAULT_PRAGMA_MAP_HPP
-#define METASHELL_CORE_BUILD_DEFAULT_PRAGMA_MAP_HPP
+#ifndef METASHELL_DEFAULTS_PRAGMA_MAP_HPP
+#define METASHELL_DEFAULTS_PRAGMA_MAP_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -31,12 +31,12 @@
 
 namespace metashell
 {
-  namespace core
+  namespace defaults
   {
     std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>>
-    build_default_pragma_map(command_processor_queue* cpq_,
-                             const boost::filesystem::path& mdb_temp_dir_,
-                             logger* logger_);
+    pragma_map(core::command_processor_queue* cpq_,
+               const boost::filesystem::path& mdb_temp_dir_,
+               core::logger* logger_);
   }
 }
 
