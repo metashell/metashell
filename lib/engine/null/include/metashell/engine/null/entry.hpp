@@ -1,5 +1,5 @@
-#ifndef METASHELL_ENGINE_NULL_HPP
-#define METASHELL_ENGINE_NULL_HPP
+#ifndef METASHELL_ENGINE_NULL_ENTRY_HPP
+#define METASHELL_ENGINE_NULL_ENTRY_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -21,9 +21,12 @@
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    engine_entry get_engine_null_entry();
+    namespace null
+    {
+      core::engine_entry entry();
+    }
   }
 }
 
