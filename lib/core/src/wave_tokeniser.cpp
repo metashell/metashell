@@ -19,7 +19,6 @@
 #pragma warning(disable : 4996)
 #endif
 
-#include <metashell/core/make_unique.hpp>
 #include <metashell/core/wave_token.hpp>
 #include <metashell/core/wave_tokeniser.hpp>
 
@@ -146,7 +145,7 @@ namespace metashell
     std::unique_ptr<iface::tokeniser>
     create_wave_tokeniser(data::cpp_code src_, std::string input_filename_)
     {
-      return core::make_unique<wave_tokeniser>(
+      return std::make_unique<wave_tokeniser>(
           std::move(src_), std::move(input_filename_));
     }
 

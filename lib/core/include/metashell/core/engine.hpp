@@ -21,7 +21,6 @@
 
 #include <metashell/core/feature_validator.hpp>
 #include <metashell/core/if_supported.hpp>
-#include <metashell/core/make_unique.hpp>
 #include <metashell/core/supported.hpp>
 
 #include <metashell/iface/engine.hpp>
@@ -246,7 +245,7 @@ namespace metashell
 
       // clang-format on
 
-      return core::make_unique<engine<
+      return std::make_unique<engine<
           TypeShell, PreprocessorShell, CodeCompleter, HeaderDiscoverer,
           MetaprogramTracer, CppValidator, MacroDiscovery, PreprocessorTracer>>(
           std::move(name_), std::forward<TypeShell>(type_shell_),
