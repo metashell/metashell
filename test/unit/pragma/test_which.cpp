@@ -22,7 +22,6 @@
 #include <metashell/core/command.hpp>
 #include <metashell/core/engine_constant.hpp>
 #include <metashell/core/in_memory_displayer.hpp>
-#include <metashell/core/shell.hpp>
 
 #include <metashell/mock/shell.hpp>
 

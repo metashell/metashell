@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/main_shell/metashell_pragma.hpp>
+#include <metashell/main_shell/process_pragma.hpp>
+#include <metashell/main_shell/shell.hpp>
+
 #include <metashell/core/command.hpp>
 #include <metashell/core/header_file_environment.hpp>
-#include <metashell/core/make_unique.hpp>
 #include <metashell/core/metashell.hpp>
-#include <metashell/core/metashell_pragma.hpp>
 #include <metashell/core/null_history.hpp>
-#include <metashell/core/process_pragma.hpp>
-#include <metashell/core/shell.hpp>
 #include <metashell/core/version.hpp>
 
 #include <metashell/data/command.hpp>
@@ -36,7 +36,7 @@
 
 namespace metashell
 {
-  namespace core
+  namespace main_shell
   {
     namespace
     {
@@ -119,7 +119,7 @@ namespace metashell
                                       const data::cpp_code& tmp_exp_,
                                       bool use_precompiled_headers_,
                                       iface::type_shell& type_shell_,
-                                      logger* logger_)
+                                      core::logger* logger_)
       {
         using std::string;
         using std::pair;
@@ -214,7 +214,7 @@ namespace metashell {
             engine_builder_,
         std::map<std::vector<std::string>,
                  std::unique_ptr<iface::pragma_handler>> pragma_handlers_,
-        logger* logger_,
+        core::logger* logger_,
         std::unique_ptr<iface::environment> env_)
       : _internal_dir(internal_dir_),
         _env_filename(env_filename_),
@@ -253,7 +253,7 @@ namespace metashell {
 
       data::text splash_text;
       splash_text.paragraphs.push_back(
-          paragraph("Template metaprogramming shell " + version()));
+          paragraph("Template metaprogramming shell " + core::version()));
 
       if (!version_desc.empty())
       {
@@ -306,7 +306,7 @@ namespace metashell {
           const std::string s = _line_prefix + s_;
           _line_prefix.clear();
 
-          const data::command cmd = to_command(data::cpp_code(s));
+          const data::command cmd = core::to_command(data::cpp_code(s));
 
           if (has_non_whitespace(s))
           {
@@ -327,7 +327,7 @@ namespace metashell {
               else if (!_echo ||
                        preprocess(displayer_, data::cpp_code(s), true))
               {
-                if (is_environment_setup_command(cmd))
+                if (core::is_environment_setup_command(cmd))
                 {
                   store_in_buffer(data::cpp_code(s), displayer_);
                 }
@@ -417,7 +417,7 @@ namespace metashell {
 
     void shell::rebuild_environment(const data::cpp_code& content_)
     {
-      _env = core::make_unique<header_file_environment>(
+      _env = std::make_unique<core::header_file_environment>(
           try_to_get_shell(engine()), _config.active_shell_config(),
           _internal_dir, _env_filename);
 
@@ -494,7 +494,7 @@ namespace metashell {
     void shell::line_available(const std::string& s_,
                                iface::displayer& displayer_)
     {
-      null_history h;
+      core::null_history h;
       line_available(s_, displayer_, h);
     }
 

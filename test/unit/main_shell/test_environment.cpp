@@ -14,9 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/main_shell/shell.hpp>
+
 #include <metashell/core/engine_constant.hpp>
 #include <metashell/core/header_file_environment.hpp>
-#include <metashell/core/shell.hpp>
 #include <metashell/core/type_shell_constant.hpp>
 
 #include <metashell/iface/environment.hpp>
@@ -70,7 +71,7 @@ TEST(environment, append_text_to_header_file_environment)
 
 TEST(environment, reload_environment_rebuilds_the_environment_object)
 {
-  core::shell sh(test_config(), "", "", core::create_failing_engine());
+  main_shell::shell sh(test_config(), "", "", core::create_failing_engine());
   const iface::environment* old_env_ptr = &sh.env();
 
   sh.rebuild_environment();

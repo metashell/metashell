@@ -11,7 +11,7 @@
       [
         "/bin/bash",
         "-c",
-        "tools/demo_server/bin/splash_info ../../../splash.txt > lib/core/version_desc.hpp"
+        "tools/demo_server/bin/splash_info ../../../splash.txt > lib/main_shell/src/version_desc.hpp"
       ],
       [
         "/bin/bash",

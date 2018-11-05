@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/metashell_pragma.hpp>
-#include <metashell/core/process_pragma.hpp>
+#include <metashell/main_shell/metashell_pragma.hpp>
+#include <metashell/main_shell/process_pragma.hpp>
 
 #include <metashell/data/exception.hpp>
 #include <metashell/data/token.hpp>
@@ -25,7 +25,7 @@
 
 namespace metashell
 {
-  namespace core
+  namespace main_shell
   {
     namespace
     {

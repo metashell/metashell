@@ -1,5 +1,5 @@
 # Metashell - Interactive C++ template metaprogramming shell
-# Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+# Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-project(metashell)
+project(metashell_main_shell_unit_test)
 
 aux_source_directory(. SOURCES)
 add_executable(${PROJECT_NAME} ${SOURCES})
@@ -24,42 +24,21 @@ enable_warnings(${PROJECT_NAME})
 target_link_libraries(
   ${PROJECT_NAME}
 
-  boost::algorithm
-  boost::filesystem
-  boost::range
-  boost::utility
+  googletest
 
-  just::temp
-
-  metashell::core
-  metashell::data
-  metashell::defaults
-  metashell::iface
   metashell::main_shell
-  metashell::readline
+  metashell::mock
 )
 
-install(TARGETS ${PROJECT_NAME} DESTINATION bin COMPONENT metashell)
+add_test(metashell_main_shell_unit_test ${PROJECT_NAME})
 
-set_property(TARGET ${PROJECT_NAME} PROPERTY INSTALL_RPATH_USE_LINK_PATH true)
-
-if (TEMPLIGHT_FOUND)
-  #############################################
-  # Install a custom Templight with Metashell #
-  #############################################
-  
-  include(MetashellTemplight)
-  
-  copy_templight_next_to_binary(true)
-  
-  if (WIN32)
-    # Windows header files
-    copy_all_files_to_binary_dir(
-      "${CMAKE_SOURCE_DIR}/windows_headers"
-      "windows_headers"
-      true
-      windows_headers
-    )
-  endif ()
-endif ()
+# Code coverage
+if (ENABLE_CODE_COVERAGE)
+  SETUP_TARGET_FOR_COVERAGE(
+    test_coverage
+    ${PROJECT_NAME}
+    coverage
+    "'/usr/*';'test/*';'3rd/*'"
+  )
+endif()
 

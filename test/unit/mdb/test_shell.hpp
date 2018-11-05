@@ -23,13 +23,10 @@
 #include <metashell/mdb/metaprogram.hpp>
 #include <metashell/mdb/shell.hpp>
 
-#include <metashell/core/shell.hpp>
-
 class test_shell : public metashell::mdb::shell
 {
 public:
   test_shell(const std::string& line = "");
-  test_shell(metashell::core::shell& shell, const std::string& line = "");
 
   bool has_metaprogram() const;
   const metashell::mdb::metaprogram& get_metaprogram() const;

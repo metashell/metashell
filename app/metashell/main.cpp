@@ -19,13 +19,13 @@
 #include <metashell/defaults/available_engines.hpp>
 #include <metashell/defaults/pragma_map.hpp>
 
+#include <metashell/main_shell/shell.hpp>
+
 #include <metashell/core/default_environment_detector.hpp>
 #include <metashell/core/fstream_file_writer.hpp>
 #include <metashell/core/input_loop.hpp>
 #include <metashell/core/logger.hpp>
-#include <metashell/core/make_unique.hpp>
 #include <metashell/core/parse_config.hpp>
-#include <metashell/core/shell.hpp>
 #include <metashell/core/version.hpp>
 #include <metashell/core/wave_tokeniser.hpp>
 
@@ -116,7 +116,7 @@ int main(int argc_, const char* argv_[])
       create_directories(temp_dir);
       create_directories(mdb_dir);
 
-      auto shell = metashell::core::make_unique<metashell::core::shell>(
+      auto shell = std::make_unique<metashell::main_shell::shell>(
           r.cfg, shell_dir, env_filename,
           // The shell should be destroyed when this scope is left, capturing
           // locals by reference should be safe.

@@ -1,5 +1,5 @@
-#ifndef METASHELL_SHELL_HPP
-#define METASHELL_SHELL_HPP
+#ifndef METASHELL_MAIN_SHELL_SHELL_HPP
+#define METASHELL_MAIN_SHELL_SHELL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,7 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/command_processor_queue.hpp>
 #include <metashell/core/logger.hpp>
 
 #include <metashell/data/config.hpp>
@@ -41,7 +40,7 @@
 
 namespace metashell
 {
-  namespace core
+  namespace main_shell
   {
     class shell : public iface::shell
     {
@@ -54,7 +53,7 @@ namespace metashell
             std::map<std::vector<std::string>,
                      std::unique_ptr<iface::pragma_handler>> pragma_handlers_ =
                 {},
-            logger* logger_ = nullptr,
+            core::logger* logger_ = nullptr,
             std::unique_ptr<iface::environment> env_ =
                 std::unique_ptr<iface::environment>());
 
@@ -120,7 +119,7 @@ namespace metashell
           _pragma_handlers;
       bool _stopped;
       std::stack<data::cpp_code> _environment_stack;
-      logger* _logger;
+      core::logger* _logger;
       std::function<std::unique_ptr<iface::engine>(const data::config&)>
           _engine_builder;
       std::map<std::string, std::unique_ptr<iface::engine>> _engines;

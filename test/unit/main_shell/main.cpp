@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,24 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "run.hpp"
+#include <gtest/gtest.h>
 
-#include <metashell/core/command.hpp>
-#include <metashell/core/metashell_pragma.hpp>
-
-#include <metashell/mock/shell.hpp>
-
-using ::testing::NiceMock;
-
-void run(const metashell::iface::pragma_handler& handler_,
-         const metashell::data::cpp_code& args_,
-         metashell::iface::displayer& displayer_)
+int main(int argc_, char* argv_[])
 {
-  NiceMock<metashell::mock::shell> sh;
-
-  const metashell::data::command cmd = metashell::core::to_command(args_);
-  handler_.run(
-      cmd.begin(), cmd.begin(), cmd.begin(),
-      metashell::core::end_of_pragma_argument_list(cmd.begin(), cmd.end()), sh,
-      displayer_);
+  ::testing::InitGoogleTest(&argc_, argv_);
+  return RUN_ALL_TESTS();
 }

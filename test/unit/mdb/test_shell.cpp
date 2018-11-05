@@ -17,7 +17,7 @@
 #include "test_shell.hpp"
 
 #include <metashell/core/engine_constant.hpp>
-#include <metashell/core/shell.hpp>
+#include <metashell/core/header_file_environment.hpp>
 
 #include <metashell/data/config.hpp>
 
@@ -35,30 +35,26 @@ namespace
     return cfg;
   }
 
-  metashell::core::shell& get_shell()
+  metashell::iface::environment& get_env()
   {
-    static metashell::core::shell sh(get_shell_config(), temp_dir(),
-                                     env_filename(),
-                                     metashell::core::create_failing_engine());
-    return sh;
+    static metashell::core::header_file_environment env(
+        nullptr, get_shell_config().active_shell_config(), temp_dir(),
+        env_filename());
+    return env;
+  }
+
+  metashell::iface::engine& get_engine()
+  {
+    static std::unique_ptr<metashell::iface::engine> engine =
+        metashell::core::create_failing_engine()(get_shell_config());
+    return *engine;
   }
 }
 
 test_shell::test_shell(const std::string& line)
-  : metashell::mdb::shell(get_shell().env(),
-                          get_shell().engine(),
-                          get_shell().env_path(),
-                          mdb_temp_dir(),
-                          false,
-                          nullptr)
-{
-  env.append(metashell::data::cpp_code(line));
-}
-
-test_shell::test_shell(metashell::core::shell& shell, const std::string& line)
-  : metashell::mdb::shell(shell.env(),
-                          shell.engine(),
-                          shell.env_path(),
+  : metashell::mdb::shell(get_env(),
+                          get_engine(),
+                          temp_dir() / "test.hpp",
                           mdb_temp_dir(),
                           false,
                           nullptr)

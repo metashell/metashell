@@ -16,9 +16,10 @@
 
 #include <metashell/pragma/switch_.hpp>
 
+#include <metashell/main_shell/metashell_pragma.hpp>
+
 #include <metashell/core/command.hpp>
 #include <metashell/core/in_memory_displayer.hpp>
-#include <metashell/core/metashell_pragma.hpp>
 
 #include <metashell/mock/shell.hpp>
 
@@ -46,7 +47,8 @@ namespace
     const metashell::data::command cmd =
         metashell::core::to_command(data::cpp_code(arg_));
     p.run(cmd.begin(), cmd.begin(), cmd.begin(),
-          metashell::core::end_of_pragma_argument_list(cmd.begin(), cmd.end()),
+          metashell::main_shell::end_of_pragma_argument_list(
+              cmd.begin(), cmd.end()),
           sh, d);
   }
 }
@@ -70,7 +72,7 @@ TEST(switch_, displays_error_when_extra_arguments_are_given)
   const data::command cmd = core::to_command(data::cpp_code("on foo"));
 
   p.run(cmd.begin(), cmd.begin(), cmd.begin(),
-        core::end_of_pragma_argument_list(cmd.begin(), cmd.end()), sh, d);
+        main_shell::end_of_pragma_argument_list(cmd.begin(), cmd.end()), sh, d);
 
   ASSERT_FALSE(d.errors().empty());
 }

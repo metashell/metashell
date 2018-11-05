@@ -1,5 +1,5 @@
-#ifndef METASHELL_METASHELL_PRAGMA_HPP
-#define METASHELL_METASHELL_PRAGMA_HPP
+#ifndef METASHELL_MAIN_SHELL_METASHELL_PRAGMA_HPP
+#define METASHELL_MAIN_SHELL_METASHELL_PRAGMA_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -25,7 +25,7 @@
 
 namespace metashell
 {
-  namespace core
+  namespace main_shell
   {
     boost::optional<data::command::iterator>
     parse_pragma(const data::command& cmd_);

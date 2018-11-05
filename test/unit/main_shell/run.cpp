@@ -1,6 +1,3 @@
-#ifndef METASHELL_CORE_PROCESS_PRAGMA_HPP
-#define METASHELL_CORE_PROCESS_PRAGMA_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,29 +14,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/command.hpp>
+#include "run.hpp"
 
-#include <metashell/iface/displayer.hpp>
-#include <metashell/iface/pragma_handler.hpp>
-#include <metashell/iface/shell.hpp>
+#include <metashell/main_shell/metashell_pragma.hpp>
 
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
+#include <metashell/core/command.hpp>
 
-namespace metashell
+#include <metashell/mock/shell.hpp>
+
+using ::testing::NiceMock;
+
+void run(const metashell::iface::pragma_handler& handler_,
+         const metashell::data::cpp_code& args_,
+         metashell::iface::displayer& displayer_)
 {
-  namespace core
-  {
-    void process_pragma(
-        const std::map<std::vector<std::string>,
-                       std::unique_ptr<iface::pragma_handler>>& handlers_,
-        const data::command::iterator& begin_,
-        const data::command::iterator& end_,
-        iface::shell& shell_,
-        iface::displayer& displayer_);
-  }
-}
+  NiceMock<metashell::mock::shell> sh;
 
-#endif
+  const metashell::data::command cmd = metashell::core::to_command(args_);
+  handler_.run(cmd.begin(), cmd.begin(), cmd.begin(),
+               metashell::main_shell::end_of_pragma_argument_list(
+                   cmd.begin(), cmd.end()),
+               sh, displayer_);
+}

@@ -14,11 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/main_shell/process_pragma.hpp>
+
 #include <metashell/iface/pragma_handler.hpp>
 
 #include <metashell/core/command.hpp>
 #include <metashell/core/null_displayer.hpp>
-#include <metashell/core/process_pragma.hpp>
 
 #include <metashell/mock/shell.hpp>
 
@@ -69,7 +70,8 @@ TEST(process_pragma, processing_non_existing_handler)
 
   core::null_displayer d;
   mock::shell sh;
-  ASSERT_ANY_THROW(process_pragma({}, cmd.begin(), cmd.end(), sh, d));
+  ASSERT_ANY_THROW(
+      main_shell::process_pragma({}, cmd.begin(), cmd.end(), sh, d));
 }
 
 TEST(process_pragma, processing_existing_handler)
@@ -85,7 +87,7 @@ TEST(process_pragma, processing_existing_handler)
 
   core::null_displayer d;
   mock::shell sh;
-  process_pragma(m, cmd.begin(), cmd.end(), sh, d);
+  main_shell::process_pragma(m, cmd.begin(), cmd.end(), sh, d);
 
   ASSERT_TRUE(foo_run);
 }
@@ -103,7 +105,7 @@ TEST(process_pragma, pragma_with_two_token_name_is_called)
 
   core::null_displayer d;
   mock::shell sh;
-  process_pragma(m, cmd.begin(), cmd.end(), sh, d);
+  main_shell::process_pragma(m, cmd.begin(), cmd.end(), sh, d);
 
   ASSERT_TRUE(foo_bar_run);
 }
@@ -125,7 +127,7 @@ TEST(process_pragma,
 
   core::null_displayer d;
   mock::shell sh;
-  process_pragma(m, cmd.begin(), cmd.end(), sh, d);
+  main_shell::process_pragma(m, cmd.begin(), cmd.end(), sh, d);
 
   ASSERT_FALSE(foo_run);
   ASSERT_TRUE(foo_bar_run);
@@ -147,7 +149,7 @@ TEST(process_pragma, pragma_prefix_is_selected_when_longer_version_is_available)
 
   core::null_displayer d;
   mock::shell sh;
-  process_pragma(m, cmd.begin(), cmd.end(), sh, d);
+  main_shell::process_pragma(m, cmd.begin(), cmd.end(), sh, d);
 
   ASSERT_TRUE(foo_run);
   ASSERT_FALSE(foo_bar_run);

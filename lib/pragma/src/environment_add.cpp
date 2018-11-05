@@ -17,7 +17,6 @@
 #include <metashell/pragma/environment_add.hpp>
 
 #include <metashell/core/metashell.hpp>
-#include <metashell/core/shell.hpp>
 
 namespace metashell
 {
