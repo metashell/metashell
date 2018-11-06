@@ -14,38 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/empty_environment.hpp>
+#include <metashell/engine/wave/cpp_validator.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    empty_environment::empty_environment(
-        const boost::filesystem::path& internal_dir_)
-      : _headers(internal_dir_)
+    namespace wave
     {
-    }
+      cpp_validator::cpp_validator(data::wave_config config_)
+        : _preprocessor(std::move(config_))
+      {
+      }
 
-    void empty_environment::append(const data::cpp_code&)
-    {
-      // ignore
-    }
-
-    data::cpp_code empty_environment::get() const { return data::cpp_code(); }
-
-    data::cpp_code empty_environment::get_appended(const data::cpp_code&) const
-    {
-      return data::cpp_code();
-    }
-
-    const data::headers& empty_environment::get_headers() const
-    {
-      return _headers;
-    }
-
-    data::cpp_code empty_environment::get_all() const
-    {
-      return data::cpp_code();
+      data::result cpp_validator::validate_code(const data::cpp_code& src_,
+                                                const data::config&,
+                                                const iface::environment&,
+                                                bool)
+      {
+        return _preprocessor.precompile(src_);
+      }
     }
   }
 }

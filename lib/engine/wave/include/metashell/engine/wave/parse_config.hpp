@@ -1,5 +1,5 @@
-#ifndef METASHELL_PARSE_WAVE_CONFIG_HPP
-#define METASHELL_PARSE_WAVE_CONFIG_HPP
+#ifndef METASHELL_ENGINE_WAVE_PARSE_CONFIG_HPP
+#define METASHELL_ENGINE_WAVE_PARSE_CONFIG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
@@ -31,18 +31,21 @@
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    data::wave_config
-    parse_wave_config(bool use_templight_headers_,
-                      const std::vector<std::string>& args_,
-                      const std::string& metashell_binary_,
-                      const boost::filesystem::path& internal_dir_,
-                      iface::environment_detector& env_detector_,
-                      iface::displayer& displayer_,
-                      logger* logger_);
+    namespace wave
+    {
+      data::wave_config
+      parse_config(bool use_templight_headers_,
+                   const std::vector<std::string>& args_,
+                   const std::string& metashell_binary_,
+                   const boost::filesystem::path& internal_dir_,
+                   iface::environment_detector& env_detector_,
+                   iface::displayer& displayer_,
+                   core::logger* logger_);
 
-    std::string wave_args(bool use_templight_headers_);
+      std::string args(bool use_templight_headers_);
+    }
   }
 }
 

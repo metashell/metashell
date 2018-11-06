@@ -1,3 +1,6 @@
+#ifndef METASHELL_ENGINE_WAVE_HEADER_DISCOVERER_HPP
+#define METASHELL_ENGINE_WAVE_HEADER_DISCOVERER_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,23 +17,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/cpp_validator_wave.hpp>
+#include <metashell/iface/header_discoverer.hpp>
+
+#include <metashell/data/wave_config.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    cpp_validator_wave::cpp_validator_wave(data::wave_config config_)
-      : _preprocessor(std::move(config_))
+    namespace wave
     {
-    }
+      class header_discoverer : public iface::header_discoverer
+      {
+      public:
+        explicit header_discoverer(data::wave_config config_);
 
-    data::result cpp_validator_wave::validate_code(const data::cpp_code& src_,
-                                                   const data::config&,
-                                                   const iface::environment&,
-                                                   bool)
-    {
-      return _preprocessor.precompile(src_);
+        virtual std::vector<boost::filesystem::path>
+        include_path(data::include_type type_) override;
+
+        virtual std::set<boost::filesystem::path>
+        files_included_by(const data::cpp_code& exp_) override;
+
+      private:
+        data::wave_config _config;
+      };
     }
   }
 }
+
+#endif

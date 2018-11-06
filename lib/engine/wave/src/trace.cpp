@@ -1,6 +1,3 @@
-#ifndef METASHELL_WAVE_TRACE_HPP
-#define METASHELL_WAVE_TRACE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,37 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/wave_trace_impl.hpp>
-
-#include <metashell/data/cpp_code.hpp>
-#include <metashell/data/metaprogram_mode.hpp>
-
-#include <memory>
+#include <metashell/engine/wave/trace.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    class wave_trace
+    namespace wave
     {
-    public:
-      wave_trace(const data::cpp_code& env_,
-                 const boost::optional<data::cpp_code>& exp_,
-                 const data::wave_config& config_,
-                 data::metaprogram_mode mode_);
+      trace::trace(const data::cpp_code& env_,
+                   const boost::optional<data::cpp_code>& exp_,
+                   const data::wave_config& config_,
+                   data::metaprogram_mode mode_)
+        : _impl(new trace_impl(env_, exp_, config_)),
+          _root_name(exp_ ? *exp_ : data::cpp_code("<environment>")),
+          _mode(mode_)
+      {
+      }
 
-      boost::optional<data::event_data> next();
+      boost::optional<data::event_data> trace::next() { return _impl->next(); }
 
-      const data::cpp_code& root_name() const;
+      const data::cpp_code& trace::root_name() const { return _root_name; }
 
-      data::metaprogram_mode mode() const;
-
-    private:
-      std::unique_ptr<wave_trace_impl> _impl;
-      data::cpp_code _root_name;
-      data::metaprogram_mode _mode;
-    };
+      data::metaprogram_mode trace::mode() const { return _mode; }
+    }
   }
 }
-
-#endif

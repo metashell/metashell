@@ -1,6 +1,3 @@
-#ifndef METASHELL_ENGINE_WAVE_HPP
-#define METASHELL_ENGINE_WAVE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,15 +14,42 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/engine_entry.hpp>
+#include <metashell/engine/wave/empty_environment.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    engine_entry get_engine_wave_entry();
-    engine_entry get_engine_wave_entry_with_templight_headers();
+    namespace wave
+    {
+      empty_environment::empty_environment(
+          const boost::filesystem::path& internal_dir_)
+        : _headers(internal_dir_)
+      {
+      }
+
+      void empty_environment::append(const data::cpp_code&)
+      {
+        // ignore
+      }
+
+      data::cpp_code empty_environment::get() const { return data::cpp_code(); }
+
+      data::cpp_code
+      empty_environment::get_appended(const data::cpp_code&) const
+      {
+        return data::cpp_code();
+      }
+
+      const data::headers& empty_environment::get_headers() const
+      {
+        return _headers;
+      }
+
+      data::cpp_code empty_environment::get_all() const
+      {
+        return data::cpp_code();
+      }
+    }
   }
 }
-
-#endif

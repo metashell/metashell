@@ -1,5 +1,5 @@
-#ifndef METASHELL_CPP_VALIDATOR_WAVE_HPP
-#define METASHELL_CPP_VALIDATOR_WAVE_HPP
+#ifndef METASHELL_ENGINE_WAVE_EMPTY_ENVIRONMENT_HPP
+#define METASHELL_ENGINE_WAVE_EMPTY_ENVIRONMENT_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,28 +17,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/cpp_validator.hpp>
-
-#include <metashell/core/preprocessor_shell_wave.hpp>
+#include <metashell/iface/environment.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    class cpp_validator_wave : public iface::cpp_validator
+    namespace wave
     {
-    public:
-      explicit cpp_validator_wave(data::wave_config config_);
+      class empty_environment : public iface::environment
+      {
+      public:
+        explicit empty_environment(
+            const boost::filesystem::path& internal_dir_);
 
-      virtual data::result
-      validate_code(const data::cpp_code& src_,
-                    const data::config& config_,
-                    const iface::environment& env_,
-                    bool use_precompiled_headers_) override;
+        virtual void append(const data::cpp_code& s_) override;
+        virtual data::cpp_code get() const override;
+        virtual data::cpp_code
+        get_appended(const data::cpp_code& s_) const override;
 
-    private:
-      preprocessor_shell_wave _preprocessor;
-    };
+        virtual const data::headers& get_headers() const override;
+
+        virtual data::cpp_code get_all() const override;
+
+      private:
+        data::headers _headers;
+      };
+    }
   }
 }
 

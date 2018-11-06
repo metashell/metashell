@@ -1,5 +1,5 @@
-#ifndef METASHELL_PREPROCESSOR_TRACER_WAVE_HPP
-#define METASHELL_PREPROCESSOR_TRACER_WAVE_HPP
+#ifndef METASHELL_ENGINE_WAVE_MACRO_DISCOVERY_HPP
+#define METASHELL_ENGINE_WAVE_MACRO_DISCOVERY_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,27 +17,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/preprocessor_tracer.hpp>
+#include <metashell/iface/macro_discovery.hpp>
 
 #include <metashell/data/wave_config.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    class preprocessor_tracer_wave : public iface::preprocessor_tracer
+    namespace wave
     {
-    public:
-      explicit preprocessor_tracer_wave(data::wave_config config_);
+      class macro_discovery : public iface::macro_discovery
+      {
+      public:
+        explicit macro_discovery(data::wave_config config_);
 
-      virtual std::unique_ptr<iface::event_data_sequence>
-      eval(iface::environment&,
-           const boost::optional<data::cpp_code>&,
-           data::metaprogram_mode) override;
+        virtual data::cpp_code macros(const iface::environment& env_) override;
 
-    private:
-      data::wave_config _config;
-    };
+      private:
+        data::wave_config _config;
+      };
+    }
   }
 }
 

@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/preprocessor_shell_wave.hpp>
-#include <metashell/core/wave_context.hpp>
+#include <metashell/engine/wave/context.hpp>
+#include <metashell/engine/wave/preprocessor_shell.hpp>
 
 #include <boost/wave.hpp>
 #include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
@@ -32,31 +32,34 @@
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    preprocessor_shell_wave::preprocessor_shell_wave(data::wave_config config_)
-      : _config(std::move(config_))
+    namespace wave
     {
-    }
-
-    data::result preprocessor_shell_wave::precompile(const data::cpp_code& exp_)
-    {
-      try
+      preprocessor_shell::preprocessor_shell(data::wave_config config_)
+        : _config(std::move(config_))
       {
-        wave_context ctx(exp_.begin(), exp_.end(), "<stdin>");
-        core::apply(ctx, _config);
-
-        std::ostringstream s;
-        display(s, ctx, _config.ignore_macro_redefinition);
-        return data::result{true, s.str(), "", ""};
       }
-      catch (const boost::wave::cpp_exception& error_)
+
+      data::result preprocessor_shell::precompile(const data::cpp_code& exp_)
       {
-        return data::result{false, "", to_string(error_), ""};
-      }
-      catch (const std::exception& error_)
-      {
-        return data::result{false, "", error_.what(), ""};
+        try
+        {
+          context ctx(exp_.begin(), exp_.end(), "<stdin>");
+          wave::apply(ctx, _config);
+
+          std::ostringstream s;
+          display(s, ctx, _config.ignore_macro_redefinition);
+          return data::result{true, s.str(), "", ""};
+        }
+        catch (const boost::wave::cpp_exception& error_)
+        {
+          return data::result{false, "", to_string(error_), ""};
+        }
+        catch (const std::exception& error_)
+        {
+          return data::result{false, "", error_.what(), ""};
+        }
       }
     }
   }

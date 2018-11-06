@@ -1,3 +1,6 @@
+#ifndef METASHELL_ENGINE_WAVE_ENTRY_HPP
+#define METASHELL_ENGINE_WAVE_ENTRY_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,34 +17,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/header_discoverer_wave.hpp>
-#include <metashell/core/wave_context.hpp>
+#include <metashell/core/engine_entry.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    header_discoverer_wave::header_discoverer_wave(data::wave_config config_)
-      : _config(std::move(config_))
+    namespace wave
     {
-    }
-
-    std::vector<boost::filesystem::path>
-    header_discoverer_wave::include_path(data::include_type type_)
-    {
-      return get(type_, _config.includes);
-    }
-
-    std::set<boost::filesystem::path>
-    header_discoverer_wave::files_included_by(const data::cpp_code& exp_)
-    {
-      const data::cpp_code exp = exp_ + "\n";
-      std::set<boost::filesystem::path> result;
-      wave_hooks hooks(result);
-      wave_context ctx(exp.begin(), exp.end(), "<stdin>", hooks);
-      core::apply(ctx, _config);
-      preprocess(ctx);
-      return result;
+      core::engine_entry entry();
+      core::engine_entry entry_with_templight_headers();
     }
   }
 }
+
+#endif

@@ -1,5 +1,5 @@
-#ifndef METASHELL_HEADER_DISCOVERER_WAVE_HPP
-#define METASHELL_HEADER_DISCOVERER_WAVE_HPP
+#ifndef METASHELL_ENGINE_WAVE_TRACE_HPP
+#define METASHELL_ENGINE_WAVE_TRACE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,28 +17,39 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/header_discoverer.hpp>
+#include <metashell/engine/wave/trace_impl.hpp>
 
-#include <metashell/data/wave_config.hpp>
+#include <metashell/data/cpp_code.hpp>
+#include <metashell/data/metaprogram_mode.hpp>
+
+#include <memory>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    class header_discoverer_wave : public iface::header_discoverer
+    namespace wave
     {
-    public:
-      explicit header_discoverer_wave(data::wave_config config_);
+      class trace
+      {
+      public:
+        trace(const data::cpp_code& env_,
+              const boost::optional<data::cpp_code>& exp_,
+              const data::wave_config& config_,
+              data::metaprogram_mode mode_);
 
-      virtual std::vector<boost::filesystem::path>
-      include_path(data::include_type type_) override;
+        boost::optional<data::event_data> next();
 
-      virtual std::set<boost::filesystem::path>
-      files_included_by(const data::cpp_code& exp_) override;
+        const data::cpp_code& root_name() const;
 
-    private:
-      data::wave_config _config;
-    };
+        data::metaprogram_mode mode() const;
+
+      private:
+        std::unique_ptr<trace_impl> _impl;
+        data::cpp_code _root_name;
+        data::metaprogram_mode _mode;
+      };
+    }
   }
 }
 

@@ -1,5 +1,5 @@
-#ifndef METASHELL_EMPTY_ENVIRONMENT_HPP
-#define METASHELL_EMPTY_ENVIRONMENT_HPP
+#ifndef METASHELL_ENGINE_WAVE_PREPROCESSOR_TRACER_HPP
+#define METASHELL_ENGINE_WAVE_PREPROCESSOR_TRACER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,29 +17,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/environment.hpp>
+#include <metashell/iface/preprocessor_tracer.hpp>
+
+#include <metashell/data/wave_config.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    class empty_environment : public iface::environment
+    namespace wave
     {
-    public:
-      explicit empty_environment(const boost::filesystem::path& internal_dir_);
+      class preprocessor_tracer : public iface::preprocessor_tracer
+      {
+      public:
+        explicit preprocessor_tracer(data::wave_config config_);
 
-      virtual void append(const data::cpp_code& s_) override;
-      virtual data::cpp_code get() const override;
-      virtual data::cpp_code
-      get_appended(const data::cpp_code& s_) const override;
+        virtual std::unique_ptr<iface::event_data_sequence>
+        eval(iface::environment&,
+             const boost::optional<data::cpp_code>&,
+             data::metaprogram_mode) override;
 
-      virtual const data::headers& get_headers() const override;
-
-      virtual data::cpp_code get_all() const override;
-
-    private:
-      data::headers _headers;
-    };
+      private:
+        data::wave_config _config;
+      };
+    }
   }
 }
 

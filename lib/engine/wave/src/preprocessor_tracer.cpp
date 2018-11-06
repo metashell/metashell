@@ -14,29 +14,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/wave_trace.hpp>
+#include <metashell/engine/wave/preprocessor_tracer.hpp>
+#include <metashell/engine/wave/trace.hpp>
+
+#include <metashell/core/filter_events.hpp>
+
+#include <metashell/data/stdin_name.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    wave_trace::wave_trace(const data::cpp_code& env_,
-                           const boost::optional<data::cpp_code>& exp_,
-                           const data::wave_config& config_,
-                           data::metaprogram_mode mode_)
-      : _impl(new wave_trace_impl(env_, exp_, config_)),
-        _root_name(exp_ ? *exp_ : data::cpp_code("<environment>")),
-        _mode(mode_)
+    namespace wave
     {
+      preprocessor_tracer::preprocessor_tracer(data::wave_config config_)
+        : _config(std::move(config_))
+      {
+      }
+
+      std::unique_ptr<iface::event_data_sequence>
+      preprocessor_tracer::eval(iface::environment& env_,
+                                const boost::optional<data::cpp_code>& exp_,
+                                data::metaprogram_mode mode_)
+      {
+        return core::filter_events(
+            trace(env_.get(), exp_, _config, mode_),
+            data::determine_from_line(
+                env_.get(), exp_, data::stdin_name_in_clang()));
+      }
     }
-
-    boost::optional<data::event_data> wave_trace::next()
-    {
-      return _impl->next();
-    }
-
-    const data::cpp_code& wave_trace::root_name() const { return _root_name; }
-
-    data::metaprogram_mode wave_trace::mode() const { return _mode; }
   }
 }

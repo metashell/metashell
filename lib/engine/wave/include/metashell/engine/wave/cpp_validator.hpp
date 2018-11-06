@@ -1,3 +1,6 @@
+#ifndef METASHELL_ENGINE_WAVE_CPP_VALIDATOR_HPP
+#define METASHELL_ENGINE_WAVE_CPP_VALIDATOR_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,30 +17,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/filter_events.hpp>
-#include <metashell/core/preprocessor_tracer_wave.hpp>
-#include <metashell/core/wave_trace.hpp>
+#include <metashell/iface/cpp_validator.hpp>
 
-#include <metashell/data/stdin_name.hpp>
+#include <metashell/engine/wave/preprocessor_shell.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    preprocessor_tracer_wave::preprocessor_tracer_wave(
-        data::wave_config config_)
-      : _config(std::move(config_))
+    namespace wave
     {
-    }
+      class cpp_validator : public iface::cpp_validator
+      {
+      public:
+        explicit cpp_validator(data::wave_config config_);
 
-    std::unique_ptr<iface::event_data_sequence>
-    preprocessor_tracer_wave::eval(iface::environment& env_,
-                                   const boost::optional<data::cpp_code>& exp_,
-                                   data::metaprogram_mode mode_)
-    {
-      return filter_events(wave_trace(env_.get(), exp_, _config, mode_),
-                           data::determine_from_line(
-                               env_.get(), exp_, data::stdin_name_in_clang()));
+        virtual data::result
+        validate_code(const data::cpp_code& src_,
+                      const data::config& config_,
+                      const iface::environment& env_,
+                      bool use_precompiled_headers_) override;
+
+      private:
+        preprocessor_shell _preprocessor;
+      };
     }
   }
 }
+
+#endif
