@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/vc_binary.hpp>
+#include <metashell/engine/vc/binary.hpp>
 
 #include <metashell/data/exception.hpp>
 
@@ -27,8 +27,8 @@ namespace
   std::pair<std::string, std::string> report_for(const std::string& err_)
   {
     const metashell::data::exit_code_t e{1};
-    return {metashell::core::vc_error_report_on_stdout({e, err_, ""}),
-            metashell::core::vc_error_report_on_stderr(
+    return {metashell::engine::vc::error_report_on_stdout({e, err_, ""}),
+            metashell::engine::vc::error_report_on_stderr(
                 {e, "", "Compiler info\nin multiple lines\n\n" + err_})};
   }
 

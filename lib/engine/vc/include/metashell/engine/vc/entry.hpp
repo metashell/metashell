@@ -1,5 +1,5 @@
-#ifndef METASHELL_PREPROESSOR_SHELL_VC_HPP
-#define METASHELL_PREPROESSOR_SHELL_VC_HPP
+#ifndef METASHELL_ENGINE_VC_ENTRY_HPP
+#define METASHELL_ENGINE_VC_ENTRY_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,24 +17,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/preprocessor_shell.hpp>
-
-#include <metashell/core/vc_binary.hpp>
+#include <metashell/core/engine_entry.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    class preprocessor_shell_vc : public iface::preprocessor_shell
+    namespace vc
     {
-    public:
-      explicit preprocessor_shell_vc(vc_binary vc_binary_);
-
-      virtual data::result precompile(const data::cpp_code& exp_) override;
-
-    private:
-      vc_binary _vc_binary;
-    };
+      core::engine_entry entry();
+    }
   }
 }
 

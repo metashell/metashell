@@ -14,11 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-project(metashell_defaults)
+project(metashell_engine_vc)
 
 aux_source_directory(src SOURCES)
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
-add_library(metashell::defaults ALIAS ${PROJECT_NAME})
+add_library(metashell::engine::vc ALIAS ${PROJECT_NAME})
 
 enable_warnings(${PROJECT_NAME})
 
@@ -28,7 +28,5 @@ target_link_libraries(
   ${PROJECT_NAME}
 
   metashell::core
-  metashell::engine::null
-  metashell::engine::vc
-  metashell::pragma
+  metashell::iface
 )

@@ -1,6 +1,3 @@
-#ifndef METASHELL_ENGINE_VC_HPP
-#define METASHELL_ENGINE_VC_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,14 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/engine_entry.hpp>
+#include <metashell/engine/vc/preprocessor_shell.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    engine_entry get_engine_vc_entry();
+    namespace vc
+    {
+      preprocessor_shell::preprocessor_shell(binary binary_) : _binary(binary_)
+      {
+      }
+
+      data::result preprocessor_shell::precompile(const data::cpp_code& exp_)
+      {
+        const data::process_output output = run(_binary, {"/E"}, exp_);
+
+        const bool success = output.exit_code == data::exit_code_t(0);
+
+        return data::result{success, success ? output.standard_output : "",
+                            success ? "" : error_report_on_stderr(output), ""};
+      }
+    }
   }
 }
-
-#endif

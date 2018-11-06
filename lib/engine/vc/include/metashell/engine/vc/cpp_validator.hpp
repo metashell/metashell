@@ -1,5 +1,5 @@
-#ifndef METASHELL_CPP_VALIDATOR_VC_HPP
-#define METASHELL_CPP_VALIDATOR_VC_HPP
+#ifndef METASHELL_ENGINE_VC_CPP_VALIDATOR_HPP
+#define METASHELL_ENGINE_VC_CPP_VALIDATOR_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -19,34 +19,38 @@
 
 #include <metashell/iface/cpp_validator.hpp>
 
+#include <metashell/engine/vc/binary.hpp>
+
 #include <metashell/core/logger.hpp>
-#include <metashell/core/vc_binary.hpp>
 
 #include <boost/filesystem/path.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    class cpp_validator_vc : public iface::cpp_validator
+    namespace vc
     {
-    public:
-      cpp_validator_vc(const boost::filesystem::path& internal_dir_,
-                       const boost::filesystem::path& env_filename_,
-                       vc_binary vc_binary_,
-                       logger* logger_);
+      class cpp_validator : public iface::cpp_validator
+      {
+      public:
+        cpp_validator(const boost::filesystem::path& internal_dir_,
+                      const boost::filesystem::path& env_filename_,
+                      binary binary_,
+                      core::logger* logger_);
 
-      virtual data::result
-      validate_code(const data::cpp_code& src_,
-                    const data::config& config_,
-                    const iface::environment& env_,
-                    bool use_precompiled_headers_) override;
+        virtual data::result
+        validate_code(const data::cpp_code& src_,
+                      const data::config& config_,
+                      const iface::environment& env_,
+                      bool use_precompiled_headers_) override;
 
-    private:
-      vc_binary _vc_binary;
-      boost::filesystem::path _env_path;
-      logger* _logger;
-    };
+      private:
+        binary _binary;
+        boost::filesystem::path _env_path;
+        core::logger* _logger;
+      };
+    }
   }
 }
 

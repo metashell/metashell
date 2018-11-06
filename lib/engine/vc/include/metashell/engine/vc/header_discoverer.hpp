@@ -1,5 +1,5 @@
-#ifndef METASHELL_HEADER_DISCOVERER_VC_HPP
-#define METASHELL_HEADER_DISCOVERER_VC_HPP
+#ifndef METASHELL_ENGINE_VC_HEADER_DISCOVERER_HPP
+#define METASHELL_ENGINE_VC_HEADER_DISCOVERER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -21,27 +21,30 @@
 
 #include <metashell/data/includes.hpp>
 
-#include <metashell/core/vc_binary.hpp>
+#include <metashell/engine/vc/binary.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    class header_discoverer_vc : public iface::header_discoverer
+    namespace vc
     {
-    public:
-      explicit header_discoverer_vc(vc_binary vc_binary_);
+      class header_discoverer : public iface::header_discoverer
+      {
+      public:
+        explicit header_discoverer(binary binary_);
 
-      virtual std::vector<boost::filesystem::path>
-      include_path(data::include_type type_) override;
+        virtual std::vector<boost::filesystem::path>
+        include_path(data::include_type type_) override;
 
-      virtual std::set<boost::filesystem::path>
-      files_included_by(const data::cpp_code& exp_) override;
+        virtual std::set<boost::filesystem::path>
+        files_included_by(const data::cpp_code& exp_) override;
 
-    private:
-      vc_binary _vc_binary;
-      data::includes _includes;
-    };
+      private:
+        binary _binary;
+        data::includes _includes;
+      };
+    }
   }
 }
 

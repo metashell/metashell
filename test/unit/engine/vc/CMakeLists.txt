@@ -14,21 +14,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-project(metashell_defaults)
+project(metashell_engine_vc_unit_test)
 
-aux_source_directory(src SOURCES)
-add_library(${PROJECT_NAME} STATIC ${SOURCES})
-add_library(metashell::defaults ALIAS ${PROJECT_NAME})
+aux_source_directory(. SOURCES)
+add_executable(${PROJECT_NAME} ${SOURCES})
 
 enable_warnings(${PROJECT_NAME})
-
-target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 target_link_libraries(
   ${PROJECT_NAME}
 
-  metashell::core
-  metashell::engine::null
+  googletest
+
   metashell::engine::vc
-  metashell::pragma
 )
+
+add_test(metashell_engine_vc_unit_test ${PROJECT_NAME})
+
+# Code coverage
+if (ENABLE_CODE_COVERAGE)
+  SETUP_TARGET_FOR_COVERAGE(
+    test_coverage
+    ${PROJECT_NAME}
+    coverage
+    "'/usr/*';'test/*';'3rd/*'"
+  )
+endif()
+
