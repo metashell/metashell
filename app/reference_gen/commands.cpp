@@ -24,8 +24,6 @@
 #include <metashell/mdb/command_handler_map.hpp>
 #include <metashell/mdb/shell.hpp>
 
-#include <metashell/core/engine_constant.hpp>
-
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>
 

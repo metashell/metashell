@@ -16,9 +16,10 @@
 
 #include <metashell/main_shell/shell.hpp>
 
-#include <metashell/core/engine_constant.hpp>
+#include <metashell/engine/constant/builder.hpp>
+#include <metashell/engine/constant/type_shell.hpp>
+
 #include <metashell/core/header_file_environment.hpp>
-#include <metashell/core/type_shell_constant.hpp>
 
 #include <metashell/iface/environment.hpp>
 
@@ -52,7 +53,7 @@ TEST(environment, empty_header_file_environment_is_empty)
   data::shell_config cfg{};
   cfg.use_precompiled_headers = false;
 
-  core::type_shell_constant type_shell(failing_data());
+  engine::constant::type_shell type_shell(failing_data());
   core::header_file_environment env(&type_shell, cfg, "", "");
 
   ASSERT_EQ("", env.get_all());
@@ -63,7 +64,7 @@ TEST(environment, append_text_to_header_file_environment)
   data::shell_config cfg{};
   cfg.use_precompiled_headers = false;
 
-  core::type_shell_constant type_shell(failing_data());
+  engine::constant::type_shell type_shell(failing_data());
   core::header_file_environment env(&type_shell, cfg, "", "");
 
   test_append_text_to_environment(env);
@@ -71,7 +72,8 @@ TEST(environment, append_text_to_header_file_environment)
 
 TEST(environment, reload_environment_rebuilds_the_environment_object)
 {
-  main_shell::shell sh(test_config(), "", "", core::create_failing_engine());
+  main_shell::shell sh(
+      test_config(), "", "", engine::constant::create_failing());
   const iface::environment* old_env_ptr = &sh.env();
 
   sh.rebuild_environment();

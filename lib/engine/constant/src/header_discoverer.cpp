@@ -1,6 +1,3 @@
-#ifndef METASHELL_CODE_COMPLETER_CONSTANT_HPP
-#define METASHELL_CODE_COMPLETER_CONSTANT_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,21 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/code_completer.hpp>
+#include <metashell/engine/constant/header_discoverer.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    class code_completer_constant : public iface::code_completer
+    namespace constant
     {
-    public:
-      virtual void code_complete(const iface::environment&,
-                                 const std::string&,
-                                 std::set<std::string>&,
-                                 bool) override;
-    };
+      header_discoverer::header_discoverer(
+          std::vector<boost::filesystem::path> sysincludes_,
+          std::vector<boost::filesystem::path> quoteincludes_)
+        : _includes(move(sysincludes_), move(quoteincludes_))
+      {
+      }
+
+      std::vector<boost::filesystem::path>
+      header_discoverer::include_path(data::include_type type_)
+      {
+        return get(type_, _includes);
+      }
+
+      std::set<boost::filesystem::path>
+      header_discoverer::files_included_by(const data::cpp_code&)
+      {
+        return std::set<boost::filesystem::path>();
+      }
+    }
   }
 }
-
-#endif

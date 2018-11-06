@@ -16,7 +16,8 @@
 
 #include "test_shell.hpp"
 
-#include <metashell/core/engine_constant.hpp>
+#include <metashell/engine/constant/builder.hpp>
+
 #include <metashell/core/header_file_environment.hpp>
 
 #include <metashell/data/config.hpp>
@@ -46,7 +47,7 @@ namespace
   metashell::iface::engine& get_engine()
   {
     static std::unique_ptr<metashell::iface::engine> engine =
-        metashell::core::create_failing_engine()(get_shell_config());
+        metashell::engine::constant::create_failing()(get_shell_config());
     return *engine;
   }
 }

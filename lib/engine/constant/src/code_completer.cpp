@@ -14,21 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/preprocessor_shell_constant.hpp>
+#include <metashell/engine/constant/code_completer.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    preprocessor_shell_constant::preprocessor_shell_constant(
-        data::result result_)
-      : _result(std::move(result_))
+    namespace constant
     {
-    }
-
-    data::result preprocessor_shell_constant::precompile(const data::cpp_code&)
-    {
-      return _result;
+      void code_completer::code_complete(const iface::environment&,
+                                         const std::string&,
+                                         std::set<std::string>&,
+                                         bool)
+      {
+        // ignore
+      }
     }
   }
 }

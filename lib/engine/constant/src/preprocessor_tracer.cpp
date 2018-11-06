@@ -1,8 +1,5 @@
-#ifndef METASHELL_MACRO_DISCOVERY_CONSTANT_HPP
-#define METASHELL_MACRO_DISCOVERY_CONSTANT_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,18 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/macro_discovery.hpp>
+#include <metashell/engine/constant/preprocessor_tracer.hpp>
+
+#include <metashell/core/event_data_sequence.hpp>
+
+#include <metashell/data/in_memory_event_data_sequence.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    class macro_discovery_constant : public iface::macro_discovery
+    namespace constant
     {
-    public:
-      virtual data::cpp_code macros(const iface::environment&) override;
-    };
+      std::unique_ptr<iface::event_data_sequence>
+      preprocessor_tracer::eval(iface::environment&,
+                                const boost::optional<data::cpp_code>&,
+                                data::metaprogram_mode mode_)
+      {
+        return core::make_event_data_sequence_ptr(
+            data::in_memory_event_data_sequence{data::cpp_code{}, mode_, {}});
+      }
+    }
   }
 }
-
-#endif

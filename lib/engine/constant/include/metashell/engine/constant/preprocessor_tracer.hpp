@@ -1,8 +1,8 @@
-#ifndef METASHELL_CPP_VALIDATOR_CONSTANT_HPP
-#define METASHELL_CPP_VALIDATOR_CONSTANT_HPP
+#ifndef METASHELL_ENGINE_CONSTANT_PREPROCESSOR_TRACER_HPP
+#define METASHELL_ENGINE_CONSTANT_PREPROCESSOR_TRACER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,25 +17,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/cpp_validator.hpp>
+#include <metashell/iface/preprocessor_tracer.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    class cpp_validator_constant : public iface::cpp_validator
+    namespace constant
     {
-    public:
-      explicit cpp_validator_constant(data::result result_);
-
-      virtual data::result validate_code(const data::cpp_code&,
-                                         const data::config&,
-                                         const iface::environment&,
-                                         bool) override;
-
-    private:
-      data::result _result;
-    };
+      class preprocessor_tracer : public iface::preprocessor_tracer
+      {
+      public:
+        virtual std::unique_ptr<iface::event_data_sequence>
+        eval(iface::environment&,
+             const boost::optional<data::cpp_code>&,
+             data::metaprogram_mode) override;
+      };
+    }
   }
 }
 

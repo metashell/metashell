@@ -16,7 +16,8 @@
 
 #include <metashell/pragma/includes.hpp>
 
-#include <metashell/core/engine_constant.hpp>
+#include <metashell/engine/constant/builder.hpp>
+
 #include <metashell/core/in_memory_displayer.hpp>
 
 #include <metashell/mock/shell.hpp>
@@ -42,7 +43,7 @@ namespace
   std::vector<std::vector<boost::filesystem::path>> pragma_includes_displays()
   {
     std::unique_ptr<iface::engine> engine =
-        core::create_engine_with_include_path(
+        engine::constant::create_with_include_path(
             Type, {"foo", "bar"})(data::config());
     NiceMock<mock::shell> sh;
     ON_CALL(sh, engine()).WillByDefault(ReturnRef(*engine));

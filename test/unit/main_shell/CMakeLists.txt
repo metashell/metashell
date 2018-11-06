@@ -26,6 +26,7 @@ target_link_libraries(
 
   googletest
 
+  metashell::engine::constant
   metashell::main_shell
   metashell::mock
 )

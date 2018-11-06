@@ -1,3 +1,6 @@
+#ifndef METASHELL_ENGINE_CONSTANT_MACRO_DISCOVERY_HPP
+#define METASHELL_ENGINE_CONSTANT_MACRO_DISCOVERY_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,15 +17,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/macro_discovery_constant.hpp>
+#include <metashell/iface/macro_discovery.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    data::cpp_code macro_discovery_constant::macros(const iface::environment&)
+    namespace constant
     {
-      return data::cpp_code();
+      class macro_discovery : public iface::macro_discovery
+      {
+      public:
+        virtual data::cpp_code macros(const iface::environment&) override;
+      };
     }
   }
 }
+
+#endif

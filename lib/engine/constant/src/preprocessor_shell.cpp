@@ -1,6 +1,3 @@
-#ifndef METASHELL_METAPROGRAM_TRACER_CONSTANT_HPP
-#define METASHELL_METAPROGRAM_TRACER_CONSTANT_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,23 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/metaprogram_tracer.hpp>
+#include <metashell/engine/constant/preprocessor_shell.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    class metaprogram_tracer_constant : public iface::metaprogram_tracer
+    namespace constant
     {
-    public:
-      virtual std::unique_ptr<iface::event_data_sequence>
-      eval(iface::environment&,
-           const boost::filesystem::path&,
-           const boost::optional<data::cpp_code>&,
-           data::metaprogram_mode,
-           iface::displayer&) override;
-    };
+      preprocessor_shell::preprocessor_shell(data::result result_)
+        : _result(std::move(result_))
+      {
+      }
+
+      data::result preprocessor_shell::precompile(const data::cpp_code&)
+      {
+        return _result;
+      }
+    }
   }
 }
-
-#endif

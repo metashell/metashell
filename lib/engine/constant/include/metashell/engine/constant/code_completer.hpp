@@ -1,5 +1,5 @@
-#ifndef METASHELL_TYPE_SHELL_CONSTANT_HPP
-#define METASHELL_TYPE_SHELL_CONSTANT_HPP
+#ifndef METASHELL_ENGINE_CONSTANT_CODE_COMPLETER_HPP
+#define METASHELL_ENGINE_CONSTANT_CODE_COMPLETER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,27 +17,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/type_shell.hpp>
+#include <metashell/iface/code_completer.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    class type_shell_constant : public iface::type_shell
+    namespace constant
     {
-    public:
-      explicit type_shell_constant(data::result result_);
-
-      virtual data::result eval(const iface::environment&,
-                                const boost::optional<data::cpp_code>&,
-                                bool) override;
-
-      virtual void
-      generate_precompiled_header(const boost::filesystem::path&) override;
-
-    private:
-      data::result _result;
-    };
+      class code_completer : public iface::code_completer
+      {
+      public:
+        virtual void code_complete(const iface::environment&,
+                                   const std::string&,
+                                   std::set<std::string>&,
+                                   bool) override;
+      };
+    }
   }
 }
 

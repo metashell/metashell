@@ -1,5 +1,8 @@
+#ifndef METASHELL_ENGINE_CONSTANT_BUILDER_HPP
+#define METASHELL_ENGINE_CONSTANT_BUILDER_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,18 +17,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/code_completer_constant.hpp>
+#include <metashell/iface/engine.hpp>
+
+#include <functional>
+#include <memory>
+#include <string>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    void code_completer_constant::code_complete(const iface::environment&,
-                                                const std::string&,
-                                                std::set<std::string>&,
-                                                bool)
+    namespace constant
     {
-      // ignore
+      std::function<std::unique_ptr<iface::engine>(const data::config&)>
+      create_failing();
+
+      std::function<std::unique_ptr<iface::engine>(const data::config&)>
+      create_returning_type(const std::string& type_);
+
+      std::function<std::unique_ptr<iface::engine>(const data::config&)>
+      create_with_include_path(data::include_type type_,
+                               std::vector<boost::filesystem::path> path_);
     }
   }
 }
+
+#endif

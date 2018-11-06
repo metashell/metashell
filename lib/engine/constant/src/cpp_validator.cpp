@@ -14,27 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/type_shell_constant.hpp>
+#include <metashell/engine/constant/cpp_validator.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    type_shell_constant::type_shell_constant(data::result result_)
-      : _result(std::move(result_))
+    namespace constant
     {
-    }
+      cpp_validator::cpp_validator(data::result result_)
+        : _result(std::move(result_))
+      {
+      }
 
-    data::result type_shell_constant::eval(
-        const iface::environment&, const boost::optional<data::cpp_code>&, bool)
-    {
-      return _result;
-    }
-
-    void type_shell_constant::generate_precompiled_header(
-        const boost::filesystem::path&)
-    {
-      // ignore
+      data::result cpp_validator::validate_code(const data::cpp_code&,
+                                                const data::config&,
+                                                const iface::environment&,
+                                                bool)
+      {
+        return _result;
+      }
     }
   }
 }

@@ -1,8 +1,8 @@
-#ifndef METASHELL_ENGINE_CONSTANT_HPP
-#define METASHELL_ENGINE_CONSTANT_HPP
+#ifndef METASHELL_ENGINE_CONSTANT_TYPE_SHELL_HPP
+#define METASHELL_ENGINE_CONSTANT_TYPE_SHELL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,25 +17,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/engine.hpp>
-
-#include <functional>
-#include <memory>
-#include <string>
+#include <metashell/iface/type_shell.hpp>
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    std::function<std::unique_ptr<iface::engine>(const data::config&)>
-    create_failing_engine();
+    namespace constant
+    {
+      class type_shell : public iface::type_shell
+      {
+      public:
+        explicit type_shell(data::result result_);
 
-    std::function<std::unique_ptr<iface::engine>(const data::config&)>
-    create_engine_returning_type(const std::string& type_);
+        virtual data::result eval(const iface::environment&,
+                                  const boost::optional<data::cpp_code>&,
+                                  bool) override;
 
-    std::function<std::unique_ptr<iface::engine>(const data::config&)>
-    create_engine_with_include_path(data::include_type type_,
-                                    std::vector<boost::filesystem::path> path_);
+        virtual void
+        generate_precompiled_header(const boost::filesystem::path&) override;
+
+      private:
+        data::result _result;
+      };
+    }
   }
 }
 
