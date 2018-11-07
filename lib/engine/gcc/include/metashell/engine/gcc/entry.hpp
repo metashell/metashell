@@ -1,5 +1,5 @@
-#ifndef METASHELL_ENGINE_GCC_HPP
-#define METASHELL_ENGINE_GCC_HPP
+#ifndef METASHELL_ENGINE_GCC_ENTRY_HPP
+#define METASHELL_ENGINE_GCC_ENTRY_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -21,9 +21,12 @@
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    engine_entry get_engine_gcc_entry();
+    namespace gcc
+    {
+      core::engine_entry entry();
+    }
   }
 }
 

@@ -16,13 +16,13 @@
 
 #include <metashell/defaults/available_engines.hpp>
 
+#include <metashell/engine/gcc/entry.hpp>
 #include <metashell/engine/null/entry.hpp>
 #include <metashell/engine/vc/entry.hpp>
 #include <metashell/engine/wave/entry.hpp>
 
 #include <metashell/core/engine_clang.hpp>
 #include <metashell/core/engine_entry.hpp>
-#include <metashell/core/engine_gcc.hpp>
 #include <metashell/core/engine_templight.hpp>
 
 namespace metashell
@@ -35,7 +35,7 @@ namespace metashell
               {"clang", core::get_engine_clang_entry()},
               {"templight", core::get_engine_templight_entry()},
               {"null", engine::null::entry()},
-              {"gcc", core::get_engine_gcc_entry()},
+              {"gcc", engine::gcc::entry()},
               {"msvc", engine::vc::entry()},
               {"wave", engine::wave::entry_with_templight_headers()},
               {"pure_wave", engine::wave::entry()}};
