@@ -1,5 +1,5 @@
-#ifndef METASHELL_ENGINE_TEMPLIGHT_HPP
-#define METASHELL_ENGINE_TEMPLIGHT_HPP
+#ifndef METASHELL_ENGINE_TEMPLIGHT_ENTRY_HPP
+#define METASHELL_ENGINE_TEMPLIGHT_ENTRY_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
@@ -21,10 +21,12 @@
 
 namespace metashell
 {
-  namespace core
+  namespace engine
   {
-    engine_entry get_engine_templight_entry();
-    engine_entry get_internal_templight_entry();
+    namespace templight
+    {
+      core::engine_entry entry(bool use_internal_templight_);
+    }
   }
 }
 

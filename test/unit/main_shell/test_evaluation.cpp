@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/mock/environment.hpp>
 #include <metashell/mock/environment_detector.hpp>
 
 #include <metashell/data/empty_container.hpp>
 
-#include "breaking_environment.hpp"
 #include "test_config.hpp"
 
 #include <metashell/main_shell/shell.hpp>
@@ -26,7 +26,6 @@
 #include <metashell/engine/constant/builder.hpp>
 
 #include <metashell/core/command.hpp>
-#include <metashell/core/engine_templight.hpp>
 #include <metashell/core/in_memory_displayer.hpp>
 #include <metashell/core/in_memory_history.hpp>
 #include <metashell/core/metashell.hpp>
@@ -37,6 +36,7 @@
 using namespace metashell;
 using ::testing::NiceMock;
 using ::testing::Return;
+using ::testing::Throw;
 using ::testing::_;
 
 TEST(evaluation, accept_empty_input)
@@ -205,40 +205,15 @@ TEST(evaluation, throwing_environment_update_not_breaking_shell)
   data::config cfg;
   cfg.push_back(data::shell_config());
 
-  breaking_environment* e = new breaking_environment();
+  auto e = new NiceMock<mock::environment>();
   core::in_memory_displayer d;
   main_shell::shell sh(cfg, "", "", engine::constant::create_failing(), {},
-                       nullptr, std::unique_ptr<breaking_environment>(e));
-  e->append_throw_from_now();
+                       nullptr, std::unique_ptr<iface::environment>(e));
+  ON_CALL(*e, append(_)).WillByDefault(Throw(std::runtime_error("some error")));
 
   sh.store_in_buffer(data::cpp_code("typedef int foo;"), d);
 
   ASSERT_FALSE(d.errors().empty());
-}
-
-TEST(evaluation, throwing_environment_not_breaking_validate)
-{
-  data::config cfg;
-  cfg.push_back(data::shell_config());
-
-  NiceMock<mock::environment_detector> det;
-  breaking_environment e;
-  e.get_appended_throw_from_now();
-  core::null_displayer d;
-
-  ON_CALL(det, on_windows()).WillByDefault(Return(false));
-  ON_CALL(det, on_osx()).WillByDefault(Return(false));
-  ON_CALL(det, directory_of_executable()).WillByDefault(Return(""));
-  ON_CALL(det, file_exists(_)).WillByDefault(Return(true));
-
-  const data::result r =
-      core::get_internal_templight_entry()
-          .build(cfg, "", "", "env.hpp", det, d, nullptr)
-          ->cpp_validator()
-          .validate_code(data::cpp_code("typedef int foo;"), cfg, e, false);
-
-  ASSERT_FALSE(r.successful);
-  ASSERT_FALSE(r.error.empty());
 }
 
 TEST(evaluation, variable_definition)

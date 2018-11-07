@@ -30,6 +30,7 @@ target_link_libraries(
   metashell::core
   metashell::engine::gcc
   metashell::engine::null
+  metashell::engine::templight
   metashell::engine::vc
   metashell::engine::wave
   metashell::pragma
