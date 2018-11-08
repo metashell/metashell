@@ -30,7 +30,7 @@ namespace metashell
       namespace
       {
         data::type_or_code_or_error
-        run_metaprogram(core::clang_binary& clang_binary_,
+        run_metaprogram(clang::binary& clang_binary_,
                         const boost::optional<data::cpp_code>& expression_,
                         const boost::filesystem::path& output_path_,
                         iface::environment& env_,
@@ -61,8 +61,7 @@ namespace metashell
         }
       }
 
-      metaprogram_tracer::metaprogram_tracer(
-          core::clang_binary templight_binary_)
+      metaprogram_tracer::metaprogram_tracer(clang::binary templight_binary_)
         : _templight_binary(templight_binary_)
       {
       }

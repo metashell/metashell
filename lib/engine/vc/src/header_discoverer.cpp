@@ -16,8 +16,6 @@
 
 #include <metashell/engine/vc/header_discoverer.hpp>
 
-#include <metashell/core/includes_cache.hpp>
-
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/split.hpp>

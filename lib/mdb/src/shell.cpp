@@ -20,7 +20,6 @@
 #include <metashell/mdb/shell.hpp>
 
 #include <metashell/core/highlight_syntax.hpp>
-#include <metashell/core/metashell.hpp>
 #include <metashell/core/null_history.hpp>
 
 #include <metashell/data/exception.hpp>

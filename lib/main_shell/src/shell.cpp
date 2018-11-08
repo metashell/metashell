@@ -20,7 +20,7 @@
 
 #include <metashell/core/command.hpp>
 #include <metashell/core/header_file_environment.hpp>
-#include <metashell/core/metashell.hpp>
+#include <metashell/core/is_environment_setup_command.hpp>
 #include <metashell/core/null_history.hpp>
 #include <metashell/core/version.hpp>
 

@@ -16,7 +16,7 @@
 
 #include <metashell/pragma/evaluate.hpp>
 
-#include <metashell/core/metashell.hpp>
+#include <metashell/core/is_environment_setup_command.hpp>
 
 namespace metashell
 {

@@ -17,15 +17,16 @@
 #include <metashell/engine/templight/entry.hpp>
 #include <metashell/engine/templight/metaprogram_tracer.hpp>
 
-#include <metashell/core/clang_binary.hpp>
-#include <metashell/core/code_completer_clang.hpp>
-#include <metashell/core/cpp_validator_clang.hpp>
+#include <metashell/engine/clang/binary.hpp>
+#include <metashell/engine/clang/code_completer.hpp>
+#include <metashell/engine/clang/cpp_validator.hpp>
+#include <metashell/engine/clang/header_discoverer.hpp>
+#include <metashell/engine/clang/macro_discovery.hpp>
+#include <metashell/engine/clang/preprocessor_shell.hpp>
+#include <metashell/engine/clang/type_shell.hpp>
+
 #include <metashell/core/engine.hpp>
-#include <metashell/core/header_discoverer_clang.hpp>
-#include <metashell/core/macro_discovery_clang.hpp>
 #include <metashell/core/not_supported.hpp>
-#include <metashell/core/preprocessor_shell_clang.hpp>
-#include <metashell/core/type_shell_clang.hpp>
 
 namespace metashell
 {
@@ -58,27 +59,25 @@ namespace metashell
         {
           using core::not_supported;
 
-          const core::clang_binary cbin(
+          const clang::binary cbin(
               UseInternalTemplight,
-              find_clang(UseInternalTemplight,
-                         config_.active_shell_config().engine_args,
-                         config_.metashell_binary,
-                         config_.active_shell_config().engine, env_detector_,
-                         displayer_, logger_),
+              clang::find_clang(UseInternalTemplight,
+                                config_.active_shell_config().engine_args,
+                                config_.metashell_binary,
+                                config_.active_shell_config().engine,
+                                env_detector_, displayer_, logger_),
               config_.active_shell_config().engine_args, internal_dir_,
               env_detector_, logger_);
 
           return core::make_engine(
               config_.active_shell_config().engine,
-              core::type_shell_clang(
-                  internal_dir_, env_filename_, cbin, logger_),
-              core::preprocessor_shell_clang(cbin),
-              core::code_completer_clang(
+              clang::type_shell(internal_dir_, env_filename_, cbin, logger_),
+              clang::preprocessor_shell(cbin),
+              clang::code_completer(
                   internal_dir_, temp_dir_, env_filename_, cbin, logger_),
-              core::header_discoverer_clang(cbin), metaprogram_tracer(cbin),
-              core::cpp_validator_clang(
-                  internal_dir_, env_filename_, cbin, logger_),
-              core::macro_discovery_clang(cbin), not_supported(),
+              clang::header_discoverer(cbin), metaprogram_tracer(cbin),
+              clang::cpp_validator(internal_dir_, env_filename_, cbin, logger_),
+              clang::macro_discovery(cbin), not_supported(),
               supported_features());
         }
       } // anonymous namespace

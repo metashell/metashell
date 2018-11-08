@@ -28,7 +28,7 @@
 #include <metashell/core/command.hpp>
 #include <metashell/core/in_memory_displayer.hpp>
 #include <metashell/core/in_memory_history.hpp>
-#include <metashell/core/metashell.hpp>
+#include <metashell/core/is_environment_setup_command.hpp>
 #include <metashell/core/null_displayer.hpp>
 
 #include <gtest/gtest.h>

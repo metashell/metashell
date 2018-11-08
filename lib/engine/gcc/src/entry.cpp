@@ -16,13 +16,15 @@
 
 #include <metashell/engine/gcc/entry.hpp>
 
-#include <metashell/core/clang_binary.hpp>
-#include <metashell/core/cpp_validator_clang.hpp>
+#include <metashell/engine/clang/binary.hpp>
+
+#include <metashell/engine/clang/cpp_validator.hpp>
+#include <metashell/engine/clang/header_discoverer.hpp>
+#include <metashell/engine/clang/macro_discovery.hpp>
+#include <metashell/engine/clang/preprocessor_shell.hpp>
+
 #include <metashell/core/engine.hpp>
-#include <metashell/core/header_discoverer_clang.hpp>
-#include <metashell/core/macro_discovery_clang.hpp>
 #include <metashell/core/not_supported.hpp>
-#include <metashell/core/preprocessor_shell_clang.hpp>
 
 namespace metashell
 {
@@ -115,18 +117,17 @@ namespace metashell
           const boost::filesystem::path clang_path = extract_gcc_binary(
               config_.active_shell_config().engine_args, env_detector_,
               config_.metashell_binary, config_.active_shell_config().engine);
-          core::clang_binary cbin(
-              clang_path, gcc_args(config_.active_shell_config().engine_args,
-                                   internal_dir_),
-              logger_);
+          clang::binary cbin(clang_path,
+                             gcc_args(config_.active_shell_config().engine_args,
+                                      internal_dir_),
+                             logger_);
 
           return core::make_engine(
               config_.active_shell_config().engine, not_supported(),
-              core::preprocessor_shell_clang(cbin), not_supported(),
-              core::header_discoverer_clang(cbin), not_supported(),
-              core::cpp_validator_clang(
-                  internal_dir_, env_filename_, cbin, logger_),
-              core::macro_discovery_clang(cbin), not_supported(),
+              clang::preprocessor_shell(cbin), not_supported(),
+              clang::header_discoverer(cbin), not_supported(),
+              clang::cpp_validator(internal_dir_, env_filename_, cbin, logger_),
+              clang::macro_discovery(cbin), not_supported(),
               supported_features());
         }
       } // anonymous namespace

@@ -43,9 +43,7 @@ target_link_libraries(
 
   metashell::data
   metashell::iface
-  metashell::process
 
   mindent
   rapidjson
-  yaml_cpp
 )

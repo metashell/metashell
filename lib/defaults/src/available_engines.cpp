@@ -16,13 +16,13 @@
 
 #include <metashell/defaults/available_engines.hpp>
 
+#include <metashell/engine/clang/entry.hpp>
 #include <metashell/engine/gcc/entry.hpp>
 #include <metashell/engine/null/entry.hpp>
 #include <metashell/engine/templight/entry.hpp>
 #include <metashell/engine/vc/entry.hpp>
 #include <metashell/engine/wave/entry.hpp>
 
-#include <metashell/core/engine_clang.hpp>
 #include <metashell/core/engine_entry.hpp>
 
 namespace metashell
@@ -32,7 +32,7 @@ namespace metashell
     std::map<std::string, core::engine_entry> available_engines()
     {
       return {{"internal", engine::templight::entry(true)},
-              {"clang", core::get_engine_clang_entry()},
+              {"clang", engine::clang::entry()},
               {"templight", engine::templight::entry(false)},
               {"null", engine::null::entry()},
               {"gcc", engine::gcc::entry()},

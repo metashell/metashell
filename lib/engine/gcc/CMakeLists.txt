@@ -28,5 +28,6 @@ target_link_libraries(
   ${PROJECT_NAME}
 
   metashell::core
+  metashell::engine::clang
   metashell::iface
 )

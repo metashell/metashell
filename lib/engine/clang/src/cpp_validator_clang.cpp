@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/engine/vc/cpp_validator.hpp>
+#include <metashell/engine/clang/cpp_validator.hpp>
+
+#include <boost/algorithm/string/trim.hpp>
 
 #include <stdexcept>
 
@@ -22,7 +24,7 @@ namespace metashell
 {
   namespace engine
   {
-    namespace vc
+    namespace clang
     {
       cpp_validator::cpp_validator(const boost::filesystem::path& internal_dir_,
                                    const boost::filesystem::path& env_filename_,
@@ -37,21 +39,28 @@ namespace metashell
       data::result cpp_validator::validate_code(const data::cpp_code& src_,
                                                 const data::config& config_,
                                                 const iface::environment& env_,
-                                                bool)
+                                                bool use_precompiled_headers_)
       {
         METASHELL_LOG(_logger, "Validating code " + src_.value());
 
         try
         {
           const data::cpp_code src = env_.get_appended(src_);
-          const data::process_output output = run(_binary, {"/c"}, src);
-          const std::string error = error_report_on_stdout(output);
+          std::vector<std::string> clang_args{"-fsyntax-only"};
+          if (use_precompiled_headers_)
+          {
+            clang_args.push_back("-include");
+            clang_args.push_back(_env_path.string());
+          }
 
-          const bool accept =
-              output.exit_code == data::exit_code_t(0) && error.empty();
+          const data::process_output output =
+              run_clang(_binary, clang_args, src);
 
-          return data::result{
-              accept, "", error, accept && config_.verbose ? src.value() : ""};
+          const bool accept = output.exit_code == data::exit_code_t(0) &&
+                              output.standard_error.empty();
+
+          return data::result{accept, "", output.standard_error,
+                              accept && config_.verbose ? src.value() : ""};
         }
         catch (const std::exception& e)
         {

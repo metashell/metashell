@@ -29,4 +29,5 @@ target_link_libraries(
 
   metashell::core
   metashell::iface
+  metashell::process
 )

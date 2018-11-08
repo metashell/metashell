@@ -17,9 +17,10 @@
 #include <metashell/engine/wave/empty_environment.hpp>
 #include <metashell/engine/wave/parse_config.hpp>
 
-#include <metashell/core/clang_binary.hpp>
-#include <metashell/core/header_discoverer_clang.hpp>
-#include <metashell/core/macro_discovery_clang.hpp>
+#include <metashell/engine/clang/binary.hpp>
+#include <metashell/engine/clang/header_discoverer.hpp>
+#include <metashell/engine/clang/macro_discovery.hpp>
+
 #include <metashell/core/wave_token.hpp>
 
 #include <boost/algorithm/string/join.hpp>
@@ -109,7 +110,7 @@ namespace metashell
         };
 
         std::vector<std::string>
-        clang_macros(const core::clang_binary& cbin_,
+        clang_macros(const clang::binary& cbin_,
                      const boost::filesystem::path& internal_dir_)
         {
           // Need to have __has_feature(cxx_decltype) to return true in order
@@ -123,7 +124,7 @@ namespace metashell
 
           empty_environment env(internal_dir_);
           const data::cpp_code defines =
-              core::macro_discovery_clang(cbin_).macros(env);
+              clang::macro_discovery(cbin_).macros(env);
 
           macro_definition_collector def_collector(result);
           boost::wave::context<
@@ -184,12 +185,13 @@ namespace metashell
         {
           const std::vector<std::string> extra_clang_args;
 
-          const core::clang_binary cbin(
-              true, find_clang(true, extra_clang_args, metashell_binary_,
-                               "internal", env_detector_, displayer_, logger_),
+          const clang::binary cbin(
+              true,
+              clang::find_clang(true, extra_clang_args, metashell_binary_,
+                                "internal", env_detector_, displayer_, logger_),
               extra_clang_args, internal_dir_, env_detector_, logger_);
 
-          core::header_discoverer_clang header_discoverer(cbin);
+          clang::header_discoverer header_discoverer(cbin);
 
           data::wave_config result;
           result.includes.sys =

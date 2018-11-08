@@ -16,7 +16,8 @@
 
 #include <metashell/core/default_environment_detector.hpp>
 #include <metashell/core/header_file_environment.hpp>
-#include <metashell/core/metashell.hpp>
+
+#include <metashell/data/default_clang_search_path.hpp>
 
 #include <just/environment.hpp>
 
@@ -50,29 +51,17 @@ namespace metashell
   {
     namespace
     {
-      const char* default_clang_search_path[] = {""
-#include "default_clang_search_path.hpp"
-      };
-
       bool file_exists_impl(const boost::filesystem::path& path_)
       {
         std::ifstream f(path_.c_str());
         return !(f.fail() || f.bad());
       }
 
-      template <class It>
-      boost::filesystem::path search_clang(It begin_, It end_)
-      {
-        const It p = std::find_if(begin_, end_, file_exists_impl);
-        return p == end_ ? "" : *p;
-      }
-
       boost::filesystem::path default_clang_path()
       {
-        return search_clang(
-            default_clang_search_path + 1,
-            default_clang_search_path +
-                sizeof(default_clang_search_path) / sizeof(const char*));
+        const data::default_clang_search_path sp;
+        const auto p = std::find_if(sp.begin(), sp.end(), file_exists_impl);
+        return p == sp.end() ? "" : *p;
       }
 
 #if !(defined _WIN32 || defined __FreeBSD__ || defined __APPLE__)

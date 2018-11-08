@@ -14,11 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-project(metashell_engine_wave)
+project(metashell_engine_clang)
 
 aux_source_directory(src SOURCES)
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
-add_library(metashell::engine::wave ALIAS ${PROJECT_NAME})
+add_library(metashell::engine::clang ALIAS ${PROJECT_NAME})
 
 enable_warnings(${PROJECT_NAME})
 
@@ -28,6 +28,8 @@ target_link_libraries(
   ${PROJECT_NAME}
 
   metashell::core
-  metashell::engine::clang
   metashell::iface
+  metashell::process
+
+  yaml_cpp
 )

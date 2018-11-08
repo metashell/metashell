@@ -1,8 +1,8 @@
-#ifndef METASHELL_ENGINE_TEMPLIGHT_METAPROGRAM_TRACER_HPP
-#define METASHELL_ENGINE_TEMPLIGHT_METAPROGRAM_TRACER_HPP
+#ifndef METASHELL_ENGINE_CLANG_METAPROGRAM_TRACER_HPP
+#define METASHELL_ENGINE_CLANG_METAPROGRAM_TRACER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,12 +27,12 @@ namespace metashell
 {
   namespace engine
   {
-    namespace templight
+    namespace clang
     {
       class metaprogram_tracer : public iface::metaprogram_tracer
       {
       public:
-        explicit metaprogram_tracer(clang::binary templight_binary_);
+        explicit metaprogram_tracer(binary binary_);
 
         virtual std::unique_ptr<iface::event_data_sequence>
         eval(iface::environment& env_,
@@ -42,7 +42,7 @@ namespace metashell
              iface::displayer& displayer_) override;
 
       private:
-        clang::binary _templight_binary;
+        binary _binary;
       };
     }
   }
