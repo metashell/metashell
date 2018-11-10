@@ -55,8 +55,7 @@ namespace metashell
     };
 
     template <event_kind Kind>
-    typename std::enable_if<category(Kind) != event_category::template_ ||
-                                Kind == event_kind::template_end,
+    typename std::enable_if<!non_end_template_event(Kind),
                             boost::optional<type>>::type
     type_of(const timeless_event_details<Kind>&)
     {
@@ -64,33 +63,27 @@ namespace metashell
     }
 
     template <event_kind Kind>
-    typename std::enable_if<category(Kind) != event_category::template_ ||
-                            Kind == event_kind::template_end>::type
+    typename std::enable_if<!non_end_template_event(Kind)>::type
     set_type(timeless_event_details<Kind>&, const type&)
     {
     }
 
     template <event_kind Kind>
-    typename std::enable_if<category(Kind) == event_category::template_ &&
-                                Kind != event_kind::template_end,
-                            bool>::type
+    typename std::enable_if<non_end_template_event(Kind), bool>::type
     is_remove_ptr(const timeless_event_details<Kind>& details_)
     {
       return is_remove_ptr(details_.full_name);
     }
 
     template <event_kind Kind>
-    typename std::enable_if<category(Kind) != event_category::template_ ||
-                                Kind == event_kind::template_end,
-                            bool>::type
+    typename std::enable_if<!non_end_template_event(Kind), bool>::type
     is_remove_ptr(const timeless_event_details<Kind>&)
     {
       return false;
     }
 
     template <event_kind Kind>
-    typename std::enable_if<category(Kind) == event_category::template_ &&
-                                Kind != event_kind::template_end,
+    typename std::enable_if<non_end_template_event(Kind),
                             boost::optional<type>>::type
     type_of(const timeless_event_details<Kind>& details_)
     {
@@ -98,35 +91,28 @@ namespace metashell
     }
 
     template <event_kind Kind>
-    typename std::enable_if<category(Kind) == event_category::template_ &&
-                            Kind != event_kind::template_end>::type
+    typename std::enable_if<non_end_template_event(Kind)>::type
     set_type(timeless_event_details<Kind>& details_, type type_)
     {
       details_.full_name = std::move(type_);
     }
 
     template <event_kind Kind>
-    typename std::enable_if<category(Kind) == event_category::template_ &&
-                                Kind != event_kind::template_end,
-                            type>::type
+    typename std::enable_if<non_end_template_event(Kind), type>::type
     name(const timeless_event_details<Kind>& details_)
     {
       return details_.full_name;
     }
 
     template <event_kind Kind>
-    typename std::enable_if<category(Kind) == event_category::template_ &&
-                                Kind != event_kind::template_end,
-                            file_location>::type
+    typename std::enable_if<non_end_template_event(Kind), file_location>::type
     source_location(const timeless_event_details<Kind>& details_)
     {
       return details_.source_location;
     }
 
     template <event_kind Kind>
-    typename std::enable_if<category(Kind) == event_category::template_ &&
-                                Kind != event_kind::template_end,
-                            file_location>::type
+    typename std::enable_if<non_end_template_event(Kind), file_location>::type
     point_of_event(const timeless_event_details<Kind>& details_)
     {
       return details_.point_of_event;

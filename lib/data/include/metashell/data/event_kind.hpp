@@ -100,6 +100,12 @@ namespace metashell
       return relative_depth::end;
     }
 
+    constexpr bool non_end_template_event(event_kind kind)
+    {
+      return category(kind) == event_category::template_ &&
+             kind != event_kind::template_end;
+    }
+
     std::ostream& operator<<(std::ostream& os, event_kind kind);
 
     std::string to_string(event_kind kind);

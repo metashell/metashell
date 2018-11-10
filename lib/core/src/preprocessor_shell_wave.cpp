@@ -44,7 +44,7 @@ namespace metashell
       try
       {
         wave_context ctx(exp_.begin(), exp_.end(), "<stdin>");
-        apply(ctx, _config);
+        core::apply(ctx, _config);
 
         std::ostringstream s;
         display(s, ctx, _config.ignore_macro_redefinition);

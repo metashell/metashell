@@ -28,7 +28,11 @@ set(MAJOR_VERSION 4)
 set(MINOR_VERSION 0)
 set(PATCH_VERSION 0)
 
-set(CMAKE_CXX_STANDARD 14)
+if (MSVC)
+  add_compile_options("/std:c++latest")
+else()
+  set(CMAKE_CXX_STANDARD 14)
+endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 

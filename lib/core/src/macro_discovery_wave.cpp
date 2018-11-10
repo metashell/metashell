@@ -30,7 +30,7 @@ namespace metashell
     {
       const data::cpp_code code = env_.get_all() + "\n";
       wave_context ctx(code.begin(), code.end(), "<stdin>");
-      apply(ctx, _config);
+      core::apply(ctx, _config);
       preprocess(ctx);
 
       std::ostringstream result;
