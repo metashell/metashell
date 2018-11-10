@@ -121,7 +121,6 @@ add_subdirectory(test/unit/pragma)
 add_subdirectory(test/unit/replace_part)
 add_subdirectory(test/unit/system_test)
 
-add_subdirectory(lib/boost)
 add_subdirectory(lib/core)
 add_subdirectory(lib/data)
 add_subdirectory(lib/defaults)

@@ -33,7 +33,6 @@ target_link_libraries(
     boost::optional
     boost::range
 
-    metashell::boost
     metashell::data
 )
 

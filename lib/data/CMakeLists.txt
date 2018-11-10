@@ -37,7 +37,5 @@ target_link_libraries(
 
   just::console
 
-  metashell::boost
-
   mpark::variant
 )
