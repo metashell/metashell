@@ -2,15 +2,7 @@
 
 set -ex
 
-# Workaround for some faulty travis image
-# https://github.com/travis-ci/travis-ci/issues/9640
-sudo softwareupdate -i "Command Line Tools (macOS High Sierra version 10.13) for Xcode-9.4"
-
 brew update >/dev/null
-
-# Oclint installs something under /usr/local/include/c++ which
-# conflicts with files installed by gcc
-brew cask uninstall oclint
 
 brew install p7zip
 
