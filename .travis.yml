@@ -1,6 +1,7 @@
 language: cpp
 sudo: required
 dist: trusty
+osx_image: xcode10.1
 os:
   - linux
   - osx

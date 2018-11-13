@@ -117,7 +117,7 @@ namespace metashell
       hooks.on_line =
           std::bind(&wave_trace_impl::on_line, this, p::_1, p::_2, p::_3);
 
-      apply(_ctx, config_);
+      core::apply(_ctx, config_);
 
       _pos = _ctx.begin();
     }

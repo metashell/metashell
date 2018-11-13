@@ -39,7 +39,7 @@ namespace metashell
       std::set<boost::filesystem::path> result;
       wave_hooks hooks(result);
       wave_context ctx(exp.begin(), exp.end(), "<stdin>", hooks);
-      apply(ctx, _config);
+      core::apply(ctx, _config);
       preprocess(ctx);
       return result;
     }

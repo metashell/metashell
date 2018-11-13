@@ -23,7 +23,6 @@
 
 #include <deque>
 #include <map>
-#include <type_traits>
 #include <vector>
 
 namespace metashell
@@ -77,18 +76,11 @@ namespace metashell
       record(const data::event_details<data::event_kind::template_end>& event_);
 
       template <data::event_kind Kind>
-      typename std::enable_if<!recordable(Kind),
-                              data::list<data::event_data>>::type
-      replay(data::event_details<Kind> event_)
+      data::list<data::event_data>
+      replay_recordable(data::event_details<Kind> event_)
       {
-        return {data::event_data(event_), _empty};
-      }
+        static_assert(recordable(Kind), "This function records the event.");
 
-      template <data::event_kind Kind>
-      typename std::enable_if<recordable(Kind),
-                              data::list<data::event_data>>::type
-      replay(data::event_details<Kind> event_)
-      {
         const auto i = _recorded.find(event_.what.full_name);
         if (i != _recorded.end() && !i->second.empty())
         {
@@ -108,16 +100,52 @@ namespace metashell
       }
 
       template <data::event_kind Kind>
-      typename std::enable_if<!recordable(Kind)>::type
-      erase_related(const data::event_details<Kind>&)
+      data::list<data::event_data> replay(data::event_details<Kind> event_)
       {
+        static_assert(
+            !recordable(Kind),
+            "This function should be specialised for recordable kinds.");
+        return {data::event_data(event_), _empty};
+      }
+
+      data::list<data::event_data> replay(
+          data::event_details<data::event_kind::template_instantiation> event_)
+      {
+        return replay_recordable(std::move(event_));
+      }
+
+      data::list<data::event_data>
+      replay(data::event_details<data::event_kind::memoization> event_)
+      {
+        return replay_recordable(std::move(event_));
       }
 
       template <data::event_kind Kind>
-      typename std::enable_if<recordable(Kind)>::type
-      erase_related(const data::event_details<Kind>& event_)
+      void erase_related_recordable(const data::event_details<Kind>& event_)
       {
+        static_assert(recordable(Kind), "This function records the event.");
+
         _recorded.erase(event_.what.full_name);
+      }
+
+      template <data::event_kind Kind>
+      void erase_related(const data::event_details<Kind>&)
+      {
+        static_assert(
+            !recordable(Kind),
+            "This function should be specialised for recordable kinds.");
+      }
+
+      void erase_related(const data::event_details<
+                         data::event_kind::template_instantiation>& event_)
+      {
+        erase_related_recordable(event_);
+      }
+
+      void erase_related(
+          const data::event_details<data::event_kind::memoization>& event_)
+      {
+        erase_related_recordable(event_);
       }
     };
   }
