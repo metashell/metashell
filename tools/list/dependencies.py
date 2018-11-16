@@ -60,13 +60,14 @@ def included_by_lib(source_root, lib_name):
 
 def dependencies_of_lib(source_root, libs, lib_name):
     """Generator of the #include dependencies of the library"""
-    inc_lib = re.compile('^[<"](metashell[\\\\/])?([^\\\\/]*)[\\\\/].*$')
+    inc_lib = re.compile('^[<"](metashell[\\\\/])?([^>"]*).*$')
     for path in included_by_lib(source_root, lib_name):
         match = inc_lib.match(path)
         if \
                 match and \
                 not (path.startswith('<boost') or path.startswith('"boost')):
             dep_lib = match.group(2)
+            dep_lib = dep_lib[:dep_lib.rfind('/')]
             if dep_lib != lib_name and dep_lib in libs:
                 yield dep_lib
 
@@ -86,7 +87,7 @@ def subpaths_containing_sources(path):
 
 
 def sublib_of(sub, outer):
-    """Checks is sub is a sublib of outer"""
+    """Checks if sub is a sublib of outer"""
     louter = len(outer)
     return \
         len(sub) > louter \
@@ -113,8 +114,8 @@ def collect_dependencies(source_root):
     """Collect all the dependencies"""
     lib_path = os.path.join(source_root, 'lib')
     libs = sorted(
-        d for d in os.listdir(lib_path)
-        if os.path.isdir(os.path.join(lib_path, d))
+        p[len(lib_path) + 1:-len('/include')] for p, _, fs in os.walk(lib_path)
+        if p.endswith('/include')
     )
     apps = sorted(remove_nested(itertools.chain(
         prefix_path(

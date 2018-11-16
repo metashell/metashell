@@ -17,9 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/feature_not_supported.hpp>
 #include <metashell/core/not_supported.hpp>
 #include <metashell/core/supported.hpp>
+
+#include <metashell/data/feature_not_supported.hpp>
 
 #include <string>
 #include <type_traits>
@@ -45,7 +46,7 @@ namespace metashell
     Expected& if_supported(const not_supported&,
                            const std::string& engine_name_)
     {
-      throw feature_not_supported<Expected>(engine_name_);
+      throw data::feature_not_supported<Expected>(engine_name_);
     }
   }
 }

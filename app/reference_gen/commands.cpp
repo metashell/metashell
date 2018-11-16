@@ -18,22 +18,22 @@
 
 #include <metashell/data/markdown_string.hpp>
 
-#include <metashell/core/available_engines.hpp>
-#include <metashell/core/engine_constant.hpp>
-#include <metashell/core/mdb_command_handler_map.hpp>
-#include <metashell/core/mdb_shell.hpp>
-#include <metashell/core/pragma_handler_map.hpp>
-#include <metashell/core/shell.hpp>
+#include <metashell/defaults/available_engines.hpp>
+#include <metashell/defaults/pragma_map.hpp>
+
+#include <metashell/mdb/command_handler_map.hpp>
+#include <metashell/mdb/shell.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>
 
+#include <cassert>
 #include <iostream>
 
 namespace
 {
   void show_markdown(const std::vector<std::string>& name_,
-                     const metashell::core::pragma_handler& h_,
+                     const metashell::iface::pragma_handler& h_,
                      std::ostream& out_)
   {
     using boost::algorithm::join;
@@ -53,15 +53,12 @@ namespace
     metashell::core::command_processor_queue cpq;
     const std::string internal_dir;
     const boost::filesystem::path mdb_temp_dir;
-    metashell::core::shell sh(cfg, cpq, internal_dir, "", mdb_temp_dir,
-                              metashell::core::create_failing_engine());
-    const metashell::core::pragma_handler_map m =
-        metashell::core::pragma_handler_map::build_default(
-            sh, &cpq, mdb_temp_dir, nullptr);
-
-    for (const auto& p : m)
+    for (const auto& p :
+         metashell::defaults::pragma_map(&cpq, mdb_temp_dir, nullptr))
     {
-      show_markdown(p.first, p.second, out_);
+      assert(p.second);
+
+      show_markdown(p.first, *p.second, out_);
     }
   }
 
@@ -71,11 +68,11 @@ namespace
     using boost::algorithm::join;
     using boost::algorithm::replace_all_copy;
 
-    metashell::core::mdb_command_handler_map::commands_t commands =
-        metashell::core::mdb_shell::build_command_handler(Preprocessor)
+    metashell::mdb::command_handler_map::commands_t commands =
+        metashell::mdb::shell::build_command_handler(Preprocessor)
             .get_commands();
 
-    for (const metashell::core::mdb_command& cmd : commands)
+    for (const metashell::mdb::command& cmd : commands)
     {
       out_ << "* __`" << join(cmd.get_keys(), "|") << " " << cmd.get_usage()
            << "`__ <br />\n"
@@ -91,7 +88,7 @@ namespace
 
   void show_engine_help(std::ostream& out_)
   {
-    const auto engines = metashell::core::available_engines();
+    const auto engines = metashell::defaults::available_engines();
 
     for (const auto& engine : engines)
     {
@@ -110,7 +107,7 @@ namespace
 
   void show_engine_features(std::ostream& out_)
   {
-    const auto engines = metashell::core::available_engines();
+    const auto engines = metashell::defaults::available_engines();
     const auto features = metashell::data::feature::all();
 
     std::vector<metashell::data::markdown_string> header{

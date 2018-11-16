@@ -28,9 +28,11 @@ target_link_libraries(
   ${PROJECT_NAME}
   
   INTERFACE
+    boost::array
     boost::concept_check
     boost::fusion
     boost::iterator
+    boost::numeric_conversion
     boost::regex
     boost::utility
 )

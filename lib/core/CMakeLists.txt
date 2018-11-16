@@ -41,13 +41,9 @@ target_link_libraries(
   just::file
   just::lines
 
-  metashell::boost
   metashell::data
   metashell::iface
-  metashell::process
 
   mindent
-  protobuf
   rapidjson
-  yaml_cpp
 )

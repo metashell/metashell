@@ -33,7 +33,9 @@ target_link_libraries(
 
   metashell::core
   metashell::data
+  metashell::defaults
   metashell::iface
+  metashell::main_shell
   metashell::readline
 )
 

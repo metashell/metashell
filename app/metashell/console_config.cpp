@@ -19,7 +19,6 @@
 #include <metashell/core/console_displayer.hpp>
 #include <metashell/core/json_displayer.hpp>
 #include <metashell/core/json_line_reader.hpp>
-#include <metashell/core/make_unique.hpp>
 #include <metashell/core/null_history.hpp>
 #include <metashell/core/rapid_json_writer.hpp>
 #include <metashell/core/stdout_console.hpp>
@@ -57,9 +56,9 @@ namespace
     switch (type_)
     {
     case data::console_type::plain:
-      return metashell::core::make_unique<core::stream_console>(std::cout);
+      return std::make_unique<core::stream_console>(std::cout);
     case data::console_type::readline:
-      return core::make_unique<core::stdout_console>();
+      return std::make_unique<core::stdout_console>();
     case data::console_type::json:
       return nullptr;
     }
@@ -76,7 +75,7 @@ namespace
     case data::console_type::readline:
       return nullptr;
     case data::console_type::json:
-      return metashell::core::make_unique<core::rapid_json_writer>(std::cout);
+      return std::make_unique<core::rapid_json_writer>(std::cout);
     }
     return nullptr;
   }
@@ -91,13 +90,12 @@ namespace
     switch (type_)
     {
     case data::console_type::plain:
-      return core::make_unique<core::console_displayer>(
-          *console_, false, false);
+      return std::make_unique<core::console_displayer>(*console_, false, false);
     case data::console_type::readline:
-      return core::make_unique<core::console_displayer>(
+      return std::make_unique<core::console_displayer>(
           *console_, indent_, syntax_highlight_);
     case data::console_type::json:
-      return core::make_unique<core::json_displayer>(*json_writer_);
+      return std::make_unique<core::json_displayer>(*json_writer_);
     }
     return nullptr;
   }
@@ -107,11 +105,11 @@ namespace
     switch (type_)
     {
     case data::console_type::plain:
-      return core::make_unique<core::null_history>();
+      return std::make_unique<core::null_history>();
     case data::console_type::readline:
-      return core::make_unique<readline::history>();
+      return std::make_unique<readline::history>();
     case data::console_type::json:
-      return core::make_unique<core::null_history>();
+      return std::make_unique<core::null_history>();
     }
     return nullptr;
   }

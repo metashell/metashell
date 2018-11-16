@@ -20,8 +20,6 @@
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/system_test_config.hpp>
 
-#include <metashell/core/make_unique.hpp>
-
 #include <boost/filesystem.hpp>
 
 #include <algorithm>
@@ -116,7 +114,7 @@ namespace metashell
         bool allow_standard_headers_)
       : _include((allow_standard_headers_ || !using_msvc()) ?
                      nullptr :
-                     core::make_unique<just::environment::override_guard>(
+                     std::make_unique<just::environment::override_guard>(
                          "INCLUDE", "")),
         _process_execution(construct_cmd(
             extra_args_, allow_user_defined_args_, allow_standard_headers_)),

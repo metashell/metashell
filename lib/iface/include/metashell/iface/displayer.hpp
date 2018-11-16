@@ -27,7 +27,7 @@
 
 #include <metashell/iface/call_graph.hpp>
 
-#include <metashell/boost/filesystem/path.hpp>
+#include <boost/filesystem/path.hpp>
 
 #include <set>
 #include <string>

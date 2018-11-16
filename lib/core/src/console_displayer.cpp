@@ -18,8 +18,11 @@
 #include <metashell/core/get_file_section.hpp>
 #include <metashell/core/highlight_syntax.hpp>
 #include <metashell/core/indenter.hpp>
+#include <metashell/core/wave_tokeniser.hpp>
 
 #include <metashell/data/colored_string.hpp>
+
+#include <metashell/iface/tokeniser.hpp>
 
 #include <mindent/display.hpp>
 #include <mindent/parser.hpp>
