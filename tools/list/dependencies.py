@@ -229,6 +229,48 @@ def find_circular_dependencies(deps):
     return result
 
 
+def reachable_in_two_steps(graph, src):
+    """Returns the list of nodes reachable from src in at most two steps"""
+    dsts = graph.get(src, [])
+    result = set(dsts)
+    for dst in dsts:
+        result.update(graph.get(dst, []))
+    return list(sorted(result))
+
+
+def transitive_closure(graph):
+    """Returns the transitive closure of the graph"""
+    prev = None
+    result = graph
+    while prev != result:
+        prev = result
+        result = {n: reachable_in_two_steps(prev, n) for n in prev.keys()}
+    return result
+
+
+def edges(graph):
+    """Generator of all edges of the graph"""
+    for src in sorted(graph.keys()):
+        for dst in sorted(graph[src]):
+            yield (src, dst)
+
+
+def remove_transitive_edges(graph):
+    """Returns a subgraph, in which there is a path between two nodes if any
+    only if there is one in the original one as well."""
+    reachable = transitive_closure(graph)
+    prev = None
+    result = graph
+    while prev != result:
+        prev = result
+        result = copy.deepcopy(prev)
+        for src, dst in edges(prev):
+            result[src].remove(dst)
+            if transitive_closure(result) != reachable:
+                result[src].append(dst)
+    return result
+
+
 class Dependencies(object):
     """Represents a set of dependencies"""
 
@@ -243,6 +285,7 @@ class Dependencies(object):
                 self.deps[key] = list(sorted(self.deps[key] + vals))
             else:
                 self.deps[key] = list(sorted(vals))
+        self.deps = remove_transitive_edges(self.deps)
 
         self.circular = find_circular_dependencies(lib_deps)
         self.circular_libs = \
