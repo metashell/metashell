@@ -108,6 +108,7 @@ namespace metashell
                           const boost::filesystem::path& internal_dir_,
                           const boost::filesystem::path&,
                           const boost::filesystem::path& env_filename_,
+                          const std::map<std::string, core::engine_entry>&,
                           iface::environment_detector& env_detector_,
                           iface::displayer&,
                           core::logger* logger_)

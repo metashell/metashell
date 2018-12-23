@@ -47,12 +47,13 @@ namespace metashell
                         const boost::filesystem::path& internal_dir_,
                         const boost::filesystem::path& temp_dir_,
                         const boost::filesystem::path& env_filename_,
+                        const std::map<std::string, engine_entry>& engines_,
                         iface::environment_detector& env_detector_,
                         iface::displayer& displayer_,
                         logger* logger_) const
     {
       return _factory(config_, internal_dir_, temp_dir_, env_filename_,
-                      env_detector_, displayer_, logger_);
+                      engines_, env_detector_, displayer_, logger_);
     }
 
     const std::string& engine_entry::args() const { return _args; }

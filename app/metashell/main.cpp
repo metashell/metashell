@@ -135,8 +135,8 @@ int main(int argc_, const char* argv_[])
             else
             {
               return eentry->second.build(config_, shell_dir, temp_dir,
-                                          env_filename, det, ccfg.displayer(),
-                                          &logger);
+                                          env_filename, engines, det,
+                                          ccfg.displayer(), &logger);
             }
           },
           metashell::defaults::pragma_map(

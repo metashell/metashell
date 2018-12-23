@@ -47,7 +47,7 @@ TEST(evaluation, throwing_environment_not_breaking_validate)
 
   const data::result r =
       engine::templight::entry(true)
-          .build(cfg, "", "", "env.hpp", det, d, nullptr)
+          .build(cfg, "", "", "env.hpp", {}, det, d, nullptr)
           ->cpp_validator()
           .validate_code(data::cpp_code("typedef int foo;"), cfg, e, false);
 

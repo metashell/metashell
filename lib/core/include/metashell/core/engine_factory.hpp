@@ -23,12 +23,15 @@
 #include <metashell/iface/engine.hpp>
 #include <metashell/iface/environment_detector.hpp>
 
+#include <metashell/core/fwd.hpp>
 #include <metashell/core/logger.hpp>
 
 #include <boost/filesystem/path.hpp>
 
 #include <functional>
+#include <map>
 #include <memory>
+#include <string>
 
 namespace metashell
 {
@@ -39,6 +42,7 @@ namespace metashell
         const boost::filesystem::path&,
         const boost::filesystem::path&,
         const boost::filesystem::path&,
+        const std::map<std::string, engine_entry>&,
         iface::environment_detector&,
         iface::displayer&,
         logger*)>
