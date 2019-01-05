@@ -48,7 +48,7 @@ namespace metashell
             "",
             data::markdown_string("An engine which does not support anything. "
                                   "Mainly for testing purposes."),
-            supported_features());
+            supported_features(), core::never_used_by_auto());
       }
     }
   }

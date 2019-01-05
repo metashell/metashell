@@ -16,6 +16,7 @@
 
 #include <metashell/defaults/available_engines.hpp>
 
+#include <metashell/engine/auto/entry.hpp>
 #include <metashell/engine/clang/entry.hpp>
 #include <metashell/engine/gcc/entry.hpp>
 #include <metashell/engine/null/entry.hpp>
@@ -31,14 +32,19 @@ namespace metashell
   {
     std::map<std::string, core::engine_entry> available_engines()
     {
-      return {{"internal", engine::templight::entry(true)},
-              {"clang", engine::clang::entry()},
-              {"templight", engine::templight::entry(false)},
-              {"null", engine::null::entry()},
-              {"gcc", engine::gcc::entry()},
-              {"msvc", engine::vc::entry()},
-              {"wave", engine::wave::entry_with_templight_headers()},
-              {"pure_wave", engine::wave::entry()}};
+      std::map<std::string, core::engine_entry> result{
+          {"internal", engine::templight::entry(true)},
+          {"clang", engine::clang::entry()},
+          {"templight", engine::templight::entry(false)},
+          {"null", engine::null::entry()},
+          {"gcc", engine::gcc::entry()},
+          {"msvc", engine::vc::entry()},
+          {"wave", engine::wave::entry_with_templight_headers()},
+          {"pure_wave", engine::wave::entry()}};
+
+      result.insert({"auto", engine::auto_::entry(result)});
+
+      return result;
     }
   }
 }

@@ -30,14 +30,17 @@ namespace metashell
       std::string no_features() { return "no features are supported"; }
     }
 
-    engine_entry::engine_entry(engine_factory factory_,
-                               std::string args_,
-                               data::markdown_string description_,
-                               std::vector<data::feature> features_)
+    engine_entry::engine_entry(
+        engine_factory factory_,
+        std::string args_,
+        data::markdown_string description_,
+        std::vector<data::feature> features_,
+        std::function<bool(const std::vector<std::string>&)> this_engine_)
       : _factory(move(factory_)),
         _args(move(args_)),
         _description(std::move(description_)),
-        _features(move(features_))
+        _features(move(features_)),
+        _this_engine(std::move(this_engine_))
     {
       std::sort(_features.begin(), _features.end());
     }
@@ -68,6 +71,13 @@ namespace metashell
       return _features;
     }
 
+    bool engine_entry::usable_by_auto() const { return bool(_this_engine); }
+
+    bool engine_entry::this_engine(const std::vector<std::string>& args_) const
+    {
+      return usable_by_auto() && _this_engine(args_);
+    }
+
     std::string list_features(const engine_entry& engine_)
     {
       return engine_.features().empty() ?
@@ -89,6 +99,11 @@ namespace metashell
                            return data::self_reference(to_string(f_));
                          }),
                      ", ");
+    }
+
+    std::function<bool(const std::vector<std::string>&)> never_used_by_auto()
+    {
+      return {};
     }
   }
 }

@@ -22,6 +22,7 @@
 #include <metashell/engine/clang/macro_discovery.hpp>
 #include <metashell/engine/clang/metaprogram_tracer.hpp>
 #include <metashell/engine/clang/preprocessor_shell.hpp>
+#include <metashell/engine/clang/this_engine.hpp>
 #include <metashell/engine/clang/type_shell.hpp>
 
 #include <metashell/core/engine.hpp>
@@ -44,6 +45,12 @@ namespace metashell
                   data::feature::metaprogram_tracer(),
                   data::feature::cpp_validator(),
                   data::feature::macro_discovery()};
+        }
+
+        bool this_engine(const std::vector<std::string>& args_)
+        {
+          return !args_.empty() && is_clang(args_.front()) &&
+                 !is_templight(args_.front());
         }
 
         std::unique_ptr<iface::engine>
@@ -95,7 +102,7 @@ namespace metashell
                 "debugging (MDB) is supported only when Clang has been patched "
                 "with "
                 "[templight](https://github.com/mikael-s-persson/templight)"),
-            supported_features());
+            supported_features(), this_engine);
       }
     }
   }

@@ -14,9 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function(register_system_test TEST_TARGET_NAME)
+function(templight_path OUT_VAR)
   if (WIN32)
-    set(TEMPLIGHT_PATH templight/templight.exe)
+    set(${OUT_VAR} templight/templight.exe PARENT_SCOPE)
+  else()
+    set(${OUT_VAR} templight_metashell PARENT_SCOPE)
+  endif()
+endfunction()
+
+function(register_system_test TEST_TARGET_NAME)
+  templight_path(TEMPLIGHT_PATH)
+
+  if (WIN32)
     set(
       CLANG_FLAGS
       -fno-ms-compatibility
@@ -26,7 +35,6 @@ function(register_system_test TEST_TARGET_NAME)
       "-I$<TARGET_FILE_DIR:metashell>/templight/include"
     )
   else()
-    set(TEMPLIGHT_PATH templight_metashell)
     if (APPLE)
       set(
         CLANG_FLAGS

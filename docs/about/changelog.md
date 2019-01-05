@@ -2,6 +2,10 @@
 
 ## Not in any release yet
 
+* New features
+    * New engine: `auto`. It chooses the engine to use based on the compiler
+      specified in the engine arguments.
+
 * Changes to existing behaviour
     * **Breaking change** Regular expression syntax for breakpoints changes
     from

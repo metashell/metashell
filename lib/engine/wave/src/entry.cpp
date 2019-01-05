@@ -79,7 +79,7 @@ namespace metashell
                                          "deployed with Metashell." :
                                          std::string()) +
                   "<br /><br />" + args(UseTemplightHeaders)),
-              supported_features());
+              supported_features(), core::never_used_by_auto());
         }
       } // anonymous namespace
 

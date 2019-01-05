@@ -23,8 +23,13 @@
 #include <metashell/engine/clang/macro_discovery.hpp>
 #include <metashell/engine/clang/preprocessor_shell.hpp>
 
+#include <metashell/process/exception.hpp>
+#include <metashell/process/run.hpp>
+
 #include <metashell/core/engine.hpp>
 #include <metashell/core/not_supported.hpp>
+
+#include <regex>
 
 namespace metashell
 {
@@ -40,6 +45,27 @@ namespace metashell
                   data::feature::header_discoverer(),
                   data::feature::cpp_validator(),
                   data::feature::macro_discovery()};
+        }
+
+        bool this_engine(const std::vector<std::string>& args_)
+        {
+          if (args_.empty())
+          {
+            return false;
+          }
+          else
+          {
+            try
+            {
+              return regex_search(
+                  process::run(args_.front(), {"-v"}, "").standard_error,
+                  std::regex("[\\n\\r]gcc version "));
+            }
+            catch (const process::exception&)
+            {
+              return false;
+            }
+          }
         }
 
         bool stdinc_allowed(const std::vector<std::string>& extra_gcc_args_)
@@ -146,7 +172,7 @@ namespace metashell
                 "standard "
                 "by default, you can omit the `-std` argument. Also note that "
                 "currently only the preprocessor shell is supported."),
-            supported_features());
+            supported_features(), this_engine);
       }
     }
   }
