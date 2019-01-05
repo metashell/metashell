@@ -40,8 +40,8 @@ Candidate multilib: .;@m64
 Selected multilib: .;@m64
 )EOS"});
 
-  compiler.on_args({"--help"}, {data::exit_code_t(0),
-                                R"EOS(OVERVIEW: clang LLVM compiler
+  compiler.on_args(
+      {"--help"}, {data::exit_code_t(0), R"EOS(OVERVIEW: clang LLVM compiler
 
 USAGE: clang [options] <inputs>
 
@@ -81,7 +81,8 @@ OPTIONS:
   -fcomment-block-commands=<arg>
                           Treat each comma separated argument in <arg> as a documentation comment block command
   -fcoverage-mapping      Generate coverage mapping to enable code coverage analysis
-  -fcxx-exceptions        Enable C++ exceptions
+  -fcxx-exceptions        Enable C++ exceptions)EOS"
+                                         R"EOS(
   -fdata-sections         Place each data in its own section (ELF Only)
   -fdebug-prefix-map=<value>
                           remap file source paths in debug info
@@ -121,7 +122,8 @@ OPTIONS:
   -fmath-errno            Require math functions to indicate errors by setting errno
   -fmax-type-align=<value>
                           Specify the maximum alignment to enforce on pointers lacking an explicit alignment
-  -fmodule-file=<file>    Load this precompiled module file
+  -fmodule-file=<file>    Load this precompiled module file)EOS"
+                                         R"EOS(
   -fmodule-map-file=<file>
                           Load this module map file
   -fmodule-name= <name>   Specify the name of the module to build
@@ -161,7 +163,8 @@ OPTIONS:
   -fno-declspec           Disallow __declspec as a keyword
   -fno-diagnostics-fixit-info
                           Do not include fixit information in diagnostics
-  -fno-dollars-in-identifiers
+  -fno-dollars-in-identifiers)EOS"
+                                         R"EOS(
                           Disallow '$' in identifiers
   -fno-elide-constructors Disable C++ copy constructor elision
   -fno-elide-type         Do not elide types when printing diagnostics
@@ -201,7 +204,8 @@ OPTIONS:
   -fno-spell-checking     Disable spell-checking
   -fno-stack-protector    Disable the use of stack protectors
   -fno-standalone-debug   Limit debug information produced to reduce size of debug binary
-  -fno-threadsafe-statics Do not emit code to make initialization of local statics thread safe
+  -fno-threadsafe-statics Do not emit code to make initialization of local statics thread safe)EOS"
+                                         R"EOS(
   -fno-trigraphs          Do not process trigraph sequences
   -fno-unroll-loops       Turn off loop unroller
   -fno-use-cxa-atexit     Don't use __cxa_atexit for calling destructors
@@ -241,7 +245,8 @@ OPTIONS:
   -fsanitize-coverage=<value>
                           Specify the type of coverage instrumentation for Sanitizers
   -fsanitize-memory-track-origins=<value>
-                          Enable origins tracking in MemorySanitizer
+                          Enable origins tracking in MemorySanitizer)EOS"
+                                         R"EOS(
   -fsanitize-memory-track-origins
                           Enable origins tracking in MemorySanitizer
   -fsanitize-memory-use-after-dtor
@@ -281,7 +286,8 @@ OPTIONS:
                           Give inline C++ member functions default visibility by default
   -fvisibility-ms-compat  Give global types 'default' visibility and global functions and variables 'hidden' visibility by default
   -fvisibility=<value>    Set the default symbol visibility for all global declarations
-  -fwrapv                 Treat signed integer overflow as two's complement
+  -fwrapv                 Treat signed integer overflow as two's complement)EOS"
+                                         R"EOS(
   -fwritable-strings      Store string literals as writable data
   -fzvector               Enable System z vector language extension
   -F <value>              Add directory to framework include search path
@@ -321,7 +327,8 @@ OPTIONS:
   -mfp32                  Use 32-bit floating point registers (MIPS only)
   -mfp64                  Use 64-bit floating point registers (MIPS only)
   -MF <file>              Write depfile output from -MMD, -MD, -MM, or -M to <file>
-  -mgeneral-regs-only     Generate code which only uses the general purpose registers (AArch64 only)
+  -mgeneral-regs-only     Generate code which only uses the general purpose registers (AArch64 only))EOS"
+                                         R"EOS(
   -mglobal-merge          Enable merging of globals
   -MG                     Add missing headers to depfile
   -mhvx-double            Enable Hexagon Double Vector eXtensions
@@ -361,7 +368,8 @@ OPTIONS:
                           Omit frame pointer setup for leaf functions
   -MP                     Create phony target for each dependency (other than main file)
   -mqdsp6-compat          Enable hexagon-qdsp6 backward compatibility
-  -MQ <value>             Specify name of main file output to quote in depfile
+  -MQ <value>             Specify name of main file output to quote in depfile)EOS"
+                                         R"EOS(
   -mrelax-all             (integrated-as) Relax all machine instructions
   -mrestrict-it           Disallow generation of deprecated IT blocks for ARMv8. It is on by default for ARMv8 Thumb mode.
   -mrtd                   Make StdCall calling convention the default
@@ -401,7 +409,8 @@ OPTIONS:
                           Enable migration to add protocol conformance on classes
   -objcmt-migrate-readonly-property
                           Enable migration to modern ObjC readonly property
-  -objcmt-migrate-readwrite-property
+  -objcmt-migrate-readwrite-property)EOS"
+                                         R"EOS(
                           Enable migration to modern ObjC readwrite property
   -objcmt-migrate-subscripting
                           Enable migration to modern ObjC subscripting
@@ -441,7 +450,8 @@ OPTIONS:
                           Treat all #include paths starting with <prefix> as including a system header.
   -S                      Only run preprocess and compilation steps
   --target=<value>        Generate code for the given target
-  -time                   Time individual commands
+  -time                   Time individual commands)EOS"
+                                         R"EOS(
   -traditional-cpp        Enable some traditional CPP emulation
   -trigraphs              Process trigraph sequences
   -undef                  undef all system defines
@@ -463,7 +473,7 @@ OPTIONS:
   -x <language>           Treat subsequent input files as having type <language>
   -z <arg>                Pass -z <arg> to the linker
 )EOS",
-                                ""});
+                   ""});
 
   return compiler.run(argc_, argv_).value();
 }
