@@ -12,6 +12,7 @@
     [Perl syntax](https://www.boost.org/doc/libs/1_68_0/libs/regex/doc/html/boost_regex/syntax/perl_syntax.html)
     to
     [ECMAScript](https://en.cppreference.com/w/cpp/regex/ecmascript).
+    * The default engine is `auto`.
 
 ## Version 4.0.0
 

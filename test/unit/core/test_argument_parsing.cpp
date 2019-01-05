@@ -173,7 +173,7 @@ TEST(argument_parsing, decommissioned_arguments_provide_an_error_message)
 
 TEST(argument_parsing, not_specifying_the_engine)
 {
-  ASSERT_EQ("internal", parse_config({}).cfg.active_shell_config().engine);
+  ASSERT_EQ("auto", parse_config({}).cfg.active_shell_config().engine);
 }
 
 TEST(argument_parsing, specifying_the_engine)

@@ -33,7 +33,7 @@ namespace metashell
 
       std::vector<std::string> engine_args;
       bool use_precompiled_headers = false;
-      std::string engine = "internal";
+      std::string engine = "auto";
       bool preprocessor_mode = false;
     };
   }
