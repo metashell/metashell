@@ -29,6 +29,15 @@ using pattern::regex;
 // If one of these TCs fail, then getting_started.md modification might be
 // needed
 
+namespace
+{
+  error macro_discovery_not_supported(const std::string& engine_)
+  {
+    return error("Error: Feature macro discovery is not supported by the " +
+                 engine_ + " engine.");
+  }
+}
+
 TEST(getting_started, testing_macros)
 {
   metashell_instance mi;
@@ -45,8 +54,8 @@ TEST(getting_started, testing_macros)
 
   const auto macro_names = mi.command("#msh macro names").front();
 
-  if (macro_names != error("Error: Feature macro discovery is not supported by "
-                           "the msvc engine."))
+  if (macro_names != macro_discovery_not_supported("msvc") &&
+      macro_names != macro_discovery_not_supported("auto"))
   {
     ASSERT_EQ(cpp_code(regex(".*\nBOOST_PP_LIMIT_MAG\n.*")), macro_names);
 

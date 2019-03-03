@@ -249,7 +249,22 @@ namespace metashell
       return args_;
     }
 
-    bool using_msvc() { return current_engine() == "msvc"; }
+    bool using_msvc()
+    {
+      const auto engine = current_engine();
+      if (engine == "auto")
+      {
+        const auto& args = system_test_config::metashell_args();
+        return std::find_if(
+                   args.begin(), args.end(), [](const std::string& arg) {
+                     return arg.find("cl.exe") != std::string::npos;
+                   }) != args.end();
+      }
+      else
+      {
+        return engine == "msvc";
+      }
+    }
 
     bool using_wave() { return current_engine() == "wave"; }
   }
