@@ -14,9 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function(register_system_test TEST_TARGET_NAME)
+function(templight_path OUT_VAR)
   if (WIN32)
-    set(TEMPLIGHT_PATH templight/templight.exe)
+    set(${OUT_VAR} templight/templight.exe PARENT_SCOPE)
+  else()
+    set(${OUT_VAR} templight_metashell PARENT_SCOPE)
+  endif()
+endfunction()
+
+function(register_system_test TEST_TARGET_NAME)
+  templight_path(TEMPLIGHT_PATH)
+
+  if (WIN32)
     set(
       CLANG_FLAGS
       -fno-ms-compatibility
@@ -26,7 +35,6 @@ function(register_system_test TEST_TARGET_NAME)
       "-I$<TARGET_FILE_DIR:metashell>/templight/include"
     )
   else()
-    set(TEMPLIGHT_PATH templight_metashell)
     if (APPLE)
       set(
         CLANG_FLAGS
@@ -53,6 +61,17 @@ function(register_system_test TEST_TARGET_NAME)
   )
 
   add_test(
+    NAME ${TEST_TARGET_NAME}_auto_internal_templight
+    COMMAND
+      ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
+      --
+  )
+
+  add_test(
     NAME ${TEST_TARGET_NAME}_templight
     COMMAND
       ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine templight --
@@ -69,9 +88,41 @@ function(register_system_test TEST_TARGET_NAME)
   )
 
   add_test(
+    NAME ${TEST_TARGET_NAME}_auto_templight
+    COMMAND
+      ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
+      "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
+      -std=c++0x
+      -ftemplate-depth=256
+      -Wfatal-errors
+      ${CLANG_FLAGS}
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
+      --
+  )
+
+  add_test(
     NAME ${TEST_TARGET_NAME}_clang
     COMMAND
       ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine clang --
+      "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
+      -std=c++0x
+      -ftemplate-depth=256
+      -Wfatal-errors
+      ${CLANG_FLAGS}
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
+      --
+  )
+
+  add_test(
+    NAME ${TEST_TARGET_NAME}_auto_clang
+    COMMAND
+      ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
       "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
       -std=c++0x
       -ftemplate-depth=256
@@ -100,6 +151,19 @@ function(register_gcc_system_test TEST_TARGET_NAME)
         "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
         --
     )
+
+    add_test(
+      NAME ${TEST_TARGET_NAME}_auto_gcc
+      COMMAND
+        ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
+        "${GXX_BINARY}"
+        -std=c++0x
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
+        --
+    )
   else()
     message(WARNING "Skipping gcc system test (g++ exectuable not found)")
   endif()
@@ -114,6 +178,19 @@ function(register_msvc_system_test TEST_TARGET_NAME)
         NAME ${TEST_TARGET_NAME}_msvc
         COMMAND
           ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine msvc --
+          "\"${MSVC_CL_BINARY}\""
+          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\config\\include\""
+          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\mpl\\include\""
+          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\preprocessor\\include\""
+          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\type_traits\\include\""
+          "/EHsc"
+          --
+      )
+
+      add_test(
+        NAME ${TEST_TARGET_NAME}_auto_msvc
+        COMMAND
+          ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
           "\"${MSVC_CL_BINARY}\""
           "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\config\\include\""
           "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\mpl\\include\""

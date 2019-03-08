@@ -24,6 +24,8 @@
 
 #include <boost/filesystem/path.hpp>
 
+#include <functional>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -34,16 +36,19 @@ namespace metashell
     class engine_entry
     {
     public:
-      engine_entry(engine_factory factory_,
-                   std::string args_,
-                   data::markdown_string description_,
-                   std::vector<data::feature> features_);
+      engine_entry(
+          engine_factory factory_,
+          std::string args_,
+          data::markdown_string description_,
+          std::vector<data::feature> features_,
+          std::function<bool(const std::vector<std::string>&)> this_engine_);
 
       std::unique_ptr<iface::engine>
       build(const data::config& config_,
             const boost::filesystem::path& internal_dir_,
             const boost::filesystem::path& temp_dir_,
             const boost::filesystem::path& env_filename_,
+            const std::map<std::string, engine_entry>& engines_,
             iface::environment_detector& env_detector_,
             iface::displayer& displayer_,
             logger* logger_) const;
@@ -53,12 +58,18 @@ namespace metashell
 
       const std::vector<data::feature>& features() const;
 
+      bool usable_by_auto() const;
+      bool this_engine(const std::vector<std::string>&) const;
+
     private:
       engine_factory _factory;
       std::string _args;
       data::markdown_string _description;
       std::vector<data::feature> _features;
+      std::function<bool(const std::vector<std::string>&)> _this_engine;
     };
+
+    std::function<bool(const std::vector<std::string>&)> never_used_by_auto();
 
     std::string list_features(const engine_entry& engine_);
     data::markdown_string

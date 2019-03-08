@@ -23,10 +23,13 @@
 #include <metashell/engine/clang/header_discoverer.hpp>
 #include <metashell/engine/clang/macro_discovery.hpp>
 #include <metashell/engine/clang/preprocessor_shell.hpp>
+#include <metashell/engine/clang/this_engine.hpp>
 #include <metashell/engine/clang/type_shell.hpp>
 
 #include <metashell/core/engine.hpp>
 #include <metashell/core/not_supported.hpp>
+
+#include <boost/algorithm/string/predicate.hpp>
 
 namespace metashell
 {
@@ -47,15 +50,29 @@ namespace metashell
                   data::feature::macro_discovery()};
         }
 
+        bool
+        this_engine_internal_templight(const std::vector<std::string>& args_)
+        {
+          return args_.empty() || boost::starts_with(args_.front(), "-");
+        }
+
+        bool
+        this_engine_external_templight(const std::vector<std::string>& args_)
+        {
+          return !args_.empty() && clang::is_clang(args_.front()) &&
+                 clang::is_templight(args_.front());
+        }
+
         template <bool UseInternalTemplight>
-        std::unique_ptr<iface::engine>
-        create_templight_engine(const data::config& config_,
-                                const boost::filesystem::path& internal_dir_,
-                                const boost::filesystem::path& temp_dir_,
-                                const boost::filesystem::path& env_filename_,
-                                iface::environment_detector& env_detector_,
-                                iface::displayer& displayer_,
-                                core::logger* logger_)
+        std::unique_ptr<iface::engine> create_templight_engine(
+            const data::config& config_,
+            const boost::filesystem::path& internal_dir_,
+            const boost::filesystem::path& temp_dir_,
+            const boost::filesystem::path& env_filename_,
+            const std::map<std::string, core::engine_entry>&,
+            iface::environment_detector& env_detector_,
+            iface::displayer& displayer_,
+            core::logger* logger_)
         {
           using core::not_supported;
 
@@ -94,7 +111,7 @@ namespace metashell
                            "shipped with Metashell. `<Clang args>` are passed "
                            "to"
                            " the compiler as command line-arguments."),
-                       supported_features()) :
+                       supported_features(), this_engine_internal_templight) :
                    core::engine_entry(&create_templight_engine<false>,
                                       "<Templight binary> -std=<standard to "
                                       "use> [<Clang args>]",
@@ -110,7 +127,8 @@ namespace metashell
                                           "by default, you can omit "
                                           "the "
                                           "`-std` argument."),
-                                      supported_features());
+                                      supported_features(),
+                                      this_engine_external_templight);
       }
     }
   }

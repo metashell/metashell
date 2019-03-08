@@ -2,12 +2,17 @@
 
 ## Not in any release yet
 
+* New features
+    * New engine: `auto`. It chooses the engine to use based on the compiler
+      specified in the engine arguments.
+
 * Changes to existing behaviour
     * **Breaking change** Regular expression syntax for breakpoints changes
     from
     [Perl syntax](https://www.boost.org/doc/libs/1_68_0/libs/regex/doc/html/boost_regex/syntax/perl_syntax.html)
     to
     [ECMAScript](https://en.cppreference.com/w/cpp/regex/ecmascript).
+    * The default engine is `auto`.
 
 ## Version 4.0.0
 

@@ -30,14 +30,17 @@ namespace metashell
       std::string no_features() { return "no features are supported"; }
     }
 
-    engine_entry::engine_entry(engine_factory factory_,
-                               std::string args_,
-                               data::markdown_string description_,
-                               std::vector<data::feature> features_)
+    engine_entry::engine_entry(
+        engine_factory factory_,
+        std::string args_,
+        data::markdown_string description_,
+        std::vector<data::feature> features_,
+        std::function<bool(const std::vector<std::string>&)> this_engine_)
       : _factory(move(factory_)),
         _args(move(args_)),
         _description(std::move(description_)),
-        _features(move(features_))
+        _features(move(features_)),
+        _this_engine(std::move(this_engine_))
     {
       std::sort(_features.begin(), _features.end());
     }
@@ -47,12 +50,13 @@ namespace metashell
                         const boost::filesystem::path& internal_dir_,
                         const boost::filesystem::path& temp_dir_,
                         const boost::filesystem::path& env_filename_,
+                        const std::map<std::string, engine_entry>& engines_,
                         iface::environment_detector& env_detector_,
                         iface::displayer& displayer_,
                         logger* logger_) const
     {
       return _factory(config_, internal_dir_, temp_dir_, env_filename_,
-                      env_detector_, displayer_, logger_);
+                      engines_, env_detector_, displayer_, logger_);
     }
 
     const std::string& engine_entry::args() const { return _args; }
@@ -65,6 +69,13 @@ namespace metashell
     const std::vector<data::feature>& engine_entry::features() const
     {
       return _features;
+    }
+
+    bool engine_entry::usable_by_auto() const { return bool(_this_engine); }
+
+    bool engine_entry::this_engine(const std::vector<std::string>& args_) const
+    {
+      return usable_by_auto() && _this_engine(args_);
     }
 
     std::string list_features(const engine_entry& engine_)
@@ -88,6 +99,11 @@ namespace metashell
                            return data::self_reference(to_string(f_));
                          }),
                      ", ");
+    }
+
+    std::function<bool(const std::vector<std::string>&)> never_used_by_auto()
+    {
+      return {};
     }
   }
 }

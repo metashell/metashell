@@ -21,12 +21,17 @@
 #include <metashell/engine/vc/header_discoverer.hpp>
 #include <metashell/engine/vc/preprocessor_shell.hpp>
 
+#include <metashell/process/exception.hpp>
+#include <metashell/process/run.hpp>
+
 #include <metashell/core/engine.hpp>
 #include <metashell/core/not_supported.hpp>
 
 #include <metashell/data/exception.hpp>
 
 #include <just/environment.hpp>
+
+#include <regex>
 
 namespace metashell
 {
@@ -41,6 +46,28 @@ namespace metashell
           return {data::feature::preprocessor_shell(),
                   data::feature::header_discoverer(),
                   data::feature::cpp_validator()};
+        }
+
+        bool this_engine(const std::vector<std::string>& args_)
+        {
+          if (args_.empty())
+          {
+            return false;
+          }
+          else
+          {
+            try
+            {
+              const std::string dash_v =
+                  process::run(args_.front(), {"-v"}, "").standard_error;
+              return regex_search(dash_v, std::regex("^Microsoft ")) &&
+                     regex_search(dash_v, std::regex("[\\n\\r]cl : .*-v"));
+            }
+            catch (const process::exception&)
+            {
+              return false;
+            }
+          }
         }
 
         std::string
@@ -96,6 +123,7 @@ namespace metashell
                          const boost::filesystem::path& internal_dir_,
                          const boost::filesystem::path& temp_dir_,
                          const boost::filesystem::path& env_filename_,
+                         const std::map<std::string, core::engine_entry>&,
                          iface::environment_detector& env_detector_,
                          iface::displayer&,
                          core::logger* logger_)
@@ -141,7 +169,7 @@ namespace metashell
                 "to run Metashell from the Visual Studio Developer Prompt to "
                 "use "
                 "this engine."),
-            supported_features());
+            supported_features(), this_engine);
       }
     }
   }

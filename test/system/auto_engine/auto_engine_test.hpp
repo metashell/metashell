@@ -1,8 +1,8 @@
-#ifndef METASHELL_DATA_SHELL_CONFIG_HPP
-#define METASHELL_DATA_SHELL_CONFIG_HPP
+#ifndef METASHELL_SYSTEM_TEST_AUTO_ENGINE_AUTO_ENGINE_TEST_HPP
+#define METASHELL_SYSTEM_TEST_AUTO_ENGINE_AUTO_ENGINE_TEST_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,26 +17,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/shell_config_name.hpp>
+#include <boost/filesystem/path.hpp>
 
-#include <string>
+#include <boost/optional.hpp>
+
 #include <vector>
 
-namespace metashell
+class auto_engine_test
 {
-  namespace data
-  {
-    class shell_config
-    {
-    public:
-      shell_config_name name;
+public:
+  explicit auto_engine_test(boost::filesystem::path metashell_);
 
-      std::vector<std::string> engine_args;
-      bool use_precompiled_headers = false;
-      std::string engine = "auto";
-      bool preprocessor_mode = false;
-    };
-  }
-}
+  void
+  test_engine_selection(const std::vector<std::string>& args_,
+                        const boost::optional<std::string>& expected_engine_);
+
+private:
+  boost::filesystem::path _metashell;
+};
 
 #endif

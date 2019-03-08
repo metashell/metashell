@@ -1,14 +1,29 @@
 # Using different compilers
 
 Metashell uses [Clang](http://clang.llvm.org) by default, but supports other
-C/C++ compilers as well. It has a concept of the compiler engine, which is a
-plugin responsible for executing commands and queries using a given compiler.
+C/C++ compilers as well. The easiest way to use a different compiler is to
+provide its binary after the `--` argument. For example:
 
-> Note that set of supported
-> [Metashell features](../reference/engines/index.html#available-features)
-> varies across compilers. Please check the
-> [Compiler Support Matrix](../reference/engines/index.html#compiler-support-matrix)
-> for further reference.
+```
+$ metashell -- /usr/bin/gcc
+```
+
+Note that this method gives access only to external compilers. Internally used
+compilers (eg. [Boost.Wave](http://boost.org/libs/wave)) require using the
+`--engine` argument. See
+[Explicitly specifying the compiler to use](#explicitly-specifying-the-compiler-to-use)
+for further details.
+
+Also note that the set of supported
+[Metashell features](../reference/engines/index.html#available-features)
+varies across compilers. Please check the
+[Compiler Support Matrix](../reference/engines/index.html#compiler-support-matrix)
+for further reference.
+
+## Explicitly specifying the compiler to use
+
+Metashell has a concept of the compiler engine, which is a
+plugin responsible for executing commands and queries using a given compiler.
 
 You can select the engine to use when launching Metashell, using the
 `--engine <name of the engine>` command-line option. By default, Metashell

@@ -1,8 +1,8 @@
-#ifndef METASHELL_DATA_SHELL_CONFIG_HPP
-#define METASHELL_DATA_SHELL_CONFIG_HPP
+#ifndef METASHELL_COMPILER_STUB_CL_STUB_HPP
+#define METASHELL_COMPILER_STUB_CL_STUB_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,24 +17,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/shell_config_name.hpp>
+#include <metashell/compiler_stub/stub.hpp>
 
-#include <string>
-#include <vector>
+#include <functional>
 
 namespace metashell
 {
-  namespace data
+  namespace compiler_stub
   {
-    class shell_config
+    class cl_stub
     {
     public:
-      shell_config_name name;
+      cl_stub(
+          std::string version_,
+          std::string usage_,
+          const std::function<std::string(const std::string&)>& invalid_arg_);
 
-      std::vector<std::string> engine_args;
-      bool use_precompiled_headers = false;
-      std::string engine = "auto";
-      bool preprocessor_mode = false;
+      data::exit_code_t run(int argc_, const char* argv_[]) const;
+
+    private:
+      stub _stub;
     };
   }
 }

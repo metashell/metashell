@@ -49,6 +49,7 @@ namespace metashell
                            const boost::filesystem::path& internal_dir_,
                            const boost::filesystem::path&,
                            const boost::filesystem::path&,
+                           const std::map<std::string, core::engine_entry>&,
                            iface::environment_detector& env_detector_,
                            iface::displayer& displayer_,
                            core::logger* logger_)
@@ -78,7 +79,7 @@ namespace metashell
                                          "deployed with Metashell." :
                                          std::string()) +
                   "<br /><br />" + args(UseTemplightHeaders)),
-              supported_features());
+              supported_features(), core::never_used_by_auto());
         }
       } // anonymous namespace
 
