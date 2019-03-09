@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/command.hpp>
+#include <metashell/data/pragma_name.hpp>
 
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/pragma_handler.hpp>
@@ -25,15 +26,13 @@
 
 #include <map>
 #include <memory>
-#include <string>
-#include <vector>
 
 namespace metashell
 {
   namespace main_shell
   {
     void process_pragma(
-        const std::map<std::vector<std::string>,
+        const std::map<data::pragma_name,
                        std::unique_ptr<iface::pragma_handler>>& handlers_,
         const data::command::iterator& begin_,
         const data::command::iterator& end_,

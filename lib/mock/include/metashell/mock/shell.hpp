@@ -66,7 +66,7 @@ namespace metashell
 
       MOCK_CONST_METHOD0(
           pragma_handlers,
-          const std::map<std::vector<std::string>,
+          const std::map<data::pragma_name,
                          std::unique_ptr<iface::pragma_handler>>&());
 
       MOCK_CONST_METHOD0(env_path, boost::filesystem::path());

@@ -20,20 +20,20 @@
 #include <metashell/core/command_processor_queue.hpp>
 #include <metashell/core/logger.hpp>
 
+#include <metashell/data/pragma_name.hpp>
+
 #include <metashell/iface/pragma_handler.hpp>
 
 #include <boost/filesystem/path.hpp>
 
 #include <map>
 #include <memory>
-#include <string>
-#include <vector>
 
 namespace metashell
 {
   namespace defaults
   {
-    std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>>
+    std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>
     pragma_map(core::command_processor_queue* cpq_,
                const boost::filesystem::path& mdb_temp_dir_,
                core::logger* logger_);

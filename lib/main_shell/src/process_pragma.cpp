@@ -21,54 +21,12 @@
 #include <metashell/data/token.hpp>
 #include <metashell/data/token_type.hpp>
 
-#include <boost/optional.hpp>
-
 namespace metashell
 {
   namespace main_shell
   {
     namespace
     {
-      bool can_be_part_of_name(const data::token& t_)
-      {
-        return t_.type() == data::token_type::identifier;
-      }
-
-      boost::optional<data::command::iterator>
-      is_this_pragma(const std::vector<std::string>& name_,
-                     data::command::iterator begin_,
-                     const data::command::iterator& end_)
-      {
-        using std::string;
-        using std::vector;
-        using boost::optional;
-
-        const vector<string>::const_iterator e = name_.end();
-        vector<string>::const_iterator i = name_.begin();
-        while (begin_ != end_ && i != e && can_be_part_of_name(*begin_) &&
-               *i == begin_->value())
-        {
-          ++i;
-          begin_ = skip_whitespace(skip(begin_), end_);
-        }
-        return i == e ? optional<data::command::iterator>(begin_) :
-                        optional<data::command::iterator>();
-      }
-
-      std::string name_of_pragma(data::command::iterator begin_,
-                                 const data::command::iterator& end_)
-      {
-        std::ostringstream s;
-        bool first = true;
-        for (; begin_ != end_ && can_be_part_of_name(*begin_);
-             begin_ = skip_whitespace(skip(begin_), end_))
-        {
-          s << (first ? "" : " ") << begin_->value();
-          first = false;
-        }
-        return s.str();
-      }
-
       template <class ForwardIterator, class Pred>
       ForwardIterator
       find_last_if(ForwardIterator begin_, ForwardIterator end_, Pred pred_)
@@ -86,15 +44,13 @@ namespace metashell
     }
 
     void process_pragma(
-        const std::map<std::vector<std::string>,
+        const std::map<data::pragma_name,
                        std::unique_ptr<iface::pragma_handler>>& handlers_,
         const data::command::iterator& begin_,
         const data::command::iterator& end_,
         iface::shell& shell_,
         iface::displayer& displayer_)
     {
-      using boost::optional;
-
       const data::command::iterator e =
           end_of_pragma_argument_list(begin_, end_);
 
@@ -106,14 +62,15 @@ namespace metashell
       {
         assert(p.second);
 
-        if (const optional<data::command::iterator> i =
+        if (const boost::optional<data::command::iterator> i =
                 is_this_pragma(p.first, begin_, e))
         {
-          if (longest_fit_len < int(p.first.size()))
+          const auto len = p.first.tokens().size();
+          if (longest_fit_len < int(len))
           {
             longest_fit_begin = *i;
             longest_fit_handler = p.second.get();
-            longest_fit_len = p.first.size();
+            longest_fit_len = len;
           }
         }
       }
@@ -130,8 +87,8 @@ namespace metashell
       }
       else
       {
-        throw data::exception("Pragma " + name_of_pragma(begin_, e) +
-                              " not found");
+        throw data::exception(
+            "Pragma " + to_string(data::pragma_name(begin_, e)) + " not found");
       }
     }
   }

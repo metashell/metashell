@@ -35,6 +35,11 @@ namespace metashell
 
     const cpp_code& token::value() const { return _value; }
 
+    bool can_be_part_of_name(const token& t_)
+    {
+      return t_.type() == token_type::identifier;
+    }
+
     std::string string_literal_value(const token& token_)
     {
       assert(token_.type() == token_type::string_literal);

@@ -47,6 +47,8 @@ namespace metashell
       cpp_code _value;
     };
 
+    bool can_be_part_of_name(const token&);
+
     std::string format_token(const token& t_);
 
     std::ostream& operator<<(std::ostream& out_, const token& t_);

@@ -32,16 +32,14 @@
 
 namespace
 {
-  void show_markdown(const std::vector<std::string>& name_,
+  void show_markdown(const metashell::data::pragma_name& name_,
                      const metashell::iface::pragma_handler& h_,
                      std::ostream& out_)
   {
-    using boost::algorithm::join;
-
     const std::string args = h_.arguments();
 
-    out_ << "* __`#msh " << join(name_, " ") << (args.empty() ? "" : " ")
-         << args << "`__ <br />\n"
+    out_ << "* __`#msh " << name_ << (args.empty() ? "" : " ") << args
+         << "`__ <br />\n"
          << h_.description() << "\n\n";
   }
 

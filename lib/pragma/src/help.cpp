@@ -29,7 +29,7 @@ namespace metashell
     namespace
     {
       void display_all(iface::displayer& displayer_,
-                       const std::map<std::vector<std::string>,
+                       const std::map<data::pragma_name,
                                       std::unique_ptr<iface::pragma_handler>>&
                            pragma_handlers_)
       {
@@ -45,7 +45,7 @@ namespace metashell
 
           const std::string args = p.second->arguments();
           t.paragraphs.push_back(
-              data::paragraph("#msh " + join(p.first, " ") +
+              data::paragraph("#msh " + to_string(p.first) +
                                   (args.empty() ? std::string() : " " + args),
                               "  "));
         }
@@ -61,18 +61,6 @@ namespace metashell
         t.paragraphs.push_back(empty_line);
 
         displayer_.show_comment(t);
-      }
-
-      template <class It1, class It2>
-      bool prefix_of(It1 prefix_begin_, It1 prefix_end_, It2 begin_, It2 end_)
-      {
-        while (prefix_begin_ != prefix_end_ && begin_ != end_ &&
-               *prefix_begin_ == *begin_)
-        {
-          ++prefix_begin_;
-          ++begin_;
-        }
-        return prefix_begin_ == prefix_end_;
       }
     }
 
@@ -116,8 +104,7 @@ namespace metashell
         {
           assert(h.second);
 
-          if (prefix_of(
-                  args.begin(), args.end(), h.first.begin(), h.first.end()))
+          if (prefix_of(args, h.first))
           {
             if (was_pragma)
             {
@@ -129,7 +116,7 @@ namespace metashell
             }
             const std::string p_args = h.second->arguments();
             help_text.paragraphs.push_back(data::paragraph(
-                "#msh " + join(h.first, " ") +
+                "#msh " + to_string(h.first) +
                 (p_args.empty() ? std::string() : " " + p_args)));
             help_text.paragraphs.push_back(
                 data::paragraph(h.second->description(), "    "));

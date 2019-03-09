@@ -212,8 +212,8 @@ namespace metashell {
         const boost::filesystem::path& env_filename_,
         std::function<std::unique_ptr<iface::engine>(const data::config&)>
             engine_builder_,
-        std::map<std::vector<std::string>,
-                 std::unique_ptr<iface::pragma_handler>> pragma_handlers_,
+        std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>
+            pragma_handlers_,
         core::logger* logger_,
         std::unique_ptr<iface::environment> env_)
       : _internal_dir(internal_dir_),
@@ -400,8 +400,7 @@ namespace metashell {
       }
     }
 
-    const std::map<std::vector<std::string>,
-                   std::unique_ptr<iface::pragma_handler>>&
+    const std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>&
     shell::pragma_handlers() const
     {
       return _pragma_handlers;

@@ -78,9 +78,8 @@ TEST(process_pragma, processing_existing_handler)
 {
   bool foo_run = false;
 
-  std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>> m;
-  m.emplace(
-      std::vector<std::string>{"foo"}, std::make_unique<test_handler>(foo_run));
+  std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>> m;
+  m.emplace(data::pragma_name{"foo"}, std::make_unique<test_handler>(foo_run));
 
   const data::command cmd =
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo"));
@@ -96,8 +95,8 @@ TEST(process_pragma, pragma_with_two_token_name_is_called)
 {
   bool foo_bar_run = false;
 
-  std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>> m;
-  m.emplace(std::vector<std::string>{"foo", "bar"},
+  std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>> m;
+  m.emplace(data::pragma_name{"foo", "bar"},
             std::make_unique<test_handler>(foo_bar_run));
 
   const data::command cmd =
@@ -116,10 +115,9 @@ TEST(process_pragma,
   bool foo_bar_run = false;
   bool foo_run = false;
 
-  std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>> m;
-  m.emplace(
-      std::vector<std::string>{"foo"}, std::make_unique<test_handler>(foo_run));
-  m.emplace(std::vector<std::string>{"foo", "bar"},
+  std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>> m;
+  m.emplace(data::pragma_name{"foo"}, std::make_unique<test_handler>(foo_run));
+  m.emplace(data::pragma_name{"foo", "bar"},
             std::make_unique<test_handler>(foo_bar_run));
 
   const data::command cmd =
@@ -138,10 +136,9 @@ TEST(process_pragma, pragma_prefix_is_selected_when_longer_version_is_available)
   bool foo_bar_run = false;
   bool foo_run = false;
 
-  std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>> m;
-  m.emplace(
-      std::vector<std::string>{"foo"}, std::make_unique<test_handler>(foo_run));
-  m.emplace(std::vector<std::string>{"foo", "bar"},
+  std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>> m;
+  m.emplace(data::pragma_name{"foo"}, std::make_unique<test_handler>(foo_run));
+  m.emplace(data::pragma_name{"foo", "bar"},
             std::make_unique<test_handler>(foo_bar_run));
 
   const data::command cmd =

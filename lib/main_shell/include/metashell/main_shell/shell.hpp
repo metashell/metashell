@@ -20,6 +20,7 @@
 #include <metashell/core/logger.hpp>
 
 #include <metashell/data/config.hpp>
+#include <metashell/data/pragma_name.hpp>
 
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/engine.hpp>
@@ -36,7 +37,6 @@
 #include <set>
 #include <stack>
 #include <string>
-#include <vector>
 
 namespace metashell
 {
@@ -50,9 +50,8 @@ namespace metashell
             const boost::filesystem::path& env_filename_,
             std::function<std::unique_ptr<iface::engine>(const data::config&)>
                 engine_builder_,
-            std::map<std::vector<std::string>,
-                     std::unique_ptr<iface::pragma_handler>> pragma_handlers_ =
-                {},
+            std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>
+                pragma_handlers_ = {},
             core::logger* logger_ = nullptr,
             std::unique_ptr<iface::environment> env_ =
                 std::unique_ptr<iface::environment>());
@@ -77,8 +76,7 @@ namespace metashell
       virtual void code_complete(const std::string& s_,
                                  std::set<std::string>& out_) override;
 
-      const std::map<std::vector<std::string>,
-                     std::unique_ptr<iface::pragma_handler>>&
+      const std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>&
       pragma_handlers() const override;
 
       virtual bool stopped() const override;
@@ -115,7 +113,7 @@ namespace metashell
       std::unique_ptr<iface::environment> _env;
       data::config _config;
       std::string _prev_line;
-      std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>>
+      std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>
           _pragma_handlers;
       bool _stopped;
       std::stack<data::cpp_code> _environment_stack;

@@ -69,12 +69,12 @@ namespace metashell
       }
     }
 
-    std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>>
+    std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>
     pragma_map(core::command_processor_queue* cpq_,
                const boost::filesystem::path& mdb_temp_dir_,
                core::logger* logger_)
     {
-      typedef std::vector<std::string> sv;
+      using sv = data::pragma_name;
 
       std::map<sv, std::unique_ptr<iface::pragma_handler>> result;
 
