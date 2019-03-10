@@ -86,14 +86,14 @@ namespace metashell
         std::vector<std::string> args;
         for (auto i = args_begin_; i != args_end_; ++i)
         {
-          switch (i->category())
+          switch (category(*i))
           {
           case data::token_category::whitespace:
           case data::token_category::comment:
             // skip token
             break;
           default:
-            args.push_back(i->value().value());
+            args.push_back(value(*i).value());
           }
         }
 

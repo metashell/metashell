@@ -240,7 +240,7 @@ namespace metashell
             indent(_console->width(), 2,
                    std::function<void(const data::token&)>(
                        [this](const data::token& t_) {
-                         this->_console->show(highlight_syntax(t_.value()));
+                         this->_console->show(highlight_syntax(value(t_)));
                        }),
                    code_, "<output>");
           }
@@ -249,7 +249,7 @@ namespace metashell
             indent(_console->width(), 2,
                    std::function<void(const data::token&)>(
                        [this](const data::token& t_) {
-                         this->_console->show(t_.value().value());
+                         this->_console->show(value(t_).value());
                        }),
                    code_, "<output>");
           }

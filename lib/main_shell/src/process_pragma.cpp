@@ -79,7 +79,7 @@ namespace metashell
         longest_fit_handler->run(
             begin_, find_last_if(begin_, longest_fit_begin,
                                  [](const data::token& token_) {
-                                   return token_.category() !=
+                                   return category(token_) !=
                                           data::token_category::whitespace;
                                  }) +
                         1,

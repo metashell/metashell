@@ -96,20 +96,20 @@ namespace metashell
             const std::string prefix = boost::algorithm::join(
                 cmd | sliced(0, cmd.size() - 1) |
                     transformed([](const data::token& t_) {
-                      return t_.value().value();
+                      return value(t_).value();
                     }),
                 "");
 
             const data::token& last = *(cmd.end() - 1);
 
-            if (last.category() == data::token_category::identifier ||
-                last.category() == data::token_category::keyword)
+            if (category(last) == data::token_category::identifier ||
+                category(last) == data::token_category::keyword)
             {
-              return {prefix, last.value().value()};
+              return {prefix, value(last).value()};
             }
             else
             {
-              return {prefix + last.value().value(), ""};
+              return {prefix + value(last).value(), ""};
             }
           }
         }

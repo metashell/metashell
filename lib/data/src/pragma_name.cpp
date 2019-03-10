@@ -28,7 +28,7 @@ namespace metashell
       for (; begin_ != end_ && can_be_part_of_name(*begin_);
            begin_ = skip_whitespace(skip(begin_), end_))
       {
-        _tokens.push_back(begin_->value().value());
+        _tokens.push_back(value(*begin_).value());
       }
     }
 
@@ -65,7 +65,7 @@ namespace metashell
       for (const auto& token : name_.tokens())
       {
         if (begin_ == end_ || !can_be_part_of_name(*begin_) ||
-            token != begin_->value())
+            token != value(*begin_))
         {
           return boost::none;
         }

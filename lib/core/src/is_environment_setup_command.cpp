@@ -41,7 +41,7 @@ namespace metashell
                        const data::command::iterator& end_)
       {
         return std::find_if(begin_, end_, [](const data::token& t_) {
-                 return t_.type() == data::token_type::keyword_typedef;
+                 return type_of(t_) == data::token_type::keyword_typedef;
                }) != end_;
       }
 
@@ -52,11 +52,11 @@ namespace metashell
         data::token_type t = data::token_type::unknown;
         for (data::command::iterator i = begin_; i != end_; ++i)
         {
-          const data::token_category c = i->category();
+          const data::token_category c = category(*i);
           if (c != data::token_category::whitespace &&
               c != data::token_category::comment)
           {
-            t = i->type();
+            t = type_of(*i);
           }
         }
         return t;
@@ -78,10 +78,10 @@ namespace metashell
         else
         {
           const data::token t = *begin_;
-          switch (t.category())
+          switch (category(t))
           {
           case data::token_category::keyword:
-            switch (t.type())
+            switch (type_of(t))
             {
             case data::token_type::keyword_bool:
             case data::token_type::keyword_char:

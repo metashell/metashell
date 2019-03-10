@@ -52,7 +52,7 @@ namespace metashell
     command::iterator skip_whitespace(command::iterator begin_,
                                       const command::iterator& end_)
     {
-      return (begin_ != end_ && whitespace_or_comment(begin_->category())) ?
+      return (begin_ != end_ && whitespace_or_comment(category(*begin_))) ?
                  skip(begin_) :
                  begin_;
     }
@@ -61,7 +61,7 @@ namespace metashell
                                           const command::iterator& end_)
     {
       return std::find_if(begin_, end_, [](const token& token_) {
-        return !whitespace_or_comment(token_.category());
+        return !whitespace_or_comment(category(token_));
       });
     }
 
@@ -71,7 +71,7 @@ namespace metashell
       std::ostringstream s;
       for (; begin_ != end_; ++begin_)
       {
-        s << begin_->value();
+        s << value(*begin_);
       }
       return cpp_code(s.str());
     }

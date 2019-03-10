@@ -109,7 +109,7 @@ namespace metashell
       {
         return std::find_if(
                    cmd_.begin(), cmd_.end(), [](const data::token& t_) -> bool {
-                     const data::token_category c = t_.category();
+                     const data::token_category c = category(t_);
                      return c != data::token_category::whitespace &&
                             c != data::token_category::comment;
                    }) == cmd_.end();
