@@ -19,7 +19,6 @@
 
 #include <metashell/iface/history.hpp>
 
-#include <string>
 #include <vector>
 
 namespace metashell
@@ -29,12 +28,12 @@ namespace metashell
     class in_memory_history : public iface::history
     {
     public:
-      virtual void add(const std::string& cmd_) override;
+      virtual void add(const data::user_input& cmd_) override;
 
-      const std::vector<std::string>& commands() const;
+      const std::vector<data::user_input>& commands() const;
 
     private:
-      std::vector<std::string> _cmds;
+      std::vector<data::user_input> _cmds;
     };
   }
 }

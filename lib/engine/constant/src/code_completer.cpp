@@ -23,8 +23,8 @@ namespace metashell
     namespace constant
     {
       void code_completer::code_complete(const iface::environment&,
-                                         const std::string&,
-                                         std::set<std::string>&,
+                                         const data::user_input&,
+                                         std::set<data::user_input>&,
                                          bool)
       {
         // ignore

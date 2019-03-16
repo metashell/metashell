@@ -54,10 +54,10 @@ namespace metashell
       virtual bool stopped() const override;
 
       void display_splash(iface::displayer& displayer_) const;
-      virtual void line_available(const std::string& line,
+      virtual void line_available(const data::user_input& line,
                                   iface::displayer& displayer_,
                                   iface::history& history_) override;
-      void line_available(const std::string& line,
+      void line_available(const data::user_input& line,
                           iface::displayer& displayer_);
       virtual void cancel_operation() override;
 
@@ -78,8 +78,8 @@ namespace metashell
       void command_help(const std::string& arg, iface::displayer& displayer_);
       void command_quit(const std::string& arg, iface::displayer& displayer_);
 
-      virtual void code_complete(const std::string& s_,
-                                 std::set<std::string>& out_) override;
+      virtual void code_complete(const data::user_input& s_,
+                                 std::set<data::user_input>& out_) override;
 
       static command_handler_map build_command_handler(bool preprocessor_);
 
@@ -127,7 +127,7 @@ namespace metashell
       int next_breakpoint_id = 1;
       breakpoints_t breakpoints;
 
-      std::string prev_line;
+      data::user_input prev_line;
       bool last_command_repeatable = false;
 
       // It is empty if evaluate was called with "-".

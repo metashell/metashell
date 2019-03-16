@@ -29,27 +29,28 @@ TEST(string_reader, empty)
 
 TEST(string_reader, one_element)
 {
-  string_reader r{"foo"};
+  string_reader r{metashell::data::user_input("foo")};
 
   const auto s1 = r(">");
   const auto s2 = r(">");
 
   ASSERT_TRUE(boost::none != s1);
-  ASSERT_EQ("foo", *s1);
+  ASSERT_EQ(metashell::data::user_input("foo"), *s1);
   ASSERT_TRUE(boost::none == s2);
 }
 
 TEST(string_reader, two_elements)
 {
-  string_reader r{"foo", "bar"};
+  string_reader r{
+      metashell::data::user_input("foo"), metashell::data::user_input("bar")};
 
   const auto s1 = r(">");
   const auto s2 = r(">");
   const auto s3 = r(">");
 
   ASSERT_TRUE(boost::none != s1);
-  ASSERT_EQ("foo", *s1);
+  ASSERT_EQ(metashell::data::user_input("foo"), *s1);
   ASSERT_TRUE(boost::none != s2);
-  ASSERT_EQ("bar", *s2);
+  ASSERT_EQ(metashell::data::user_input("bar"), *s2);
   ASSERT_TRUE(boost::none == s3);
 }

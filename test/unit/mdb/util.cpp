@@ -20,7 +20,7 @@
 
 std::tuple<metashell::mdb::command, std::string>
 get_command_from_map(const metashell::mdb::command_handler_map& map,
-                     const std::string& line)
+                     const metashell::data::user_input& line)
 {
   if (const auto opt_pair = map.get_command_for_line(line))
   {
@@ -28,6 +28,6 @@ get_command_from_map(const metashell::mdb::command_handler_map& map,
   }
   else
   {
-    throw std::logic_error("Command for " + line + " not found.");
+    throw std::logic_error("Command for " + line.value() + " not found.");
   }
 }

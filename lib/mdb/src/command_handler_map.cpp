@@ -42,10 +42,10 @@ namespace metashell
     }
 
     boost::optional<std::tuple<command, std::string>>
-    command_handler_map::get_command_for_line(const std::string& line) const
+    command_handler_map::get_command_for_line(
+        const data::user_input& line) const
     {
-
-      std::stringstream line_stream(line);
+      std::stringstream line_stream(line.value());
       std::string command;
 
       if (!(line_stream >> command))

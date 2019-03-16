@@ -33,22 +33,22 @@ TEST(command_handler_map, command_selection_1)
   mdb::command command;
   std::string args;
 
-  std::tie(command, args) = get_command_from_map(map, {"asd"});
+  std::tie(command, args) = get_command_from_map(map, data::user_input("asd"));
 
   ASSERT_EQ(std::vector<std::string>{"asd"}, command.get_keys());
   ASSERT_EQ(args, "");
 
-  std::tie(command, args) = get_command_from_map(map, {"efg"});
+  std::tie(command, args) = get_command_from_map(map, data::user_input("efg"));
 
   ASSERT_EQ(std::vector<std::string>{"efg"}, command.get_keys());
   ASSERT_EQ(args, "");
 
-  std::tie(command, args) = get_command_from_map(map, "a");
+  std::tie(command, args) = get_command_from_map(map, data::user_input("a"));
 
   ASSERT_EQ(std::vector<std::string>{"asd"}, command.get_keys());
   ASSERT_EQ(args, "");
 
-  std::tie(command, args) = get_command_from_map(map, "e");
+  std::tie(command, args) = get_command_from_map(map, data::user_input("e"));
 
   ASSERT_EQ(std::vector<std::string>{"efg"}, command.get_keys());
   ASSERT_EQ(args, "");
@@ -65,12 +65,12 @@ TEST(command_handler_map, command_selection_2)
   mdb::command command;
   std::string args;
 
-  std::tie(command, args) = get_command_from_map(map, "as");
+  std::tie(command, args) = get_command_from_map(map, data::user_input("as"));
 
   ASSERT_EQ(std::vector<std::string>{"asd"}, command.get_keys());
   ASSERT_EQ(args, "");
 
-  std::tie(command, args) = get_command_from_map(map, "af");
+  std::tie(command, args) = get_command_from_map(map, data::user_input("af"));
 
   ASSERT_EQ(std::vector<std::string>{"afg"}, command.get_keys());
   ASSERT_EQ(args, "");
@@ -87,12 +87,12 @@ TEST(command_handler_map, command_selection_3)
   mdb::command command;
   std::string args;
 
-  std::tie(command, args) = get_command_from_map(map, "as");
+  std::tie(command, args) = get_command_from_map(map, data::user_input("as"));
 
   ASSERT_EQ(std::vector<std::string>{"asd"}, command.get_keys());
   ASSERT_EQ(args, "");
 
-  std::tie(command, args) = get_command_from_map(map, "a");
+  std::tie(command, args) = get_command_from_map(map, data::user_input("a"));
 
   ASSERT_EQ(std::vector<std::string>{"a"}, command.get_keys());
   ASSERT_EQ(args, "");
@@ -106,9 +106,9 @@ TEST(command_handler_map, command_selection_4)
 
   mdb::command_handler_map map(commands);
 
-  ASSERT_FALSE(map.get_command_for_line(""));
-  ASSERT_FALSE(map.get_command_for_line("a"));
-  ASSERT_FALSE(map.get_command_for_line("as"));
+  ASSERT_FALSE(map.get_command_for_line(data::user_input("")));
+  ASSERT_FALSE(map.get_command_for_line(data::user_input("a")));
+  ASSERT_FALSE(map.get_command_for_line(data::user_input("as")));
 }
 
 TEST(command_handler_map, command_selection_5)
@@ -122,17 +122,17 @@ TEST(command_handler_map, command_selection_5)
   mdb::command command;
   std::string args;
 
-  std::tie(command, args) = get_command_from_map(map, "asd");
+  std::tie(command, args) = get_command_from_map(map, data::user_input("asd"));
 
   ASSERT_EQ((std::vector<std::string>{"asd", "xyz"}), command.get_keys());
   ASSERT_EQ(args, "");
 
-  std::tie(command, args) = get_command_from_map(map, "xyz");
+  std::tie(command, args) = get_command_from_map(map, data::user_input("xyz"));
 
   ASSERT_EQ((std::vector<std::string>{"asd", "xyz"}), command.get_keys());
   ASSERT_EQ(args, "");
 
-  std::tie(command, args) = get_command_from_map(map, "asf");
+  std::tie(command, args) = get_command_from_map(map, data::user_input("asf"));
 
   ASSERT_EQ(std::vector<std::string>{"asf"}, command.get_keys());
   ASSERT_EQ(args, "");
@@ -154,7 +154,7 @@ TEST(command_handler_map, command_selection_6)
   mdb::command command;
   std::string args;
 
-  std::tie(command, args) = get_command_from_map(map, "f");
+  std::tie(command, args) = get_command_from_map(map, data::user_input("f"));
 
   ASSERT_EQ(
       (std::vector<std::string>{"ft", "forwardtrace"}), command.get_keys());
@@ -177,7 +177,7 @@ TEST(command_handler_map, command_selection_7)
   mdb::command command;
   std::string args;
 
-  std::tie(command, args) = get_command_from_map(map, "f");
+  std::tie(command, args) = get_command_from_map(map, data::user_input("f"));
 
   ASSERT_EQ((std::vector<std::string>{"ft", "forwardtrace", "fff"}),
             command.get_keys());
@@ -197,7 +197,7 @@ TEST(command_handler_map, command_selection_8)
 
   mdb::command_handler_map map(commands);
 
-  ASSERT_FALSE(map.get_command_for_line("f"));
+  ASSERT_FALSE(map.get_command_for_line(data::user_input("f")));
 }
 
 TEST(command_handler_map, argument_passing)
@@ -210,22 +210,25 @@ TEST(command_handler_map, argument_passing)
   mdb::command command;
   std::string args;
 
-  std::tie(command, args) = get_command_from_map(map, "a abc");
+  std::tie(command, args) =
+      get_command_from_map(map, data::user_input("a abc"));
 
   ASSERT_EQ(std::vector<std::string>{"asf"}, command.get_keys());
   ASSERT_EQ(args, "abc");
 
-  std::tie(command, args) = get_command_from_map(map, "asf   abc");
+  std::tie(command, args) =
+      get_command_from_map(map, data::user_input("asf   abc"));
 
   ASSERT_EQ(std::vector<std::string>{"asf"}, command.get_keys());
   ASSERT_EQ(args, "abc");
 
-  std::tie(command, args) = get_command_from_map(map, "as   ab c");
+  std::tie(command, args) =
+      get_command_from_map(map, data::user_input("as   ab c"));
 
   ASSERT_EQ(std::vector<std::string>{"asf"}, command.get_keys());
   ASSERT_EQ(args, "ab c");
 
-  std::tie(command, args) = get_command_from_map(map, "a   ");
+  std::tie(command, args) = get_command_from_map(map, data::user_input("a   "));
 
   ASSERT_EQ(std::vector<std::string>{"asf"}, command.get_keys());
   ASSERT_EQ(args, "");

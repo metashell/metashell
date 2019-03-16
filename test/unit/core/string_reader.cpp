@@ -16,12 +16,14 @@
 
 #include "string_reader.hpp"
 
-string_reader::string_reader(std::initializer_list<std::string> strings_)
+string_reader::string_reader(
+    std::initializer_list<metashell::data::user_input> strings_)
   : _strings(strings_), _next(0)
 {
 }
 
-boost::optional<std::string> string_reader::operator()(const std::string&)
+boost::optional<metashell::data::user_input> string_reader::
+operator()(const std::string&)
 {
   if (_next == _strings.size())
   {

@@ -22,8 +22,6 @@
 #include <boost/iterator/iterator_categories.hpp>
 #include <boost/range/adaptor/type_erased.hpp>
 
-#include <vector>
-
 namespace metashell
 {
   namespace iface

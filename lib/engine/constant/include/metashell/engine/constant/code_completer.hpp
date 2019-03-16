@@ -29,8 +29,8 @@ namespace metashell
       {
       public:
         virtual void code_complete(const iface::environment&,
-                                   const std::string&,
-                                   std::set<std::string>&,
+                                   const data::user_input&,
+                                   std::set<data::user_input>&,
                                    bool) override;
       };
     }

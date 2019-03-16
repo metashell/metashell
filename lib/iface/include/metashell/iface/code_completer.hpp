@@ -17,17 +17,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/config.hpp>
 #include <metashell/data/feature.hpp>
-#include <metashell/data/include_type.hpp>
-#include <metashell/data/result.hpp>
+#include <metashell/data/user_input.hpp>
 #include <metashell/iface/environment.hpp>
 
-#include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
-
 #include <set>
-#include <string>
 
 namespace metashell
 {
@@ -39,8 +33,8 @@ namespace metashell
       virtual ~code_completer() {}
 
       virtual void code_complete(const environment& env_,
-                                 const std::string& src_,
-                                 std::set<std::string>& out_,
+                                 const data::user_input& src_,
+                                 std::set<data::user_input>& out_,
                                  bool use_precompiled_headers_) = 0;
 
       static data::feature name_of_feature()

@@ -29,8 +29,8 @@ TEST(readme, continue_abbreviated_as_c)
   mdb::command command;
   std::string args;
 
-  std::tie(command, args) =
-      get_command_from_map(mdb::shell::build_command_handler(false), "c");
+  std::tie(command, args) = get_command_from_map(
+      mdb::shell::build_command_handler(false), data::user_input("c"));
 
   auto keys = command.get_keys();
 

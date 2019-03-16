@@ -72,15 +72,15 @@ namespace metashell
       {
         assert(bool(completer));
 
-        static std::set<std::string> values;
-        static std::set<std::string>::const_iterator pos;
+        static std::set<data::user_input> values;
+        static std::set<data::user_input>::const_iterator pos;
 
         if (!state_) // init
         {
           const std::string edited_text = get_edited_text();
 
           const auto eb = edited_text.begin();
-          completer(std::string(eb, eb + completion_end), values);
+          completer(data::user_input(eb, eb + completion_end), values);
           pos = values.begin();
         }
 
@@ -90,11 +90,12 @@ namespace metashell
         }
         else
         {
-          const std::string str = text_ + *pos;
+          const auto str = text_ + pos->value();
           // readline expects the string to be allocated by malloc
-          char* s = (char*)malloc(str.length() + 1);
-          std::copy(str.begin(), str.end(), array_begin(s, str.length() + 1));
-          s[str.length()] = 0;
+          const auto len = str.size();
+          char* s = (char*)malloc(len + 1);
+          std::copy(str.begin(), str.end(), array_begin(s, len + 1));
+          s[len] = 0;
           ++pos;
           return s;
         }
@@ -107,7 +108,7 @@ namespace metashell
         return rl_completion_matches(const_cast<char*>(text_), &tab_generator);
       }
 
-      boost::optional<std::string>
+      boost::optional<data::user_input>
       read_next_line(const std::string& prompt_,
                      const data::code_completer& completer_)
       {
@@ -117,7 +118,7 @@ namespace metashell
 
         if (char* line = ::readline(prompt_.c_str()))
         {
-          const std::string str(line);
+          const data::user_input str(line);
 
 #if defined __FreeBSD__ || defined __OpenBSD__ || defined __APPLE__ ||         \
     defined USE_EDITLINE

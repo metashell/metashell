@@ -19,6 +19,8 @@
 
 #include <metashell/mdb/command.hpp>
 
+#include <metashell/data/user_input.hpp>
+
 #include <boost/container/flat_map.hpp>
 #include <boost/optional.hpp>
 
@@ -40,7 +42,7 @@ namespace metashell
 
       // <command, args>
       boost::optional<std::tuple<command, std::string>>
-      get_command_for_line(const std::string& line) const;
+      get_command_for_line(const data::user_input& line) const;
 
       const commands_t& get_commands() const;
 

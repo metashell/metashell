@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/user_input.hpp>
+
 #include <boost/optional.hpp>
 
 #include <functional>
@@ -26,7 +28,7 @@ namespace metashell
 {
   namespace data
   {
-    typedef std::function<boost::optional<std::string>(const std::string&)>
+    typedef std::function<boost::optional<user_input>(const std::string&)>
         line_reader;
   }
 }

@@ -20,12 +20,12 @@ namespace metashell
 {
   namespace core
   {
-    void in_memory_history::add(const std::string& cmd_)
+    void in_memory_history::add(const data::user_input& cmd_)
     {
       _cmds.push_back(cmd_);
     }
 
-    const std::vector<std::string>& in_memory_history::commands() const
+    const std::vector<data::user_input>& in_memory_history::commands() const
     {
       return _cmds;
     }

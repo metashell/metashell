@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/user_input.hpp>
+
 #include <boost/optional.hpp>
 
 #include <string>
@@ -25,15 +27,16 @@
 class string_reader
 {
 public:
-  explicit string_reader(std::initializer_list<std::string> strings_);
+  explicit string_reader(
+      std::initializer_list<metashell::data::user_input> strings_);
 
-  boost::optional<std::string> operator()(const std::string&);
+  boost::optional<metashell::data::user_input> operator()(const std::string&);
 
 private:
-  std::vector<std::string> _strings;
+  std::vector<metashell::data::user_input> _strings;
   // storing the index instead of an iterator makes the default copy
   // constructor work
-  std::vector<std::string>::size_type _next;
+  std::vector<metashell::data::user_input>::size_type _next;
 };
 
 #endif

@@ -29,7 +29,7 @@ namespace metashell
 {
   namespace readline
   {
-    void history::add(const std::string& cmd_)
+    void history::add(const data::user_input& cmd_)
     {
       // TODO save/restore history
       std::vector<char> l(cmd_.c_str(), cmd_.c_str() + cmd_.size() + 1);

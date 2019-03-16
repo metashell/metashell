@@ -182,7 +182,7 @@ namespace metashell
       displayer_.show_raw_text("For help, type \"help\".");
     }
 
-    void shell::line_available(const std::string& line_arg,
+    void shell::line_available(const data::user_input& line_arg,
                                iface::displayer& displayer_,
                                iface::history& history_)
     {
@@ -192,7 +192,7 @@ namespace metashell
         using boost::algorithm::all;
         using boost::is_space;
 
-        std::string line = line_arg;
+        data::user_input line = line_arg;
 
         if (line != prev_line && !line.empty())
         {
@@ -716,7 +716,8 @@ namespace metashell
         return;
       }
 
-      auto command_arg_pair = command_handler.get_command_for_line(arg);
+      auto command_arg_pair =
+          command_handler.get_command_for_line(data::user_input(arg));
       if (!command_arg_pair)
       {
         displayer_.show_error("Command not found\n");
@@ -986,12 +987,13 @@ namespace metashell
       // TODO
     }
 
-    void shell::code_complete(const std::string&, std::set<std::string>&)
+    void shell::code_complete(const data::user_input&,
+                              std::set<data::user_input>&)
     {
       // TODO
     }
 
-    void shell::line_available(const std::string& line,
+    void shell::line_available(const data::user_input& line,
                                iface::displayer& displayer_)
     {
       core::null_history h;

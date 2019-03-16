@@ -31,7 +31,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cctype>
 #include <sstream>
 
 namespace metashell
@@ -91,18 +90,6 @@ namespace metashell
             displayer_.show_cpp_code(data::cpp_code(r_.output));
           }
         }
-      }
-
-      bool has_non_whitespace(const std::string& s_)
-      {
-        for (char c : s_)
-        {
-          if (!std::isspace(c))
-          {
-            return true;
-          }
-        }
-        return false;
       }
 
       bool is_empty_line(const data::command& cmd_)
@@ -295,7 +282,7 @@ namespace metashell {
       }
     }
 
-    void shell::line_available(const std::string& s_,
+    void shell::line_available(const data::user_input& s_,
                                iface::displayer& displayer_,
                                iface::history& history_)
     {
@@ -303,7 +290,7 @@ namespace metashell {
       {
         if (s_.empty() || s_.back() != '\\')
         {
-          const std::string s = _line_prefix + s_;
+          const data::user_input s = _line_prefix + s_;
           _line_prefix.clear();
 
           const data::command cmd = core::to_command(data::cpp_code(s));
@@ -385,8 +372,8 @@ namespace metashell {
       return r.successful;
     }
 
-    void shell::code_complete(const std::string& s_,
-                              std::set<std::string>& out_)
+    void shell::code_complete(const data::user_input& s_,
+                              std::set<data::user_input>& out_)
     {
       try
       {
@@ -490,7 +477,7 @@ namespace metashell {
 
     data::config& shell::get_config() { return _config; }
 
-    void shell::line_available(const std::string& s_,
+    void shell::line_available(const data::user_input& s_,
                                iface::displayer& displayer_)
     {
       core::null_history h;

@@ -22,7 +22,8 @@ namespace metashell
 {
   namespace pragma
   {
-    macro::macro(std::string description_, std::vector<std::string> commands_)
+    macro::macro(std::string description_,
+                 std::vector<data::user_input> commands_)
       : _commands(move(commands_)), _description(move(description_))
     {
     }
@@ -33,7 +34,7 @@ namespace metashell
     {
       core::null_history ignore;
 
-      for (const std::string& cmd : _commands)
+      for (const data::user_input& cmd : _commands)
       {
         shell_.line_available(cmd, displayer_, ignore);
       }

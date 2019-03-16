@@ -21,6 +21,7 @@
 
 #include <metashell/data/config.hpp>
 #include <metashell/data/pragma_name.hpp>
+#include <metashell/data/user_input.hpp>
 
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/engine.hpp>
@@ -59,10 +60,11 @@ namespace metashell
       void display_splash(
           iface::displayer& displayer_,
           const std::map<std::string, std::string>& dependency_versions_);
-      virtual void line_available(const std::string& s_,
+      virtual void line_available(const data::user_input& s_,
                                   iface::displayer& displayer_,
                                   iface::history& history_) override;
-      void line_available(const std::string& s_, iface::displayer& displayer_);
+      void line_available(const data::user_input& s_,
+                          iface::displayer& displayer_);
       virtual std::string prompt() const override;
 
       virtual void cancel_operation() override;
@@ -73,8 +75,8 @@ namespace metashell
       void run_metaprogram(const data::cpp_code& s_,
                            iface::displayer& displayer_) override;
 
-      virtual void code_complete(const std::string& s_,
-                                 std::set<std::string>& out_) override;
+      virtual void code_complete(const data::user_input& s_,
+                                 std::set<data::user_input>& out_) override;
 
       const std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>&
       pragma_handlers() const override;
@@ -109,10 +111,10 @@ namespace metashell
     private:
       boost::filesystem::path _internal_dir;
       boost::filesystem::path _env_filename;
-      std::string _line_prefix;
+      data::user_input _line_prefix;
       std::unique_ptr<iface::environment> _env;
       data::config _config;
-      std::string _prev_line;
+      data::user_input _prev_line;
       std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>
           _pragma_handlers;
       bool _stopped;

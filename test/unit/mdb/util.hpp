@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/user_input.hpp>
 #include <metashell/mdb/command_handler_map.hpp>
 
 #include <string>
@@ -24,6 +25,6 @@
 
 std::tuple<metashell::mdb::command, std::string>
 get_command_from_map(const metashell::mdb::command_handler_map& map,
-                     const std::string& line);
+                     const metashell::data::user_input& line);
 
 #endif

@@ -29,7 +29,7 @@ namespace metashell
     {
     public:
       MOCK_METHOD3(line_available,
-                   void(const std::string&,
+                   void(const data::user_input&,
                         iface::displayer&,
                         iface::history&));
 
@@ -39,7 +39,7 @@ namespace metashell
       MOCK_CONST_METHOD0(stopped, bool());
 
       MOCK_METHOD2(code_complete,
-                   void(const std::string&, std::set<std::string>&));
+                   void(const data::user_input&, std::set<data::user_input>&));
 
       MOCK_CONST_METHOD0(get_config, const data::config&());
       MOCK_METHOD0(get_config, data::config&());
