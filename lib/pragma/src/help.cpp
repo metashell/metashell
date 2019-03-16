@@ -18,9 +18,9 @@
 
 #include <metashell/core/version.hpp>
 
-#include <boost/algorithm/string/join.hpp>
-
+#include <algorithm>
 #include <cassert>
+#include <iterator>
 
 namespace metashell
 {
@@ -33,8 +33,6 @@ namespace metashell
                                       std::unique_ptr<iface::pragma_handler>>&
                            pragma_handlers_)
       {
-        using boost::algorithm::join;
-
         data::text t;
         t.paragraphs.push_back(
             data::paragraph("Metashell has the following built-in pragmas:"));
@@ -83,19 +81,13 @@ namespace metashell
       }
       else
       {
-        std::vector<std::string> args;
-        for (auto i = args_begin_; i != args_end_; ++i)
-        {
-          switch (category(*i))
-          {
-          case data::token_category::whitespace:
-          case data::token_category::comment:
-            // skip token
-            break;
-          default:
-            args.push_back(value(*i).value());
-          }
-        }
+        std::vector<data::token> args;
+        std::copy_if(args_begin_, args_end_, std::back_inserter(args),
+                     [](const data::token& t_) {
+                       const auto cat = category(t_);
+                       return cat != data::token_category::whitespace &&
+                              cat != data::token_category::comment;
+                     });
 
         data::text help_text;
         bool was_pragma = false;
@@ -128,7 +120,8 @@ namespace metashell
         }
         else
         {
-          displayer_.show_error("Pragma " + join(args, " ") + " not found.");
+          displayer_.show_error("Pragma " + join_tokens(args, " ") +
+                                " not found.");
         }
       }
     }

@@ -16,8 +16,6 @@
 
 #include <metashell/data/pragma_name.hpp>
 
-#include <boost/algorithm/string/join.hpp>
-
 namespace metashell
 {
   namespace data
@@ -25,14 +23,20 @@ namespace metashell
     pragma_name::pragma_name(command::iterator begin_,
                              const command::iterator& end_)
     {
-      for (; begin_ != end_ && can_be_part_of_name(*begin_);
-           begin_ = skip_whitespace(skip(begin_), end_))
+      for (; begin_ != end_; begin_ = skip_whitespace(skip(begin_), end_))
       {
-        _tokens.push_back(value(*begin_).value());
+        if (auto id = mpark::get_if<identifier>(&*begin_))
+        {
+          _tokens.push_back(*id);
+        }
+        else
+        {
+          break;
+        }
       }
     }
 
-    const std::vector<std::string>& pragma_name::tokens() const
+    const std::vector<identifier>& pragma_name::tokens() const
     {
       return _tokens;
     }
@@ -49,7 +53,7 @@ namespace metashell
 
     std::string to_string(const pragma_name& n_)
     {
-      return boost::algorithm::join(n_.tokens(), " ");
+      return join_tokens(n_.tokens(), " ");
     }
 
     std::ostream& operator<<(std::ostream& out_, const pragma_name& n_)
@@ -64,8 +68,7 @@ namespace metashell
     {
       for (const auto& token : name_.tokens())
       {
-        if (begin_ == end_ || !can_be_part_of_name(*begin_) ||
-            token != value(*begin_))
+        if (begin_ == end_ || *begin_ != token)
         {
           return boost::none;
         }

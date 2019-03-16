@@ -22,6 +22,9 @@
 #include <metashell/data/token_category.hpp>
 #include <metashell/data/token_type.hpp>
 
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptor/transformed.hpp>
+
 #include <variant.hpp>
 
 #include <cassert>
@@ -54,8 +57,6 @@ namespace metashell
 
     token_category category(const token&);
 
-    bool can_be_part_of_name(const token&);
-
     std::string format_token(const token& t_);
 
     std::ostream& operator<<(std::ostream& out_, const token& t_);
@@ -72,6 +73,40 @@ namespace metashell
         ++begin_;
       }
       return cpp_code(s.str());
+    }
+
+    template <class TokenRange, class Sep>
+    std::string join_tokens(const TokenRange& tokens_, const Sep& sep_)
+    {
+      return boost::algorithm::join(
+          tokens_ | boost::adaptors::transformed(
+                        [](const token& t_) { return to_string(value(t_)); }),
+          sep_);
+    }
+
+    template <token_category Category>
+    bool operator==(const token& lhs_, const token_<Category>& rhs_)
+    {
+      const auto t = mpark::get_if<token_<Category>>(&lhs_);
+      return t && *t == rhs_;
+    }
+
+    template <token_category Category>
+    bool operator==(const token_<Category>& lhs_, const token& rhs_)
+    {
+      return rhs_ == lhs_;
+    }
+
+    template <token_category Category>
+    bool operator!=(const token& lhs_, const token_<Category>& rhs_)
+    {
+      return !(lhs_ == rhs_);
+    }
+
+    template <token_category Category>
+    bool operator!=(const token_<Category>& lhs_, const token& rhs_)
+    {
+      return !(lhs_ == rhs_);
     }
   }
 }

@@ -69,11 +69,6 @@ namespace metashell
       return mpark::visit(category_visitor(), t_);
     }
 
-    bool can_be_part_of_name(const token& t_)
-    {
-      return type_of(t_) == token_type::identifier;
-    }
-
     std::string string_literal_value(const token& token_)
     {
       assert(type_of(token_) == token_type::string_literal);

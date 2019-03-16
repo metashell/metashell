@@ -23,6 +23,9 @@
 
 #include <boost/operators.hpp>
 
+#include <iostream>
+#include <string>
+
 namespace metashell
 {
   namespace data
@@ -71,6 +74,18 @@ namespace metashell
     {
       return lhs_.type() < rhs_.type() ||
              (lhs_.type() == rhs_.type() && lhs_.value() < rhs_.value());
+    }
+
+    template <token_category Category>
+    std::string to_string(const token_<Category>& t_)
+    {
+      return to_string(t_.value());
+    }
+
+    template <token_category Category>
+    std::ostream& operator<<(std::ostream& out_, const token_<Category>& t_)
+    {
+      return out_ << t_.value();
     }
   }
 }

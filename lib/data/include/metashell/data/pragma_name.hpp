@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/command.hpp>
+#include <metashell/data/identifier.hpp>
 
 #include <boost/operators.hpp>
 #include <boost/optional.hpp>
@@ -34,16 +35,17 @@ namespace metashell
     {
     public:
       template <size_t... Lens>
-      explicit pragma_name(const char (&... parts)[Lens]) : _tokens{parts...}
+      explicit pragma_name(const char (&... parts)[Lens])
+        : _tokens{make_token<token_type::identifier>(cpp_code(parts))...}
       {
       }
 
       pragma_name(command::iterator, const command::iterator&);
 
-      const std::vector<std::string>& tokens() const;
+      const std::vector<identifier>& tokens() const;
 
     private:
-      std::vector<std::string> _tokens;
+      std::vector<identifier> _tokens;
     };
 
     bool operator<(const pragma_name&, const pragma_name&);
