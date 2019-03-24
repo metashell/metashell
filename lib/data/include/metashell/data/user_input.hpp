@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/cpp_code.hpp>
+#include <metashell/data/mdb_command.hpp>
 
 #include <boost/operators.hpp>
 
@@ -64,6 +65,7 @@ namespace metashell
       const_iterator end() const;
 
       explicit operator cpp_code() const;
+      explicit operator mdb_command() const;
 
     private:
       std::string _value;

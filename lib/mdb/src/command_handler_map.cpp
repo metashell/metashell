@@ -18,8 +18,6 @@
 #include <metashell/mdb/command_handler_map.hpp>
 #include <metashell/mdb/shell.hpp>
 
-#include <sstream>
-
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/range/iterator_range_core.hpp>
 
@@ -33,7 +31,7 @@ namespace metashell
       std::vector<key_command_map_t::value_type> key_command_vec;
       for (std::size_t i = 0; i < commands.size(); ++i)
       {
-        for (const std::string& key : commands[i].get_keys())
+        for (const data::mdb_command::name_type& key : commands[i].get_keys())
         {
           key_command_vec.push_back(key_command_map_t::value_type(key, i));
         }
@@ -41,35 +39,30 @@ namespace metashell
       key_command_map.insert(key_command_vec.begin(), key_command_vec.end());
     }
 
-    boost::optional<std::tuple<command, std::string>>
-    command_handler_map::get_command_for_line(
-        const data::user_input& line) const
+    boost::optional<command> command_handler_map::get_command(
+        const data::mdb_command::name_type& name) const
     {
-      std::stringstream line_stream(line.value());
-      std::string command;
-
-      if (!(line_stream >> command))
+      if (name.empty())
       {
         return boost::none;
       }
 
       key_command_map_t::const_iterator lower =
-          key_command_map.lower_bound(command);
+          key_command_map.lower_bound(name);
 
       using boost::algorithm::starts_with;
 
-      if (lower == key_command_map.end() || !starts_with(lower->first, command))
+      if (lower == key_command_map.end() || !starts_with(lower->first, name))
       {
         return boost::none;
       }
 
       // Check if the found command is unambiguous
-      if (command != lower->first)
+      if (name != lower->first)
       { // Pass if the match is full
         std::size_t command_index = lower->second;
         for (key_command_map_t::const_iterator it = std::next(lower);
-             it != key_command_map.end() && starts_with(it->first, command);
-             ++it)
+             it != key_command_map.end() && starts_with(it->first, name); ++it)
         {
           // Even there are multiple matches,
           // aliases for the same command should pass
@@ -81,12 +74,8 @@ namespace metashell
         }
       }
 
-      line_stream >> std::ws;
-      std::string rest;
-      std::getline(line_stream, rest);
-
       assert(lower->second < commands.size());
-      return std::make_tuple(commands[lower->second], rest);
+      return commands[lower->second];
     }
 
     const command_handler_map::commands_t&

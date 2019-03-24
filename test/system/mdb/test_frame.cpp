@@ -113,7 +113,8 @@ TEST(mdb_frame, fib_no_argument)
     metashell_instance mi;
     mi.command("#msh mdb" + nocache + " int");
 
-    ASSERT_EQ(error("Argument parsing failed"), mi.command("frame").front());
+    ASSERT_EQ(error("Error: Empty value found where an integer is expected.\n"),
+              mi.command("frame").front());
   }
 }
 
@@ -124,8 +125,8 @@ TEST(mdb_frame, fib_garbage_argument)
     metashell_instance mi;
     mi.command("#msh mdb" + nocache + " int");
 
-    ASSERT_EQ(
-        error("Argument parsing failed"), mi.command("frame asd").front());
+    ASSERT_EQ(error("Error: Invalid integer: asd\n"),
+              mi.command("frame asd").front());
   }
 }
 

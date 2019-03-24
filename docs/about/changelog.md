@@ -13,6 +13,7 @@
     to
     [ECMAScript](https://en.cppreference.com/w/cpp/regex/ecmascript).
     * The default engine is `auto`.
+    * Improved error messages for invalid mdb commands.
 
 ## Version 4.0.0
 

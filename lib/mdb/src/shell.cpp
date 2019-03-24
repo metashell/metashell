@@ -27,19 +27,12 @@
 #include <metashell/data/some_feature_not_supported.hpp>
 
 #include <cmath>
-#include <sstream>
 #include <stdexcept>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/optional.hpp>
-#include <boost/spirit/include/phoenix_core.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
-#include <boost/spirit/include/qi.hpp>
 
 #include <boost/range/iterator_range.hpp>
-
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/trim.hpp>
 
 namespace metashell
 {
@@ -47,8 +40,10 @@ namespace metashell
   {
     namespace
     {
-      std::function<void(shell&, const std::string&, iface::displayer&)>
-      callback(void (shell::*f)(const std::string&, iface::displayer&))
+      std::function<void(
+          shell&, const data::mdb_command::arguments_type&, iface::displayer&)>
+      callback(void (shell::*f)(const data::mdb_command::arguments_type&,
+                                iface::displayer&))
       {
         using namespace std::placeholders;
         return std::bind(f, _1, _2, _3);
@@ -73,11 +68,13 @@ namespace metashell
 
     command_handler_map shell::build_command_handler(bool preprocessor_)
     {
+      using name_type = data::mdb_command::name_type;
+
       const std::string expr = preprocessor_ ? "<expression>" : "<type>";
       // clang-format off
     return
       command_handler_map({
-        {{"evaluate"}, repeatable_t::non_repeatable,
+        {{name_type("evaluate")}, repeatable_t::non_repeatable,
           callback(&shell::command_evaluate),
           data::mdb_usage(preprocessor_),
           "Evaluate and start debugging a new metaprogram.",
@@ -98,7 +95,7 @@ namespace metashell
             "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
             "explicitly enter `metashell::format< <type> >::type` for the same effect."
           )},
-        {{"step"}, repeatable_t::repeatable,
+        {{name_type("step")}, repeatable_t::repeatable,
           callback(&shell::command_step),
           "[over|out] [n]",
           "Step the program.",
@@ -107,7 +104,7 @@ namespace metashell
           "`step over` is an alias for next.\n"
           "Use of the `out` qualifier will jump out of the current instantiation frame.\n"
           "Similarly to `next`, `step out -1` is not always the inverse of `step out`."},
-        {{"next"}, repeatable_t::repeatable,
+        {{name_type("next")}, repeatable_t::repeatable,
           callback(&shell::command_next),
           "[n]",
           "Jump over to the next instantiation skipping sub instantiations.",
@@ -118,50 +115,50 @@ namespace metashell
           "by the current parent, then `next` will behave like a normal `step`,\n"
           "and will step out of one or more instantiation frames.\n\n"
           "`step over` is an alias for next."},
-        {{"rbreak"}, repeatable_t::non_repeatable,
+        {{name_type("rbreak")}, repeatable_t::non_repeatable,
           callback(&shell::command_rbreak),
           "<regex>",
           "Add breakpoint for all types matching `<regex>`.",
           ""},
-        {{"break"}, repeatable_t::non_repeatable,
+        {{name_type("break")}, repeatable_t::non_repeatable,
           callback(&shell::command_break),
           "list",
           "List breakpoints.",
           ""},
-        {{"continue"}, repeatable_t::repeatable,
+        {{name_type("continue")}, repeatable_t::repeatable,
           callback(&shell::command_continue),
           "[n]",
           "Continue program being debugged.",
           "The program is continued until the nth breakpoint or the end of the program\n"
           "is reached. n defaults to 1 if not specified.\n"
           "Negative n means continue the program backwards."},
-        {{"finish"}, repeatable_t::repeatable,
+        {{name_type("finish")}, repeatable_t::repeatable,
           callback(&shell::command_finish),
           "",
           "Finish program being debugged.",
           "The program is continued until the end ignoring any breakpoints."},
-        {{"forwardtrace", "ft"}, repeatable_t::non_repeatable,
+        {{name_type("forwardtrace"), name_type("ft")}, repeatable_t::non_repeatable,
           callback(&shell::command_forwardtrace),
           "[n]",
           "Print forwardtrace from the current point.",
           "The n specifier limits the depth of the trace. If n is not specified, then the\n"
           "trace depth is unlimited."},
-        {{"backtrace", "bt"}, repeatable_t::non_repeatable,
+        {{name_type("backtrace"), name_type("bt")}, repeatable_t::non_repeatable,
           callback(&shell::command_backtrace),
           "",
           "Print backtrace from the current point.",
           ""},
-        {{"frame", "f"}, repeatable_t::non_repeatable,
+        {{name_type("frame"), name_type("f")}, repeatable_t::non_repeatable,
           callback(&shell::command_frame),
           "n",
           "Inspect the nth frame of the current backtrace.",
           ""},
-        {{"help"}, repeatable_t::non_repeatable,
+        {{name_type("help")}, repeatable_t::non_repeatable,
           callback(&shell::command_help),
           "[<command>]",
           "Show help for commands.",
           "If <command> is not specified, show a list of all available commands."},
-        {{"quit"} , repeatable_t::non_repeatable,
+        {{name_type("quit")} , repeatable_t::non_repeatable,
           callback(&shell::command_quit),
           "",
           "Quit metadebugger.",
@@ -186,17 +183,13 @@ namespace metashell
                                iface::displayer& displayer_,
                                iface::history& history_)
     {
-
       try
       {
-        using boost::algorithm::all;
-        using boost::is_space;
-
-        data::user_input line = line_arg;
+        data::mdb_command line(line_arg);
 
         if (line != prev_line && !line.empty())
         {
-          history_.add(line);
+          history_.add(line_arg);
         }
 
         if (line.empty())
@@ -212,26 +205,21 @@ namespace metashell
           prev_line = line;
         }
 
-        if (all(line, is_space()))
+        if (line.only_whitespace())
         {
           return;
         }
 
-        auto command_arg_pair = command_handler.get_command_for_line(line);
-        if (!command_arg_pair)
+        if (auto cmd = command_handler.get_command(line.name()))
+        {
+          last_command_repeatable = cmd->is_repeatable();
+          cmd->get_func()(*this, line.arguments(), displayer_);
+        }
+        else
         {
           displayer_.show_error("Command parsing failed\n");
           last_command_repeatable = false;
-          return;
         }
-
-        command cmd;
-        std::string args;
-        std::tie(cmd, args) = *command_arg_pair;
-
-        last_command_repeatable = cmd.is_repeatable();
-
-        cmd.get_func()(*this, args, displayer_);
       }
       catch (const std::exception& ex)
       {
@@ -243,8 +231,9 @@ namespace metashell
       }
     }
 
-    bool shell::require_empty_args(const std::string& args,
-                                   iface::displayer& displayer_) const
+    bool
+    shell::require_empty_args(const data::mdb_command::arguments_type& args,
+                              iface::displayer& displayer_) const
     {
       if (!args.empty())
       {
@@ -299,7 +288,7 @@ namespace metashell
       }
     }
 
-    void shell::command_continue(const std::string& arg,
+    void shell::command_continue(const data::mdb_command::arguments_type& arg,
                                  iface::displayer& displayer_)
     {
       if (!require_evaluated_metaprogram(displayer_))
@@ -307,20 +296,15 @@ namespace metashell
         return;
       }
 
-      const auto continue_count = parse_defaultable_integer(arg, 1);
-      if (!continue_count)
-      {
-        display_argument_parsing_failed(displayer_);
-        return;
-      }
+      const int continue_count = arg.empty() ? 1 : int(arg);
 
-      data::direction_t direction = *continue_count >= 0 ?
+      data::direction_t direction = continue_count >= 0 ?
                                         data::direction_t::forward :
                                         data::direction_t::backwards;
 
       const breakpoint* breakpoint_ptr = nullptr;
       for (int i = 0;
-           i < std::abs(*continue_count) && !mp->is_at_endpoint(direction); ++i)
+           i < std::abs(continue_count) && !mp->is_at_endpoint(direction); ++i)
       {
         breakpoint_ptr = continue_metaprogram(direction);
       }
@@ -329,10 +313,10 @@ namespace metashell
       {
         displayer_.show_raw_text(breakpoint_ptr->to_string() + " reached");
       }
-      display_movement_info(*continue_count != 0, displayer_);
+      display_movement_info(continue_count != 0, displayer_);
     }
 
-    void shell::command_finish(const std::string& arg,
+    void shell::command_finish(const data::mdb_command::arguments_type& arg,
                                iface::displayer& displayer_)
     {
       if (!require_empty_args(arg, displayer_) ||
@@ -346,21 +330,13 @@ namespace metashell
       display_movement_info(steps > 0, displayer_);
     }
 
-    void shell::command_step(const std::string& arg,
+    void shell::command_step(const data::mdb_command::arguments_type& arg,
                              iface::displayer& displayer_)
     {
       if (!require_evaluated_metaprogram(displayer_))
       {
         return;
       }
-
-      using boost::spirit::qi::lit;
-      using boost::spirit::qi::int_;
-      using boost::spirit::ascii::space;
-      using boost::phoenix::ref;
-      using boost::spirit::qi::_1;
-
-      auto begin = arg.begin(), end = arg.end();
 
       int step_count = 1;
 
@@ -373,19 +349,29 @@ namespace metashell
 
       step_t step_type = step_t::normal;
 
-      bool result = boost::spirit::qi::phrase_parse(
-          begin, end,
-
-          -(lit("over")[ref(step_type) = step_t::over] |
-            lit("out")[ref(step_type) = step_t::out]) >>
-              -int_[ref(step_count) = _1],
-
-          space);
-
-      if (!result || begin != end)
+      auto begin = arg.begin();
+      const auto end = arg.end();
+      if (begin != end)
       {
-        display_argument_parsing_failed(displayer_);
-        return;
+        if (*begin == "over")
+        {
+          step_type = step_t::over;
+          ++begin;
+        }
+        else if (*begin == "out")
+        {
+          step_type = step_t::out;
+          ++begin;
+        }
+      }
+      if (begin != end)
+      {
+        step_count = int(*begin);
+        ++begin;
+      }
+      if (begin != end)
+      {
+        throw data::exception("Unexpected argument: " + join(begin, end));
       }
 
       data::direction_t direction = step_count >= 0 ?
@@ -428,7 +414,7 @@ namespace metashell
       display_movement_info(step_count != 0, displayer_);
     }
 
-    void shell::command_next(const std::string& arg,
+    void shell::command_next(const data::mdb_command::arguments_type& arg,
                              iface::displayer& displayer_)
     {
       if (!require_evaluated_metaprogram(displayer_))
@@ -436,58 +422,38 @@ namespace metashell
         return;
       }
 
-      const auto next_count = parse_defaultable_integer(arg, 1);
-      if (!next_count)
-      {
-        display_argument_parsing_failed(displayer_);
-        return;
-      }
+      const int next_count = arg.empty() ? 1 : int(arg);
 
       next_metaprogram(next_count >= 0 ? data::direction_t::forward :
                                          data::direction_t::backwards,
-                       std::abs(*next_count));
+                       std::abs(next_count));
 
       display_movement_info(next_count != 0, displayer_);
     }
 
-    void shell::command_evaluate(const std::string& arg_copy,
+    void shell::command_evaluate(const data::mdb_command::arguments_type& arg,
                                  iface::displayer& displayer_)
     {
-      // Easier not to use spirit here (or probably not...)
-      // TODO OK. after -profile, this parsing really needs some refactoring
-      std::string arg = arg_copy;
-
-      const std::string full_flag = "-full";
-      const std::string profile_flag = "-profile";
-      const std::string nocache_flag = "-nocache";
-
       bool has_full = false;
       bool has_profile = false;
       bool caching = true;
 
-      // Intentionally left really ugly for more motivation to refactor
-      while (true)
+      auto i = arg.begin();
+      const auto e = arg.end();
+
+      for (; i != e; ++i)
       {
-        if (!_preprocessor && boost::starts_with(arg, full_flag) &&
-            (arg.size() == full_flag.size() ||
-             std::isspace(arg[full_flag.size()])))
+        if (!_preprocessor && *i == "-full")
         {
           has_full = true;
-          arg = boost::trim_left_copy(arg.substr(full_flag.size()));
         }
-        else if (boost::starts_with(arg, profile_flag) &&
-                 (arg.size() == profile_flag.size() ||
-                  std::isspace(arg[profile_flag.size()])))
+        else if (*i == "-profile")
         {
           has_profile = true;
-          arg = boost::trim_left_copy(arg.substr(profile_flag.size()));
         }
-        else if (boost::starts_with(arg, nocache_flag) &&
-                 (arg.size() == nocache_flag.size() ||
-                  std::isspace(arg[nocache_flag.size()])))
+        else if (*i == "-nocache")
         {
           caching = false;
-          arg = boost::trim_left_copy(arg.substr(nocache_flag.size()));
         }
         else
         {
@@ -509,7 +475,7 @@ namespace metashell
         return;
       }
 
-      boost::optional<data::cpp_code> expression = data::cpp_code(arg);
+      boost::optional<data::cpp_code> expression = data::cpp_code(join(i, e));
       if (expression->empty())
       {
         if (!mp)
@@ -547,41 +513,37 @@ namespace metashell
       }
     }
 
-    void shell::command_forwardtrace(const std::string& arg,
-                                     iface::displayer& displayer_)
+    void
+    shell::command_forwardtrace(const data::mdb_command::arguments_type& arg,
+                                iface::displayer& displayer_)
     {
       if (!require_running_metaprogram(displayer_))
       {
         return;
       }
 
-      using boost::spirit::qi::lit;
-      using boost::spirit::qi::uint_;
-      using boost::spirit::ascii::space;
-      using boost::spirit::qi::_1;
-
-      namespace phx = boost::phoenix;
-
-      auto begin = arg.begin(), end = arg.end();
-
       boost::optional<int> max_depth;
 
-      bool result =
-          boost::spirit::qi::phrase_parse(begin, end,
-
-                                          -uint_[phx::ref(max_depth) = _1],
-
-                                          space);
-
-      if (!result || begin != end)
+      auto begin = arg.begin();
+      const auto end = arg.end();
+      if (begin != end)
       {
-        display_argument_parsing_failed(displayer_);
-        return;
+        max_depth = int(*begin);
+        if (*max_depth < 0)
+        {
+          throw data::exception("Non-negative max depth expected.");
+        }
+        ++begin;
       }
+      if (begin != end)
+      {
+        throw data::exception("Unexpected argument: " + join(begin, end));
+      }
+
       display_current_forwardtrace(max_depth, displayer_);
     }
 
-    void shell::command_backtrace(const std::string& arg,
+    void shell::command_backtrace(const data::mdb_command::arguments_type& arg,
                                   iface::displayer& displayer_)
     {
       if (require_empty_args(arg, displayer_) &&
@@ -591,7 +553,7 @@ namespace metashell
       }
     }
 
-    void shell::command_frame(const std::string& arg,
+    void shell::command_frame(const data::mdb_command::arguments_type& arg,
                               iface::displayer& displayer_)
     {
       if (!require_running_or_errored_metaprogram(displayer_))
@@ -599,25 +561,20 @@ namespace metashell
         return;
       }
 
-      const auto frame_index = parse_mandatory_integer(arg);
-      if (!frame_index)
-      {
-        display_argument_parsing_failed(displayer_);
-        return;
-      }
+      const int frame_index = int(arg);
 
       auto backtrace = mp->get_backtrace();
 
-      if (frame_index < 0 || *frame_index >= static_cast<int>(backtrace.size()))
+      if (frame_index < 0 || frame_index >= static_cast<int>(backtrace.size()))
       {
         displayer_.show_error("Frame index out of range");
         return;
       }
 
-      display_frame(backtrace[*frame_index], displayer_);
+      display_frame(backtrace[frame_index], displayer_);
     }
 
-    void shell::command_rbreak(const std::string& arg,
+    void shell::command_rbreak(const data::mdb_command::arguments_type& arg,
                                iface::displayer& displayer_)
     {
       if (arg.empty())
@@ -645,37 +602,37 @@ namespace metashell
 
           if (match_count == 0)
           {
-            displayer_.show_raw_text("Breakpoint \"" + arg +
+            displayer_.show_raw_text("Breakpoint \"" + arg.value() +
                                      "\" will never stop the execution");
           }
           else
           {
             displayer_.show_raw_text(
-                "Breakpoint \"" + arg + "\" will stop the execution on " +
-                std::to_string(match_count) +
+                "Breakpoint \"" + arg.value() +
+                "\" will stop the execution on " + std::to_string(match_count) +
                 (match_count > 1 ? " locations" : " location"));
             breakpoints.push_back(bp);
           }
         }
         else
         {
-          displayer_.show_raw_text("Breakpoint \"" + arg + "\" created");
+          displayer_.show_raw_text("Breakpoint \"" + arg.value() +
+                                   "\" created");
           breakpoints.push_back(bp);
         }
       }
       catch (const std::regex_error&)
       {
-        displayer_.show_error("\"" + arg + "\" is not a valid regex");
+        displayer_.show_error("\"" + arg.value() + "\" is not a valid regex");
       }
     }
 
-    void shell::command_break(const std::string& arg,
+    void shell::command_break(const data::mdb_command::arguments_type& arg,
                               iface::displayer& displayer_)
     {
       // TODO there will other more kinds of arguments here but needs a proper
-      // but
-      // it needs a proper command parser
-      if (arg != "list")
+      // but it needs a proper command parser
+      if (arg.value() != "list")
       {
         displayer_.show_error("Call break like this: \"break list\"");
         return;
@@ -693,7 +650,7 @@ namespace metashell
       }
     }
 
-    void shell::command_help(const std::string& arg,
+    void shell::command_help(const data::mdb_command::arguments_type& arg,
                              iface::displayer& displayer_)
     {
       if (arg.empty())
@@ -702,7 +659,7 @@ namespace metashell
         displayer_.show_raw_text("");
         for (const command& cmd : command_handler.get_commands())
         {
-          displayer_.show_raw_text(cmd.get_keys().front() + " -- " +
+          displayer_.show_raw_text(cmd.get_keys().front().value() + " -- " +
                                    cmd.get_short_description());
         }
         displayer_.show_raw_text("");
@@ -716,32 +673,33 @@ namespace metashell
         return;
       }
 
-      auto command_arg_pair =
-          command_handler.get_command_for_line(data::user_input(arg));
-      if (!command_arg_pair)
+      const data::mdb_command arg_cmd(arg);
+
+      if (auto cmd = command_handler.get_command(arg_cmd.name()))
+      {
+        if (!arg_cmd.arguments().empty())
+        {
+          displayer_.show_error("Only one argument expected\n");
+          return;
+        }
+
+        displayer_.show_raw_text(
+            boost::algorithm::join(
+                cmd->get_keys() | boost::adaptors::transformed([](
+                                      const data::mdb_command::name_type& n_) {
+                  return n_.value();
+                }),
+                "|") +
+            " " + cmd->get_usage());
+        displayer_.show_raw_text(cmd->get_full_description());
+      }
+      else
       {
         displayer_.show_error("Command not found\n");
-        return;
       }
-
-      using boost::algorithm::join;
-
-      command cmd;
-      std::string command_args;
-      std::tie(cmd, command_args) = *command_arg_pair;
-
-      if (!command_args.empty())
-      {
-        displayer_.show_error("Only one argument expected\n");
-        return;
-      }
-
-      displayer_.show_raw_text(join(cmd.get_keys(), "|") + " " +
-                               cmd.get_usage());
-      displayer_.show_raw_text(cmd.get_full_description());
     }
 
-    void shell::command_quit(const std::string& arg,
+    void shell::command_quit(const data::mdb_command::arguments_type& arg,
                              iface::displayer& displayer_)
     {
       if (!require_empty_args(arg, displayer_))
@@ -785,55 +743,6 @@ namespace metashell
         return false;
       }
       return true;
-    }
-
-    boost::optional<int>
-    shell::parse_defaultable_integer(const std::string& arg, int default_value)
-    {
-      using boost::spirit::qi::int_;
-      using boost::spirit::ascii::space;
-      using boost::phoenix::ref;
-      using boost::spirit::qi::_1;
-
-      auto begin = arg.begin(), end = arg.end();
-
-      int value = default_value;
-
-      bool result = boost::spirit::qi::phrase_parse(begin, end,
-
-                                                    -int_[ref(value) = _1],
-
-                                                    space);
-
-      if (!result || begin != end)
-      {
-        return boost::none;
-      }
-      return value;
-    }
-
-    boost::optional<int> shell::parse_mandatory_integer(const std::string& arg)
-    {
-      using boost::spirit::qi::int_;
-      using boost::spirit::ascii::space;
-      using boost::phoenix::ref;
-      using boost::spirit::qi::_1;
-
-      auto begin = arg.begin(), end = arg.end();
-
-      int value = 0;
-
-      bool result = boost::spirit::qi::phrase_parse(begin, end,
-
-                                                    int_[ref(value) = _1],
-
-                                                    space);
-
-      if (!result || begin != end)
-      {
-        return boost::none;
-      }
-      return value;
     }
 
     const breakpoint* shell::continue_metaprogram(data::direction_t direction)
@@ -940,12 +849,6 @@ namespace metashell
       {
         displayer_.show_backtrace(mp->get_backtrace());
       }
-    }
-
-    void
-    shell::display_argument_parsing_failed(iface::displayer& displayer_) const
-    {
-      displayer_.show_error("Argument parsing failed");
     }
 
     void shell::display_metaprogram_reached_the_beginning(

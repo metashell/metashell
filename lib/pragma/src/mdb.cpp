@@ -61,7 +61,8 @@ namespace metashell
     {
       assert(_cpq != nullptr);
 
-      std::string args = tokens_to_string(args_begin_, args_end_).value();
+      const data::mdb_command::arguments_type args(
+          tokens_to_string(args_begin_, args_end_).value());
 
       core::command_processor_queue::cleanup_function restore;
       if (shell_.enabled(data::shell_flag::use_precompiled_headers))

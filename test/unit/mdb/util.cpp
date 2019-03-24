@@ -18,16 +18,16 @@
 
 #include <stdexcept>
 
-std::tuple<metashell::mdb::command, std::string>
+metashell::mdb::command
 get_command_from_map(const metashell::mdb::command_handler_map& map,
-                     const metashell::data::user_input& line)
+                     const metashell::data::mdb_command& line)
 {
-  if (const auto opt_pair = map.get_command_for_line(line))
+  if (const auto cmd = map.get_command(line.name()))
   {
-    return *opt_pair;
+    return *cmd;
   }
   else
   {
-    throw std::logic_error("Command for " + line.value() + " not found.");
+    throw std::logic_error("Command for " + to_string(line) + " not found.");
   }
 }

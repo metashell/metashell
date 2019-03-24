@@ -59,6 +59,8 @@ namespace metashell
 
     user_input::operator cpp_code() const { return cpp_code(_value); }
 
+    user_input::operator mdb_command() const { return mdb_command(_value); }
+
     std::ostream& operator<<(std::ostream& o_, const user_input& i_)
     {
       return o_ << i_.value();

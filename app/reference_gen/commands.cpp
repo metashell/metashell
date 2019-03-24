@@ -72,8 +72,14 @@ namespace
 
     for (const metashell::mdb::command& cmd : commands)
     {
-      out_ << "* __`" << join(cmd.get_keys(), "|") << " " << cmd.get_usage()
-           << "`__ <br />\n"
+      out_ << "* __`"
+           << join(cmd.get_keys() |
+                       boost::adaptors::transformed([](
+                           const metashell::data::mdb_command::name_type& n_) {
+                         return to_string(n_);
+                       }),
+                   "|")
+           << " " << cmd.get_usage() << "`__ <br />\n"
            << cmd.get_short_description();
       if (!cmd.get_long_description().empty())
       {
