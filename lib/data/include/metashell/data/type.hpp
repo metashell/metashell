@@ -18,26 +18,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/cpp_code.hpp>
+#include <metashell/data/string.hpp>
 
-#include <boost/operators.hpp>
 #include <boost/optional.hpp>
-
-#include <iosfwd>
-#include <string>
 
 namespace metashell
 {
   namespace data
   {
-    class type : boost::totally_ordered<type>
+    class type : string<type, cpp_code>
     {
     public:
-      typedef std::string::const_iterator iterator;
-      typedef std::string::const_iterator const_iterator;
-
-      type();
-      explicit type(const std::string& name_);
-      explicit type(const cpp_code& name_);
+      using string<type, cpp_code>::string;
+      using string<type, cpp_code>::value;
 
       const cpp_code& name() const;
 
@@ -45,19 +38,7 @@ namespace metashell
                                 const std::string& value_) const;
 
       operator cpp_code() const;
-
-      const_iterator begin() const;
-      const_iterator end() const;
-
-    private:
-      cpp_code _name;
     };
-
-    std::ostream& operator<<(std::ostream& o_, const type& t_);
-    std::string to_string(const type&);
-
-    bool operator==(const type& a_, const type& b_);
-    bool operator<(const type& a_, const type& b_);
 
     boost::optional<type> trim_wrap_type(const type& type_);
     bool is_remove_ptr(const type& type_);

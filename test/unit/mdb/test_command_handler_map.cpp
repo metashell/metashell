@@ -45,22 +45,22 @@ TEST(command_handler_map, command_selection_1)
   const data::mdb_command asd("asd");
   ASSERT_EQ(std::vector<name_type>{name_type("asd")},
             get_command_from_map(map, asd).get_keys());
-  ASSERT_TRUE(asd.arguments().empty());
+  ASSERT_TRUE(empty(asd.arguments()));
 
   const data::mdb_command efg("efg");
   ASSERT_EQ(std::vector<name_type>{name_type("efg")},
             get_command_from_map(map, efg).get_keys());
-  ASSERT_TRUE(efg.arguments().empty());
+  ASSERT_TRUE(empty(efg.arguments()));
 
   const data::mdb_command a("a");
   ASSERT_EQ(std::vector<name_type>{name_type("asd")},
             get_command_from_map(map, a).get_keys());
-  ASSERT_TRUE(a.arguments().empty());
+  ASSERT_TRUE(empty(a.arguments()));
 
   const data::mdb_command e("e");
   ASSERT_EQ(std::vector<name_type>{name_type("efg")},
             get_command_from_map(map, e).get_keys());
-  ASSERT_TRUE(e.arguments().empty());
+  ASSERT_TRUE(empty(e.arguments()));
 }
 
 TEST(command_handler_map, command_selection_2)
@@ -86,12 +86,12 @@ TEST(command_handler_map, command_selection_2)
   const data::mdb_command as("as");
   ASSERT_EQ(std::vector<name_type>{name_type("asd")},
             get_command_from_map(map, as).get_keys());
-  ASSERT_TRUE(as.arguments().empty());
+  ASSERT_TRUE(empty(as.arguments()));
 
   const data::mdb_command af("af");
   ASSERT_EQ(std::vector<name_type>{name_type("afg")},
             get_command_from_map(map, af).get_keys());
-  ASSERT_TRUE(af.arguments().empty());
+  ASSERT_TRUE(empty(af.arguments()));
 }
 
 TEST(command_handler_map, command_selection_3)
@@ -117,12 +117,12 @@ TEST(command_handler_map, command_selection_3)
   const data::mdb_command as("as");
   ASSERT_EQ(std::vector<name_type>{name_type("asd")},
             get_command_from_map(map, as).get_keys());
-  ASSERT_TRUE(as.arguments().empty());
+  ASSERT_TRUE(empty(as.arguments()));
 
   const data::mdb_command a("a");
   ASSERT_EQ(std::vector<name_type>{name_type("a")},
             get_command_from_map(map, a).get_keys());
-  ASSERT_TRUE(a.arguments().empty());
+  ASSERT_TRUE(empty(a.arguments()));
 }
 
 TEST(command_handler_map, command_selection_4)
@@ -173,17 +173,17 @@ TEST(command_handler_map, command_selection_5)
   const data::mdb_command asd("asd");
   ASSERT_EQ((std::vector<name_type>{name_type("asd"), name_type("xyz")}),
             get_command_from_map(map, asd).get_keys());
-  ASSERT_TRUE(asd.arguments().empty());
+  ASSERT_TRUE(empty(asd.arguments()));
 
   const data::mdb_command xyz("xyz");
   ASSERT_EQ((std::vector<name_type>{name_type("asd"), name_type("xyz")}),
             get_command_from_map(map, xyz).get_keys());
-  ASSERT_TRUE(xyz.arguments().empty());
+  ASSERT_TRUE(empty(xyz.arguments()));
 
   const data::mdb_command asf("asf");
   ASSERT_EQ(std::vector<name_type>{name_type("asf")},
             get_command_from_map(map, asf).get_keys());
-  ASSERT_TRUE(asf.arguments().empty());
+  ASSERT_TRUE(empty(asf.arguments()));
 }
 
 TEST(command_handler_map, command_selection_6)
@@ -210,7 +210,7 @@ TEST(command_handler_map, command_selection_6)
   ASSERT_EQ(
       (std::vector<name_type>{name_type("ft"), name_type("forwardtrace")}),
       get_command_from_map(map, f).get_keys());
-  ASSERT_TRUE(f.arguments().empty());
+  ASSERT_TRUE(empty(f.arguments()));
 }
 
 TEST(command_handler_map, command_selection_7)
@@ -237,7 +237,7 @@ TEST(command_handler_map, command_selection_7)
   ASSERT_EQ((std::vector<name_type>{
                 name_type("ft"), name_type("forwardtrace"), name_type("fff")}),
             get_command_from_map(map, f).get_keys());
-  ASSERT_TRUE(f.arguments().empty());
+  ASSERT_TRUE(empty(f.arguments()));
 }
 
 TEST(command_handler_map, command_selection_8)
@@ -319,5 +319,5 @@ TEST(command_handler_map, argument_passing)
   const data::mdb_command a2("a   ");
   ASSERT_EQ(std::vector<name_type>{name_type("asf")},
             get_command_from_map(map, a2).get_keys());
-  ASSERT_TRUE(a2.arguments().empty());
+  ASSERT_TRUE(empty(a2.arguments()));
 }

@@ -56,7 +56,8 @@ namespace metashell
       else
       {
         const auto by_ext_env = header_discoverer.files_included_by(
-            env + "\n" + data::tokens_to_string(args_begin_, args_end_));
+            env + data::cpp_code("\n") +
+            data::tokens_to_string(args_begin_, args_end_));
 
         std::set<boost::filesystem::path> new_headers;
         for (const boost::filesystem::path& p : by_ext_env)

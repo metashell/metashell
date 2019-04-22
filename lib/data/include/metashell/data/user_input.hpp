@@ -19,63 +19,23 @@
 
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/mdb_command.hpp>
-
-#include <boost/operators.hpp>
-
-#include <iosfwd>
-#include <string>
+#include <metashell/data/string.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    class user_input : boost::totally_ordered<user_input>,
-                       boost::addable<user_input>
+    class user_input : string<user_input>
     {
     public:
-      using size_type = std::string::size_type;
-      using iterator = std::string::const_iterator;
-      using const_iterator = std::string::const_iterator;
+      using string<user_input>::string;
+      using string<user_input>::value;
 
-      user_input() = default;
-      explicit user_input(std::string);
       explicit user_input(const cpp_code&);
-
-      template <class InputIterator>
-      user_input(InputIterator begin_, InputIterator end_)
-        : _value(begin_, end_)
-      {
-      }
-
-      const std::string& value() const;
-      const char* c_str() const;
-
-      size_type size() const;
-      bool empty() const;
-
-      void clear();
-
-      char back() const;
-
-      user_input substr(size_t pos_, size_t len_) const;
-
-      user_input& operator+=(const user_input&);
-
-      const_iterator begin() const;
-      const_iterator end() const;
 
       explicit operator cpp_code() const;
       explicit operator mdb_command() const;
-
-    private:
-      std::string _value;
     };
-
-    std::ostream& operator<<(std::ostream&, const user_input&);
-    std::string to_string(const user_input&);
-
-    bool operator==(const user_input&, const user_input&);
-    bool operator<(const user_input&, const user_input&);
 
     bool has_non_whitespace(const user_input&);
   }

@@ -29,7 +29,6 @@
 #include <cmath>
 #include <stdexcept>
 
-#include <boost/algorithm/string.hpp>
 #include <boost/optional.hpp>
 
 #include <boost/range/iterator_range.hpp>
@@ -187,12 +186,12 @@ namespace metashell
       {
         data::mdb_command line(line_arg);
 
-        if (line != prev_line && !line.empty())
+        if (line != prev_line && !empty(line))
         {
           history_.add(line_arg);
         }
 
-        if (line.empty())
+        if (empty(line))
         {
           if (!last_command_repeatable)
           {
@@ -235,7 +234,7 @@ namespace metashell
     shell::require_empty_args(const data::mdb_command::arguments_type& args,
                               iface::displayer& displayer_) const
     {
-      if (!args.empty())
+      if (!empty(args))
       {
         displayer_.show_error("This command doesn't accept arguments");
         return false;
@@ -296,7 +295,7 @@ namespace metashell
         return;
       }
 
-      const int continue_count = arg.empty() ? 1 : int(arg);
+      const int continue_count = empty(arg) ? 1 : int(arg);
 
       data::direction_t direction = continue_count >= 0 ?
                                         data::direction_t::forward :
@@ -422,7 +421,7 @@ namespace metashell
         return;
       }
 
-      const int next_count = arg.empty() ? 1 : int(arg);
+      const int next_count = empty(arg) ? 1 : int(arg);
 
       next_metaprogram(next_count >= 0 ? data::direction_t::forward :
                                          data::direction_t::backwards,
@@ -476,7 +475,7 @@ namespace metashell
       }
 
       boost::optional<data::cpp_code> expression = data::cpp_code(join(i, e));
-      if (expression->empty())
+      if (empty(*expression))
       {
         if (!mp)
         {
@@ -577,7 +576,7 @@ namespace metashell
     void shell::command_rbreak(const data::mdb_command::arguments_type& arg,
                                iface::displayer& displayer_)
     {
-      if (arg.empty())
+      if (empty(arg))
       {
         displayer_.show_error("Argument expected");
         return;
@@ -653,7 +652,7 @@ namespace metashell
     void shell::command_help(const data::mdb_command::arguments_type& arg,
                              iface::displayer& displayer_)
     {
-      if (arg.empty())
+      if (empty(arg))
       {
         displayer_.show_raw_text("List of available commands:");
         displayer_.show_raw_text("");
@@ -677,7 +676,7 @@ namespace metashell
 
       if (auto cmd = command_handler.get_command(arg_cmd.name()))
       {
-        if (!arg_cmd.arguments().empty())
+        if (!empty(arg_cmd.arguments()))
         {
           displayer_.show_error("Only one argument expected\n");
           return;

@@ -84,7 +84,7 @@ namespace metashell
         {
           rapid_object_handler handler(displayer_);
           rapidjson::Reader reader;
-          rapidjson::StringStream string_stream(s->c_str());
+          rapidjson::StringStream string_stream(c_str(*s));
           reader.Parse(string_stream, handler);
           if (!handler.failed())
           {

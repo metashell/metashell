@@ -17,52 +17,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/operators.hpp>
+#include <metashell/data/string.hpp>
 
-#include <iosfwd>
-#include <string>
 #include <vector>
 
 namespace metashell
 {
   namespace data
   {
-    class markdown_string : boost::addable<markdown_string>
+    class markdown_string : string<markdown_string>
     {
     public:
-      typedef std::string::iterator iterator;
-      typedef std::string::const_iterator const_iterator;
-      typedef std::string::size_type size_type;
-
-      explicit markdown_string(const std::string& value_ = std::string());
-
-      const std::string& value() const;
-
-      size_type size() const;
-
-      markdown_string& operator+=(const markdown_string& s_);
-      markdown_string& operator+=(const std::string& s_);
-
-      iterator begin();
-      iterator end();
-
-      const_iterator begin() const;
-      const_iterator end() const;
-
-      template <class InputIterator>
-      void insert(iterator at_, InputIterator first_, InputIterator last_)
-      {
-        _value.insert(at_, first_, last_);
-      }
-
-    private:
-      std::string _value;
+      using string<markdown_string>::string;
+      using string<markdown_string>::value;
     };
-
-    std::ostream& operator<<(std::ostream& out_, const markdown_string& md_);
-    markdown_string operator+(const std::string& s_,
-                              const markdown_string& md_);
-    markdown_string operator+(markdown_string md_, const std::string& s_);
 
     markdown_string italics(const markdown_string& md_);
 

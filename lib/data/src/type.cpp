@@ -17,23 +17,13 @@
 #include <metashell/data/command.hpp>
 #include <metashell/data/type.hpp>
 
-#include <boost/algorithm/string.hpp>
-
-#include <ostream>
 #include <regex>
 
 namespace metashell
 {
   namespace data
   {
-
-    type::type() {}
-
-    type::type(const std::string& name_) : _name(name_) {}
-
-    type::type(const cpp_code& name_) : _name(name_) {}
-
-    const cpp_code& type::name() const { return _name; }
+    const cpp_code& type::name() const { return value(); }
 
     bool type::is_integral_constant(const type& type_,
                                     const std::string& value_) const
@@ -43,42 +33,20 @@ namespace metashell
                                      to_string(type_) + ", " + value_ + ">"));
     }
 
-    type::operator cpp_code() const { return cpp_code(_name); }
-
-    type::const_iterator type::begin() const { return _name.begin(); }
-
-    type::const_iterator type::end() const { return _name.end(); }
-
-    std::ostream& operator<<(std::ostream& o_, const type& t_)
-    {
-      return o_ << t_.name();
-    }
-
-    std::string to_string(const type& t_) { return to_string(t_.name()); }
-
-    bool operator==(const type& a_, const type& b_)
-    {
-      return a_.name() == b_.name();
-    }
-
-    bool operator<(const type& a_, const type& b_)
-    {
-      return a_.name() < b_.name();
-    }
+    type::operator cpp_code() const { return name(); }
 
     boost::optional<type> trim_wrap_type(const type& type_)
     {
-      const std::string wrap_prefix = "metashell::impl::wrap<";
-      const std::string wrap_suffix = ">";
+      const type wrap_prefix("metashell::impl::wrap<");
+      const type wrap_suffix(">");
 
       // TODO this check could be made more strict,
       // since we know whats inside wrap<...> (mp->get_evaluation_result)
-      if (boost::starts_with(type_, wrap_prefix) &&
-          boost::ends_with(type_, wrap_suffix))
+      if (starts_with(type_, wrap_prefix) && ends_with(type_, wrap_suffix))
       {
-        return type(boost::trim_copy(type_.name().substr(
-            wrap_prefix.size(),
-            type_.name().size() - wrap_prefix.size() - wrap_suffix.size())));
+        return type(trim_copy(substr(
+            type_.name(), size(wrap_prefix),
+            size(type_.name()) - size(wrap_prefix) - size(wrap_suffix))));
       }
       else
       {
@@ -88,7 +56,7 @@ namespace metashell
 
     bool is_remove_ptr(const type& type_)
     {
-      return type_ == "metashell::impl::remove_ptr";
+      return type_ == type("metashell::impl::remove_ptr");
     }
   }
 } // namespace metashell:data

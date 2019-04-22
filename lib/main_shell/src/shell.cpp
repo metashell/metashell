@@ -130,9 +130,10 @@ namespace metashell
                 " with metashell::format");
 
         return simple.successful ?
-                   type_shell_.eval(
-                       env_, "::metashell::format<" + tmp_exp_ + ">::type",
-                       use_precompiled_headers_) :
+                   type_shell_.eval(env_,
+                                    data::cpp_code("::metashell::format<") +
+                                        tmp_exp_ + data::cpp_code(">::type"),
+                                    use_precompiled_headers_) :
                    simple;
       }
 
@@ -288,10 +289,10 @@ namespace metashell {
     {
       try
       {
-        if (s_.empty() || s_.back() != '\\')
+        if (!ends_with(s_, data::user_input("\\")))
         {
           const data::user_input s = _line_prefix + s_;
-          _line_prefix.clear();
+          clear(_line_prefix);
 
           const data::command cmd = core::to_command(data::cpp_code(s));
 
@@ -328,7 +329,7 @@ namespace metashell {
         }
         else
         {
-          _line_prefix += s_.substr(0, s_.size() - 1);
+          _line_prefix += substr(s_, 0, size(s_) - 1);
         }
       }
       catch (const std::exception& e)
@@ -343,14 +344,14 @@ namespace metashell {
 
     std::string shell::prompt() const
     {
-      return _line_prefix.empty() ? ">" : "...>";
+      return empty(_line_prefix) ? ">" : "...>";
     }
 
     bool shell::store_in_buffer(const data::cpp_code& s_,
                                 iface::displayer& displayer_)
     {
       const data::result r = engine().cpp_validator().validate_code(
-          s_ + "\n", _config, *_env,
+          s_ + data::cpp_code("\n"), _config, *_env,
           enabled(data::shell_flag::use_precompiled_headers));
 
       if (r.successful)
@@ -407,7 +408,7 @@ namespace metashell {
           try_to_get_shell(engine()), _config.active_shell_config(),
           _internal_dir, _env_filename);
 
-      if (!content_.empty())
+      if (!empty(content_))
       {
         _env->append(content_);
       }
@@ -510,8 +511,8 @@ namespace metashell {
                            bool process_directives_)
     {
       data::result r = engine().preprocessor_shell().precompile(
-          _env->get_all() + "\n" + add_markers(exp_, process_directives_) +
-          "\n");
+          _env->get_all() + data::cpp_code("\n") +
+          add_markers(exp_, process_directives_) + data::cpp_code("\n"));
 
       if (r.successful)
       {

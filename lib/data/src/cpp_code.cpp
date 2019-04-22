@@ -16,15 +16,12 @@
 
 #include <metashell/data/cpp_code.hpp>
 
-#include <algorithm>
-#include <ostream>
 #include <stdexcept>
 
 namespace
 {
-  template <class Str, class Wrapper>
-  auto wrap(const Str& s_, const Wrapper& wrapper_)
-      -> decltype(wrapper_ + s_ + wrapper_)
+  template <class Str>
+  std::string wrap(const Str& s_, const std::string& wrapper_)
   {
     return wrapper_ + s_ + wrapper_;
   }
@@ -40,73 +37,9 @@ namespace metashell
 {
   namespace data
   {
-    cpp_code::cpp_code(std::string value_) : _value(move(value_)) {}
-
-    const std::string& cpp_code::value() const { return _value; }
-
-    bool cpp_code::empty() const { return _value.empty(); }
-
-    cpp_code::size_type cpp_code::size() const { return _value.size(); }
-
-    char cpp_code::operator[](size_type pos_) const { return _value[pos_]; }
-
-    cpp_code cpp_code::substr(size_type pos_, size_type len_) const
-    {
-      return cpp_code(_value.substr(pos_, len_));
-    }
-
-    cpp_code::iterator cpp_code::begin() { return _value.begin(); }
-    cpp_code::iterator cpp_code::end() { return _value.end(); }
-
-    cpp_code::const_iterator cpp_code::begin() const { return _value.begin(); }
-    cpp_code::const_iterator cpp_code::end() const { return _value.end(); }
-
-    cpp_code& cpp_code::operator+=(const cpp_code& code_)
-    {
-      return *this += code_.value();
-    }
-
-    cpp_code& cpp_code::operator+=(const std::string& code_)
-    {
-      _value += code_;
-      return *this;
-    }
-
-    std::string to_string(const cpp_code& c_) { return c_.value(); }
-
-    std::ostream& operator<<(std::ostream& o_, const cpp_code& c_)
-    {
-      return o_ << c_.value();
-    }
-
-    bool operator==(const cpp_code& a_, const cpp_code& b_)
-    {
-      return a_ == b_.value();
-    }
-
-    bool operator<(const cpp_code& a_, const cpp_code& b_)
-    {
-      return a_.value() < b_.value();
-    }
-
-    bool operator==(const cpp_code& a_, const std::string& b_)
-    {
-      return a_.value() == b_;
-    }
-
-    cpp_code operator+(cpp_code code_, const std::string& s_)
-    {
-      return code_ += s_;
-    }
-
-    cpp_code operator+(std::string s_, const cpp_code& code_)
-    {
-      return cpp_code(s_) += code_;
-    }
-
     cpp_code add_markers(const cpp_code& code_, bool process_directives_)
     {
-      return wrap(code_, marker(process_directives_));
+      return cpp_code(wrap(code_, marker(process_directives_)));
     }
 
     cpp_code remove_markers(const cpp_code& code_, bool process_directives_)
@@ -151,9 +84,6 @@ namespace metashell
       }
     }
 
-    int lines_in(const cpp_code& code_)
-    {
-      return int(std::count(code_.begin(), code_.end(), '\n'));
-    }
+    int lines_in(const cpp_code& code_) { return int(count(code_, '\n')); }
   }
 } // namespace metashell:data

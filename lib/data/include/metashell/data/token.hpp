@@ -132,9 +132,9 @@ namespace mindent
     static bool is_c_comment(const token_type& t_)
     {
       return category(t_) == metashell::data::token_category::comment &&
-             metashell::data::value(t_).size() >= 4 &&
-             metashell::data::value(t_)[0] == '/' &&
-             metashell::data::value(t_)[1] == '*';
+             size(metashell::data::value(t_)) >= 4 &&
+             starts_with(
+                 metashell::data::value(t_), metashell::data::cpp_code("/*"));
     }
 
     static bool is_less(const token_type& t_)
@@ -193,7 +193,7 @@ namespace mindent
 
     static string_type value(const token_type& t_)
     {
-      return metashell::data::value(t_).value();
+      return to_string(metashell::data::value(t_));
     }
   };
 }

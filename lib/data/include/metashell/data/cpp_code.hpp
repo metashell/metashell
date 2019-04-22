@@ -17,70 +17,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/operators.hpp>
-
-#include <iosfwd>
-#include <string>
+#include <metashell/data/string.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    class cpp_code : boost::totally_ordered<cpp_code>,
-                     boost::equality_comparable<cpp_code, std::string>,
-                     boost::addable<cpp_code>
+    class cpp_code : string<cpp_code>
     {
     public:
-      typedef std::string::iterator iterator;
-      typedef std::string::const_iterator const_iterator;
-      typedef std::string::size_type size_type;
-
-      explicit cpp_code(std::string value_ = std::string());
-
-      template <class InputIterator>
-      cpp_code(InputIterator begin_, InputIterator end_) : _value(begin_, end_)
-      {
-      }
-
-      const std::string& value() const;
-
-      bool empty() const;
-      size_type size() const;
-      char operator[](size_type pos_) const;
-
-      cpp_code substr(size_type pos_ = 0,
-                      size_type len_ = std::string::npos) const;
-
-      iterator begin();
-      iterator end();
-
-      const_iterator begin() const;
-      const_iterator end() const;
-
-      cpp_code& operator+=(const cpp_code& code_);
-      cpp_code& operator+=(const std::string& code_);
-
-      template <class InputIterator>
-      void insert(iterator at_, InputIterator first_, InputIterator last_)
-      {
-        _value.insert(at_, first_, last_);
-      }
-
-    private:
-      std::string _value;
+      using string<cpp_code>::string;
+      using string<cpp_code>::value;
     };
-
-    std::string to_string(const cpp_code& c_);
-
-    std::ostream& operator<<(std::ostream& o_, const cpp_code& c_);
-
-    bool operator==(const cpp_code& a_, const cpp_code& b_);
-    bool operator<(const cpp_code& a_, const cpp_code& b_);
-
-    bool operator==(const cpp_code& a_, const std::string& b_);
-
-    cpp_code operator+(cpp_code code_, const std::string& s_);
-    cpp_code operator+(std::string s_, const cpp_code& code_);
 
     cpp_code add_markers(const cpp_code& code_, bool process_directives_);
     cpp_code remove_markers(const cpp_code& code_, bool process_directives_);

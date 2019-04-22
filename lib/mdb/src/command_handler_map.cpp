@@ -18,9 +18,6 @@
 #include <metashell/mdb/command_handler_map.hpp>
 #include <metashell/mdb/shell.hpp>
 
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/range/iterator_range_core.hpp>
-
 namespace metashell
 {
   namespace mdb
@@ -42,15 +39,13 @@ namespace metashell
     boost::optional<command> command_handler_map::get_command(
         const data::mdb_command::name_type& name) const
     {
-      if (name.empty())
+      if (empty(name))
       {
         return boost::none;
       }
 
       key_command_map_t::const_iterator lower =
           key_command_map.lower_bound(name);
-
-      using boost::algorithm::starts_with;
 
       if (lower == key_command_map.end() || !starts_with(lower->first, name))
       {

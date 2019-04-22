@@ -231,7 +231,7 @@ namespace metashell
 
     void console_displayer::show_cpp_code(const data::cpp_code& code_)
     {
-      if (!code_.empty())
+      if (!empty(code_))
       {
         if (_indent)
         {

@@ -290,9 +290,9 @@ namespace metashell
         {
           if (on_conditional)
           {
-            on_conditional(
-                token_to_code(directive_) + " " + tokens_to_code(expression_),
-                to_file_location(directive_));
+            on_conditional(token_to_code(directive_) + data::cpp_code(" ") +
+                               tokens_to_code(expression_),
+                           to_file_location(directive_));
           }
           flush_event_queue();
 

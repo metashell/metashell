@@ -17,35 +17,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/operators.hpp>
-
-#include <iosfwd>
-#include <string>
+#include <metashell/data/string.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    class shell_config_name : boost::equality_comparable<shell_config_name>
+    class shell_config_name : string<shell_config_name>
     {
     public:
-      shell_config_name() = default;
-      explicit shell_config_name(std::string s_);
-
-      const std::string& value() const;
-
-      bool empty() const;
-
-    private:
-      std::string _value;
+      using string<shell_config_name>::string;
+      using string<shell_config_name>::value;
     };
-
-    bool operator==(const shell_config_name& a_, const shell_config_name& b_);
-    std::string to_string(const shell_config_name& name_);
-    std::ostream& operator<<(std::ostream& o_, const shell_config_name& name_);
-
-    std::string operator+(const std::string& a_, const shell_config_name& b_);
-    std::string operator+(const shell_config_name& a_, const std::string& b_);
   }
 }
 

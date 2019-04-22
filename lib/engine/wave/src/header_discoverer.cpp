@@ -37,10 +37,10 @@ namespace metashell
       std::set<boost::filesystem::path>
       header_discoverer::files_included_by(const data::cpp_code& exp_)
       {
-        const data::cpp_code exp = exp_ + "\n";
+        const data::cpp_code exp = exp_ + data::cpp_code("\n");
         std::set<boost::filesystem::path> result;
         hooks hks(result);
-        context ctx(exp.begin(), exp.end(), "<stdin>", hks);
+        context ctx(begin(exp), end(exp), "<stdin>", hks);
         wave::apply(ctx, _config);
         preprocess(ctx);
         return result;

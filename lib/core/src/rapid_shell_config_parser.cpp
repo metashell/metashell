@@ -68,6 +68,12 @@ namespace metashell
         return i == fields.end() ? boost::none :
                                    boost::make_optional(i->second);
       }
+
+      template <class T>
+      auto is_empty(const T& s_)
+      {
+        return empty(s_);
+      }
     }
 
     bool rapid_shell_config_parser::StartArray()
@@ -139,7 +145,7 @@ namespace metashell
 
       not_empty();
 
-      if (_config->name.empty())
+      if (is_empty(_config->name))
       {
         fail("The name of a config is missing");
         return false;

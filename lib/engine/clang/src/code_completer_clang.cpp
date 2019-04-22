@@ -25,7 +25,6 @@
 #include <metashell/data/token.hpp>
 #include <metashell/data/token_category.hpp>
 
-#include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/optional.hpp>
 #include <boost/range/adaptor/sliced.hpp>
@@ -93,11 +92,11 @@ namespace metashell
             using boost::adaptors::sliced;
             using boost::adaptors::transformed;
 
-            const data::cpp_code prefix = boost::algorithm::join(
-                cmd | sliced(0, cmd.size() - 1) |
-                    transformed(
-                        [](const data::token& t_) { return value(t_); }),
-                data::cpp_code());
+            const data::cpp_code prefix =
+                join(cmd | sliced(0, cmd.size() - 1) |
+                         transformed(
+                             [](const data::token& t_) { return value(t_); }),
+                     data::cpp_code());
 
             const data::token& last = *(cmd.end() - 1);
 
@@ -169,7 +168,7 @@ namespace metashell
 
         const std::string out = o.standard_output;
         out_.clear();
-        const auto prefix_len = completion_start.second.size();
+        const auto prefix_len = size(completion_start.second);
         core::for_each_line(out, [&out_, &completion_start,
                                   prefix_len](const std::string& line_) {
           if (const auto comp = parse_completion(line_))
@@ -177,7 +176,7 @@ namespace metashell
             if (starts_with(*comp, completion_start.second) &&
                 *comp != completion_start.second)
             {
-              out_.insert(data::user_input(comp->substr(prefix_len)));
+              out_.insert(data::user_input(substr(*comp, prefix_len)));
             }
           }
         });

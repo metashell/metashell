@@ -43,7 +43,7 @@ namespace metashell
           Size& width = boost::get<0>(p);
           const markdown_string& cell = boost::get<1>(p);
 
-          width = std::max(width, cell.size());
+          width = std::max(width, size(cell));
         }
       }
 
@@ -59,9 +59,9 @@ namespace metashell
           const Size& width = boost::get<0>(p);
           const markdown_string& cell = boost::get<1>(p);
 
-          assert(cell.size() <= width);
+          assert(size(cell) <= width);
 
-          out_ << '|' << cell << std::string(width - cell.size(), ' ');
+          out_ << '|' << cell << std::string(width - size(cell), ' ');
         }
         out_ << "|\n";
       }
@@ -89,60 +89,6 @@ namespace metashell
       }
     }
 
-    markdown_string::markdown_string(const std::string& value_) : _value(value_)
-    {
-    }
-
-    const std::string& markdown_string::value() const { return _value; }
-
-    markdown_string::size_type markdown_string::size() const
-    {
-      return _value.size();
-    }
-
-    markdown_string& markdown_string::operator+=(const markdown_string& s_)
-    {
-      return *this += s_.value();
-    }
-
-    markdown_string& markdown_string::operator+=(const std::string& s_)
-    {
-      _value += s_;
-      return *this;
-    }
-
-    markdown_string::iterator markdown_string::begin()
-    {
-      return _value.begin();
-    }
-
-    markdown_string::iterator markdown_string::end() { return _value.end(); }
-
-    markdown_string::const_iterator markdown_string::begin() const
-    {
-      return _value.begin();
-    }
-
-    markdown_string::const_iterator markdown_string::end() const
-    {
-      return _value.end();
-    }
-
-    std::ostream& operator<<(std::ostream& out_, const markdown_string& md_)
-    {
-      return out_ << md_.value();
-    }
-
-    markdown_string operator+(const std::string& s_, const markdown_string& md_)
-    {
-      return markdown_string(s_) += md_;
-    }
-
-    markdown_string operator+(markdown_string md_, const std::string& s_)
-    {
-      return md_ += s_;
-    }
-
     markdown_string italics(const markdown_string& md_)
     {
       return markdown_string("_" + md_.value() + "_");
@@ -156,12 +102,14 @@ namespace metashell
 
     markdown_string self_reference(const std::string& value_)
     {
-      return "<a href=\"#" + make_id(value_) + "\">" + value_ + "</a>";
+      return markdown_string("<a href=\"#") + make_id(value_) +
+             markdown_string("\">" + value_ + "</a>");
     }
 
     markdown_string self_id(const std::string& value_)
     {
-      return "<strong id=\"" + make_id(value_) + "\">" + value_ + "</strong>";
+      return markdown_string("<strong id=\"") + make_id(value_) +
+             markdown_string("\">" + value_ + "</strong>");
     }
 
     void format_table(const std::vector<markdown_string>& header_,

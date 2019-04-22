@@ -35,52 +35,18 @@ namespace metashell
     namespace
     {
       bool is_space(char c_) { return std::isspace(c_); }
-    }
 
-    mdb_command::name_type::name_type(std::string value_)
-      : _value(std::move(value_))
-    {
-      if (std::find_if(_value.begin(), _value.end(), is_space) != _value.end())
+      template <class T>
+      auto begin_of(const T& t_)
       {
-        throw exception("Invalid MDB command name: " + _value);
+        return begin(t_);
       }
-    }
 
-    const std::string& mdb_command::name_type::value() const { return _value; }
-
-    bool mdb_command::name_type::empty() const { return _value.empty(); }
-
-    mdb_command::name_type::const_iterator mdb_command::name_type::begin() const
-    {
-      return _value.begin();
-    }
-
-    mdb_command::name_type::const_iterator mdb_command::name_type::end() const
-    {
-      return _value.end();
-    }
-
-    std::ostream& operator<<(std::ostream& out_,
-                             const mdb_command::name_type& name_)
-    {
-      return out_ << name_.value();
-    }
-
-    std::string to_string(const mdb_command::name_type& name_)
-    {
-      return name_.value();
-    }
-
-    bool operator==(const mdb_command::name_type& lhs_,
-                    const mdb_command::name_type& rhs_)
-    {
-      return lhs_.value() == rhs_.value();
-    }
-
-    bool operator<(const mdb_command::name_type& lhs_,
-                   const mdb_command::name_type& rhs_)
-    {
-      return lhs_.value() < rhs_.value();
+      template <class T>
+      auto end_of(const T& t_)
+      {
+        return end(t_);
+      }
     }
 
     mdb_command::argument_type::argument_type(std::string value_,
@@ -128,18 +94,6 @@ namespace metashell
       return lhs_.value() == rhs_.value() && lhs_.suffix() == rhs_.suffix();
     }
 
-    mdb_command::arguments_type::arguments_type(std::string value_)
-      : _value(std::move(value_))
-    {
-    }
-
-    const std::string& mdb_command::arguments_type::value() const
-    {
-      return _value;
-    }
-
-    bool mdb_command::arguments_type::empty() const { return _value.empty(); }
-
     bool mdb_command::arguments_type::iterator::
     operator==(const iterator& rhs_) const
     {
@@ -150,13 +104,13 @@ namespace metashell
     mdb_command::arguments_type::iterator
     mdb_command::arguments_type::begin() const
     {
-      return iterator(_value.begin(), _value.end());
+      return iterator(begin_of(*this), end_of(*this));
     }
 
     mdb_command::arguments_type::iterator
     mdb_command::arguments_type::end() const
     {
-      return iterator(_value.end(), _value.end());
+      return iterator(end_of(*this), end_of(*this));
     }
 
     std::string join(mdb_command::arguments_type::iterator begin_,
@@ -245,29 +199,12 @@ namespace metashell
 
     mdb_command::arguments_type::operator regex() const
     {
-      return regex(_value);
+      return regex(value());
     }
 
     mdb_command::arguments_type::operator mdb_command() const
     {
-      return mdb_command(_value);
-    }
-
-    std::ostream& operator<<(std::ostream& out_,
-                             const mdb_command::arguments_type& a_)
-    {
-      return out_ << a_.value();
-    }
-
-    std::string to_string(const mdb_command::arguments_type& a_)
-    {
-      return a_.value();
-    }
-
-    bool operator==(const mdb_command::arguments_type& lhs_,
-                    const mdb_command::arguments_type& rhs_)
-    {
-      return lhs_.value() == rhs_.value();
+      return mdb_command(value());
     }
 
     mdb_command::mdb_command(const std::string& value_)
@@ -284,21 +221,21 @@ namespace metashell
       std::get<3>(_val) = arguments_type(arguments_begin, e);
     }
 
-    bool mdb_command::empty() const
+    bool empty(const mdb_command& cmd_)
     {
-      assert(!(name().empty() && !separator().empty()));
-      assert(!(name().empty() && !arguments().empty()));
+      assert(!(empty(cmd_.name()) && !cmd_.separator().empty()));
+      assert(!(empty(cmd_.name()) && !empty(cmd_.arguments())));
 
-      return prefix().empty() && name().empty();
+      return cmd_.prefix().empty() && empty(cmd_.name());
     }
 
     bool mdb_command::only_whitespace() const
     {
-      assert(arguments().empty() ||
+      assert(empty(arguments()) ||
              !std::all_of(arguments().value().begin(),
                           arguments().value().end(), is_space));
 
-      return name().empty();
+      return empty(name());
     }
 
     const whitespace& mdb_command::prefix() const { return std::get<0>(_val); }

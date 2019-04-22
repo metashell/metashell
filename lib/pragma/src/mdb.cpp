@@ -89,7 +89,7 @@ namespace metashell
         sh->display_splash(displayer_);
       }
 
-      if (!args.empty())
+      if (!empty(args))
       {
         sh->command_evaluate(args, displayer_);
       }

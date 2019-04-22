@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/regex.hpp>
+#include <metashell/data/string.hpp>
 #include <metashell/data/whitespace.hpp>
 
 #include <boost/operators.hpp>
@@ -34,30 +35,11 @@ namespace metashell
     class mdb_command : boost::equality_comparable<mdb_command>
     {
     public:
-      class name_type : boost::totally_ordered<name_type>
+      class name_type : string<name_type>
       {
       public:
-        using iterator = std::string::const_iterator;
-        using const_iterator = std::string::const_iterator;
-
-        name_type() = default;
-        explicit name_type(std::string);
-
-        template <class InputIt>
-        name_type(InputIt begin_, InputIt end_)
-          : name_type(std::string(begin_, end_))
-        {
-        }
-
-        const std::string& value() const;
-
-        bool empty() const;
-
-        const_iterator begin() const;
-        const_iterator end() const;
-
-      private:
-        std::string _value;
+        using string<name_type>::string;
+        using string<name_type>::value;
       };
 
       class argument_type : boost::equality_comparable<argument_type>
@@ -82,7 +64,7 @@ namespace metashell
         whitespace _suffix;
       };
 
-      class arguments_type : boost::equality_comparable<arguments_type>
+      class arguments_type : string<arguments_type>
       {
       public:
         class iterator
@@ -106,18 +88,8 @@ namespace metashell
           std::string::const_iterator _end;
         };
 
-        arguments_type() = default;
-        explicit arguments_type(std::string);
-
-        template <class InputIt>
-        arguments_type(InputIt begin_, InputIt end_)
-          : arguments_type(std::string(begin_, end_))
-        {
-        }
-
-        const std::string& value() const;
-
-        bool empty() const;
+        using string<arguments_type>::string;
+        using string<arguments_type>::value;
 
         iterator begin() const;
         iterator end() const;
@@ -125,9 +97,6 @@ namespace metashell
         explicit operator int() const;
         explicit operator regex() const;
         explicit operator mdb_command() const;
-
-      private:
-        std::string _value;
       };
 
       using tuple_t =
@@ -136,7 +105,6 @@ namespace metashell
       mdb_command() = default;
       explicit mdb_command(const std::string&);
 
-      bool empty() const;
       bool only_whitespace() const;
 
       const whitespace& prefix() const;
@@ -153,21 +121,9 @@ namespace metashell
     std::ostream& operator<<(std::ostream&, const mdb_command&);
     std::string to_string(const mdb_command&);
 
+    bool empty(const mdb_command&);
+
     bool operator==(const mdb_command&, const mdb_command&);
-
-    std::ostream& operator<<(std::ostream&, const mdb_command::name_type&);
-    std::string to_string(const mdb_command::name_type&);
-
-    bool operator==(const mdb_command::name_type&,
-                    const mdb_command::name_type&);
-    bool operator<(const mdb_command::name_type&,
-                   const mdb_command::name_type&);
-
-    std::ostream& operator<<(std::ostream&, const mdb_command::arguments_type&);
-    std::string to_string(const mdb_command::arguments_type&);
-
-    bool operator==(const mdb_command::arguments_type&,
-                    const mdb_command::arguments_type&);
 
     std::string join(mdb_command::arguments_type::iterator,
                      mdb_command::arguments_type::iterator);
