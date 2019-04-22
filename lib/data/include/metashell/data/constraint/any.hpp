@@ -1,8 +1,8 @@
-#ifndef METASHELL_CPP_CODE_HPP
-#define METASHELL_CPP_CODE_HPP
+#ifndef METASHELL_DATA_CONSTRAINT_ANY_HPP
+#define METASHELL_DATA_CONSTRAINT_ANY_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,25 +17,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/string.hpp>
-
 namespace metashell
 {
   namespace data
   {
-    class cpp_code : string<cpp_code>
+    namespace constraint
     {
-    public:
-      using string<cpp_code>::string;
-      using string<cpp_code>::value;
-
-      static constexpr const char* name_of_type() { return "C++ code"; }
-    };
-
-    cpp_code add_markers(const cpp_code& code_, bool process_directives_);
-    cpp_code remove_markers(const cpp_code& code_, bool process_directives_);
-
-    int lines_in(const cpp_code& code_);
+      struct any
+      {
+        template <class CharT>
+        static constexpr bool allowed_char(CharT)
+        {
+          return true;
+        }
+      };
+    }
   }
 }
 

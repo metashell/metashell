@@ -223,10 +223,10 @@ namespace metashell
 
     bool empty(const mdb_command& cmd_)
     {
-      assert(!(empty(cmd_.name()) && !cmd_.separator().empty()));
+      assert(!(empty(cmd_.name()) && !empty(cmd_.separator())));
       assert(!(empty(cmd_.name()) && !empty(cmd_.arguments())));
 
-      return cmd_.prefix().empty() && empty(cmd_.name());
+      return empty(cmd_.prefix()) && empty(cmd_.name());
     }
 
     bool mdb_command::only_whitespace() const

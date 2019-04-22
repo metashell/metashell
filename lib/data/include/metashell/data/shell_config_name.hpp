@@ -28,6 +28,11 @@ namespace metashell
     public:
       using string<shell_config_name>::string;
       using string<shell_config_name>::value;
+
+      static constexpr const char* name_of_type()
+      {
+        return "Shell config name";
+      }
     };
   }
 }

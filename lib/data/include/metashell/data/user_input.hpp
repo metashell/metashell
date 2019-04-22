@@ -31,6 +31,8 @@ namespace metashell
       using string<user_input>::string;
       using string<user_input>::value;
 
+      static constexpr const char* name_of_type() { return "User input"; }
+
       explicit user_input(const cpp_code&);
 
       explicit operator cpp_code() const;

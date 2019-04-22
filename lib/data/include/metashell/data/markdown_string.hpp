@@ -30,6 +30,8 @@ namespace metashell
     public:
       using string<markdown_string>::string;
       using string<markdown_string>::value;
+
+      static constexpr const char* name_of_type() { return "Markdown string"; }
     };
 
     markdown_string italics(const markdown_string& md_);

@@ -26,11 +26,17 @@ namespace metashell
 {
   namespace data
   {
-    class type : string<type, cpp_code>
+    // Allowing empty values because the Templight trace migth contain entries
+    // about types with empty name.
+    class type : string<type, true, constraint::any, constraint::any, cpp_code>
     {
     public:
-      using string<type, cpp_code>::string;
-      using string<type, cpp_code>::value;
+      using string<type, true, constraint::any, constraint::any, cpp_code>::
+          string;
+      using string<type, true, constraint::any, constraint::any, cpp_code>::
+          value;
+
+      static constexpr const char* name_of_type() { return "Type"; }
 
       const cpp_code& name() const;
 

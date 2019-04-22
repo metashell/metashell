@@ -17,42 +17,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/operators.hpp>
-
-#include <iosfwd>
-#include <string>
+#include <metashell/data/constraint/whitespace.hpp>
+#include <metashell/data/string.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    class whitespace : boost::equality_comparable<whitespace>
+    class whitespace : string<whitespace, true, constraint::whitespace>
     {
     public:
-      whitespace() = default;
-      explicit whitespace(std::string);
+      using string<whitespace, true, constraint::whitespace>::string;
+      using string<whitespace, true, constraint::whitespace>::value;
 
-      template <class InputIt>
-      whitespace(InputIt begin_, InputIt end_)
-        : whitespace(std::string(begin_, end_))
-      {
-      }
-
-      const std::string& value() const;
-
-      bool empty() const;
-
-    private:
-      std::string _value;
+      static constexpr const char* name_of_type() { return "Whitespace"; }
     };
-
-    std::ostream& operator<<(std::ostream&, const whitespace&);
-    std::string to_string(const whitespace&);
-
-    bool operator==(const whitespace&, const whitespace&);
-
-    std::string operator+(const whitespace&, const std::string&);
-    std::string operator+(const std::string&, const whitespace&);
   }
 }
 

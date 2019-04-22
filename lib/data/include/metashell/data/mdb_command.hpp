@@ -40,6 +40,11 @@ namespace metashell
       public:
         using string<name_type>::string;
         using string<name_type>::value;
+
+        static constexpr const char* name_of_type()
+        {
+          return "Name of MDB command";
+        }
       };
 
       class argument_type : boost::equality_comparable<argument_type>
@@ -90,6 +95,11 @@ namespace metashell
 
         using string<arguments_type>::string;
         using string<arguments_type>::value;
+
+        static constexpr const char* name_of_type()
+        {
+          return "Arguments of MDB command";
+        }
 
         iterator begin() const;
         iterator end() const;
