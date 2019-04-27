@@ -22,6 +22,7 @@
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/util.hpp>
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem/path.hpp>
 
 #include <just/file.hpp>
@@ -205,6 +206,9 @@ TEST(config_parsing, errors)
       "foo" +
           nl,
       t.error_with_configs({"{\"name\":\"foo\"}", "{\"name\":\"foo\"}"}));
+
+  ASSERT_TRUE(boost::starts_with(t.error_with_configs({test_config("")}),
+                                 "Empty shell config name value"));
 }
 
 TEST(config_parsing, parsed_config)
@@ -239,6 +243,10 @@ TEST(config_parsing, parsed_config)
   ASSERT_EQ(error("Error: Config test2 not found."),
             t.cmd_with_configs(
                  {"[" + test_config("test1") + "]"}, {"#msh config show test2"})
+                .front());
+
+  ASSERT_EQ(comment({paragraph(" * default\n   1")}),
+            t.cmd_with_configs({"[" + test_config("1") + "]"}, {"#msh config"})
                 .front());
 }
 

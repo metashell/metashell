@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/constraint/code.hpp>
+
 #include <metashell/data/string.hpp>
 
 #include <vector>
@@ -25,13 +27,13 @@ namespace metashell
 {
   namespace data
   {
-    class markdown_string : string<markdown_string>
+    class markdown_string : string<markdown_string, true, constraint::code>
     {
     public:
-      using string<markdown_string>::string;
-      using string<markdown_string>::value;
+      using string<markdown_string, true, constraint::code>::string;
+      using string<markdown_string, true, constraint::code>::value;
 
-      static constexpr const char* name_of_type() { return "Markdown string"; }
+      static constexpr const char* name_of_type() { return "markdown string"; }
     };
 
     markdown_string italics(const markdown_string& md_);

@@ -23,15 +23,17 @@ namespace metashell
 {
   namespace data
   {
-    class shell_config_name : string<shell_config_name>
+    class shell_config_name : string<shell_config_name, false>
     {
     public:
-      using string<shell_config_name>::string;
-      using string<shell_config_name>::value;
+      using string<shell_config_name, false>::string;
+      using string<shell_config_name, false>::value;
+
+      shell_config_name() = delete;
 
       static constexpr const char* name_of_type()
       {
-        return "Shell config name";
+        return "shell config name";
       }
     };
   }

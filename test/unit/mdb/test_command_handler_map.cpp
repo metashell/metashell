@@ -42,25 +42,31 @@ TEST(command_handler_map, command_selection_1)
 
   mdb::command_handler_map map(commands);
 
-  const data::mdb_command asd("asd");
+  const boost::optional<data::mdb_command> asd =
+      data::mdb_command::parse("asd");
+  ASSERT_TRUE(asd);
   ASSERT_EQ(std::vector<name_type>{name_type("asd")},
-            get_command_from_map(map, asd).get_keys());
-  ASSERT_TRUE(empty(asd.arguments()));
+            get_command_from_map(map, *asd).get_keys());
+  ASSERT_TRUE(empty(asd->arguments()));
 
-  const data::mdb_command efg("efg");
+  const boost::optional<data::mdb_command> efg =
+      data::mdb_command::parse("efg");
+  ASSERT_TRUE(efg);
   ASSERT_EQ(std::vector<name_type>{name_type("efg")},
-            get_command_from_map(map, efg).get_keys());
-  ASSERT_TRUE(empty(efg.arguments()));
+            get_command_from_map(map, *efg).get_keys());
+  ASSERT_TRUE(empty(efg->arguments()));
 
-  const data::mdb_command a("a");
+  const boost::optional<data::mdb_command> a = data::mdb_command::parse("a");
+  ASSERT_TRUE(a);
   ASSERT_EQ(std::vector<name_type>{name_type("asd")},
-            get_command_from_map(map, a).get_keys());
-  ASSERT_TRUE(empty(a.arguments()));
+            get_command_from_map(map, *a).get_keys());
+  ASSERT_TRUE(empty(a->arguments()));
 
-  const data::mdb_command e("e");
+  const boost::optional<data::mdb_command> e = data::mdb_command::parse("e");
+  ASSERT_TRUE(e);
   ASSERT_EQ(std::vector<name_type>{name_type("efg")},
-            get_command_from_map(map, e).get_keys());
-  ASSERT_TRUE(empty(e.arguments()));
+            get_command_from_map(map, *e).get_keys());
+  ASSERT_TRUE(empty(e->arguments()));
 }
 
 TEST(command_handler_map, command_selection_2)
@@ -83,15 +89,17 @@ TEST(command_handler_map, command_selection_2)
 
   mdb::command_handler_map map(commands);
 
-  const data::mdb_command as("as");
+  const boost::optional<data::mdb_command> as = data::mdb_command::parse("as");
+  ASSERT_TRUE(as);
   ASSERT_EQ(std::vector<name_type>{name_type("asd")},
-            get_command_from_map(map, as).get_keys());
-  ASSERT_TRUE(empty(as.arguments()));
+            get_command_from_map(map, *as).get_keys());
+  ASSERT_TRUE(empty(as->arguments()));
 
-  const data::mdb_command af("af");
+  const boost::optional<data::mdb_command> af = data::mdb_command::parse("af");
+  ASSERT_TRUE(af);
   ASSERT_EQ(std::vector<name_type>{name_type("afg")},
-            get_command_from_map(map, af).get_keys());
-  ASSERT_TRUE(empty(af.arguments()));
+            get_command_from_map(map, *af).get_keys());
+  ASSERT_TRUE(empty(af->arguments()));
 }
 
 TEST(command_handler_map, command_selection_3)
@@ -114,15 +122,17 @@ TEST(command_handler_map, command_selection_3)
 
   mdb::command_handler_map map(commands);
 
-  const data::mdb_command as("as");
+  const boost::optional<data::mdb_command> as = data::mdb_command::parse("as");
+  ASSERT_TRUE(as);
   ASSERT_EQ(std::vector<name_type>{name_type("asd")},
-            get_command_from_map(map, as).get_keys());
-  ASSERT_TRUE(empty(as.arguments()));
+            get_command_from_map(map, *as).get_keys());
+  ASSERT_TRUE(empty(as->arguments()));
 
-  const data::mdb_command a("a");
+  const boost::optional<data::mdb_command> a = data::mdb_command::parse("a");
+  ASSERT_TRUE(a);
   ASSERT_EQ(std::vector<name_type>{name_type("a")},
-            get_command_from_map(map, a).get_keys());
-  ASSERT_TRUE(empty(a.arguments()));
+            get_command_from_map(map, *a).get_keys());
+  ASSERT_TRUE(empty(a->arguments()));
 }
 
 TEST(command_handler_map, command_selection_4)
@@ -145,7 +155,6 @@ TEST(command_handler_map, command_selection_4)
 
   mdb::command_handler_map map(commands);
 
-  ASSERT_FALSE(map.get_command(data::mdb_command::name_type("")));
   ASSERT_FALSE(map.get_command(data::mdb_command::name_type("a")));
   ASSERT_FALSE(map.get_command(data::mdb_command::name_type("as")));
 }
@@ -170,20 +179,26 @@ TEST(command_handler_map, command_selection_5)
 
   mdb::command_handler_map map(commands);
 
-  const data::mdb_command asd("asd");
+  const boost::optional<data::mdb_command> asd =
+      data::mdb_command::parse("asd");
+  ASSERT_TRUE(asd);
   ASSERT_EQ((std::vector<name_type>{name_type("asd"), name_type("xyz")}),
-            get_command_from_map(map, asd).get_keys());
-  ASSERT_TRUE(empty(asd.arguments()));
+            get_command_from_map(map, *asd).get_keys());
+  ASSERT_TRUE(empty(asd->arguments()));
 
-  const data::mdb_command xyz("xyz");
+  const boost::optional<data::mdb_command> xyz =
+      data::mdb_command::parse("xyz");
+  ASSERT_TRUE(xyz);
   ASSERT_EQ((std::vector<name_type>{name_type("asd"), name_type("xyz")}),
-            get_command_from_map(map, xyz).get_keys());
-  ASSERT_TRUE(empty(xyz.arguments()));
+            get_command_from_map(map, *xyz).get_keys());
+  ASSERT_TRUE(empty(xyz->arguments()));
 
-  const data::mdb_command asf("asf");
+  const boost::optional<data::mdb_command> asf =
+      data::mdb_command::parse("asf");
+  ASSERT_TRUE(asf);
   ASSERT_EQ(std::vector<name_type>{name_type("asf")},
-            get_command_from_map(map, asf).get_keys());
-  ASSERT_TRUE(empty(asf.arguments()));
+            get_command_from_map(map, *asf).get_keys());
+  ASSERT_TRUE(empty(asf->arguments()));
 }
 
 TEST(command_handler_map, command_selection_6)
@@ -206,11 +221,12 @@ TEST(command_handler_map, command_selection_6)
 
   mdb::command_handler_map map(commands);
 
-  const data::mdb_command f("f");
+  const boost::optional<data::mdb_command> f = data::mdb_command::parse("f");
+  ASSERT_TRUE(f);
   ASSERT_EQ(
       (std::vector<name_type>{name_type("ft"), name_type("forwardtrace")}),
-      get_command_from_map(map, f).get_keys());
-  ASSERT_TRUE(empty(f.arguments()));
+      get_command_from_map(map, *f).get_keys());
+  ASSERT_TRUE(empty(f->arguments()));
 }
 
 TEST(command_handler_map, command_selection_7)
@@ -233,11 +249,12 @@ TEST(command_handler_map, command_selection_7)
 
   mdb::command_handler_map map(commands);
 
-  const data::mdb_command f("f");
+  const boost::optional<data::mdb_command> f = data::mdb_command::parse("f");
+  ASSERT_TRUE(f);
   ASSERT_EQ((std::vector<name_type>{
                 name_type("ft"), name_type("forwardtrace"), name_type("fff")}),
-            get_command_from_map(map, f).get_keys());
-  ASSERT_TRUE(empty(f.arguments()));
+            get_command_from_map(map, *f).get_keys());
+  ASSERT_TRUE(empty(f->arguments()));
 }
 
 TEST(command_handler_map, command_selection_8)
@@ -277,36 +294,42 @@ TEST(command_handler_map, argument_passing)
 
   mdb::command_handler_map map(commands);
 
-  const data::mdb_command a("a abc");
+  const boost::optional<data::mdb_command> a =
+      data::mdb_command::parse("a abc");
+  ASSERT_TRUE(a);
   ASSERT_EQ(std::vector<name_type>{name_type("asf")},
-            get_command_from_map(map, a).get_keys());
+            get_command_from_map(map, *a).get_keys());
   {
-    auto i = a.arguments().begin();
-    const auto e = a.arguments().end();
+    auto i = a->arguments().begin();
+    const auto e = a->arguments().end();
     ASSERT_TRUE(i != e);
     ASSERT_EQ(*i, "abc");
     ++i;
     ASSERT_TRUE(i == e);
   }
 
-  const data::mdb_command asf("asf   abc");
+  const boost::optional<data::mdb_command> asf =
+      data::mdb_command::parse("asf   abc");
+  ASSERT_TRUE(asf);
   ASSERT_EQ(std::vector<name_type>{name_type("asf")},
-            get_command_from_map(map, asf).get_keys());
+            get_command_from_map(map, *asf).get_keys());
   {
-    auto i = asf.arguments().begin();
-    const auto e = asf.arguments().end();
+    auto i = asf->arguments().begin();
+    const auto e = asf->arguments().end();
     ASSERT_TRUE(i != e);
     ASSERT_EQ(*i, "abc");
     ++i;
     ASSERT_TRUE(i == e);
   }
 
-  const data::mdb_command as("as   ab c");
+  const boost::optional<data::mdb_command> as =
+      data::mdb_command::parse("as   ab c");
+  ASSERT_TRUE(as);
   ASSERT_EQ(std::vector<name_type>{name_type("asf")},
-            get_command_from_map(map, as).get_keys());
+            get_command_from_map(map, *as).get_keys());
   {
-    auto i = as.arguments().begin();
-    const auto e = as.arguments().end();
+    auto i = as->arguments().begin();
+    const auto e = as->arguments().end();
     ASSERT_TRUE(i != e);
     ASSERT_EQ(*i, "ab");
     ++i;
@@ -316,8 +339,10 @@ TEST(command_handler_map, argument_passing)
     ASSERT_TRUE(i == e);
   }
 
-  const data::mdb_command a2("a   ");
+  const boost::optional<data::mdb_command> a2 =
+      data::mdb_command::parse("a   ");
+  ASSERT_TRUE(a2);
   ASSERT_EQ(std::vector<name_type>{name_type("asf")},
-            get_command_from_map(map, a2).get_keys());
-  ASSERT_TRUE(empty(a2.arguments()));
+            get_command_from_map(map, *a2).get_keys());
+  ASSERT_TRUE(empty(a2->arguments()));
 }

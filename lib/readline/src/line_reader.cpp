@@ -118,7 +118,7 @@ namespace metashell
 
         if (char* line = ::readline(prompt_.c_str()))
         {
-          const data::user_input str(line);
+          std::string str(line);
 
 #if defined __FreeBSD__ || defined __OpenBSD__ || defined __APPLE__ ||         \
     defined USE_EDITLINE
@@ -126,7 +126,7 @@ namespace metashell
 #else
           rl_free(line);
 #endif
-          return str;
+          return data::user_input(str);
         }
         else
         {

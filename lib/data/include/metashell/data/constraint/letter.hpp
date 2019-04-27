@@ -1,5 +1,5 @@
-#ifndef METASHELL_DATA_USER_INPUT_HPP
-#define METASHELL_DATA_USER_INPUT_HPP
+#ifndef METASHELL_DATA_CONSTRAINT_LETTER_HPP
+#define METASHELL_DATA_CONSTRAINT_LETTER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,34 +17,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/constraint/code.hpp>
-
-#include <metashell/data/cpp_code.hpp>
-#include <metashell/data/mdb_command.hpp>
-#include <metashell/data/string.hpp>
-
-#include <boost/optional.hpp>
+#include <metashell/data/constraint/one_of.hpp>
+#include <metashell/data/constraint/range.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    class user_input : string<user_input, true, constraint::code>
+    namespace constraint
     {
-    public:
-      using string<user_input, true, constraint::code>::string;
-      using string<user_input, true, constraint::code>::value;
-
-      static constexpr const char* name_of_type() { return "user input"; }
-
-      user_input() = default;
-      explicit user_input(const cpp_code&);
-
-      explicit operator cpp_code() const;
-      explicit operator boost::optional<mdb_command>() const;
-    };
-
-    bool has_non_whitespace(const user_input&);
+      using letter = one_of<range<'a', 'z'>, range<'A', 'Z'>>;
+    }
   }
 }
 

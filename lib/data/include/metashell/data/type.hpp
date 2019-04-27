@@ -36,7 +36,7 @@ namespace metashell
       using string<type, true, constraint::any, constraint::any, cpp_code>::
           value;
 
-      static constexpr const char* name_of_type() { return "Type"; }
+      static constexpr const char* name_of_type() { return "type"; }
 
       const cpp_code& name() const;
 

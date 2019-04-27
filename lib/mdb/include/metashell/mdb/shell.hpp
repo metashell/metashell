@@ -123,6 +123,9 @@ namespace metashell
       void display_metaprogram_finished(iface::displayer& displayer_);
       void display_movement_info(bool moved, iface::displayer& displayer_);
 
+      boost::optional<data::mdb_command>
+      command_to_execute(const data::user_input&, iface::history&);
+
       iface::environment& env;
 
       boost::optional<metaprogram> mp;
@@ -130,7 +133,7 @@ namespace metashell
       int next_breakpoint_id = 1;
       breakpoints_t breakpoints;
 
-      data::mdb_command prev_line;
+      boost::optional<data::mdb_command> prev_line;
       bool last_command_repeatable = false;
 
       // It is empty if evaluate was called with "-".

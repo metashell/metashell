@@ -1,6 +1,3 @@
-#ifndef METASHELL_DATA_WHITESPACE_HPP
-#define METASHELL_DATA_WHITESPACE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,22 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/constraint/whitespace.hpp>
-#include <metashell/data/string.hpp>
+#include <metashell/system_test/error.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
 
-namespace metashell
+#include <gtest/gtest.h>
+
+using namespace metashell::system_test;
+
+using pattern::_;
+
+TEST(validation, invalid_input)
 {
-  namespace data
-  {
-    class whitespace : string<whitespace, true, constraint::whitespace>
-    {
-    public:
-      using string<whitespace, true, constraint::whitespace>::string;
-      using string<whitespace, true, constraint::whitespace>::value;
-
-      static constexpr const char* name_of_type() { return "whitespace"; }
-    };
-  }
+  ASSERT_EQ(error(_), metashell_instance().command("\a").front());
 }
-
-#endif

@@ -17,6 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/constraint/code.hpp>
+#include <metashell/data/constraint/name_first.hpp>
+#include <metashell/data/constraint/name_non_first.hpp>
+
 #include <metashell/data/regex.hpp>
 #include <metashell/data/string.hpp>
 #include <metashell/data/whitespace.hpp>
@@ -35,15 +39,26 @@ namespace metashell
     class mdb_command : boost::equality_comparable<mdb_command>
     {
     public:
-      class name_type : string<name_type>
+      class name_type : string<name_type,
+                               false,
+                               constraint::name_non_first,
+                               constraint::name_first>
       {
       public:
-        using string<name_type>::string;
-        using string<name_type>::value;
+        using string<name_type,
+                     false,
+                     constraint::name_non_first,
+                     constraint::name_first>::string;
+        using string<name_type,
+                     false,
+                     constraint::name_non_first,
+                     constraint::name_first>::value;
+
+        name_type() = delete;
 
         static constexpr const char* name_of_type()
         {
-          return "Name of MDB command";
+          return "name of MDB command";
         }
       };
 
@@ -69,7 +84,7 @@ namespace metashell
         whitespace _suffix;
       };
 
-      class arguments_type : string<arguments_type>
+      class arguments_type : string<arguments_type, true, constraint::code>
       {
       public:
         class iterator
@@ -93,12 +108,12 @@ namespace metashell
           std::string::const_iterator _end;
         };
 
-        using string<arguments_type>::string;
-        using string<arguments_type>::value;
+        using string<arguments_type, true, constraint::code>::string;
+        using string<arguments_type, true, constraint::code>::value;
 
         static constexpr const char* name_of_type()
         {
-          return "Arguments of MDB command";
+          return "arguments of MDB command";
         }
 
         iterator begin() const;
@@ -106,16 +121,13 @@ namespace metashell
 
         explicit operator int() const;
         explicit operator regex() const;
-        explicit operator mdb_command() const;
+        explicit operator boost::optional<mdb_command>() const;
       };
 
       using tuple_t =
           std::tuple<whitespace, name_type, whitespace, arguments_type>;
 
-      mdb_command() = default;
-      explicit mdb_command(const std::string&);
-
-      bool only_whitespace() const;
+      mdb_command(whitespace, name_type, whitespace, arguments_type);
 
       const whitespace& prefix() const;
       const name_type& name() const;
@@ -123,6 +135,8 @@ namespace metashell
       const arguments_type& arguments() const;
 
       const tuple_t tuple() const;
+
+      static boost::optional<mdb_command> parse(const std::string&);
 
     private:
       tuple_t _val;

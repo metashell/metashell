@@ -17,17 +17,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/constraint/code.hpp>
+
 #include <metashell/data/string.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    class cpp_code : string<cpp_code>
+    class cpp_code : string<cpp_code, true, constraint::code>
     {
     public:
-      using string<cpp_code>::string;
-      using string<cpp_code>::value;
+      using string<cpp_code, true, constraint::code>::string;
+      using string<cpp_code, true, constraint::code>::value;
 
       static constexpr const char* name_of_type() { return "C++ code"; }
     };

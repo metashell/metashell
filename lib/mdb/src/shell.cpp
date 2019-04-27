@@ -178,46 +178,49 @@ namespace metashell
       displayer_.show_raw_text("For help, type \"help\".");
     }
 
+    boost::optional<data::mdb_command>
+    shell::command_to_execute(const data::user_input& line_arg,
+                              iface::history& history_)
+    {
+      if (auto line = boost::optional<data::mdb_command>(line_arg))
+      {
+        if (line != prev_line)
+        {
+          history_.add(line_arg);
+        }
+
+        prev_line = line;
+        last_command_repeatable = false;
+
+        return line;
+      }
+      else
+      {
+        return (empty(line_arg) && last_command_repeatable && prev_line) ?
+                   prev_line :
+                   boost::none;
+      }
+    }
+
     void shell::line_available(const data::user_input& line_arg,
                                iface::displayer& displayer_,
                                iface::history& history_)
     {
       try
       {
-        data::mdb_command line(line_arg);
-
-        if (line != prev_line && !empty(line))
+        if (boost::optional<data::mdb_command> line =
+                command_to_execute(line_arg, history_))
         {
-          history_.add(line_arg);
-        }
-
-        if (empty(line))
-        {
-          if (!last_command_repeatable)
+          if (auto cmd = command_handler.get_command(line->name()))
           {
-            return;
+            last_command_repeatable = cmd->is_repeatable();
+            cmd->get_func()(*this, line->arguments(), displayer_);
           }
-          line = prev_line;
-        }
-        else
-        {
-          prev_line = line;
-        }
-
-        if (line.only_whitespace())
-        {
-          return;
-        }
-
-        if (auto cmd = command_handler.get_command(line.name()))
-        {
-          last_command_repeatable = cmd->is_repeatable();
-          cmd->get_func()(*this, line.arguments(), displayer_);
-        }
-        else
-        {
-          displayer_.show_error("Command parsing failed\n");
-          last_command_repeatable = false;
+          else
+          {
+            displayer_.show_error("Command parsing failed\n");
+            last_command_repeatable = false;
+          }
         }
       }
       catch (const std::exception& ex)
@@ -672,29 +675,35 @@ namespace metashell
         return;
       }
 
-      const data::mdb_command arg_cmd(arg);
-
-      if (auto cmd = command_handler.get_command(arg_cmd.name()))
+      if (const auto arg_cmd = boost::optional<data::mdb_command>(arg))
       {
-        if (!empty(arg_cmd.arguments()))
+        if (auto cmd = command_handler.get_command(arg_cmd->name()))
         {
-          displayer_.show_error("Only one argument expected\n");
-          return;
-        }
+          if (!empty(arg_cmd->arguments()))
+          {
+            displayer_.show_error("Only one argument expected\n");
+            return;
+          }
 
-        displayer_.show_raw_text(
-            boost::algorithm::join(
-                cmd->get_keys() | boost::adaptors::transformed([](
-                                      const data::mdb_command::name_type& n_) {
-                  return n_.value();
-                }),
-                "|") +
-            " " + cmd->get_usage());
-        displayer_.show_raw_text(cmd->get_full_description());
+          displayer_.show_raw_text(
+              boost::algorithm::join(
+                  cmd->get_keys() |
+                      boost::adaptors::transformed(
+                          [](const data::mdb_command::name_type& n_) {
+                            return n_.value();
+                          }),
+                  "|") +
+              " " + cmd->get_usage());
+          displayer_.show_raw_text(cmd->get_full_description());
+        }
+        else
+        {
+          displayer_.show_error("Command not found\n");
+        }
       }
       else
       {
-        displayer_.show_error("Command not found\n");
+        displayer_.show_error("Invalid command\n");
       }
     }
 

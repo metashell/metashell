@@ -202,23 +202,41 @@ namespace metashell
       return regex(value());
     }
 
-    mdb_command::arguments_type::operator mdb_command() const
+    mdb_command::arguments_type::operator boost::optional<mdb_command>() const
     {
-      return mdb_command(value());
+      return mdb_command::parse(value());
     }
 
-    mdb_command::mdb_command(const std::string& value_)
+    mdb_command::mdb_command(whitespace prefix_,
+                             name_type name_,
+                             whitespace sep_,
+                             arguments_type args_)
+      : _val(std::move(prefix_),
+             std::move(name_),
+             std::move(sep_),
+             std::move(args_))
+    {
+    }
+
+    boost::optional<mdb_command> mdb_command::parse(const std::string& value_)
     {
       const auto e = value_.end();
 
       auto command_begin = std::find_if_not(value_.begin(), e, is_space);
       auto command_end = std::find_if(command_begin, e, is_space);
-      auto arguments_begin = std::find_if_not(command_end, e, is_space);
+      if (command_begin == command_end)
+      {
+        return boost::none;
+      }
+      else
+      {
+        auto arguments_begin = std::find_if_not(command_end, e, is_space);
 
-      std::get<0>(_val) = whitespace(value_.begin(), command_begin);
-      std::get<1>(_val) = name_type(command_begin, command_end);
-      std::get<2>(_val) = whitespace(command_end, arguments_begin);
-      std::get<3>(_val) = arguments_type(arguments_begin, e);
+        return mdb_command(whitespace(value_.begin(), command_begin),
+                           name_type(command_begin, command_end),
+                           whitespace(command_end, arguments_begin),
+                           arguments_type(arguments_begin, e));
+      }
     }
 
     bool empty(const mdb_command& cmd_)
@@ -227,15 +245,6 @@ namespace metashell
       assert(!(empty(cmd_.name()) && !empty(cmd_.arguments())));
 
       return empty(cmd_.prefix()) && empty(cmd_.name());
-    }
-
-    bool mdb_command::only_whitespace() const
-    {
-      assert(empty(arguments()) ||
-             !std::all_of(arguments().value().begin(),
-                          arguments().value().end(), is_space));
-
-      return empty(name());
     }
 
     const whitespace& mdb_command::prefix() const { return std::get<0>(_val); }

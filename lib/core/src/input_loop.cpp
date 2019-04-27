@@ -58,13 +58,24 @@ namespace metashell
 
         if (!processor_queue_.empty())
         {
-          if (const auto line = line_reader_(processor_queue_.prompt()))
+          try
           {
-            processor_queue_.line_available(*line, displayer_);
+            if (const auto line = line_reader_(processor_queue_.prompt()))
+            {
+              processor_queue_.line_available(*line, displayer_);
+            }
+            else
+            {
+              processor_queue_.pop(displayer_);
+            }
           }
-          else
+          catch (const std::exception& e)
           {
-            processor_queue_.pop(displayer_);
+            displayer_.show_error(e.what());
+          }
+          catch (...)
+          {
+            displayer_.show_error("Unknown error");
           }
         }
       }

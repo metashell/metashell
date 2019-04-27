@@ -22,13 +22,17 @@ namespace metashell
 {
   namespace data
   {
-    user_input::user_input(const cpp_code& c_) : string<user_input>(c_.value())
+    user_input::user_input(const cpp_code& c_)
+      : string<user_input, true, constraint::code>(c_.value())
     {
     }
 
     user_input::operator cpp_code() const { return cpp_code(value()); }
 
-    user_input::operator mdb_command() const { return mdb_command(value()); }
+    user_input::operator boost::optional<mdb_command>() const
+    {
+      return mdb_command::parse(value());
+    }
 
     bool has_non_whitespace(const user_input& s_)
     {
