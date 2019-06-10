@@ -32,7 +32,9 @@ namespace
   metashell::data::config get_shell_config()
   {
     metashell::data::config cfg;
-    cfg.push_back(metashell::data::shell_config());
+    cfg.push_back(metashell::data::shell_config(
+        metashell::data::shell_config_name("test"),
+        metashell::data::shell_config_data()));
     return cfg;
   }
 

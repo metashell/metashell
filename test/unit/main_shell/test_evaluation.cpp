@@ -205,7 +205,8 @@ TEST(evaluation, comment_is_stored_in_history)
 TEST(evaluation, throwing_environment_update_not_breaking_shell)
 {
   data::config cfg;
-  cfg.push_back(data::shell_config());
+  cfg.push_back(data::shell_config(
+      data::shell_config_name("test"), data::shell_config_data()));
 
   auto e = new NiceMock<mock::environment>();
   core::in_memory_displayer d;

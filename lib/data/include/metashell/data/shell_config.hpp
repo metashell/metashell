@@ -17,24 +17,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/shell_config_data.hpp>
 #include <metashell/data/shell_config_name.hpp>
-
-#include <string>
-#include <vector>
 
 namespace metashell
 {
   namespace data
   {
-    class shell_config
+    class shell_config : public shell_config_data
     {
     public:
       shell_config_name name;
 
-      std::vector<std::string> engine_args;
-      bool use_precompiled_headers = false;
-      std::string engine = "auto";
-      bool preprocessor_mode = false;
+      shell_config(shell_config_name, shell_config_data);
     };
   }
 }

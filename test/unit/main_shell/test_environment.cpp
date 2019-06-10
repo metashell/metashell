@@ -25,7 +25,7 @@
 
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/result.hpp>
-#include <metashell/data/shell_config.hpp>
+#include <metashell/data/shell_config_data.hpp>
 
 #include <gtest/gtest.h>
 
@@ -50,7 +50,7 @@ namespace
 
 TEST(environment, empty_header_file_environment_is_empty)
 {
-  data::shell_config cfg{};
+  data::shell_config_data cfg{};
   cfg.use_precompiled_headers = false;
 
   engine::constant::type_shell type_shell(failing_data());
@@ -61,7 +61,7 @@ TEST(environment, empty_header_file_environment_is_empty)
 
 TEST(environment, append_text_to_header_file_environment)
 {
-  data::shell_config cfg{};
+  data::shell_config_data cfg{};
   cfg.use_precompiled_headers = false;
 
   engine::constant::type_shell type_shell(failing_data());

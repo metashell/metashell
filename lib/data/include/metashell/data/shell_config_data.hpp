@@ -1,5 +1,8 @@
+#ifndef METASHELL_DATA_SHELL_CONFIG_DATA_HPP
+#define METASHELL_DATA_SHELL_CONFIG_DATA_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,16 +17,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "test_config.hpp"
+#include <string>
+#include <vector>
 
-#include <metashell/data/config.hpp>
-
-using namespace metashell::data;
-
-config metashell::test_config()
+namespace metashell
 {
-  config result;
-  result.push_back(
-      shell_config(data::shell_config_name("test"), data::shell_config_data()));
-  return result;
+  namespace data
+  {
+    class shell_config_data
+    {
+    public:
+      std::vector<std::string> engine_args;
+      bool use_precompiled_headers = false;
+      std::string engine = "auto";
+      bool preprocessor_mode = false;
+    };
+  }
 }
+
+#endif

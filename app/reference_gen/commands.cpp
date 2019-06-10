@@ -46,7 +46,9 @@ namespace
   void show_pragma_help(std::ostream& out_)
   {
     metashell::data::config cfg{};
-    cfg.push_back(metashell::data::shell_config());
+    cfg.push_back(metashell::data::shell_config(
+        metashell::data::shell_config_name("default"),
+        metashell::data::shell_config_data()));
 
     metashell::core::command_processor_queue cpq;
     const std::string internal_dir;

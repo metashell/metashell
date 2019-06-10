@@ -18,7 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/headers.hpp>
-#include <metashell/data/shell_config.hpp>
+#include <metashell/data/shell_config_data.hpp>
 #include <metashell/iface/environment.hpp>
 #include <metashell/iface/type_shell.hpp>
 
@@ -32,7 +32,7 @@ namespace metashell
     {
     public:
       header_file_environment(iface::type_shell* type_shell,
-                              const data::shell_config& config_,
+                              const data::shell_config_data& config_,
                               const boost::filesystem::path& internal_dir_,
                               const boost::filesystem::path& env_filename_);
 
