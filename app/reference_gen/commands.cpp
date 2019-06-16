@@ -32,23 +32,23 @@
 
 namespace
 {
-  void show_markdown(const std::vector<std::string>& name_,
+  void show_markdown(const metashell::data::pragma_name& name_,
                      const metashell::iface::pragma_handler& h_,
                      std::ostream& out_)
   {
-    using boost::algorithm::join;
-
     const std::string args = h_.arguments();
 
-    out_ << "* __`#msh " << join(name_, " ") << (args.empty() ? "" : " ")
-         << args << "`__ <br />\n"
+    out_ << "* __`#msh " << name_ << (args.empty() ? "" : " ") << args
+         << "`__ <br />\n"
          << h_.description() << "\n\n";
   }
 
   void show_pragma_help(std::ostream& out_)
   {
     metashell::data::config cfg{};
-    cfg.push_back(metashell::data::shell_config());
+    cfg.push_back(metashell::data::shell_config(
+        metashell::data::shell_config_name("default"),
+        metashell::data::shell_config_data()));
 
     metashell::core::command_processor_queue cpq;
     const std::string internal_dir;
@@ -74,8 +74,14 @@ namespace
 
     for (const metashell::mdb::command& cmd : commands)
     {
-      out_ << "* __`" << join(cmd.get_keys(), "|") << " " << cmd.get_usage()
-           << "`__ <br />\n"
+      out_ << "* __`"
+           << join(cmd.get_keys() |
+                       boost::adaptors::transformed([](
+                           const metashell::data::mdb_command::name_type& n_) {
+                         return to_string(n_);
+                       }),
+                   "|")
+           << " " << cmd.get_usage() << "`__ <br />\n"
            << cmd.get_short_description();
       if (!cmd.get_long_description().empty())
       {

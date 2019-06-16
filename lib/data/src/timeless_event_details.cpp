@@ -16,8 +16,6 @@
 
 #include <metashell/data/timeless_event_details.hpp>
 
-#include <boost/algorithm/string/join.hpp>
-
 namespace metashell
 {
   namespace data
@@ -31,10 +29,9 @@ namespace metashell
     cpp_code
     name(const timeless_event_details<event_kind::macro_expansion>& details_)
     {
-      using boost::algorithm::join;
-
       return details_.args ?
-                 details_.name + "(" + join(*details_.args, ",") + ")" :
+                 details_.name + cpp_code("(") +
+                     join(*details_.args, cpp_code(",")) + cpp_code(")") :
                  details_.name;
     }
 
@@ -53,12 +50,12 @@ namespace metashell
     cpp_code
     name(const timeless_event_details<event_kind::macro_definition>& details_)
     {
-      using boost::algorithm::join;
-
       return details_.name +
-             (details_.args ? "(" + join(*details_.args, ", ") + ")" :
-                              cpp_code()) +
-             " " + details_.body;
+             (details_.args ?
+                  cpp_code("(") + join(*details_.args, cpp_code(", ")) +
+                      cpp_code(")") :
+                  cpp_code()) +
+             cpp_code(" ") + details_.body;
     }
 
     file_location source_location(
@@ -295,7 +292,7 @@ namespace metashell
     cpp_code
     name(const timeless_event_details<event_kind::line_directive>& details_)
     {
-      return "#line " + details_.arg;
+      return cpp_code("#line ") + details_.arg;
     }
 
     file_location source_location(

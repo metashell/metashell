@@ -64,8 +64,8 @@ TEST(pragma, name_of_pragma)
   const data::command::iterator op_foo = *main_shell::parse_pragma(c_foo),
                                 op_bar = *main_shell::parse_pragma(c_bar);
 
-  ASSERT_EQ("foo", op_foo->value());
-  ASSERT_EQ("bar", op_bar->value());
+  ASSERT_EQ("foo", value(*op_foo));
+  ASSERT_EQ("bar", value(*op_bar));
 }
 
 TEST(pragma, name_of_pragma_is_not_a_literal)

@@ -57,7 +57,7 @@ namespace metashell
 
         bool match(const data::token& token_) const
         {
-          return match(token_.value());
+          return match(value(token_));
         }
 
         bool match(const boost::filesystem::path& path_) const

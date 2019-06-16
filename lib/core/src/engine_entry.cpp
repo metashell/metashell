@@ -93,12 +93,11 @@ namespace metashell
     {
       return engine_.features().empty() ?
                  italics(data::markdown_string(no_features())) :
-                 boost::algorithm::join(
-                     engine_.features() |
-                         boost::adaptors::transformed([](data::feature f_) {
-                           return data::self_reference(to_string(f_));
-                         }),
-                     ", ");
+                 join(engine_.features() |
+                          boost::adaptors::transformed([](data::feature f_) {
+                            return data::self_reference(to_string(f_));
+                          }),
+                      data::markdown_string(", "));
     }
 
     std::function<bool(const std::vector<std::string>&)> never_used_by_auto()

@@ -628,7 +628,8 @@ TEST(mdb_step, garbage_argument)
     mi.command(fibonacci_mp);
     mi.command("#msh mdb" + nocache + " int_<fib<2>::value>");
 
-    ASSERT_EQ(error("Argument parsing failed"), mi.command("step asd").front());
+    ASSERT_EQ(
+        error("Error: Invalid integer: asd\n"), mi.command("step asd").front());
   }
 }
 

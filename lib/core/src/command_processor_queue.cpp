@@ -24,9 +24,8 @@ namespace metashell
   {
     bool command_processor_queue::empty() const { return _items.empty(); }
 
-    void
-    command_processor_queue::code_complete(const std::string& s_,
-                                           std::set<std::string>& out_) const
+    void command_processor_queue::code_complete(
+        const data::user_input& s_, std::set<data::user_input>& out_) const
     {
       if (!empty())
       {
@@ -54,7 +53,7 @@ namespace metashell
       }
     }
 
-    void command_processor_queue::line_available(const std::string& cmd_,
+    void command_processor_queue::line_available(const data::user_input& cmd_,
                                                  iface::displayer& displayer_)
     {
       assert(_history != nullptr);

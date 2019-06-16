@@ -41,8 +41,8 @@ namespace metashell
                        core::logger* logger_);
 
         virtual void code_complete(const iface::environment& env_,
-                                   const std::string& src_,
-                                   std::set<std::string>& out_,
+                                   const data::user_input& src_,
+                                   std::set<data::user_input>& out_,
                                    bool use_precompiled_headers_) override;
 
       private:

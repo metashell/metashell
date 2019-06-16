@@ -32,7 +32,8 @@ using ::testing::_;
 TEST(evaluation, throwing_environment_not_breaking_validate)
 {
   data::config cfg;
-  cfg.push_back(data::shell_config());
+  cfg.push_back(data::shell_config(
+      data::shell_config_name("test"), data::shell_config_data()));
 
   NiceMock<mock::environment_detector> det;
   NiceMock<mock::environment> e;

@@ -347,7 +347,7 @@ namespace metashell
     data::token token_from_wave_token(const Token& t_)
     {
       const auto v = t_.get_value();
-      return data::token(
+      return data::make_token(
           data::cpp_code(v.begin(), v.end()), type_of_wave_token(t_));
     }
   }

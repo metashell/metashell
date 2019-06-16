@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include <metashell/data/user_input.hpp>
 
 namespace metashell
 {
@@ -28,7 +28,7 @@ namespace metashell
     public:
       virtual ~history() {}
 
-      virtual void add(const std::string& cmd_) = 0;
+      virtual void add(const data::user_input& cmd_) = 0;
     };
   }
 }

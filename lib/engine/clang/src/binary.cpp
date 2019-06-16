@@ -23,7 +23,6 @@
 #include <metashell/process/run.hpp>
 #include <metashell/process/util.hpp>
 
-#include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 
 #include <algorithm>
@@ -270,8 +269,9 @@ namespace metashell
                   std::vector<std::string>{"-include", env_path_->string()} :
                   std::vector<std::string>{},
               tmp_exp_ ?
-                  env_.get_appended("::metashell::impl::wrap< " + *tmp_exp_ +
-                                    " > __metashell_v;\n") :
+                  env_.get_appended(
+                      data::cpp_code("::metashell::impl::wrap< ") + *tmp_exp_ +
+                      data::cpp_code(" > __metashell_v;\n")) :
                   env_.get());
         }
 

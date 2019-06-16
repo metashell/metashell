@@ -20,7 +20,7 @@ namespace metashell
 {
   namespace core
   {
-    void null_history::add(const std::string&)
+    void null_history::add(const data::user_input&)
     {
       // throw away
     }

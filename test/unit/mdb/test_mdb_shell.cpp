@@ -41,20 +41,20 @@ TEST(mdb_shell, empty_lines)
 
   ASSERT_EQ(data::empty_container(), h.commands());
 
-  sh.line_available("", d, h);
+  sh.line_available(data::user_input(), d, h);
   ASSERT_EQ(data::empty_container(), h.commands());
   ASSERT_EQ(data::empty_container(), d.raw_texts());
   ASSERT_EQ(data::empty_container(), d.types());
   ASSERT_TRUE(d.call_graphs().empty());
 
-  sh.line_available(" ", d, h);
-  ASSERT_EQ(std::vector<std::string>{" "}, h.commands());
+  sh.line_available(data::user_input(" "), d, h);
+  ASSERT_EQ(std::vector<data::user_input>{}, h.commands());
   ASSERT_EQ(data::empty_container(), d.raw_texts());
   ASSERT_EQ(data::empty_container(), d.types());
   ASSERT_TRUE(d.call_graphs().empty());
 
-  sh.line_available("\t", d, h);
-  ASSERT_EQ((std::vector<std::string>{" ", "\t"}), h.commands());
+  sh.line_available(data::user_input("\t"), d, h);
+  ASSERT_EQ((std::vector<data::user_input>{}), h.commands());
   ASSERT_EQ(data::empty_container(), d.raw_texts());
   ASSERT_EQ(data::empty_container(), d.types());
   ASSERT_TRUE(d.call_graphs().empty());
@@ -68,17 +68,24 @@ TEST(mdb_shell, identical_lines_in_history)
 
   ASSERT_EQ(data::empty_container(), h.commands());
 
-  sh.line_available("asd", d, h);
-  ASSERT_EQ(std::vector<std::string>{"asd"}, h.commands());
+  sh.line_available(data::user_input("asd"), d, h);
+  ASSERT_EQ(
+      std::vector<data::user_input>{data::user_input("asd")}, h.commands());
 
-  sh.line_available("asd", d, h);
-  ASSERT_EQ(std::vector<std::string>{"asd"}, h.commands());
+  sh.line_available(data::user_input("asd"), d, h);
+  ASSERT_EQ(
+      std::vector<data::user_input>{data::user_input("asd")}, h.commands());
 
-  sh.line_available("xyz", d, h);
-  ASSERT_EQ((std::vector<std::string>{"asd", "xyz"}), h.commands());
+  sh.line_available(data::user_input("xyz"), d, h);
+  ASSERT_EQ((std::vector<data::user_input>{
+                data::user_input("asd"), data::user_input("xyz")}),
+            h.commands());
 
-  sh.line_available("asd", d, h);
-  ASSERT_EQ((std::vector<std::string>{"asd", "xyz", "asd"}), h.commands());
+  sh.line_available(data::user_input("asd"), d, h);
+  ASSERT_EQ((std::vector<data::user_input>{data::user_input("asd"),
+                                           data::user_input("xyz"),
+                                           data::user_input("asd")}),
+            h.commands());
 }
 
 TEST(mdb_shell, identical_all_space_lines_in_history)
@@ -89,17 +96,17 @@ TEST(mdb_shell, identical_all_space_lines_in_history)
 
   ASSERT_EQ(data::empty_container(), h.commands());
 
-  sh.line_available(" ", d, h);
-  ASSERT_EQ(std::vector<std::string>{" "}, h.commands());
+  sh.line_available(data::user_input(" "), d, h);
+  ASSERT_EQ(std::vector<data::user_input>{}, h.commands());
 
-  sh.line_available(" ", d, h);
-  ASSERT_EQ(std::vector<std::string>{" "}, h.commands());
+  sh.line_available(data::user_input(" "), d, h);
+  ASSERT_EQ(std::vector<data::user_input>{}, h.commands());
 
-  sh.line_available("  ", d, h);
-  ASSERT_EQ((std::vector<std::string>{" ", "  "}), h.commands());
+  sh.line_available(data::user_input("  "), d, h);
+  ASSERT_EQ((std::vector<data::user_input>{}), h.commands());
 
-  sh.line_available(" ", d, h);
-  ASSERT_EQ((std::vector<std::string>{" ", "  ", " "}), h.commands());
+  sh.line_available(data::user_input(" "), d, h);
+  ASSERT_EQ((std::vector<data::user_input>{}), h.commands());
 }
 
 TEST(mdb_shell, skips_empty_lines)
@@ -110,14 +117,17 @@ TEST(mdb_shell, skips_empty_lines)
 
   ASSERT_EQ(data::empty_container(), h.commands());
 
-  sh.line_available("ads", d, h);
-  ASSERT_EQ(std::vector<std::string>{"ads"}, h.commands());
+  sh.line_available(data::user_input("ads"), d, h);
+  ASSERT_EQ(
+      std::vector<data::user_input>{data::user_input("ads")}, h.commands());
 
-  sh.line_available("", d, h);
-  ASSERT_EQ(std::vector<std::string>{"ads"}, h.commands());
+  sh.line_available(data::user_input(), d, h);
+  ASSERT_EQ(
+      std::vector<data::user_input>{data::user_input("ads")}, h.commands());
 
-  sh.line_available("ads", d, h);
-  ASSERT_EQ(std::vector<std::string>{"ads"}, h.commands());
+  sh.line_available(data::user_input("ads"), d, h);
+  ASSERT_EQ(
+      std::vector<data::user_input>{data::user_input("ads")}, h.commands());
 }
 
 TEST(mdb_shell, prompt)

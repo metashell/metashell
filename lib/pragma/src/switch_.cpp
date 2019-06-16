@@ -72,7 +72,7 @@ namespace metashell
 
       if (i != args_end_)
       {
-        const std::string v = i->value().value();
+        const std::string v = value(*i).value();
         if (valid_argument(v))
         {
           ++i;

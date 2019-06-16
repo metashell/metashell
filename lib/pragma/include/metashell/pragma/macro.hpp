@@ -19,6 +19,8 @@
 
 #include <metashell/pragma/without_arguments.hpp>
 
+#include <metashell/data/user_input.hpp>
+
 #include <string>
 #include <vector>
 
@@ -29,7 +31,7 @@ namespace metashell
     class macro : public without_arguments
     {
     public:
-      macro(std::string description_, std::vector<std::string> commands_);
+      macro(std::string description_, std::vector<data::user_input> commands_);
 
       virtual std::string description() const override;
 
@@ -37,7 +39,7 @@ namespace metashell
                        iface::displayer& displayer_) const override;
 
     private:
-      std::vector<std::string> _commands;
+      std::vector<data::user_input> _commands;
       std::string _description;
     };
   }

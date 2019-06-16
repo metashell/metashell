@@ -44,8 +44,8 @@ TEST(mdb_forwardtrace, garbage_argument)
   mi.command("#msh mdb");
   mi.command("evaluate int");
 
-  ASSERT_EQ(
-      error("Argument parsing failed"), mi.command("forwardtrace asd").front());
+  ASSERT_EQ(error("Error: Invalid integer: asd\n"),
+            mi.command("forwardtrace asd").front());
 }
 
 TEST(mdb_forwardtrace, int_type)

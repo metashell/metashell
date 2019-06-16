@@ -18,9 +18,9 @@
 
 #include <metashell/core/version.hpp>
 
-#include <boost/algorithm/string/join.hpp>
-
+#include <algorithm>
 #include <cassert>
+#include <iterator>
 
 namespace metashell
 {
@@ -29,12 +29,10 @@ namespace metashell
     namespace
     {
       void display_all(iface::displayer& displayer_,
-                       const std::map<std::vector<std::string>,
+                       const std::map<data::pragma_name,
                                       std::unique_ptr<iface::pragma_handler>>&
                            pragma_handlers_)
       {
-        using boost::algorithm::join;
-
         data::text t;
         t.paragraphs.push_back(
             data::paragraph("Metashell has the following built-in pragmas:"));
@@ -45,7 +43,7 @@ namespace metashell
 
           const std::string args = p.second->arguments();
           t.paragraphs.push_back(
-              data::paragraph("#msh " + join(p.first, " ") +
+              data::paragraph("#msh " + to_string(p.first) +
                                   (args.empty() ? std::string() : " " + args),
                               "  "));
         }
@@ -61,18 +59,6 @@ namespace metashell
         t.paragraphs.push_back(empty_line);
 
         displayer_.show_comment(t);
-      }
-
-      template <class It1, class It2>
-      bool prefix_of(It1 prefix_begin_, It1 prefix_end_, It2 begin_, It2 end_)
-      {
-        while (prefix_begin_ != prefix_end_ && begin_ != end_ &&
-               *prefix_begin_ == *begin_)
-        {
-          ++prefix_begin_;
-          ++begin_;
-        }
-        return prefix_begin_ == prefix_end_;
       }
     }
 
@@ -95,19 +81,13 @@ namespace metashell
       }
       else
       {
-        std::vector<std::string> args;
-        for (auto i = args_begin_; i != args_end_; ++i)
-        {
-          switch (i->category())
-          {
-          case data::token_category::whitespace:
-          case data::token_category::comment:
-            // skip token
-            break;
-          default:
-            args.push_back(i->value().value());
-          }
-        }
+        std::vector<data::token> args;
+        std::copy_if(args_begin_, args_end_, std::back_inserter(args),
+                     [](const data::token& t_) {
+                       const auto cat = category(t_);
+                       return cat != data::token_category::whitespace &&
+                              cat != data::token_category::comment;
+                     });
 
         data::text help_text;
         bool was_pragma = false;
@@ -116,8 +96,7 @@ namespace metashell
         {
           assert(h.second);
 
-          if (prefix_of(
-                  args.begin(), args.end(), h.first.begin(), h.first.end()))
+          if (prefix_of(args, h.first))
           {
             if (was_pragma)
             {
@@ -129,7 +108,7 @@ namespace metashell
             }
             const std::string p_args = h.second->arguments();
             help_text.paragraphs.push_back(data::paragraph(
-                "#msh " + join(h.first, " ") +
+                "#msh " + to_string(h.first) +
                 (p_args.empty() ? std::string() : " " + p_args)));
             help_text.paragraphs.push_back(
                 data::paragraph(h.second->description(), "    "));
@@ -141,7 +120,8 @@ namespace metashell
         }
         else
         {
-          displayer_.show_error("Pragma " + join(args, " ") + " not found.");
+          displayer_.show_error("Pragma " + join_tokens(args, " ") +
+                                " not found.");
         }
       }
     }

@@ -44,7 +44,7 @@ TEST(evaluation, accept_empty_input)
   core::in_memory_displayer d;
   main_shell::shell sh(
       test_config(), "", "", engine::constant::create_failing());
-  sh.line_available("", d);
+  sh.line_available(data::user_input(), d);
 
   ASSERT_EQ(data::empty_container(), d.types());
   ASSERT_EQ(data::empty_container(), d.errors());
@@ -55,7 +55,7 @@ TEST(evaluation, accept_space_input)
   core::in_memory_displayer d;
   main_shell::shell sh(
       test_config(), "", "", engine::constant::create_failing());
-  sh.line_available(" ", d);
+  sh.line_available(data::user_input(" "), d);
 
   ASSERT_EQ(data::empty_container(), d.types());
   ASSERT_EQ(data::empty_container(), d.errors());
@@ -66,7 +66,7 @@ TEST(evaluation, accept_tab_input)
   core::in_memory_displayer d;
   main_shell::shell sh(
       test_config(), "", "", engine::constant::create_failing());
-  sh.line_available("\t", d);
+  sh.line_available(data::user_input("\t"), d);
 
   ASSERT_EQ(data::empty_container(), d.types());
   ASSERT_EQ(data::empty_container(), d.errors());
@@ -77,7 +77,7 @@ TEST(evaluation, accept_vertical_tab_input)
   core::in_memory_displayer d;
   main_shell::shell sh(
       test_config(), "", "", engine::constant::create_failing());
-  sh.line_available("\v", d);
+  sh.line_available(data::user_input("\v"), d);
 
   ASSERT_EQ(data::empty_container(), d.types());
   ASSERT_EQ(data::empty_container(), d.errors());
@@ -88,7 +88,7 @@ TEST(evaluation, accept_new_line_input)
   core::in_memory_displayer d;
   main_shell::shell sh(
       test_config(), "", "", engine::constant::create_failing());
-  sh.line_available("\n", d);
+  sh.line_available(data::user_input("\n"), d);
 
   ASSERT_EQ(data::empty_container(), d.types());
   ASSERT_EQ(data::empty_container(), d.errors());
@@ -99,7 +99,7 @@ TEST(evaluation, accept_carrige_return_input)
   core::in_memory_displayer d;
   main_shell::shell sh(
       test_config(), "", "", engine::constant::create_failing());
-  sh.line_available("\r", d);
+  sh.line_available(data::user_input("\r"), d);
 
   ASSERT_EQ(data::empty_container(), d.types());
   ASSERT_EQ(data::empty_container(), d.errors());
@@ -110,7 +110,7 @@ TEST(evaluation, accept_two_space_input)
   core::in_memory_displayer d;
   main_shell::shell sh(
       test_config(), "", "", engine::constant::create_failing());
-  sh.line_available("  ", d);
+  sh.line_available(data::user_input("  "), d);
 
   ASSERT_EQ(data::empty_container(), d.types());
   ASSERT_EQ(data::empty_container(), d.errors());
@@ -123,9 +123,10 @@ TEST(evaluation, history_is_stored)
   main_shell::shell sh(
       test_config(), "", "", engine::constant::create_failing());
 
-  sh.line_available("int", d, h);
+  sh.line_available(data::user_input("int"), d, h);
 
-  ASSERT_EQ(std::vector<std::string>{"int"}, h.commands());
+  ASSERT_EQ(
+      std::vector<data::user_input>{data::user_input("int")}, h.commands());
 }
 
 TEST(evaluation, empty_line_is_not_stored_in_history)
@@ -135,7 +136,7 @@ TEST(evaluation, empty_line_is_not_stored_in_history)
   main_shell::shell sh(
       test_config(), "", "", engine::constant::create_failing());
 
-  sh.line_available("", d, h);
+  sh.line_available(data::user_input(), d, h);
 
   ASSERT_EQ(data::empty_container(), h.commands());
 }
@@ -147,7 +148,7 @@ TEST(evaluation, line_containing_just_whitespace_is_not_stored_in_history)
   main_shell::shell sh(
       test_config(), "", "", engine::constant::create_failing());
 
-  sh.line_available(" ", d, h);
+  sh.line_available(data::user_input(" "), d, h);
 
   ASSERT_EQ(data::empty_container(), h.commands());
 }
@@ -160,10 +161,11 @@ TEST(evaluation,
   main_shell::shell sh(
       test_config(), "", "", engine::constant::create_failing());
 
-  sh.line_available("int", d, h);
-  sh.line_available("int", d, h);
+  sh.line_available(data::user_input("int"), d, h);
+  sh.line_available(data::user_input("int"), d, h);
 
-  ASSERT_EQ(std::vector<std::string>{"int"}, h.commands());
+  ASSERT_EQ(
+      std::vector<data::user_input>{data::user_input("int")}, h.commands());
 }
 
 TEST(evaluation, accept_c_comment_input)
@@ -171,7 +173,7 @@ TEST(evaluation, accept_c_comment_input)
   core::in_memory_displayer d;
   main_shell::shell sh(
       test_config(), "", "", engine::constant::create_failing());
-  sh.line_available("/* some comment */", d);
+  sh.line_available(data::user_input("/* some comment */"), d);
 
   ASSERT_EQ(data::empty_container(), d.types());
   ASSERT_EQ(data::empty_container(), d.errors());
@@ -182,7 +184,7 @@ TEST(evaluation, accept_cpp_comment_input)
   core::in_memory_displayer d;
   main_shell::shell sh(
       test_config(), "", "", engine::constant::create_failing());
-  sh.line_available("// some comment", d);
+  sh.line_available(data::user_input("// some comment"), d);
 
   ASSERT_EQ(data::empty_container(), d.types());
   ASSERT_EQ(data::empty_container(), d.errors());
@@ -195,7 +197,7 @@ TEST(evaluation, comment_is_stored_in_history)
   main_shell::shell sh(
       test_config(), "", "", engine::constant::create_failing());
 
-  sh.line_available("// some comment", d, h);
+  sh.line_available(data::user_input("// some comment"), d, h);
 
   ASSERT_EQ(1u, h.commands().size());
 }
@@ -203,7 +205,8 @@ TEST(evaluation, comment_is_stored_in_history)
 TEST(evaluation, throwing_environment_update_not_breaking_shell)
 {
   data::config cfg;
-  cfg.push_back(data::shell_config());
+  cfg.push_back(data::shell_config(
+      data::shell_config_name("test"), data::shell_config_data()));
 
   auto e = new NiceMock<mock::environment>();
   core::in_memory_displayer d;
@@ -249,7 +252,7 @@ TEST(evaluation, prompt_is_different_in_multiline_input)
   core::null_displayer d;
   main_shell::shell sh(
       test_config(), "", "", engine::constant::create_failing());
-  sh.line_available("const \\", d);
+  sh.line_available(data::user_input("const \\"), d);
 
   ASSERT_EQ("...>", sh.prompt());
 }

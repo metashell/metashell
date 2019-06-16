@@ -31,7 +31,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cctype>
 #include <sstream>
 
 namespace metashell
@@ -93,23 +92,11 @@ namespace metashell
         }
       }
 
-      bool has_non_whitespace(const std::string& s_)
-      {
-        for (char c : s_)
-        {
-          if (!std::isspace(c))
-          {
-            return true;
-          }
-        }
-        return false;
-      }
-
       bool is_empty_line(const data::command& cmd_)
       {
         return std::find_if(
                    cmd_.begin(), cmd_.end(), [](const data::token& t_) -> bool {
-                     const data::token_category c = t_.category();
+                     const data::token_category c = category(t_);
                      return c != data::token_category::whitespace &&
                             c != data::token_category::comment;
                    }) == cmd_.end();
@@ -143,9 +130,10 @@ namespace metashell
                 " with metashell::format");
 
         return simple.successful ?
-                   type_shell_.eval(
-                       env_, "::metashell::format<" + tmp_exp_ + ">::type",
-                       use_precompiled_headers_) :
+                   type_shell_.eval(env_,
+                                    data::cpp_code("::metashell::format<") +
+                                        tmp_exp_ + data::cpp_code(">::type"),
+                                    use_precompiled_headers_) :
                    simple;
       }
 
@@ -212,8 +200,8 @@ namespace metashell {
         const boost::filesystem::path& env_filename_,
         std::function<std::unique_ptr<iface::engine>(const data::config&)>
             engine_builder_,
-        std::map<std::vector<std::string>,
-                 std::unique_ptr<iface::pragma_handler>> pragma_handlers_,
+        std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>
+            pragma_handlers_,
         core::logger* logger_,
         std::unique_ptr<iface::environment> env_)
       : _internal_dir(internal_dir_),
@@ -295,16 +283,16 @@ namespace metashell {
       }
     }
 
-    void shell::line_available(const std::string& s_,
+    void shell::line_available(const data::user_input& s_,
                                iface::displayer& displayer_,
                                iface::history& history_)
     {
       try
       {
-        if (s_.empty() || s_.back() != '\\')
+        if (!ends_with(s_, data::user_input("\\")))
         {
-          const std::string s = _line_prefix + s_;
-          _line_prefix.clear();
+          const data::user_input s = _line_prefix + s_;
+          clear(_line_prefix);
 
           const data::command cmd = core::to_command(data::cpp_code(s));
 
@@ -341,7 +329,7 @@ namespace metashell {
         }
         else
         {
-          _line_prefix += s_.substr(0, s_.size() - 1);
+          _line_prefix += substr(s_, 0, size(s_) - 1);
         }
       }
       catch (const std::exception& e)
@@ -356,14 +344,14 @@ namespace metashell {
 
     std::string shell::prompt() const
     {
-      return _line_prefix.empty() ? ">" : "...>";
+      return empty(_line_prefix) ? ">" : "...>";
     }
 
     bool shell::store_in_buffer(const data::cpp_code& s_,
                                 iface::displayer& displayer_)
     {
       const data::result r = engine().cpp_validator().validate_code(
-          s_ + "\n", _config, *_env,
+          s_ + data::cpp_code("\n"), _config, *_env,
           enabled(data::shell_flag::use_precompiled_headers));
 
       if (r.successful)
@@ -385,8 +373,8 @@ namespace metashell {
       return r.successful;
     }
 
-    void shell::code_complete(const std::string& s_,
-                              std::set<std::string>& out_)
+    void shell::code_complete(const data::user_input& s_,
+                              std::set<data::user_input>& out_)
     {
       try
       {
@@ -400,8 +388,7 @@ namespace metashell {
       }
     }
 
-    const std::map<std::vector<std::string>,
-                   std::unique_ptr<iface::pragma_handler>>&
+    const std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>&
     shell::pragma_handlers() const
     {
       return _pragma_handlers;
@@ -421,7 +408,7 @@ namespace metashell {
           try_to_get_shell(engine()), _config.active_shell_config(),
           _internal_dir, _env_filename);
 
-      if (!content_.empty())
+      if (!empty(content_))
       {
         _env->append(content_);
       }
@@ -491,7 +478,7 @@ namespace metashell {
 
     data::config& shell::get_config() { return _config; }
 
-    void shell::line_available(const std::string& s_,
+    void shell::line_available(const data::user_input& s_,
                                iface::displayer& displayer_)
     {
       core::null_history h;
@@ -524,8 +511,8 @@ namespace metashell {
                            bool process_directives_)
     {
       data::result r = engine().preprocessor_shell().precompile(
-          _env->get_all() + "\n" + add_markers(exp_, process_directives_) +
-          "\n");
+          _env->get_all() + data::cpp_code("\n") +
+          add_markers(exp_, process_directives_) + data::cpp_code("\n"));
 
       if (r.successful)
       {

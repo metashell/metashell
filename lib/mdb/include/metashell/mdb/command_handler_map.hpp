@@ -19,12 +19,13 @@
 
 #include <metashell/mdb/command.hpp>
 
+#include <metashell/data/mdb_command.hpp>
+
 #include <boost/container/flat_map.hpp>
 #include <boost/optional.hpp>
 
 #include <map>
 #include <string>
-#include <tuple>
 #include <vector>
 
 namespace metashell
@@ -38,18 +39,19 @@ namespace metashell
 
       command_handler_map(const commands_t& commands);
 
-      // <command, args>
-      boost::optional<std::tuple<command, std::string>>
-      get_command_for_line(const std::string& line) const;
+      boost::optional<command>
+      get_command(const data::mdb_command::name_type&) const;
 
       const commands_t& get_commands() const;
 
     private:
 #ifdef _WIN32
       // Fails to compile on Windows (Visual C++ 2013, Boost 1.55)
-      typedef std::map<std::string, std::size_t> key_command_map_t;
+      typedef std::map<data::mdb_command::name_type, std::size_t>
+          key_command_map_t;
 #else
-      typedef boost::container::flat_map<std::string, std::size_t>
+      typedef boost::container::flat_map<data::mdb_command::name_type,
+                                         std::size_t>
           key_command_map_t;
 #endif
 

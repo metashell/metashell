@@ -23,7 +23,7 @@ namespace metashell
   {
     data::colored_string::color_t color_of_token(const data::token& t)
     {
-      switch (t.category())
+      switch (category(t))
       {
       case data::token_category::character_literal:
       case data::token_category::floating_literal:
@@ -51,7 +51,7 @@ namespace metashell
       {
         data::token token = tokeniser->current_token();
         result +=
-            data::colored_string(token.value().value(), color_of_token(token));
+            data::colored_string(value(token).value(), color_of_token(token));
       }
 
       // If we couldn't lex it for some reason, it's better not to do any

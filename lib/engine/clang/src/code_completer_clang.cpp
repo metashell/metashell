@@ -25,7 +25,6 @@
 #include <metashell/data/token.hpp>
 #include <metashell/data/token_category.hpp>
 
-#include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/optional.hpp>
 #include <boost/range/adaptor/sliced.hpp>
@@ -52,7 +51,7 @@ namespace metashell
           }
         }
 
-        boost::optional<std::string> parse_completion(std::string line_)
+        boost::optional<data::cpp_code> parse_completion(std::string line_)
         {
           if (const auto without_completion =
                   remove_prefix(line_, "COMPLETION: "))
@@ -61,16 +60,16 @@ namespace metashell
                     remove_prefix(*without_completion, "Pattern : "))
             {
               const auto prefix_end = pattern->find("<#");
-              return std::string(
+              return data::cpp_code(
                   pattern->begin(), prefix_end == std::string::npos ?
                                         pattern->end() :
                                         pattern->begin() + prefix_end);
             }
             else
             {
-              return std::string(without_completion->begin(),
-                                 std::find(without_completion->begin(),
-                                           without_completion->end(), ' '));
+              return data::cpp_code(without_completion->begin(),
+                                    std::find(without_completion->begin(),
+                                              without_completion->end(), ' '));
             }
           }
           else
@@ -79,37 +78,36 @@ namespace metashell
           }
         }
 
-        std::pair<std::string, std::string>
-        find_completion_start(const std::string& s_)
+        std::pair<data::cpp_code, data::cpp_code>
+        find_completion_start(const data::cpp_code& s_)
         {
-          const data::command cmd = core::to_command(data::cpp_code(s_));
+          const data::command cmd = core::to_command(s_);
 
           if (cmd.empty())
           {
-            return {"", ""};
+            return {data::cpp_code(), data::cpp_code()};
           }
           else
           {
             using boost::adaptors::sliced;
             using boost::adaptors::transformed;
 
-            const std::string prefix = boost::algorithm::join(
-                cmd | sliced(0, cmd.size() - 1) |
-                    transformed([](const data::token& t_) {
-                      return t_.value().value();
-                    }),
-                "");
+            const data::cpp_code prefix =
+                join(cmd | sliced(0, cmd.size() - 1) |
+                         transformed(
+                             [](const data::token& t_) { return value(t_); }),
+                     data::cpp_code());
 
             const data::token& last = *(cmd.end() - 1);
 
-            if (last.category() == data::token_category::identifier ||
-                last.category() == data::token_category::keyword)
+            if (category(last) == data::token_category::identifier ||
+                category(last) == data::token_category::keyword)
             {
-              return {prefix, last.value().value()};
+              return {prefix, value(last)};
             }
             else
             {
-              return {prefix + last.value().value(), ""};
+              return {prefix + value(last), data::cpp_code()};
             }
           }
         }
@@ -129,27 +127,23 @@ namespace metashell
       }
 
       void code_completer::code_complete(const iface::environment& env_,
-                                         const std::string& src_,
-                                         std::set<std::string>& out_,
+                                         const data::user_input& src_,
+                                         std::set<data::user_input>& out_,
                                          bool use_precompiled_headers_)
       {
         using boost::starts_with;
 
-        using std::pair;
-        using std::string;
-        using std::set;
+        METASHELL_LOG(_logger, "Code completion of " + src_.value());
 
-        METASHELL_LOG(_logger, "Code completion of " + src_);
-
-        const pair<string, string> completion_start =
-            find_completion_start(src_);
+        const std::pair<data::cpp_code, data::cpp_code> completion_start =
+            find_completion_start(data::cpp_code(src_));
 
         METASHELL_LOG(_logger, "Part kept for code completion: " +
-                                   completion_start.first);
+                                   completion_start.first.value());
 
         const data::unsaved_file src(
             _temp_dir / "code_complete.cpp",
-            env_.get_appended(data::cpp_code(completion_start.first)).value());
+            env_.get_appended(completion_start.first).value());
 
         core::generate(src);
 
@@ -174,15 +168,15 @@ namespace metashell
 
         const std::string out = o.standard_output;
         out_.clear();
-        const int prefix_len = completion_start.second.length();
+        const auto prefix_len = size(completion_start.second);
         core::for_each_line(out, [&out_, &completion_start,
                                   prefix_len](const std::string& line_) {
-          if (const boost::optional<std::string> comp = parse_completion(line_))
+          if (const auto comp = parse_completion(line_))
           {
             if (starts_with(*comp, completion_start.second) &&
                 *comp != completion_start.second)
             {
-              out_.insert(string(comp->begin() + prefix_len, comp->end()));
+              out_.insert(data::user_input(substr(*comp, prefix_len)));
             }
           }
         });

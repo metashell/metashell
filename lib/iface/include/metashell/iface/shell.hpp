@@ -23,14 +23,13 @@
 #include <metashell/iface/environment.hpp>
 
 #include <metashell/data/cpp_code.hpp>
+#include <metashell/data/pragma_name.hpp>
 #include <metashell/data/shell_flag.hpp>
 
 #include <boost/filesystem/path.hpp>
 
 #include <map>
 #include <memory>
-#include <string>
-#include <vector>
 
 namespace metashell
 {
@@ -65,7 +64,7 @@ namespace metashell
       virtual void run_metaprogram(const data::cpp_code& s_,
                                    displayer& displayer_) = 0;
 
-      virtual const std::map<std::vector<std::string>,
+      virtual const std::map<data::pragma_name,
                              std::unique_ptr<iface::pragma_handler>>&
       pragma_handlers() const = 0;
 

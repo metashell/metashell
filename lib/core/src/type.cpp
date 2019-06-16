@@ -30,8 +30,8 @@ namespace metashell
     {
       const data::command cmd = to_command(type_);
       return std::find_if(cmd.begin(), cmd.end(), [](const data::token& t_) {
-               return t_.type() == data::token_type::operator_greater ||
-                      t_.type() == data::token_type::operator_less;
+               return type_of(t_) == data::token_type::operator_greater ||
+                      type_of(t_) == data::token_type::operator_less;
              }) != cmd.end();
     }
   }

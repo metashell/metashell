@@ -21,6 +21,8 @@
 
 #include <metashell/iface/displayer.hpp>
 
+#include <metashell/data/mdb_command.hpp>
+
 #include <functional>
 #include <string>
 #include <vector>
@@ -34,8 +36,9 @@ namespace metashell
     class command
     {
     public:
-      typedef std::vector<std::string> keys_t;
-      typedef std::function<void(shell&, const std::string&, iface::displayer&)>
+      typedef std::vector<data::mdb_command::name_type> keys_t;
+      typedef std::function<void(
+          shell&, const data::mdb_command::arguments_type&, iface::displayer&)>
           function;
 
       command() = default;

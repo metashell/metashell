@@ -196,8 +196,8 @@ namespace metashell
           const char** extra_args_end_,
           const std::string& engine_)
       {
-        data::shell_config result;
-        result.name = data::shell_config_name("default");
+        data::shell_config result(
+            data::shell_config_name("default"), data::shell_config_data());
 
         result.engine_args.insert(
             result.engine_args.end(), extra_args_begin_, extra_args_end_);
@@ -253,7 +253,7 @@ namespace metashell
       const std::string engine_info =
           "The engine (C++ compiler) to use. Available engines: " +
           boost::algorithm::join(engines_ | boost::adaptors::map_keys, ", ") +
-          ". Default: " + data::shell_config().engine;
+          ". Default: " + data::shell_config_data().engine;
 
       std::vector<boost::filesystem::path> configs_to_load;
 

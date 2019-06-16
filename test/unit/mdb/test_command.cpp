@@ -22,10 +22,12 @@ using namespace metashell;
 
 TEST(mdb_command, repeatable_constructor)
 {
-  mdb::command x({"asdf"}, mdb::repeatable_t::repeatable, nullptr, "[asd]",
-                 "fdsa", "xxyy");
+  using name_type = data::mdb_command::name_type;
 
-  ASSERT_EQ(std::vector<std::string>{"asdf"}, x.get_keys());
+  mdb::command x({name_type("asdf")}, mdb::repeatable_t::repeatable, nullptr,
+                 "[asd]", "fdsa", "xxyy");
+
+  ASSERT_EQ(std::vector<name_type>{name_type("asdf")}, x.get_keys());
   ASSERT_TRUE(x.is_repeatable());
   ASSERT_EQ(x.get_usage(), "[asd]");
   ASSERT_EQ(x.get_short_description(), "fdsa");
@@ -34,10 +36,12 @@ TEST(mdb_command, repeatable_constructor)
 
 TEST(mdb_command, non_repeatable_constructor)
 {
-  mdb::command x({"asdf"}, mdb::repeatable_t::non_repeatable, nullptr, "[asd]",
-                 "fdsa", "xxyy");
+  using name_type = data::mdb_command::name_type;
 
-  ASSERT_EQ(std::vector<std::string>{"asdf"}, x.get_keys());
+  mdb::command x({name_type("asdf")}, mdb::repeatable_t::non_repeatable,
+                 nullptr, "[asd]", "fdsa", "xxyy");
+
+  ASSERT_EQ(std::vector<name_type>{name_type("asdf")}, x.get_keys());
   ASSERT_FALSE(x.is_repeatable());
   ASSERT_EQ(x.get_short_description(), "fdsa");
   ASSERT_EQ(x.get_long_description(), "xxyy");
@@ -45,10 +49,14 @@ TEST(mdb_command, non_repeatable_constructor)
 
 TEST(mdb_command, multiple_keys_constructor)
 {
-  mdb::command x({"asdf", "xxx"}, mdb::repeatable_t::non_repeatable, nullptr,
-                 "[asd]", "fd", "xx");
+  using name_type = data::mdb_command::name_type;
 
-  ASSERT_EQ((std::vector<std::string>{"asdf", "xxx"}), x.get_keys());
+  mdb::command x({name_type("asdf"), name_type("xxx")},
+                 mdb::repeatable_t::non_repeatable, nullptr, "[asd]", "fd",
+                 "xx");
+
+  ASSERT_EQ((std::vector<name_type>{name_type("asdf"), name_type("xxx")}),
+            x.get_keys());
   ASSERT_FALSE(x.is_repeatable());
   ASSERT_EQ(x.get_usage(), "[asd]");
   ASSERT_EQ(x.get_short_description(), "fd");
@@ -57,8 +65,10 @@ TEST(mdb_command, multiple_keys_constructor)
 
 TEST(mdb_command, full_description_empty_long_description)
 {
-  mdb::command x(std::vector<std::string>{"asdf"},
-                 mdb::repeatable_t::non_repeatable, nullptr, "[asd]", "fd", "");
+  using name_type = data::mdb_command::name_type;
+
+  mdb::command x({name_type("asdf")}, mdb::repeatable_t::non_repeatable,
+                 nullptr, "[asd]", "fd", "");
 
   ASSERT_EQ(x.get_usage(), "[asd]");
   ASSERT_EQ(x.get_short_description(), "fd");
@@ -68,9 +78,10 @@ TEST(mdb_command, full_description_empty_long_description)
 
 TEST(mdb_command, full_description_non_empty_long_description)
 {
-  mdb::command x(std::vector<std::string>{"asdf"},
-                 mdb::repeatable_t::non_repeatable, nullptr, "[asd]", "fd",
-                 "xx");
+  using name_type = data::mdb_command::name_type;
+
+  mdb::command x({name_type("asdf")}, mdb::repeatable_t::non_repeatable,
+                 nullptr, "[asd]", "fd", "xx");
 
   ASSERT_EQ(x.get_usage(), "[asd]");
   ASSERT_EQ(x.get_short_description(), "fd");

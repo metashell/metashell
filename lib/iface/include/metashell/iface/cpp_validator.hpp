@@ -23,8 +23,6 @@
 #include <metashell/data/result.hpp>
 #include <metashell/iface/environment.hpp>
 
-#include <string>
-
 namespace metashell
 {
   namespace iface

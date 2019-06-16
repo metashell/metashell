@@ -23,6 +23,7 @@ using namespace metashell::data;
 config metashell::test_config()
 {
   config result;
-  result.push_back(shell_config());
+  result.push_back(
+      shell_config(data::shell_config_name("test"), data::shell_config_data()));
   return result;
 }

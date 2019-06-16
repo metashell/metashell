@@ -49,8 +49,8 @@ TEST(mdb_continue, garbage_argument)
     metashell_instance mi;
     mi.command("#msh mdb" + nocache + " int");
 
-    ASSERT_EQ(
-        error("Argument parsing failed"), mi.command("continue asd").front());
+    ASSERT_EQ(error("Error: Invalid integer: asd\n"),
+              mi.command("continue asd").front());
   }
 }
 

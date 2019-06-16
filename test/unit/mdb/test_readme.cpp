@@ -26,13 +26,14 @@ using namespace metashell;
 
 TEST(readme, continue_abbreviated_as_c)
 {
-  mdb::command command;
-  std::string args;
+  const boost::optional<data::mdb_command> c = data::mdb_command::parse("c");
+  ASSERT_TRUE(c);
 
-  std::tie(command, args) =
-      get_command_from_map(mdb::shell::build_command_handler(false), "c");
+  const mdb::command command =
+      get_command_from_map(mdb::shell::build_command_handler(false), *c);
+  const auto keys = command.get_keys();
 
-  auto keys = command.get_keys();
-
-  ASSERT_TRUE(std::find(keys.begin(), keys.end(), "continue") != keys.end());
+  ASSERT_TRUE(std::find(keys.begin(), keys.end(),
+                        data::mdb_command::name_type("continue")) !=
+              keys.end());
 }

@@ -72,7 +72,7 @@ class TempDir(object):
         self.path = None
 
     def __enter__(self):
-        self.path = tempfile.mkdtemp()
+        self.path = os.path.realpath(tempfile.mkdtemp())
         return self
 
     def __exit__(self, typ, value, traceback):

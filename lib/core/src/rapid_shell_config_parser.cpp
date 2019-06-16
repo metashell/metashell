@@ -68,13 +68,19 @@ namespace metashell
         return i == fields.end() ? boost::none :
                                    boost::make_optional(i->second);
       }
+
+      template <class T>
+      auto is_empty(const T& s_)
+      {
+        return empty(s_);
+      }
     }
 
     bool rapid_shell_config_parser::StartArray()
     {
       not_empty();
 
-      if (_config && _key)
+      if (_data && _key)
       {
         const auto t = type_of_field(*_key);
 
@@ -96,7 +102,7 @@ namespace metashell
           return false;
         }
       }
-      else if (_in_list || _config)
+      else if (_in_list || _data)
       {
         fail("Unexpected array");
         return false;
@@ -123,31 +129,32 @@ namespace metashell
     {
       not_empty();
 
-      if (_config || _in_engine_args)
+      if (_data || _in_engine_args)
       {
         fail("Unexpected object");
         return false;
       }
 
-      _config = data::shell_config();
+      _data = data::shell_config_data();
       return true;
     }
 
     bool rapid_shell_config_parser::end_object()
     {
-      assert(bool(_config));
+      assert(bool(_data));
 
       not_empty();
 
-      if (_config->name.empty())
+      if (!_name)
       {
         fail("The name of a config is missing");
         return false;
       }
       else
       {
-        parsed_config_callback(std::move(*_config));
-        _config = boost::none;
+        parsed_config_callback(data::shell_config(*_name, *_data));
+        _name = boost::none;
+        _data = boost::none;
 
         return true;
       }
@@ -155,7 +162,7 @@ namespace metashell
 
     bool rapid_shell_config_parser::key(const std::string& str_)
     {
-      assert(bool(_config));
+      assert(bool(_data));
 
       not_empty();
 
@@ -175,7 +182,7 @@ namespace metashell
     {
       not_empty();
 
-      if (_config && _key)
+      if (_data && _key)
       {
         const auto t = type_of_field(*_key);
 
@@ -183,11 +190,11 @@ namespace metashell
         {
           if (*_key == "name")
           {
-            _config->name = data::shell_config_name(str_);
+            _name = data::shell_config_name(str_);
           }
           else if (*_key == "engine")
           {
-            _config->engine = str_;
+            _data->engine = str_;
           }
           else
           {
@@ -198,7 +205,7 @@ namespace metashell
         }
         else if (t == field_type::list_ && _in_engine_args)
         {
-          _config->engine_args.push_back(str_);
+          _data->engine_args.push_back(str_);
           return true;
         }
         else
@@ -221,7 +228,7 @@ namespace metashell
 
       const std::string value = b_ ? "true" : "false";
 
-      if (_config && _key)
+      if (_data && _key)
       {
         const auto t = type_of_field(*_key);
 
@@ -229,11 +236,11 @@ namespace metashell
         {
           if (*_key == "use_precompiled_headers")
           {
-            _config->use_precompiled_headers = b_;
+            _data->use_precompiled_headers = b_;
           }
           else if (*_key == "preprocessor_mode")
           {
-            _config->preprocessor_mode = b_;
+            _data->preprocessor_mode = b_;
           }
           else
           {

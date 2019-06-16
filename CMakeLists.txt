@@ -31,7 +31,7 @@ set(PATCH_VERSION 0)
 if (MSVC)
   add_compile_options("/std:c++latest")
 else()
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 17)
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")

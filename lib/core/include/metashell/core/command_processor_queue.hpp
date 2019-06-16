@@ -19,6 +19,9 @@
 
 #include <metashell/iface/command_processor.hpp>
 
+#include <metashell/data/cpp_code.hpp>
+#include <metashell/data/user_input.hpp>
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -40,10 +43,10 @@ namespace metashell
       void pop_stopped_processors(iface::displayer& displayer_);
 
       void cancel_operation();
-      void line_available(const std::string& cmd_,
+      void line_available(const data::user_input& cmd_,
                           iface::displayer& displayer_);
-      void code_complete(const std::string& s_,
-                         std::set<std::string>& out_) const;
+      void code_complete(const data::user_input& s_,
+                         std::set<data::user_input>& out_) const;
 
       std::string prompt() const;
 

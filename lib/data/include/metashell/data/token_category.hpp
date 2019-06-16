@@ -39,7 +39,24 @@ namespace metashell
       preprocessor
     };
 
-    token_category category_of_token(token_type type_);
+    constexpr token_category category_of_token(token_type type_)
+    {
+      switch (type_)
+      {
+#ifdef METASHELL_TOKEN_TYPE
+#error METASHELL_TOKEN_TYPE already defined
+#endif
+#define METASHELL_TOKEN_TYPE(name, cat, format)                                \
+  case token_type::name:                                                       \
+    return token_category::cat;
+
+#include <metashell/data/impl/token_type_list.hpp>
+
+#undef METASHELL_TOKEN_TYPE
+      }
+      // Avoid warning about not returning a value...
+      return token_category::unknown;
+    }
   }
 }
 

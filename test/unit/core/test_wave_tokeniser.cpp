@@ -28,7 +28,7 @@ namespace
     const auto t = core::create_wave_tokeniser(data::cpp_code(token_));
 
     ASSERT_TRUE(t->has_further_tokens());
-    ASSERT_TRUE(expected_type_ == t->current_token().type());
+    ASSERT_TRUE(expected_type_ == type_of(t->current_token()));
   }
 
   void test_category_of_a_token(const std::string& token_,
@@ -37,7 +37,7 @@ namespace
     const auto t = core::create_wave_tokeniser(data::cpp_code(token_));
 
     ASSERT_TRUE(t->has_further_tokens());
-    ASSERT_TRUE(expected_category_ == t->current_token().category());
+    ASSERT_TRUE(expected_category_ == category(t->current_token()));
   }
 }
 
@@ -68,11 +68,11 @@ TEST(wave_tokeniser, value_of_token)
 {
   const auto t = core::create_wave_tokeniser(data::cpp_code("foo "));
 
-  ASSERT_EQ("foo", t->current_token().value());
+  ASSERT_EQ("foo", value(t->current_token()));
 
   t->move_to_next_token();
 
-  ASSERT_EQ(" ", t->current_token().value());
+  ASSERT_EQ(" ", value(t->current_token()));
 }
 
 TEST(wave_tokeniser, category_of_a_character_literal)

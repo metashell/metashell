@@ -12,8 +12,8 @@ fi
 ./install_build_dependencies.sh
 
 # gcc 5 support
-sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc
-sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-5 /usr/bin/g++
+sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-6 /usr/bin/gcc
+sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-6 /usr/bin/g++
 
 [ "${COVERAGE}" = "true" ] && sudo pip install cpp-coveralls==0.3.12
 

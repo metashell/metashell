@@ -48,20 +48,26 @@ namespace metashell
   {
     namespace
     {
-      std::string on_off(bool v_) { return v_ ? "on" : "off"; }
+      data::user_input on_off(bool v_)
+      {
+        return data::user_input(v_ ? "on" : "off");
+      }
 
       std::unique_ptr<pragma::macro> shell_mode(const std::string& name_,
                                                 const std::string& comment_,
                                                 bool preprocessing_mode_)
       {
-        std::vector<std::string> cmds{
-            "#msh preprocessed echo " + on_off(preprocessing_mode_),
-            "#msh show cpp_errors " + on_off(!preprocessing_mode_),
-            "#msh metaprogram evaluation " + on_off(!preprocessing_mode_)};
+        std::vector<data::user_input> cmds{
+            data::user_input("#msh preprocessed echo ") +
+                on_off(preprocessing_mode_),
+            data::user_input("#msh show cpp_errors ") +
+                on_off(!preprocessing_mode_),
+            data::user_input("#msh metaprogram evaluation ") +
+                on_off(!preprocessing_mode_)};
 
         if (!comment_.empty())
         {
-          cmds.push_back("#msh echo " + comment_);
+          cmds.push_back(data::user_input("#msh echo " + comment_));
         }
 
         return std::make_unique<pragma::macro>(
@@ -69,12 +75,12 @@ namespace metashell
       }
     }
 
-    std::map<std::vector<std::string>, std::unique_ptr<iface::pragma_handler>>
+    std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>
     pragma_map(core::command_processor_queue* cpq_,
                const boost::filesystem::path& mdb_temp_dir_,
                core::logger* logger_)
     {
-      typedef std::vector<std::string> sv;
+      using sv = data::pragma_name;
 
       std::map<sv, std::unique_ptr<iface::pragma_handler>> result;
 

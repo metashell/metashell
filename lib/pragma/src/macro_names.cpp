@@ -44,25 +44,25 @@ namespace metashell
              tokeniser->has_further_tokens(); tokeniser->move_to_next_token())
         {
           const data::token token = tokeniser->current_token();
-          if (token.type() == data::token_type::new_line)
+          if (type_of(token) == data::token_type::new_line)
           {
             st = state::start_line;
           }
-          else if (token.category() != data::token_category::whitespace)
+          else if (category(token) != data::token_category::whitespace)
           {
             switch (st)
             {
             case state::ignore:
               break;
             case state::start_line:
-              st = token.type() == data::token_type::p_define ?
+              st = type_of(token) == data::token_type::p_define ?
                        state::was_define :
                        state::ignore;
               break;
             case state::was_define:
-              if (token.type() == data::token_type::identifier)
+              if (type_of(token) == data::token_type::identifier)
               {
-                names.push_back(token.value().value());
+                names.push_back(value(token).value());
               }
               st = state::ignore;
               break;

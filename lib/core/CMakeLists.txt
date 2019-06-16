@@ -33,7 +33,6 @@ target_link_libraries(
   boost::optional
   boost::program_options
   boost::range
-  boost::spirit
   boost::utility
   boost::wave
 

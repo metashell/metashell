@@ -28,7 +28,7 @@ namespace metashell
     {
       bool include_quote_token(const token& token_)
       {
-        return token_.type() == token_type::unknown && token_.value() == "\"";
+        return type_of(token_) == token_type::unknown && value(token_) == "\"";
       }
 
       template <char Closing, class Pred>
@@ -62,15 +62,15 @@ namespace metashell
     {
       if (begin_ != end_)
       {
-        if (begin_->type() == token_type::operator_less)
+        if (type_of(*begin_) == token_type::operator_less)
         {
           const auto path = parse_path_until_token<'>'>(
               begin_ + 1, end_, [](const token& token_) {
-                return token_.type() == token_type::operator_greater;
+                return type_of(token_) == token_type::operator_greater;
               });
           return {include_argument(include_type::sys, path.first), path.second};
         }
-        else if (begin_->type() == token_type::string_literal)
+        else if (type_of(*begin_) == token_type::string_literal)
         {
           return {include_argument(
                       include_type::quote, string_literal_value(*begin_)),

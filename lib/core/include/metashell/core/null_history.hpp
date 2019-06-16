@@ -26,7 +26,7 @@ namespace metashell
     class null_history : public iface::history
     {
     public:
-      virtual void add(const std::string& cmd_) override;
+      virtual void add(const data::user_input& cmd_) override;
     };
   }
 }

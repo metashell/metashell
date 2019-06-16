@@ -28,8 +28,9 @@ namespace metashell
   {
     namespace
     {
-      void show_code_complete_result(iface::json_writer& writer_,
-                                     const std::set<std::string>& completions_)
+      void
+      show_code_complete_result(iface::json_writer& writer_,
+                                const std::set<data::user_input>& completions_)
       {
         writer_.start_object();
 
@@ -38,9 +39,9 @@ namespace metashell
 
         writer_.key("completions");
         writer_.start_array();
-        for (const std::string& c : completions_)
+        for (const data::user_input& c : completions_)
         {
-          writer_.string(c);
+          writer_.string(c.value());
         }
         writer_.end_array();
 
@@ -62,7 +63,7 @@ namespace metashell
         writer_.end_document();
       }
 
-      boost::optional<std::string>
+      boost::optional<data::user_input>
       read_next_line(const data::line_reader& line_reader_,
                      iface::json_writer& json_writer_,
                      const std::string& prompt_)
@@ -71,7 +72,7 @@ namespace metashell
         return line_reader_("");
       }
 
-      boost::optional<std::string>
+      boost::optional<data::user_input>
       json_line_reader(const data::line_reader& line_reader_,
                        iface::displayer& displayer_,
                        iface::json_writer& json_writer_,
@@ -83,13 +84,13 @@ namespace metashell
         {
           rapid_object_handler handler(displayer_);
           rapidjson::Reader reader;
-          rapidjson::StringStream string_stream(s->c_str());
+          rapidjson::StringStream string_stream(c_str(*s));
           reader.Parse(string_stream, handler);
           if (!handler.failed())
           {
             if (handler.empty())
             {
-              return std::string();
+              return data::user_input();
             }
             else if (const auto type = handler.field("type"))
             {
@@ -97,7 +98,7 @@ namespace metashell
               {
                 if (const auto cmd = handler.field("cmd"))
                 {
-                  return *cmd;
+                  return data::user_input(*cmd);
                 }
                 else
                 {
@@ -109,8 +110,9 @@ namespace metashell
               {
                 if (const auto code = handler.field("code"))
                 {
-                  std::set<std::string> cc;
-                  command_processor_queue_.code_complete(*code, cc);
+                  std::set<data::user_input> cc;
+                  command_processor_queue_.code_complete(
+                      data::user_input(*code), cc);
                   show_code_complete_result(json_writer_, cc);
                 }
                 else
@@ -127,7 +129,7 @@ namespace metashell
             }
             else
             {
-              displayer_.show_error("Command without a type: " + *s);
+              displayer_.show_error("Command without a type: " + s->value());
             }
           }
         }

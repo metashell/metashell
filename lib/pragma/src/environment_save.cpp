@@ -16,8 +16,6 @@
 
 #include <metashell/pragma/environment_save.hpp>
 
-#include <boost/algorithm/string/trim.hpp>
-
 #include <fstream>
 
 namespace metashell
@@ -44,7 +42,7 @@ namespace metashell
       if (shell_.get_config().saving_enabled)
       {
         const std::string fn =
-            boost::trim_copy(tokens_to_string(args_begin_, args_end_)).value();
+            trim_copy(tokens_to_string(args_begin_, args_end_)).value();
 
         if (fn.empty())
         {

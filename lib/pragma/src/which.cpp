@@ -90,7 +90,7 @@ namespace metashell
       bool all = false;
 
       data::command::iterator i = args_begin_;
-      while (i != args_end_ && i->type() == data::token_type::operator_minus)
+      while (i != args_end_ && type_of(*i) == data::token_type::operator_minus)
       {
         ++i;
 
@@ -98,8 +98,8 @@ namespace metashell
         {
           throw data::exception("Invalid argument: -");
         }
-        else if (i->type() == data::token_type::identifier &&
-                 i->value() == "all")
+        else if (type_of(*i) == data::token_type::identifier &&
+                 value(*i) == "all")
         {
           i = data::skip_all_whitespace(i + 1, args_end_);
           all = true;

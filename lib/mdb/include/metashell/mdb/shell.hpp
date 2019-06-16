@@ -30,6 +30,8 @@
 #include <metashell/iface/environment.hpp>
 #include <metashell/iface/history.hpp>
 
+#include <metashell/data/mdb_command.hpp>
+
 #include <boost/optional.hpp>
 
 #include <string>
@@ -54,37 +56,45 @@ namespace metashell
       virtual bool stopped() const override;
 
       void display_splash(iface::displayer& displayer_) const;
-      virtual void line_available(const std::string& line,
+      virtual void line_available(const data::user_input& line,
                                   iface::displayer& displayer_,
                                   iface::history& history_) override;
-      void line_available(const std::string& line,
+      void line_available(const data::user_input& line,
                           iface::displayer& displayer_);
       virtual void cancel_operation() override;
 
-      void command_continue(const std::string& arg,
+      void command_continue(const data::mdb_command::arguments_type& arg,
                             iface::displayer& displayer_);
-      void command_finish(const std::string& arg, iface::displayer& displayer_);
-      void command_step(const std::string& arg, iface::displayer& displayer_);
-      void command_next(const std::string& arg, iface::displayer& displayer_);
-      void command_evaluate(const std::string& arg,
+      void command_finish(const data::mdb_command::arguments_type& arg,
+                          iface::displayer& displayer_);
+      void command_step(const data::mdb_command::arguments_type& arg,
+                        iface::displayer& displayer_);
+      void command_next(const data::mdb_command::arguments_type& arg,
+                        iface::displayer& displayer_);
+      void command_evaluate(const data::mdb_command::arguments_type& arg,
                             iface::displayer& displayer_);
-      void command_forwardtrace(const std::string& arg,
+      void command_forwardtrace(const data::mdb_command::arguments_type& arg,
                                 iface::displayer& displayer_);
-      void command_backtrace(const std::string& arg,
+      void command_backtrace(const data::mdb_command::arguments_type& arg,
                              iface::displayer& displayer_);
-      void command_frame(const std::string& arg, iface::displayer& displayer_);
-      void command_rbreak(const std::string& arg, iface::displayer& displayer_);
-      void command_break(const std::string& arg, iface::displayer& displayer_);
-      void command_help(const std::string& arg, iface::displayer& displayer_);
-      void command_quit(const std::string& arg, iface::displayer& displayer_);
+      void command_frame(const data::mdb_command::arguments_type& arg,
+                         iface::displayer& displayer_);
+      void command_rbreak(const data::mdb_command::arguments_type& arg,
+                          iface::displayer& displayer_);
+      void command_break(const data::mdb_command::arguments_type& arg,
+                         iface::displayer& displayer_);
+      void command_help(const data::mdb_command::arguments_type& arg,
+                        iface::displayer& displayer_);
+      void command_quit(const data::mdb_command::arguments_type& arg,
+                        iface::displayer& displayer_);
 
-      virtual void code_complete(const std::string& s_,
-                                 std::set<std::string>& out_) override;
+      virtual void code_complete(const data::user_input& s_,
+                                 std::set<data::user_input>& out_) override;
 
       static command_handler_map build_command_handler(bool preprocessor_);
 
     protected:
-      bool require_empty_args(const std::string& args,
+      bool require_empty_args(const data::mdb_command::arguments_type& args,
                               iface::displayer& displayer_) const;
       bool require_evaluated_metaprogram(iface::displayer& displayer_) const;
       bool require_running_metaprogram(iface::displayer& displayer_);
@@ -95,12 +105,6 @@ namespace metashell
           data::metaprogram_mode mode,
           bool caching_enabled,
           iface::displayer& displayer_);
-
-      static boost::optional<int>
-      parse_defaultable_integer(const std::string& arg, int default_value);
-
-      static boost::optional<int>
-      parse_mandatory_integer(const std::string& arg);
 
       // may return nullptr
       const breakpoint* continue_metaprogram(data::direction_t direction);
@@ -114,11 +118,13 @@ namespace metashell
       void display_current_forwardtrace(boost::optional<int> max_depth,
                                         iface::displayer& displayer_);
       void display_backtrace(iface::displayer& displayer_);
-      void display_argument_parsing_failed(iface::displayer& displayer_) const;
       void display_metaprogram_reached_the_beginning(
           iface::displayer& displayer_) const;
       void display_metaprogram_finished(iface::displayer& displayer_);
       void display_movement_info(bool moved, iface::displayer& displayer_);
+
+      boost::optional<data::mdb_command>
+      command_to_execute(const data::user_input&, iface::history&);
 
       iface::environment& env;
 
@@ -127,7 +133,7 @@ namespace metashell
       int next_breakpoint_id = 1;
       breakpoints_t breakpoints;
 
-      std::string prev_line;
+      boost::optional<data::mdb_command> prev_line;
       bool last_command_repeatable = false;
 
       // It is empty if evaluate was called with "-".

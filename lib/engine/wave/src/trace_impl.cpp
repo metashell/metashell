@@ -50,7 +50,8 @@ namespace metashell
         {
           if (exp_)
           {
-            return env_ + "\n" + add_markers(*exp_, true) + "\n";
+            return env_ + data::cpp_code("\n") + add_markers(*exp_, true) +
+                   data::cpp_code("\n");
           }
           else
           {
@@ -68,14 +69,14 @@ namespace metashell
           _ignore_macro_redefinition(config_.ignore_macro_redefinition),
           _input(determine_input(env_, exp_)),
           _num_tokens_from_macro_call(0),
-          _ctx(_input.begin(), _input.end(), env_path().c_str()),
+          _ctx(begin(_input), end(_input), env_path().c_str()),
           _pos(boost::none)
       {
         namespace p = std::placeholders;
 
         auto& hooks = _ctx.get_hooks();
 
-        hooks.lines_of_env = std::count(_env.begin(), _env.end(), '\n');
+        hooks.lines_of_env = count(_env, '\n');
 
         // this value comes from the lines added by determine_input. Since the
         // function adds a suffix as well, I can't think of a way of

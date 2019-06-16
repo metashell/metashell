@@ -44,7 +44,7 @@ namespace metashell
 
       bool argument_token(const data::token& t_)
       {
-        const data::token_category c = t_.category();
+        const data::token_category c = category(t_);
         return c != data::token_category::whitespace &&
                c != data::token_category::comment;
       }
@@ -55,28 +55,28 @@ namespace metashell
     {
       data::command::iterator i = skip_whitespace(cmd_.begin(), cmd_.end());
 
-      if (i != cmd_.end() && (i->type() == data::token_type::p_pragma ||
-                              i->type() == data::token_type::operator_pound))
+      if (i != cmd_.end() && (type_of(*i) == data::token_type::p_pragma ||
+                              type_of(*i) == data::token_type::operator_pound))
       {
         i = skip_whitespace(skip(i), cmd_.end());
 
-        if (i != cmd_.end() && i->type() == data::token_type::identifier &&
-            (i->value() == "metashell" || i->value() == "msh"))
+        if (i != cmd_.end() && type_of(*i) == data::token_type::identifier &&
+            (value(*i) == "metashell" || value(*i) == "msh"))
         {
           i = skip_whitespace(skip(i), cmd_.end());
-          if (i == cmd_.end() || i->value().empty())
+          if (i == cmd_.end() || empty(value(*i)))
           {
             throw data::exception(
                 "The name of the metashell pragma is missing.");
           }
-          else if (i->type() == data::token_type::identifier)
+          else if (type_of(*i) == data::token_type::identifier)
           {
             return i;
           }
           else
           {
             std::ostringstream s;
-            s << "Invalid pragma name " << i->value();
+            s << "Invalid pragma name " << *i;
             throw data::exception(s.str());
           }
         }
