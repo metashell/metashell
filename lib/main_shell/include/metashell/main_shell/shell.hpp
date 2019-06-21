@@ -122,7 +122,8 @@ namespace metashell
       core::logger* _logger;
       std::function<std::unique_ptr<iface::engine>(const data::config&)>
           _engine_builder;
-      std::map<std::string, std::unique_ptr<iface::engine>> _engines;
+      std::map<data::shell_config_name, std::unique_ptr<iface::engine>>
+          _engines;
       bool _echo = false;
       bool _show_cpp_errors = true;
       bool _evaluate_metaprograms = true;

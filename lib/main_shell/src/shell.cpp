@@ -487,7 +487,7 @@ namespace metashell {
 
     iface::engine& shell::engine()
     {
-      const auto& name = _config.active_shell_config().engine;
+      const auto& name = _config.active_shell_config().name;
       const auto i = _engines.find(name);
       if (i == _engines.end())
       {

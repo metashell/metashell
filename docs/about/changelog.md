@@ -6,6 +6,12 @@
     * New engine: `auto`. It chooses the engine to use based on the compiler
       specified in the engine arguments.
 
+* Fixes
+    * When multiple shell configs use the same engine with different engine
+      arguments, Metashell can now use the correct arguments for each config
+      instead of using the arguments the shell config had, which was loaded
+      first.
+
 * Changes to existing behaviour
     * **Breaking change** Regular expression syntax for breakpoints changes
     from

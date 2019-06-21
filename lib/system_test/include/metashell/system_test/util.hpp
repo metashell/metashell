@@ -48,6 +48,8 @@ namespace metashell
     }
 
     std::string new_line();
+
+    void write_file(const boost::filesystem::path&, const std::string&);
   }
 }
 
