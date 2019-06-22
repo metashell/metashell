@@ -44,15 +44,15 @@ namespace metashell
         }
 
         template <bool UseTemplightHeaders>
-        std::unique_ptr<iface::engine>
-        create_wave_engine(const data::config& config_,
-                           const boost::filesystem::path& internal_dir_,
-                           const boost::filesystem::path&,
-                           const boost::filesystem::path&,
-                           const std::map<std::string, core::engine_entry>&,
-                           iface::environment_detector& env_detector_,
-                           iface::displayer& displayer_,
-                           core::logger* logger_)
+        std::unique_ptr<iface::engine> create_wave_engine(
+            const data::config& config_,
+            const boost::filesystem::path& internal_dir_,
+            const boost::filesystem::path&,
+            const boost::filesystem::path&,
+            const std::map<data::engine_name, core::engine_entry>&,
+            iface::environment_detector& env_detector_,
+            iface::displayer& displayer_,
+            core::logger* logger_)
         {
           using core::not_supported;
 

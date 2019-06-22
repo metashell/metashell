@@ -98,7 +98,8 @@ namespace
 
     for (const auto& engine : engines)
     {
-      out_ << "* " << metashell::data::self_id(engine.first) << "<br />\n"
+      out_ << "* " << metashell::data::self_id(to_string(engine.first))
+           << "<br />\n"
            << "Usage: `metashell --engine " << engine.first;
       const auto args = engine.second.args();
       if (!args.empty())
@@ -120,7 +121,8 @@ namespace
         metashell::data::markdown_string("Feature")};
     for (const auto& engine : engines)
     {
-      header.push_back(metashell::data::self_reference(engine.first));
+      header.push_back(
+          metashell::data::self_reference(to_string(engine.first)));
     }
 
     std::vector<std::vector<metashell::data::markdown_string>> table;

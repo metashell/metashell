@@ -39,7 +39,7 @@ namespace metashell
         extract_clang_binary(const std::vector<std::string>& engine_args_,
                              iface::environment_detector& env_detector_,
                              const std::string& metashell_path_,
-                             const std::string& engine_name_)
+                             const data::engine_name& engine_)
         {
           if (engine_args_.empty())
           {
@@ -51,7 +51,7 @@ namespace metashell
                 "The engine requires that you specify the path to the clang "
                 "compiler"
                 " after --. For example: " +
-                metashell_path_ + " --engine " + engine_name_ + " -- " +
+                metashell_path_ + " --engine " + engine_ + " -- " +
                 sample_path + " -std=c++11");
           }
           else
@@ -453,7 +453,7 @@ namespace metashell
       find_clang(bool use_internal_templight_,
                  const std::vector<std::string>& extra_clang_args_,
                  const std::string& metashell_binary_,
-                 const std::string& engine_,
+                 const data::engine_name& engine_,
                  iface::environment_detector& env_detector_,
                  iface::displayer& displayer_,
                  core::logger* logger_)

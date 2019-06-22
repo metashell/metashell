@@ -20,6 +20,7 @@
 #include <metashell/core/not_supported.hpp>
 #include <metashell/core/supported.hpp>
 
+#include <metashell/data/engine_name.hpp>
 #include <metashell/data/feature_not_supported.hpp>
 
 #include <string>
@@ -31,22 +32,22 @@ namespace metashell
   {
     template <class Expected, class Real>
     typename std::enable_if<supported<Real>::value, Expected&>::type
-    if_supported(Real& real_, const std::string&)
+    if_supported(Real& real_, const data::engine_name&)
     {
       return real_;
     }
 
     template <class Expected, class Real>
-    const Expected& if_supported(const Real& real_, const std::string&)
+    const Expected& if_supported(const Real& real_, const data::engine_name&)
     {
       return real_;
     }
 
     template <class Expected>
     Expected& if_supported(const not_supported&,
-                           const std::string& engine_name_)
+                           const data::engine_name& engine_)
     {
-      throw data::feature_not_supported<Expected>(engine_name_);
+      throw data::feature_not_supported<Expected>(engine_);
     }
   }
 }

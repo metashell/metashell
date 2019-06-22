@@ -186,9 +186,9 @@ namespace metashell
           const std::vector<std::string> extra_clang_args;
 
           const clang::binary cbin(
-              true,
-              clang::find_clang(true, extra_clang_args, metashell_binary_,
-                                "internal", env_detector_, displayer_, logger_),
+              true, clang::find_clang(true, extra_clang_args, metashell_binary_,
+                                      data::engine_name("internal"),
+                                      env_detector_, displayer_, logger_),
               extra_clang_args, internal_dir_, env_detector_, logger_);
 
           clang::header_discoverer header_discoverer(cbin);

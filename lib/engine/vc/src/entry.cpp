@@ -74,7 +74,7 @@ namespace metashell
         extract_vc_binary(const std::vector<std::string>& engine_args_,
                           iface::environment_detector& env_detector_,
                           const std::string& metashell_path_,
-                          const std::string& engine_name_)
+                          const data::engine_name& engine_)
         {
           if (engine_args_.empty())
           {
@@ -84,7 +84,7 @@ namespace metashell
             throw data::exception(
                 "The engine requires that you specify the path to cl.exe"
                 " after --. For example: " +
-                metashell_path_ + " --engine " + engine_name_ + " -- " +
+                metashell_path_ + " --engine " + engine_ + " -- " +
                 sample_path);
           }
           else
@@ -123,7 +123,7 @@ namespace metashell
                          const boost::filesystem::path& internal_dir_,
                          const boost::filesystem::path& temp_dir_,
                          const boost::filesystem::path& env_filename_,
-                         const std::map<std::string, core::engine_entry>&,
+                         const std::map<data::engine_name, core::engine_entry>&,
                          iface::environment_detector& env_detector_,
                          iface::displayer&,
                          core::logger* logger_)

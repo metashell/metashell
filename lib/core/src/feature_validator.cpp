@@ -28,9 +28,9 @@ namespace metashell
   namespace core
   {
     feature_validator::feature_validator(
-        std::string engine_name_,
+        data::engine_name engine_,
         std::vector<data::feature> supported_features_)
-      : _engine_name(move(engine_name_)),
+      : _engine(std::move(engine_)),
         _supported_features(move(supported_features_)),
         _all_checked(false)
     {
@@ -55,7 +55,7 @@ namespace metashell
         if (!doc_says_supported)
         {
           throw std::runtime_error(
-              "Documentation of engine " + _engine_name + " states feature " +
+              "Documentation of engine " + _engine + " states feature " +
               to_string(feature_) +
               " is not supported, but the engine supports it.");
         }
@@ -63,7 +63,7 @@ namespace metashell
       else if (doc_says_supported)
       {
         throw std::runtime_error(
-            "Documentation of engine " + _engine_name + " states feature " +
+            "Documentation of engine " + _engine + " states feature " +
             to_string(feature_) +
             " is supported, but the engine does not support it.");
       }
@@ -78,7 +78,7 @@ namespace metashell
       if (!_supported_features.empty())
       {
         throw std::runtime_error(
-            "During the validaton of engine " + _engine_name +
+            "During the validaton of engine " + _engine +
             ", the following features have not been checked: " +
             boost::algorithm::join(
                 _supported_features |

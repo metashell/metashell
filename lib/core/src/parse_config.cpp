@@ -30,6 +30,7 @@
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
 #include <boost/range/adaptor/map.hpp>
+#include <boost/range/adaptor/transformed.hpp>
 
 #include <just/file.hpp>
 
@@ -65,10 +66,11 @@ namespace metashell
         }
       }
 
-      void show_engine_help(const std::map<std::string, engine_entry>& engines_,
-                            const std::string& engine_,
-                            std::ostream* out_,
-                            const std::string& app_name_)
+      void show_engine_help(
+          const std::map<data::engine_name, engine_entry>& engines_,
+          const data::engine_name& engine_,
+          std::ostream* out_,
+          const std::string& app_name_)
       {
         const auto e = engines_.find(engine_);
         if (e == engines_.end())
@@ -194,7 +196,7 @@ namespace metashell
           const boost::program_options::variables_map& vm_,
           const char** extra_args_begin_,
           const char** extra_args_end_,
-          const std::string& engine_)
+          const boost::optional<data::engine_name>& engine_)
       {
         data::shell_config result(
             data::shell_config_name("default"), data::shell_config_data());
@@ -202,9 +204,9 @@ namespace metashell
         result.engine_args.insert(
             result.engine_args.end(), extra_args_begin_, extra_args_end_);
 
-        if (vm_.count("engine"))
+        if (engine_)
         {
-          result.engine = engine_;
+          result.engine = *engine_;
         }
         result.use_precompiled_headers = !vm_.count("no_precompiled_headers");
         result.preprocessor_mode = vm_.count("preprocessor");
@@ -216,7 +218,7 @@ namespace metashell
     parse_config_result
     parse_config(int argc_,
                  const char* argv_[],
-                 const std::map<std::string, engine_entry>& engines_,
+                 const std::map<data::engine_name, engine_entry>& engines_,
                  iface::environment_detector& env_detector_,
                  std::ostream* out_,
                  std::ostream* err_)
@@ -252,7 +254,12 @@ namespace metashell
 
       const std::string engine_info =
           "The engine (C++ compiler) to use. Available engines: " +
-          boost::algorithm::join(engines_ | boost::adaptors::map_keys, ", ") +
+          boost::algorithm::join(engines_ | boost::adaptors::map_keys |
+                                     boost::adaptors::transformed(
+                                         [](const data::engine_name& name_) {
+                                           return to_string(name_);
+                                         }),
+                                 ", ") +
           ". Default: " + data::shell_config_data().engine;
 
       std::vector<boost::filesystem::path> configs_to_load;
@@ -347,8 +354,11 @@ namespace metashell
                                                  data::logging_mode::file;
         }
 
-        cfg.push_back(
-            parse_default_shell_config(vm, extra_args_begin, args_end, engine));
+        cfg.push_back(parse_default_shell_config(
+            vm, extra_args_begin, args_end,
+            vm.count("engine") ?
+                boost::make_optional(data::engine_name(engine)) :
+                boost::none));
 
         for (const boost::filesystem::path& config_path : configs_to_load)
         {
@@ -378,7 +388,8 @@ namespace metashell
         }
         else if (vm.count("help_engine"))
         {
-          show_engine_help(engines_, help_engine, out_, argv_[0]);
+          show_engine_help(
+              engines_, data::engine_name(help_engine), out_, argv_[0]);
           return parse_config_result::exit(false);
         }
         else

@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/engine_name.hpp>
 #include <metashell/data/feature.hpp>
 
 #include <metashell/core/feature_validator.hpp>
@@ -26,7 +27,6 @@
 #include <metashell/iface/engine.hpp>
 
 #include <memory>
-#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -77,7 +77,7 @@ namespace metashell
                                         PreprocessorTracer>::value,
                     "Preprocessor tracer is needed");
 
-      engine(std::string name_,
+      engine(data::engine_name name_,
              TypeShell type_shell_,
              PreprocessorShell preprocessor_shell_,
              CodeCompleter code_completer_,
@@ -190,7 +190,7 @@ namespace metashell
       }
 
     private:
-      std::string _name;
+      data::engine_name _name;
       TypeShell _type_shell;
       PreprocessorShell _preprocessor_shell;
       CodeCompleter _code_completer;
@@ -217,7 +217,7 @@ namespace metashell
                            CppValidator,
                            MacroDiscovery,
                            PreprocessorTracer>>
-    make_engine(std::string name_,
+    make_engine(data::engine_name name_,
                 TypeShell&& type_shell_,
                 PreprocessorShell&& preprocessor_shell_,
                 CodeCompleter&& code_completer_,

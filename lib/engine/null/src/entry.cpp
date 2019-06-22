@@ -37,7 +37,7 @@ namespace metashell
         return core::engine_entry(
             [](const data::config& config_, const boost::filesystem::path&,
                const boost::filesystem::path&, const boost::filesystem::path&,
-               const std::map<std::string, core::engine_entry>&,
+               const std::map<data::engine_name, core::engine_entry>&,
                iface::environment_detector&, iface::displayer&, core::logger*) {
               return core::make_engine(
                   config_.active_shell_config().engine, not_supported(),

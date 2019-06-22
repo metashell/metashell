@@ -80,7 +80,7 @@ namespace metashell
         extract_gcc_binary(const std::vector<std::string>& engine_args_,
                            iface::environment_detector& env_detector_,
                            const std::string& metashell_path_,
-                           const std::string& engine_name_)
+                           const data::engine_name& engine_)
         {
           if (engine_args_.empty())
           {
@@ -89,7 +89,7 @@ namespace metashell
                 "The engine requires that you specify the path to the gcc "
                 "compiler"
                 " after --. For example: " +
-                metashell_path_ + " --engine " + engine_name_ + " -- " +
+                metashell_path_ + " --engine " + engine_ + " -- " +
                 sample_path + " -std=c++11");
           }
           else
@@ -129,15 +129,15 @@ namespace metashell
           return args;
         }
 
-        std::unique_ptr<iface::engine>
-        create_gcc_engine(const data::config& config_,
-                          const boost::filesystem::path& internal_dir_,
-                          const boost::filesystem::path&,
-                          const boost::filesystem::path& env_filename_,
-                          const std::map<std::string, core::engine_entry>&,
-                          iface::environment_detector& env_detector_,
-                          iface::displayer&,
-                          core::logger* logger_)
+        std::unique_ptr<iface::engine> create_gcc_engine(
+            const data::config& config_,
+            const boost::filesystem::path& internal_dir_,
+            const boost::filesystem::path&,
+            const boost::filesystem::path& env_filename_,
+            const std::map<data::engine_name, core::engine_entry>&,
+            iface::environment_detector& env_detector_,
+            iface::displayer&,
+            core::logger* logger_)
         {
           using core::not_supported;
 
