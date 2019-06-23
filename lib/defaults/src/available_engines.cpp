@@ -33,17 +33,17 @@ namespace metashell
     std::map<data::engine_name, core::engine_entry> available_engines()
     {
       std::map<data::engine_name, core::engine_entry> result{
-          {data::engine_name("internal"), engine::templight::entry(true)},
-          {data::engine_name("clang"), engine::clang::entry()},
-          {data::engine_name("templight"), engine::templight::entry(false)},
-          {data::engine_name("null"), engine::null::entry()},
-          {data::engine_name("gcc"), engine::gcc::entry()},
-          {data::engine_name("msvc"), engine::vc::entry()},
-          {data::engine_name("wave"),
+          {engine::templight::name(true), engine::templight::entry(true)},
+          {engine::clang::name(), engine::clang::entry()},
+          {engine::templight::name(false), engine::templight::entry(false)},
+          {engine::null::name(), engine::null::entry()},
+          {engine::gcc::name(), engine::gcc::entry()},
+          {engine::vc::name(), engine::vc::entry()},
+          {engine::wave::name_with_templight_headers(),
            engine::wave::entry_with_templight_headers()},
-          {data::engine_name("pure_wave"), engine::wave::entry()}};
+          {engine::wave::name(), engine::wave::entry()}};
 
-      result.insert({data::engine_name("auto"), engine::auto_::entry(result)});
+      result.insert({engine::auto_::name(), engine::auto_::entry(result)});
 
       return result;
     }

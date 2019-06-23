@@ -29,6 +29,8 @@ namespace metashell
   {
     namespace auto_
     {
+      data::engine_name name();
+
       core::engine_entry
       entry(const std::map<data::engine_name, core::engine_entry>&);
     }

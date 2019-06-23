@@ -159,6 +159,8 @@ namespace metashell
         }
       } // anonymous namespace
 
+      data::engine_name name() { return data::engine_name("gcc"); }
+
       core::engine_entry entry()
       {
         return core::engine_entry(

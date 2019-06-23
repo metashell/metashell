@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/engine_name.hpp>
+
 #include <metashell/core/engine_entry.hpp>
 
 namespace metashell
@@ -25,7 +27,10 @@ namespace metashell
   {
     namespace wave
     {
+      data::engine_name name();
       core::engine_entry entry();
+
+      data::engine_name name_with_templight_headers();
       core::engine_entry entry_with_templight_headers();
     }
   }

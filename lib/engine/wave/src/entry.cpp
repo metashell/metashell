@@ -83,7 +83,14 @@ namespace metashell
         }
       } // anonymous namespace
 
+      data::engine_name name() { return data::engine_name("pure_wave"); }
+
       core::engine_entry entry() { return get_engine_entry<false>(); }
+
+      data::engine_name name_with_templight_headers()
+      {
+        return data::engine_name("wave");
+      }
 
       core::engine_entry entry_with_templight_headers()
       {
