@@ -26,6 +26,8 @@
 #include <metashell/iface/preprocessor_tracer.hpp>
 #include <metashell/iface/type_shell.hpp>
 
+#include <metashell/data/engine_name.hpp>
+
 namespace metashell
 {
   namespace iface
@@ -34,6 +36,10 @@ namespace metashell
     {
     public:
       virtual ~engine() {}
+
+      virtual data::engine_name name() const = 0;
+
+      virtual data::engine_name display_name() const = 0;
 
       virtual iface::type_shell& type_shell() = 0;
       virtual const iface::type_shell& type_shell() const = 0;

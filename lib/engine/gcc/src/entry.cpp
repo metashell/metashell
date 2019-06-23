@@ -150,7 +150,7 @@ namespace metashell
                              logger_);
 
           return core::make_engine(
-              config_.active_shell_config().engine, not_supported(),
+              name(), config_.active_shell_config().engine, not_supported(),
               clang::preprocessor_shell(cbin), not_supported(),
               clang::header_discoverer(cbin), not_supported(),
               clang::cpp_validator(internal_dir_, env_filename_, cbin, logger_),

@@ -78,6 +78,7 @@ namespace metashell
                     "Preprocessor tracer is needed");
 
       engine(data::engine_name name_,
+             data::engine_name display_name_,
              TypeShell type_shell_,
              PreprocessorShell preprocessor_shell_,
              CodeCompleter code_completer_,
@@ -87,6 +88,7 @@ namespace metashell
              MacroDiscovery macro_discovery_,
              PreprocessorTracer preprocessor_tracer_)
         : _name(std::move(name_)),
+          _display_name(std::move(display_name_)),
           _type_shell(std::move(type_shell_)),
           _preprocessor_shell(std::move(preprocessor_shell_)),
           _code_completer(std::move(code_completer_)),
@@ -96,6 +98,13 @@ namespace metashell
           _macro_discovery(std::move(macro_discovery_)),
           _preprocessor_tracer(std::move(preprocessor_tracer_))
       {
+      }
+
+      virtual data::engine_name name() const override { return _name; }
+
+      virtual data::engine_name display_name() const override
+      {
+        return _display_name;
       }
 
       virtual iface::type_shell& type_shell() override
@@ -191,6 +200,7 @@ namespace metashell
 
     private:
       data::engine_name _name;
+      data::engine_name _display_name;
       TypeShell _type_shell;
       PreprocessorShell _preprocessor_shell;
       CodeCompleter _code_completer;
@@ -218,6 +228,7 @@ namespace metashell
                            MacroDiscovery,
                            PreprocessorTracer>>
     make_engine(data::engine_name name_,
+                data::engine_name display_name_,
                 TypeShell&& type_shell_,
                 PreprocessorShell&& preprocessor_shell_,
                 CodeCompleter&& code_completer_,
@@ -248,7 +259,8 @@ namespace metashell
       return std::make_unique<engine<
           TypeShell, PreprocessorShell, CodeCompleter, HeaderDiscoverer,
           MetaprogramTracer, CppValidator, MacroDiscovery, PreprocessorTracer>>(
-          std::move(name_), std::forward<TypeShell>(type_shell_),
+          std::move(name_), std::move(display_name_),
+          std::forward<TypeShell>(type_shell_),
           std::forward<PreprocessorShell>(preprocessor_shell_),
           std::forward<CodeCompleter>(code_completer_),
           std::forward<HeaderDiscoverer>(header_discoverer_),

@@ -87,7 +87,7 @@ namespace metashell
               env_detector_, logger_);
 
           return core::make_engine(
-              config_.active_shell_config().engine,
+              name(UseInternalTemplight), config_.active_shell_config().engine,
               clang::type_shell(internal_dir_, env_filename_, cbin, logger_),
               clang::preprocessor_shell(cbin),
               clang::code_completer(

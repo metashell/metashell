@@ -146,7 +146,7 @@ namespace metashell
               temp_dir_, logger_);
 
           return make_engine(
-              config_.active_shell_config().engine, not_supported(),
+              name(), config_.active_shell_config().engine, not_supported(),
               preprocessor_shell(cbin), not_supported(),
               header_discoverer(cbin), not_supported(),
               cpp_validator(internal_dir_, env_filename_, cbin, logger_),

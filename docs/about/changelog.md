@@ -5,6 +5,7 @@
 * New features
     * New engine: `auto`. It chooses the engine to use based on the compiler
       specified in the engine arguments.
+    * Support for displaying the currently used engine (`#msh engine show`)
 
 * Fixes
     * When multiple shell configs use the same engine with different engine
@@ -21,6 +22,8 @@
     * The default engine is `auto`.
     * Improved error messages for invalid mdb commands.
     * Improved input validation
+    * Display the name of the underlying engine in error messages about missing
+      features while using the `auto` engine
 
 ## Version 4.0.0
 

@@ -20,6 +20,7 @@
 #include <metashell/pragma/config_load.hpp>
 #include <metashell/pragma/config_show.hpp>
 #include <metashell/pragma/echo.hpp>
+#include <metashell/pragma/engine_show.hpp>
 #include <metashell/pragma/environment.hpp>
 #include <metashell/pragma/environment_add.hpp>
 #include <metashell/pragma/environment_pop.hpp>
@@ -92,6 +93,9 @@ namespace metashell
       result.emplace(sv{"precompiled_headers"},
                      std::make_unique<pragma::switch_>(
                          data::shell_flag::use_precompiled_headers));
+
+      result.emplace(
+          sv{"engine", "show"}, std::make_unique<pragma::engine_show>());
 
       result.emplace(
           sv{"environment"}, std::make_unique<pragma::environment>());

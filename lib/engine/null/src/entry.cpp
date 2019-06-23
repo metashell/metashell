@@ -42,7 +42,7 @@ namespace metashell
                const std::map<data::engine_name, core::engine_entry>&,
                iface::environment_detector&, iface::displayer&, core::logger*) {
               return core::make_engine(
-                  config_.active_shell_config().engine, not_supported(),
+                  name(), config_.active_shell_config().engine, not_supported(),
                   not_supported(), not_supported(), not_supported(),
                   not_supported(), not_supported(), not_supported(),
                   not_supported(), supported_features());

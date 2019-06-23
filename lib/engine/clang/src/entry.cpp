@@ -75,7 +75,7 @@ namespace metashell
               env_detector_, logger_);
 
           return core::make_engine(
-              config_.active_shell_config().engine,
+              name(), config_.active_shell_config().engine,
               type_shell(internal_dir_, env_filename_, cbin, logger_),
               preprocessor_shell(cbin),
               code_completer(
