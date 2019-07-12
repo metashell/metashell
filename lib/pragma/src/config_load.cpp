@@ -17,8 +17,10 @@
 #include <metashell/pragma/config_load.hpp>
 
 #include <metashell/core/comment_json_writer.hpp>
+#include <metashell/core/engine.hpp>
 
 #include <metashell/data/exception.hpp>
+#include <metashell/data/some_feature_not_supported.hpp>
 
 #include <algorithm>
 
@@ -71,7 +73,17 @@ namespace metashell
         try
         {
           shell_.rebuild_environment();
-          displayer_.show_comment(data::text("Switched to config " + name));
+
+          data::text comment;
+          comment.paragraphs.emplace_back("Switched to config " + name);
+
+          if (const auto limit = core::limitation(shell_.engine()))
+          {
+            comment.paragraphs.emplace_back();
+            comment.paragraphs.emplace_back(*limit);
+          }
+
+          displayer_.show_comment(comment);
         }
         catch (const std::exception& e)
         {

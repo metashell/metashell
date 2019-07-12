@@ -27,7 +27,7 @@ namespace metashell
   {
     struct some_feature_not_supported : exception
     {
-      some_feature_not_supported(const data::engine_name&, const feature&);
+      some_feature_not_supported(const engine_name&, const feature&);
     };
   }
 }

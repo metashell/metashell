@@ -29,6 +29,7 @@ target_link_libraries(
   just::temp
 
   metashell::core
+  metashell::engine::constant
   metashell::mock
 )
 

@@ -93,3 +93,31 @@ TEST(shell_config, engine_arguments)
   ASSERT_EQ(prompt(_), mi.command("#include <foobar.hpp>").front());
   ASSERT_EQ(type("int"), mi.command("foo").front());
 }
+
+TEST(shell_config, warning_about_null)
+{
+  just::temp::directory temp_dir;
+  const boost::filesystem::path temp(temp_dir.path());
+
+  {
+    std::ofstream f((temp / "shell_config.json").string());
+    metashell::core::rapid_json_writer out(f);
+
+    out.start_array();
+    write_shell_config(out, "foo", "null");
+    out.end_array();
+  }
+
+  metashell_instance mi(
+      {"--load_configs", (temp / "shell_config.json").string()},
+      boost::filesystem::path(), false);
+
+  const std::vector<json_string> load = mi.command("#msh config load foo");
+  ASSERT_GT(load.size(), 1);
+  ASSERT_EQ(comment(_), load.front());
+  ASSERT_TRUE(
+      load.front().get().find("Note that you are using the null engine, which "
+                              "means that you can not debug anything. "
+                              "Metashell supports different features if you "
+                              "use different compilers.") != std::string::npos);
+}

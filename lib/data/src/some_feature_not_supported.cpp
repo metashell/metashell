@@ -21,7 +21,7 @@ namespace metashell
   namespace data
   {
     some_feature_not_supported::some_feature_not_supported(
-        const data::engine_name& engine_, const feature& feature_)
+        const engine_name& engine_, const feature& feature_)
       : exception("Feature " + to_string(feature_) +
                   " is not supported by the " + engine_ + " engine.")
     {

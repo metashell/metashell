@@ -26,7 +26,10 @@
 
 #include <metashell/iface/engine.hpp>
 
+#include <boost/optional.hpp>
+
 #include <memory>
+#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -269,6 +272,8 @@ namespace metashell
           std::forward<MacroDiscovery>(macro_discovery_),
           std::forward<PreprocessorTracer>(preprocessor_tracer_));
     }
+
+    boost::optional<std::string> limitation(const iface::engine& engine_);
   }
 }
 
