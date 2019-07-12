@@ -43,7 +43,7 @@ TEST(pragma, check_verbosity)
   const auto result = mi.command("#pragma metashell verbose");
 
   ASSERT_EQ(2u, result.size());
-  ASSERT_EQ(comment({paragraph("verbose mode is off")}), result.front());
+  ASSERT_EQ(comment("verbose mode is off"), result.front());
   ASSERT_EQ(prompt(">"), result.back());
 }
 
@@ -54,7 +54,7 @@ TEST(pragma, check_enabling_verbosity)
   const auto result = mi.command("#pragma metashell verbose on");
 
   ASSERT_EQ(2u, result.size());
-  ASSERT_EQ(comment({paragraph("verbose mode is on")}), result.front());
+  ASSERT_EQ(comment("verbose mode is on"), result.front());
   ASSERT_EQ(prompt(">"), result.back());
 }
 

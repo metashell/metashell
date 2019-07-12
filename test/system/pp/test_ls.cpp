@@ -139,14 +139,14 @@ namespace
 
       const auto ignored = directories_and_files_coming_from_test_arguments();
 
-      if (i != r.end() && comment({paragraph{"Directories:"}}) == *i)
+      if (i != r.end() && comment("Directories:") == *i)
       {
         ++i;
         _directories = remove_includes_from(ignored.first, include_set(*i));
         ++i;
       }
 
-      if (i != r.end() && comment({paragraph{"Header files:"}}) == *i)
+      if (i != r.end() && comment("Header files:") == *i)
       {
         ++i;
         _header_files = remove_includes_from(ignored.second, include_set(*i));

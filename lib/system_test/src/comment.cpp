@@ -28,8 +28,13 @@ namespace metashell
 {
   namespace system_test
   {
-    comment::comment(std::vector<paragraph> paragraphs_)
-      : _paragraphs_specified(true), _paragraphs(move(paragraphs_))
+    comment::comment(std::string content_)
+      : _paragraphs_specified(true), _paragraphs{paragraph(std::move(content_))}
+    {
+    }
+
+    comment::comment(std::initializer_list<paragraph> paragraphs_)
+      : _paragraphs_specified(true), _paragraphs(paragraphs_)
     {
     }
 

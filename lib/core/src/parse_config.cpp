@@ -18,6 +18,7 @@
 
 #include <metashell/core/engine_entry.hpp>
 #include <metashell/core/parse_config.hpp>
+#include <metashell/core/rapid_compile_commands_parser.hpp>
 #include <metashell/core/rapid_shell_config_parser.hpp>
 
 #include <rapidjson/reader.h>
@@ -213,6 +214,31 @@ namespace metashell
 
         return result;
       }
+
+      data::shell_config_name find_unique_name(const data::config& cfg_,
+                                               data::shell_config_name prefix_)
+      {
+        if (!cfg_.exists(prefix_))
+        {
+          return prefix_;
+        }
+
+        for (;;)
+        {
+          prefix_ += data::shell_config_name(":");
+
+          // Relying on unsigned integer overflow
+          for (unsigned long int i = 1; i != 0; ++i)
+          {
+            const data::shell_config_name name =
+                prefix_ + data::shell_config_name(std::to_string(i));
+            if (!cfg_.exists(name))
+            {
+              return name;
+            }
+          }
+        }
+      }
     }
 
     parse_config_result
@@ -263,6 +289,7 @@ namespace metashell
           ". Default: " + data::shell_config_data().engine;
 
       std::vector<boost::filesystem::path> configs_to_load;
+      std::vector<boost::filesystem::path> compile_commands_to_load;
 
       options_description desc("Options");
       // clang-format off
@@ -292,6 +319,11 @@ namespace metashell
     ("engine", value(&engine), engine_info.c_str())
     ("help_engine", value(&help_engine), "Display help about the engine")
     ("preprocessor", "Starts the shell in preprocessor mode")
+    (
+      "load_compile_commands", value(&compile_commands_to_load),
+      "Generate configs for the compilation units of the"
+      " compile_commands.json file"
+    )
     ("load_configs", value(&configs_to_load), "Load configs from a file.");
       // clang-format on
 
@@ -354,11 +386,13 @@ namespace metashell
                                                  data::logging_mode::file;
         }
 
-        cfg.push_back(parse_default_shell_config(
+        const auto default_shell_config = parse_default_shell_config(
             vm, extra_args_begin, args_end,
             vm.count("engine") ?
                 boost::make_optional(data::engine_name(engine)) :
-                boost::none));
+                boost::none);
+
+        cfg.push_back(default_shell_config);
 
         for (const boost::filesystem::path& config_path : configs_to_load)
         {
@@ -379,6 +413,27 @@ namespace metashell
             }
           };
           reader.Parse(string_stream, handler);
+        }
+
+        for (const boost::filesystem::path& compile_commands_path :
+             compile_commands_to_load)
+        {
+          rapid_compile_commands_parser handler(
+              default_shell_config.use_precompiled_headers,
+              default_shell_config.preprocessor_mode);
+          {
+            const std::string json =
+                just::file::read<std::string>(compile_commands_path.string());
+            rapidjson::StringStream string_stream(json.c_str());
+            rapidjson::Reader reader;
+            reader.Parse(string_stream, handler);
+          }
+
+          for (data::shell_config scfg : handler.configs())
+          {
+            scfg.name = find_unique_name(cfg, std::move(scfg.name));
+            cfg.push_back(scfg);
+          };
         }
 
         if (vm.count("help"))
