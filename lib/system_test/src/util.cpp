@@ -112,7 +112,7 @@ namespace metashell
         case '\"':
         case '\'':
           end = write_to(end, '\\');
-        // [[fallthrough]];
+          [[fallthrough]];
         default:
           end = write_to(end, c);
         }
