@@ -87,7 +87,6 @@ ubuntu)
     UBUNTU_VERSION="16.04"
   fi
   CLANG_ARCHIVE="clang+llvm-${CLANG_VERSION}-x86_64-linux-gnu-ubuntu-${UBUNTU_VERSION}"
-  GRAPHVIZ_ARCHIVE="graphviz-stable_release_${GRAPHVIZ_VERSION}"
   mkdir -p "bin/${PLATFORM_ID}"
   cd "bin/${PLATFORM_ID}"
     wget http://llvm.org/releases/${CLANG_VERSION}/${CLANG_ARCHIVE}.tar.xz
@@ -102,10 +101,7 @@ ubuntu)
       mkdir graphviz
       cd graphviz
         GRAPHVIZ_BIN="$(pwd)"
-        wget https://gitlab.com/graphviz/graphviz/-/archive/stable_release_${GRAPHVIZ_VERSION}/${GRAPHVIZ_ARCHIVE}.tar.bz2
-        tar -jxf ${GRAPHVIZ_ARCHIVE}.tar.bz2
-        mv ${GRAPHVIZ_ARCHIVE} src
-        rm ${GRAPHVIZ_ARCHIVE}.tar.bz2
+        cp -r "../../../3rd/graphviz" src
         cd src
           ./autogen.sh
           ./configure --prefix "${GRAPHVIZ_BIN}"
