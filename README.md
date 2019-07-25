@@ -19,7 +19,6 @@ Service | Status
 --- | ---
 [travis-ci.org](https://travis-ci.org/metashell/metashell) | [![Travis Build Status](https://travis-ci.org/metashell/metashell.svg?branch=master "Build Status")](https://travis-ci.org/metashell/metashell) |
 [ci.appveyor.com](https://ci.appveyor.com/project/sabel83/metashell/) | [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/2t30o2h0kieh2ovm/branch/master?svg=true)](https://ci.appveyor.com/project/sabel83/metashell/branch/master) |
-[coveralls.io](https://coveralls.io/github/metashell/metashell) | [![Coverage Status](https://coveralls.io/repos/github/metashell/metashell/badge.svg?branch=master)](https://coveralls.io/github/metashell/metashell?branch=master) |
 
 ## License
 
