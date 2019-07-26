@@ -12,9 +12,6 @@ matrix:
   include:
     - os: linux
       compiler: gcc
-      env: COVERAGE="true"
-    - os: linux
-      compiler: gcc
       env: STATIC_CHECKS="true"
 addons:
   apt:

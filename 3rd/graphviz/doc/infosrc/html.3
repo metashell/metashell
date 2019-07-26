@@ -1,0 +1,44 @@
+</XMP>
+produces the HTML analogue of the record example above<BR>
+<IMG SRC=html1.gif>
+<P>
+As usual, an HTML specification is more verbose. On the other hand,
+HTML labels are much more general, as the following example shows:
+<P>
+<IMG SRC=html2.gif>
+<P>
+The source for this graph can be found <A HREF=html2.gv>here</A>.
+<P>
+Here is an example using &lt;FONT&gt; elements 
+<P>
+<IMG SRC=html3.gif>
+<P>
+with the <A HREF=html3.gv>input graph</A>.
+<P>
+Here is an example using an &lt;IMG&gt; element 
+<P>
+<IMG SRC=html4.gif>
+<P>
+with the <A HREF=html4.gv>input graph</A>.
+<P>
+The <tt>sides</tt> attribute (version 2.37 and later) allows one to combine cells to form 
+various non-convex shapes. For example, a <tt>tee-shaped</tt> node
+<P>
+<IMG SRC=tee.gif>
+<P>
+can be produced using
+<XMP>
+  tee [shape=none margin=0 label=
+    <<table border="0" cellspacing="0" cellborder="1">
+     <tr>
+      <td width="9" height="9" fixedsize="true" style="invis"></td>
+      <td width="9" height="9" fixedsize="true" sides="ltr"></td>
+      <td width="9" height="9" fixedsize="true" style="invis"></td>
+     </tr>
+     <tr>
+      <td width="9" height="9" fixedsize="true" sides="tlb"></td>
+      <td width="9" height="9" fixedsize="true" sides="b"></td>
+      <td width="9" height="9" fixedsize="true" sides="brt"></td>
+     </tr>
+    </table>>]
+</XMP>
