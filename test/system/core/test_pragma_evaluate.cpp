@@ -35,11 +35,11 @@ TEST(pragma_evaluate, runs_a_metaprogram)
   ASSERT_EQ(
       (std::vector<json_string>{
           to_json_string(type("int")),
-          to_json_string(comment(
-              {paragraph("You don't need the evaluate add pragma to evaluate "
-                         "this metaprogram."
-                         " The following command does this as well:"),
-               paragraph("x")})),
+          to_json_string(comment{
+              paragraph("You don't need the evaluate add pragma to evaluate "
+                        "this metaprogram."
+                        " The following command does this as well:"),
+              paragraph("x")}),
           to_json_string(prompt(">"))}),
       mi.command("#pragma metashell evaluate x"));
 }
@@ -52,7 +52,7 @@ TEST(pragma_evaluate, displays_error_for_invalid_code)
       mi.command("#pragma metashell evaluate nonexisting_type");
   ASSERT_EQ(error(_), re[0]);
   ASSERT_EQ(
-      comment({paragraph("You don't need the evaluate add pragma to evaluate "
+      (comment{paragraph("You don't need the evaluate add pragma to evaluate "
                          "this metaprogram."
                          " The following command does this as well:"),
                paragraph("nonexisting_type")}),
@@ -66,11 +66,11 @@ TEST(pragma_evaluate, warns)
   ASSERT_EQ(
       (std::vector<json_string>{
           to_json_string(type("int")),
-          to_json_string(comment(
-              {paragraph("You don't need the evaluate add pragma to evaluate "
-                         "this metaprogram."
-                         " The following command does this as well:"),
-               paragraph("int")})),
+          to_json_string(comment{
+              paragraph("You don't need the evaluate add pragma to evaluate "
+                        "this metaprogram."
+                        " The following command does this as well:"),
+              paragraph("int")}),
           to_json_string(prompt(">"))}),
       mi.command("#pragma metashell evaluate int"));
 }

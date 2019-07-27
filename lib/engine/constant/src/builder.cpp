@@ -72,9 +72,10 @@ namespace metashell
         return [](const data::config&) {
           const data::result result(false, "", "Using failing engine", "");
           const std::vector<boost::filesystem::path> empty;
+          const data::engine_name name("failing");
 
           return core::make_engine(
-              "failing", type_shell(result), preprocessor_shell(result),
+              name, name, type_shell(result), preprocessor_shell(result),
               code_completer(), header_discoverer(empty, empty),
               metaprogram_tracer(), cpp_validator(result), macro_discovery(),
               preprocessor_tracer(), supported_features());
@@ -87,9 +88,10 @@ namespace metashell
         return [type_](const data::config&) {
           const data::result result(true, type_, "", "");
           const std::vector<boost::filesystem::path> empty;
+          const data::engine_name name("type_returning");
 
           return core::make_engine(
-              "type_returning", type_shell(result), preprocessor_shell(result),
+              name, name, type_shell(result), preprocessor_shell(result),
               code_completer(), header_discoverer(empty, empty),
               metaprogram_tracer(), cpp_validator(result), macro_discovery(),
               preprocessor_tracer(), supported_features());
@@ -102,10 +104,11 @@ namespace metashell
       {
         return [type_, path_](const data::config&) {
           const data::result result(true, "int", "", "");
+          const data::engine_name name("engine_with_include_path");
 
           return core::make_engine(
-              "engine_with_include_path", type_shell(result),
-              preprocessor_shell(result), code_completer(),
+              name, name, type_shell(result), preprocessor_shell(result),
+              code_completer(),
               create_header_discoverer_with_include_path(type_, path_),
               metaprogram_tracer(), cpp_validator(result), macro_discovery(),
               preprocessor_tracer(), supported_features());

@@ -24,6 +24,7 @@
 
 #include <boost/operators.hpp>
 
+#include <initializer_list>
 #include <iosfwd>
 #include <vector>
 
@@ -34,7 +35,8 @@ namespace metashell
     class comment : boost::equality_comparable<comment, json_string>
     {
     public:
-      explicit comment(std::vector<paragraph> paragraphs_);
+      explicit comment(std::string);
+      explicit comment(std::initializer_list<paragraph>);
       explicit comment(pattern::placeholder);
 
       bool paragraphs_specified() const;

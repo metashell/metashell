@@ -69,7 +69,7 @@ namespace metashell
             const boost::filesystem::path& internal_dir_,
             const boost::filesystem::path& temp_dir_,
             const boost::filesystem::path& env_filename_,
-            const std::map<std::string, core::engine_entry>&,
+            const std::map<data::engine_name, core::engine_entry>&,
             iface::environment_detector& env_detector_,
             iface::displayer& displayer_,
             core::logger* logger_)
@@ -87,7 +87,7 @@ namespace metashell
               env_detector_, logger_);
 
           return core::make_engine(
-              config_.active_shell_config().engine,
+              name(UseInternalTemplight), config_.active_shell_config().engine,
               clang::type_shell(internal_dir_, env_filename_, cbin, logger_),
               clang::preprocessor_shell(cbin),
               clang::code_completer(
@@ -98,6 +98,12 @@ namespace metashell
               supported_features());
         }
       } // anonymous namespace
+
+      data::engine_name name(bool use_internal_templight_)
+      {
+        return use_internal_templight_ ? data::engine_name("internal") :
+                                         data::engine_name("templight");
+      }
 
       core::engine_entry entry(bool use_internal_templight_)
       {

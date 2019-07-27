@@ -1,5 +1,5 @@
-#ifndef METASHELL_DATA_SHELL_CONFIG_DATA_HPP
-#define METASHELL_DATA_SHELL_CONFIG_DATA_HPP
+#ifndef METASHELL_ENGINE_NAME_HPP
+#define METASHELL_ENGINE_NAME_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,22 +17,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/engine_name.hpp>
+#include <metashell/data/constraint/name_first.hpp>
+#include <metashell/data/constraint/name_non_first.hpp>
 
-#include <string>
-#include <vector>
+#include <metashell/data/string.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    class shell_config_data
+    class engine_name : string<engine_name,
+                               false,
+                               constraint::name_non_first,
+                               constraint::name_first>
     {
     public:
-      std::vector<std::string> engine_args;
-      bool use_precompiled_headers = false;
-      engine_name engine = engine_name("auto");
-      bool preprocessor_mode = false;
+      using string<engine_name,
+                   false,
+                   constraint::name_non_first,
+                   constraint::name_first>::string;
+      using string<engine_name,
+                   false,
+                   constraint::name_non_first,
+                   constraint::name_first>::value;
+
+      engine_name() = delete;
+
+      static constexpr const char* name_of_type() { return "engine name"; }
     };
   }
 }

@@ -18,6 +18,7 @@
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/read_only_path.hpp>
 #include <metashell/system_test/type.hpp>
+#include <metashell/system_test/util.hpp>
 
 #include <gtest/gtest.h>
 #include <just/temp.hpp>
@@ -32,24 +33,6 @@ using pattern::_;
 
 namespace
 {
-  void write_file(const boost::filesystem::path& p_,
-                  const std::string& content_)
-  {
-    const std::string p = p_.string();
-    std::ofstream f(p);
-    if (f)
-    {
-      if (!(f << content_))
-      {
-        throw std::runtime_error("Failed to write into file " + p);
-      }
-    }
-    else
-    {
-      throw std::runtime_error("Failed to create file " + p);
-    }
-  }
-
   bool can_create_file_in(const boost::filesystem::path& p_)
   {
     return !std::ofstream((p_ / "test.txt").string()).fail();

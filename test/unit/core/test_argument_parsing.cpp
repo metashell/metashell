@@ -43,7 +43,7 @@ namespace
     ON_CALL(env_detector, on_osx()).WillByDefault(Return(false));
 
     return core::parse_config(args.size(), args.data(),
-                              std::map<std::string, core::engine_entry>(),
+                              std::map<data::engine_name, core::engine_entry>(),
                               env_detector, out_, err_);
   }
 
@@ -192,7 +192,7 @@ TEST(argument_parsing, metashell_path_is_filled)
 
   const metashell::data::config cfg =
       core::parse_config(args.size(), args.data(),
-                         std::map<std::string, core::engine_entry>(),
+                         std::map<data::engine_name, core::engine_entry>(),
                          env_detector, nullptr, nullptr)
           .cfg;
 

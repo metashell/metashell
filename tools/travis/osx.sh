@@ -7,8 +7,8 @@ brew update >/dev/null
 brew install p7zip
 
 if [ "$CXX" = "g++" ]; then
-  brew install gcc@6
-  export CXX="g++-6"
+  brew install gcc@7
+  export CXX="g++-7"
 fi
 
 # Test that the download version links are correct

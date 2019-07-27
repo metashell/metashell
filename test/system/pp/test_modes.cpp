@@ -27,11 +27,11 @@ TEST(modes, preprocessor_mode)
   metashell_instance mi;
   mi.command("#msh preprocessor mode");
 
-  ASSERT_EQ(comment({paragraph("display preprocessed commands is on")}),
+  ASSERT_EQ(comment("display preprocessed commands is on"),
             mi.command("#msh preprocessed echo").front());
-  ASSERT_EQ(comment({paragraph("display C++ errors is off")}),
+  ASSERT_EQ(comment("display C++ errors is off"),
             mi.command("#msh show cpp_errors").front());
-  ASSERT_EQ(comment({paragraph("evaluation of metaprograms is off")}),
+  ASSERT_EQ(comment("evaluation of metaprograms is off"),
             mi.command("#msh metaprogram evaluation").front());
 }
 
@@ -40,11 +40,11 @@ TEST(modes, metaprogram_mode)
   metashell_instance mi;
   mi.command("#msh metaprogram mode");
 
-  ASSERT_EQ(comment({paragraph("display preprocessed commands is off")}),
+  ASSERT_EQ(comment("display preprocessed commands is off"),
             mi.command("#msh preprocessed echo").front());
-  ASSERT_EQ(comment({paragraph("display C++ errors is on")}),
+  ASSERT_EQ(comment("display C++ errors is on"),
             mi.command("#msh show cpp_errors").front());
-  ASSERT_EQ(comment({paragraph("evaluation of metaprograms is on")}),
+  ASSERT_EQ(comment("evaluation of metaprograms is on"),
             mi.command("#msh metaprogram evaluation").front());
 }
 

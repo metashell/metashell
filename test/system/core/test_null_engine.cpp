@@ -91,11 +91,10 @@ TEST(null_engine, cpp_validator)
 
 TEST(null_engine, configs)
 {
-  ASSERT_EQ(comment({paragraph(" * default")}),
-            with_null_engine("#msh config").front());
+  ASSERT_EQ(comment(" * default"), with_null_engine("#msh config").front());
 
-  ASSERT_EQ(comment({paragraph("{\"name\":\"default\",\"engine\":\"null\","
-                               "\"engine_args\":[],\"use_precompiled_headers\":"
-                               "true,\"preprocessor_mode\":false}")}),
+  ASSERT_EQ(comment("{\"name\":\"default\",\"engine\":\"null\","
+                    "\"engine_args\":[],\"use_precompiled_headers\":"
+                    "true,\"preprocessor_mode\":false}"),
             with_null_engine("#msh config show default").front());
 }

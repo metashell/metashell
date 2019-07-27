@@ -45,15 +45,15 @@ namespace metashell
       std::sort(_features.begin(), _features.end());
     }
 
-    std::unique_ptr<iface::engine>
-    engine_entry::build(const data::config& config_,
-                        const boost::filesystem::path& internal_dir_,
-                        const boost::filesystem::path& temp_dir_,
-                        const boost::filesystem::path& env_filename_,
-                        const std::map<std::string, engine_entry>& engines_,
-                        iface::environment_detector& env_detector_,
-                        iface::displayer& displayer_,
-                        logger* logger_) const
+    std::unique_ptr<iface::engine> engine_entry::build(
+        const data::config& config_,
+        const boost::filesystem::path& internal_dir_,
+        const boost::filesystem::path& temp_dir_,
+        const boost::filesystem::path& env_filename_,
+        const std::map<data::engine_name, engine_entry>& engines_,
+        iface::environment_detector& env_detector_,
+        iface::displayer& displayer_,
+        logger* logger_) const
     {
       return _factory(config_, internal_dir_, temp_dir_, env_filename_,
                       engines_, env_detector_, displayer_, logger_);

@@ -1,5 +1,8 @@
+#ifndef METASHELL_PRAGMA_ENGINE_SHOW_HPP
+#define METASHELL_PRAGMA_ENGINE_SHOW_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,17 +17,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/some_feature_not_supported.hpp>
+#include <metashell/pragma/without_arguments.hpp>
 
 namespace metashell
 {
-  namespace data
+  namespace pragma
   {
-    some_feature_not_supported::some_feature_not_supported(
-        const engine_name& engine_, const feature& feature_)
-      : exception("Feature " + to_string(feature_) +
-                  " is not supported by the " + engine_ + " engine.")
+    class engine_show : public without_arguments
     {
-    }
+    public:
+      virtual std::string description() const override;
+
+      virtual void run(iface::shell& shell_,
+                       iface::displayer& displayer_) const override;
+    };
   }
 }
+
+#endif

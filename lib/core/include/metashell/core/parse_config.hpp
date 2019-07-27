@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/config.hpp>
+#include <metashell/data/engine_name.hpp>
 
 #include <metashell/core/engine_entry.hpp>
 
@@ -25,7 +26,6 @@
 
 #include <iosfwd>
 #include <map>
-#include <string>
 
 namespace metashell
 {
@@ -53,7 +53,7 @@ namespace metashell
     parse_config_result
     parse_config(int argc_,
                  const char* argv_[],
-                 const std::map<std::string, engine_entry>& engines_,
+                 const std::map<data::engine_name, engine_entry>& engines_,
                  iface::environment_detector& env_detector_,
                  std::ostream* out_ = 0,
                  std::ostream* err_ = 0);

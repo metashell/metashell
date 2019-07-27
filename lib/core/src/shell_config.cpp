@@ -31,7 +31,7 @@ namespace metashell
       out_.string(cfg_.name.value());
 
       out_.key("engine");
-      out_.string(cfg_.engine);
+      out_.string(cfg_.engine.value());
 
       out_.key("engine_args");
       out_.start_array();

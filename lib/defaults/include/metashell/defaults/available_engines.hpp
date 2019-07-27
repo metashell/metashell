@@ -17,16 +17,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/engine_name.hpp>
+
 #include <metashell/core/engine_entry.hpp>
 
 #include <map>
-#include <string>
 
 namespace metashell
 {
   namespace defaults
   {
-    std::map<std::string, core::engine_entry> available_engines();
+    std::map<data::engine_name, core::engine_entry> available_engines();
   }
 }
 

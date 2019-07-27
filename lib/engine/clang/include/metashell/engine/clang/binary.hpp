@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/cpp_code.hpp>
+#include <metashell/data/engine_name.hpp>
 #include <metashell/data/result.hpp>
 
 #include <metashell/iface/displayer.hpp>
@@ -71,7 +72,7 @@ namespace metashell
       find_clang(bool use_internal_templight_,
                  const std::vector<std::string>& extra_clang_args_,
                  const std::string& metashell_binary_,
-                 const std::string& engine_,
+                 const data::engine_name& engine_,
                  iface::environment_detector& env_detector_,
                  iface::displayer& displayer_,
                  core::logger* logger_);

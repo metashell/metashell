@@ -44,15 +44,15 @@ namespace metashell
         }
 
         template <bool UseTemplightHeaders>
-        std::unique_ptr<iface::engine>
-        create_wave_engine(const data::config& config_,
-                           const boost::filesystem::path& internal_dir_,
-                           const boost::filesystem::path&,
-                           const boost::filesystem::path&,
-                           const std::map<std::string, core::engine_entry>&,
-                           iface::environment_detector& env_detector_,
-                           iface::displayer& displayer_,
-                           core::logger* logger_)
+        std::unique_ptr<iface::engine> create_wave_engine(
+            const data::config& config_,
+            const boost::filesystem::path& internal_dir_,
+            const boost::filesystem::path&,
+            const boost::filesystem::path&,
+            const std::map<data::engine_name, core::engine_entry>&,
+            iface::environment_detector& env_detector_,
+            iface::displayer& displayer_,
+            core::logger* logger_)
         {
           using core::not_supported;
 
@@ -61,6 +61,7 @@ namespace metashell
               config_.metashell_binary, internal_dir_, env_detector_,
               displayer_, logger_);
           return make_engine(
+              UseTemplightHeaders ? name_with_templight_headers() : name(),
               config_.active_shell_config().engine, not_supported(),
               preprocessor_shell(cfg), not_supported(), header_discoverer(cfg),
               not_supported(), cpp_validator(cfg), macro_discovery(cfg),
@@ -83,7 +84,14 @@ namespace metashell
         }
       } // anonymous namespace
 
+      data::engine_name name() { return data::engine_name("pure_wave"); }
+
       core::engine_entry entry() { return get_engine_entry<false>(); }
+
+      data::engine_name name_with_templight_headers()
+      {
+        return data::engine_name("wave");
+      }
 
       core::engine_entry entry_with_templight_headers()
       {

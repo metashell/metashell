@@ -54,9 +54,9 @@ TEST(shell_environment, extending_with_pragma_warns)
 
   ASSERT_EQ(
       (std::vector<json_string>{
-          to_json_string(comment({paragraph(
+          to_json_string(comment(
               "You don't need the environment add pragma to add this to the"
-              " environment. The following command does this as well:")})),
+              " environment. The following command does this as well:")),
           to_json_string(cpp_code("typedef int x;")),
           to_json_string(prompt(">"))}),
       mi.command("#pragma metashell environment add typedef int x;"));
@@ -87,12 +87,12 @@ TEST(shell_environment, restoring_after_reset_from_environment_stack)
   metashell_instance mi;
   mi.command("typedef int foo;");
 
-  ASSERT_EQ(comment({paragraph("Environment stack has 1 entry")}),
+  ASSERT_EQ(comment("Environment stack has 1 entry"),
             mi.command("#pragma metashell environment push").front());
 
   mi.command("#pragma metashell environment reset");
 
-  ASSERT_EQ(comment({paragraph("Environment stack is empty")}),
+  ASSERT_EQ(comment("Environment stack is empty"),
             mi.command("#pragma metashell environment pop").front());
 
   ASSERT_EQ(type("int"), mi.command("foo").front());

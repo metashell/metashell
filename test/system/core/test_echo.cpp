@@ -23,6 +23,6 @@ using namespace metashell::system_test;
 
 TEST(echo, tests)
 {
-  ASSERT_EQ(comment({paragraph("foo bar")}),
+  ASSERT_EQ(comment("foo bar"),
             metashell_instance().command("#msh echo foo bar").front());
 }

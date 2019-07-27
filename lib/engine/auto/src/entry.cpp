@@ -43,7 +43,7 @@ namespace metashell
         }
 
         std::vector<data::feature> supported_features(
-            const std::map<std::string, core::engine_entry>& engines_)
+            const std::map<data::engine_name, core::engine_entry>& engines_)
         {
           std::set<data::feature> result;
 
@@ -58,15 +58,15 @@ namespace metashell
           return std::vector<data::feature>(result.begin(), result.end());
         }
 
-        std::unique_ptr<iface::engine>
-        choose_engine(const data::config& config_,
-                      const boost::filesystem::path& internal_dir_,
-                      const boost::filesystem::path& temp_dir_,
-                      const boost::filesystem::path& env_filename_,
-                      const std::map<std::string, core::engine_entry>& engines_,
-                      iface::environment_detector& env_detector_,
-                      iface::displayer& displayer_,
-                      core::logger* logger_)
+        std::unique_ptr<iface::engine> choose_engine(
+            const data::config& config_,
+            const boost::filesystem::path& internal_dir_,
+            const boost::filesystem::path& temp_dir_,
+            const boost::filesystem::path& env_filename_,
+            const std::map<data::engine_name, core::engine_entry>& engines_,
+            iface::environment_detector& env_detector_,
+            iface::displayer& displayer_,
+            core::logger* logger_)
         {
           const data::shell_config& cfg = config_.active_shell_config();
 
@@ -76,7 +76,7 @@ namespace metashell
               logger_,
               "auto engine determining engine to use. Arguments: " + args);
 
-          std::vector<std::string> usable;
+          std::vector<data::engine_name> usable;
 
           for (const auto& engine : engines_)
           {
@@ -117,18 +117,21 @@ namespace metashell
                 "following arguments " +
                 args + ". Please use one of " +
                 boost::algorithm::join(
-                    usable | boost::adaptors::transformed(
-                                 [](const std::string& e_) -> std::string {
-                                   return "\"--engine " + e_ + "\"";
-                                 }),
+                    usable |
+                        boost::adaptors::transformed(
+                            [](const data::engine_name& e_) -> std::string {
+                              return "\"--engine " + e_ + "\"";
+                            }),
                     ", ") +
                 "instead of \"--engine auto\".");
           }
         }
       }
 
+      data::engine_name name() { return data::engine_name("auto"); }
+
       core::engine_entry
-      entry(const std::map<std::string, core::engine_entry>& engines_)
+      entry(const std::map<data::engine_name, core::engine_entry>& engines_)
       {
         return core::engine_entry(
             choose_engine, "",

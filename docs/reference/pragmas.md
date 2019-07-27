@@ -27,6 +27,9 @@ Shows the details of a config.
 * __`#msh echo <text>`__ <br />
 Display a comment containing <text>.
 
+* __`#msh engine show`__ <br />
+Displays information about the current engine.
+
 * __`#msh environment`__ <br />
 Displays the entire content of the environment.
 

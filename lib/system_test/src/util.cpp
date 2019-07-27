@@ -20,6 +20,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 
 #include <map>
+#include <stdexcept>
 #include <vector>
 
 namespace metashell
@@ -112,7 +113,7 @@ namespace metashell
         case '\"':
         case '\'':
           end = write_to(end, '\\');
-        // [[fallthrough]];
+          [[fallthrough]];
         default:
           end = write_to(end, c);
         }
@@ -127,6 +128,24 @@ namespace metashell
 #else
       return "\n";
 #endif
+    }
+
+    void write_file(const boost::filesystem::path& p_,
+                    const std::string& content_)
+    {
+      const std::string p = p_.string();
+      std::ofstream f(p);
+      if (f)
+      {
+        if (!(f << content_))
+        {
+          throw std::runtime_error("Failed to write into file " + p);
+        }
+      }
+      else
+      {
+        throw std::runtime_error("Failed to create file " + p);
+      }
     }
   }
 }

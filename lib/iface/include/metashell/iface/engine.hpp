@@ -26,6 +26,8 @@
 #include <metashell/iface/preprocessor_tracer.hpp>
 #include <metashell/iface/type_shell.hpp>
 
+#include <metashell/data/engine_name.hpp>
+
 namespace metashell
 {
   namespace iface
@@ -34,6 +36,10 @@ namespace metashell
     {
     public:
       virtual ~engine() {}
+
+      virtual data::engine_name name() const = 0;
+
+      virtual data::engine_name display_name() const = 0;
 
       virtual iface::type_shell& type_shell() = 0;
       virtual const iface::type_shell& type_shell() const = 0;
@@ -59,6 +65,104 @@ namespace metashell
       virtual iface::preprocessor_tracer& preprocessor_tracer() = 0;
       virtual const iface::preprocessor_tracer& preprocessor_tracer() const = 0;
     };
+
+    namespace impl
+    {
+      template <class Feature>
+      struct get;
+
+      template <>
+      struct get<type_shell>
+      {
+        template <class Engine>
+        static auto& run(Engine& engine_)
+        {
+          return engine_.type_shell();
+        }
+      };
+
+      template <>
+      struct get<preprocessor_shell>
+      {
+        template <class Engine>
+        static auto& run(Engine& engine_)
+        {
+          return engine_.preprocessor_shell();
+        }
+      };
+
+      template <>
+      struct get<code_completer>
+      {
+        template <class Engine>
+        static auto& run(Engine& engine_)
+        {
+          return engine_.code_completer();
+        }
+      };
+
+      template <>
+      struct get<header_discoverer>
+      {
+        template <class Engine>
+        static auto& run(Engine& engine_)
+        {
+          return engine_.header_discoverer();
+        }
+      };
+
+      template <>
+      struct get<metaprogram_tracer>
+      {
+        template <class Engine>
+        static auto& run(Engine& engine_)
+        {
+          return engine_.metaprogram_tracer();
+        }
+      };
+
+      template <>
+      struct get<cpp_validator>
+      {
+        template <class Engine>
+        static auto& run(Engine& engine_)
+        {
+          return engine_.cpp_validator();
+        }
+      };
+
+      template <>
+      struct get<macro_discovery>
+      {
+        template <class Engine>
+        static auto& run(Engine& engine_)
+        {
+          return engine_.macro_discovery();
+        }
+      };
+
+      template <>
+      struct get<preprocessor_tracer>
+      {
+        template <class Engine>
+        static auto& run(Engine& engine_)
+        {
+          return engine_.preprocessor_tracer();
+        }
+      };
+    }
+
+    template <class Feature>
+    Feature& get(engine& engine_)
+    {
+      return impl::get<Feature>::run(engine_);
+    }
+
+    template <class Feature>
+    const Feature& get(const engine& engine_)
+    {
+      return impl::get<Feature>::run(engine_);
+    }
   }
 }
 

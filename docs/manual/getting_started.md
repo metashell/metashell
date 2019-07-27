@@ -7,6 +7,39 @@ This section presents how to use Metashell to do simple debugging.
 You can try Metashell in your browser without installing anything. You can find
 an online demo [here](../about/demo/index.html).
 
+## Using Metashell on your C++ project
+
+If you are using [CMake](https://cmake.org/), you can easily debug the code you
+are working on using Metashell. Make sure, that you enable
+[`CMAKE_EXPORT_COMPILE_COMMANDS`](https://cmake.org/cmake/help/latest/variable/CMAKE_EXPORT_COMPILE_COMMANDS.html)
+in order to generate `compile_commands.json` in the directory you run `cmake`
+from. Once you have that file, Metashell can load the compilation flags
+(eg. the ones setting the include path) from that file:
+
+```
+$ metashell --load_compile_commands <path to compile_commands.json>
+```
+
+Once Metashell has started, you will need to select the compilation unit,
+whose compilation flags you would like to use. You can list them using the
+following command:
+
+```cpp
+> #msh config
+```
+
+You can load the one you would like to debug:
+
+```cpp
+> #msh config load <name of the config>
+```
+
+Note that Metashell will detect the compiler you use for building your code and
+use the same compiler in the backend.
+[GCC support](../reference/engines.html#gcc) is currently very limited in
+Metashell, it is recommended to compile your code with
+[Clang](http://clang.llvm.org/) when using Metashell.
+
 ## Evaluating simple expressions
 
 Let's look at how to evaluate the expression `6 + 7`. If you have access to

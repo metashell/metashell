@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/engine_name.hpp>
 #include <metashell/data/feature.hpp>
 #include <metashell/data/markdown_string.hpp>
 
@@ -48,7 +49,7 @@ namespace metashell
             const boost::filesystem::path& internal_dir_,
             const boost::filesystem::path& temp_dir_,
             const boost::filesystem::path& env_filename_,
-            const std::map<std::string, engine_entry>& engines_,
+            const std::map<data::engine_name, engine_entry>& engines_,
             iface::environment_detector& env_detector_,
             iface::displayer& displayer_,
             logger* logger_) const;

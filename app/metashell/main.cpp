@@ -72,8 +72,8 @@ int main(int argc_, const char* argv_[])
     using metashell::core::parse_config;
     using metashell::core::parse_config_result;
 
-    const std::map<std::string, metashell::core::engine_entry> engines =
-        metashell::defaults::available_engines();
+    const std::map<metashell::data::engine_name, metashell::core::engine_entry>
+        engines = metashell::defaults::available_engines();
 
     metashell::core::default_environment_detector det(argv_[0]);
 
@@ -130,7 +130,12 @@ int main(int argc_, const char* argv_[])
                   "Engine " + config_.active_shell_config().engine +
                   " not found. Available engines: " +
                   boost::algorithm::join(
-                      engines | boost::adaptors::map_keys, ", "));
+                      engines | boost::adaptors::map_keys |
+                          boost::adaptors::transformed(
+                              [](const metashell::data::engine_name& engine_) {
+                                return to_string(engine_);
+                              }),
+                      ", "));
             }
             else
             {

@@ -26,10 +26,10 @@ using namespace metashell::system_test;
 TEST(precompiled_headers, enabling_and_disabling)
 {
   const std::vector<json_string> is_on{
-      to_json_string(comment({paragraph("precompiled header usage is on")})),
+      to_json_string(comment("precompiled header usage is on")),
       to_json_string(prompt(">"))};
   const std::vector<json_string> is_off{
-      to_json_string(comment({paragraph("precompiled header usage is off")})),
+      to_json_string(comment("precompiled header usage is off")),
       to_json_string(prompt(">"))};
 
   metashell_instance mi;

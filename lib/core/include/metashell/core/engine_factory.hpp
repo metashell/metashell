@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/config.hpp>
+#include <metashell/data/engine_name.hpp>
 
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/engine.hpp>
@@ -31,7 +32,6 @@
 #include <functional>
 #include <map>
 #include <memory>
-#include <string>
 
 namespace metashell
 {
@@ -42,7 +42,7 @@ namespace metashell
         const boost::filesystem::path&,
         const boost::filesystem::path&,
         const boost::filesystem::path&,
-        const std::map<std::string, engine_entry>&,
+        const std::map<data::engine_name, engine_entry>&,
         iface::environment_detector&,
         iface::displayer&,
         logger*)>

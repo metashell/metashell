@@ -5,6 +5,15 @@
 * New features
     * New engine: `auto`. It chooses the engine to use based on the compiler
       specified in the engine arguments.
+    * Support for displaying the currently used engine (`#msh engine show`)
+    * Support loading compilation flags from `compile_commands.json` generated
+      by CMake.
+
+* Fixes
+    * When multiple shell configs use the same engine with different engine
+      arguments, Metashell can now use the correct arguments for each config
+      instead of using the arguments the shell config had, which was loaded
+      first.
 
 * Changes to existing behaviour
     * **Breaking change** Regular expression syntax for breakpoints changes
@@ -15,6 +24,8 @@
     * The default engine is `auto`.
     * Improved error messages for invalid mdb commands.
     * Improved input validation
+    * Display the name of the underlying engine in error messages about missing
+      features while using the `auto` engine
 
 ## Version 4.0.0
 

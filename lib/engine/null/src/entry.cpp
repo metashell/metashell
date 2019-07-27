@@ -30,6 +30,8 @@ namespace metashell
         std::vector<data::feature> supported_features() { return {}; }
       }
 
+      data::engine_name name() { return data::engine_name("null"); }
+
       core::engine_entry entry()
       {
         using core::not_supported;
@@ -37,10 +39,10 @@ namespace metashell
         return core::engine_entry(
             [](const data::config& config_, const boost::filesystem::path&,
                const boost::filesystem::path&, const boost::filesystem::path&,
-               const std::map<std::string, core::engine_entry>&,
+               const std::map<data::engine_name, core::engine_entry>&,
                iface::environment_detector&, iface::displayer&, core::logger*) {
               return core::make_engine(
-                  config_.active_shell_config().engine, not_supported(),
+                  name(), config_.active_shell_config().engine, not_supported(),
                   not_supported(), not_supported(), not_supported(),
                   not_supported(), not_supported(), not_supported(),
                   not_supported(), supported_features());
