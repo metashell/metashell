@@ -71,7 +71,7 @@ namespace
     return metashell_instance(
                {"--load_compile_commands", compile_commands.string()},
                boost::filesystem::path(), false)
-        .command("#msh config")
+        .command("#msh all config")
         .front();
   }
 }

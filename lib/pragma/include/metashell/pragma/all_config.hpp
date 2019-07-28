@@ -1,5 +1,5 @@
-#ifndef METASHELL_PRAGMA_CONFIG_HPP
-#define METASHELL_PRAGMA_CONFIG_HPP
+#ifndef METASHELL_PRAGMA_ALL_CONFIG_HPP
+#define METASHELL_PRAGMA_ALL_CONFIG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
@@ -25,7 +25,7 @@ namespace metashell
 {
   namespace pragma
   {
-    class config : public without_arguments
+    class all_config : public without_arguments
     {
     public:
       virtual std::string description() const override;

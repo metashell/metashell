@@ -26,6 +26,8 @@
     * Improved input validation
     * Display the name of the underlying engine in error messages about missing
       features while using the `auto` engine
+    * **Breaking change** The `#msh config` pragma has been renamed to
+      `#msh all config`.
 
 ## Version 4.0.0
 

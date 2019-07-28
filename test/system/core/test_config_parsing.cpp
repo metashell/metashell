@@ -215,24 +215,24 @@ TEST(config_parsing, parsed_config)
 {
   config_parse_test t;
 
-  ASSERT_EQ(
-      comment(" * default"), t.cmd_with_configs({}, {"#msh config"}).front());
+  ASSERT_EQ(comment(" * default"),
+            t.cmd_with_configs({}, {"#msh all config"}).front());
 
   ASSERT_EQ(
       comment(" * default\n   test"),
-      t.cmd_with_configs({"[" + test_config("test") + "]"}, {"#msh config"})
+      t.cmd_with_configs({"[" + test_config("test") + "]"}, {"#msh all config"})
           .front());
 
   ASSERT_EQ(comment(" * default\n   test1\n   test2"),
             t.cmd_with_configs({"[" + test_config("test1") + ", " +
                                 test_config("test2") + "]"},
-                               {"#msh config"})
+                               {"#msh all config"})
                 .front());
 
   ASSERT_EQ(comment(" * default\n   test1\n   test2"),
             t.cmd_with_configs({"[" + test_config("test1") + "]",
                                 "[" + test_config("test2") + "]"},
-                               {"#msh config"})
+                               {"#msh all config"})
                 .front());
 
   ASSERT_EQ(comment(test_config("test")),
@@ -245,9 +245,10 @@ TEST(config_parsing, parsed_config)
                  {"[" + test_config("test1") + "]"}, {"#msh config show test2"})
                 .front());
 
-  ASSERT_EQ(comment(" * default\n   1"),
-            t.cmd_with_configs({"[" + test_config("1") + "]"}, {"#msh config"})
-                .front());
+  ASSERT_EQ(
+      comment(" * default\n   1"),
+      t.cmd_with_configs({"[" + test_config("1") + "]"}, {"#msh all config"})
+          .front());
 }
 
 TEST(config_parsing, switching_config)
@@ -265,9 +266,9 @@ TEST(config_parsing, switching_config)
                                                    "typedef foo bar;",
                                                    "#msh config load default"})
                           .front());
-  ASSERT_EQ(
-      comment("   default\n * wave"),
-      t.cmd_with_configs(configs, {"#msh config load wave", "typedef foo bar;",
-                                   "#msh config load default", "#msh config"})
-          .front());
+  ASSERT_EQ(comment("   default\n * wave"),
+            t.cmd_with_configs(
+                 configs, {"#msh config load wave", "typedef foo bar;",
+                           "#msh config load default", "#msh all config"})
+                .front());
 }

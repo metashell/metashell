@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma/config.hpp>
+#include <metashell/pragma/all_config.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/transformed.hpp>
@@ -23,12 +23,13 @@ namespace metashell
 {
   namespace pragma
   {
-    std::string config::description() const
+    std::string all_config::description() const
     {
       return "Lists all available configs.";
     }
 
-    void config::run(iface::shell& shell_, iface::displayer& displayer_) const
+    void all_config::run(iface::shell& shell_,
+                         iface::displayer& displayer_) const
     {
       using boost::algorithm::join;
       using boost::adaptors::transformed;
