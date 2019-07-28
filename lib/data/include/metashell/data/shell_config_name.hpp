@@ -88,6 +88,7 @@ namespace metashell
       shell_config_name& operator+=(const shell_config_name&);
       shell_config_name& operator+=(const element&);
 
+      element front() const;
       element back() const;
 
     private:
@@ -151,6 +152,9 @@ namespace metashell
             return std::min(sub_result_, common_prefix_length(first, name_));
           });
     }
+
+    std::string
+    to_string_with_standard_suffix(const shell_config_name::element&);
   }
 }
 

@@ -18,6 +18,9 @@ Metashell supports the following pragmas:
 * __`#msh all config`__ <br />
 Lists all available configs.
 
+* __`#msh config [<name>]`__ <br />
+Lists the available configs and config folders in config folder <name>.
+
 * __`#msh config load <name>`__ <br />
 Loads the config in the shell (keeping the environment).
 

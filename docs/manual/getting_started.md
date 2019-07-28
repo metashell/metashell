@@ -28,7 +28,16 @@ following command:
 > #msh config
 ```
 
-You can load the one you would like to debug:
+This command will list the directories containing source files. You can list
+the content of a directory with the same command:
+
+```cpp
+> #msh config <name of directory>
+```
+
+Using this command repeatedly on subdirectories will get you to the source
+files of your project. Once you know which one you'd like to debug, you can
+load it:
 
 ```cpp
 > #msh config load <name of the config>

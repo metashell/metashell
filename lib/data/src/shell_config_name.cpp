@@ -28,6 +28,8 @@ namespace metashell
   {
     namespace
     {
+      const char path_separators[] = "/\\";
+
       bool path_separator(char c_) { return c_ == '/' || c_ == '\\'; }
     }
 
@@ -146,7 +148,7 @@ namespace metashell
         return *this;
       }
 
-      const auto next = _str->find_first_of("/\\", _next_from);
+      const auto next = _str->find_first_of(path_separators, _next_from);
       if (next == std::string::npos)
       {
         _value = element(_str->substr(_next_from));
@@ -224,9 +226,17 @@ namespace metashell
       return *this;
     }
 
+    shell_config_name::element shell_config_name::front() const
+    {
+      const auto sep = _value.find_first_of(path_separators);
+      return sep == std::string::npos ?
+                 element(_value) :
+                 element(_value.substr(0, sep), _value[sep]);
+    }
+
     shell_config_name::element shell_config_name::back() const
     {
-      const auto sep = _value.find_last_of("/\\");
+      const auto sep = _value.find_last_of(path_separators);
       return element(sep == std::string::npos ? _value :
                                                 _value.substr(sep + 1));
     }
@@ -297,6 +307,12 @@ namespace metashell
                              std::string::size_type len_)
     {
       return shell_config_name(s_.value().substr(pos_, len_));
+    }
+
+    std::string
+    to_string_with_standard_suffix(const shell_config_name::element& s_)
+    {
+      return s_.value() + (s_.separator() ? "/" : "");
     }
   }
 }

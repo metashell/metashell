@@ -17,6 +17,7 @@
 #include <metashell/defaults/pragma_map.hpp>
 
 #include <metashell/pragma/all_config.hpp>
+#include <metashell/pragma/config.hpp>
 #include <metashell/pragma/config_load.hpp>
 #include <metashell/pragma/config_show.hpp>
 #include <metashell/pragma/echo.hpp>
@@ -181,6 +182,8 @@ namespace metashell
 
       result.emplace(
           sv{"config", "load"}, std::make_unique<pragma::config_load>());
+
+      result.emplace(sv{"config"}, std::make_unique<pragma::config>());
 
       result.emplace(sv{"quit"}, std::make_unique<pragma::quit>());
 

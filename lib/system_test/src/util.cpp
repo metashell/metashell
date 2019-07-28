@@ -162,11 +162,11 @@ namespace metashell
       w.String(name_.c_str());
 
       w.Key("engine");
-      w.String("clang");
+      w.String("internal");
 
       w.Key("engine_args");
       w.StartArray();
-      w.String("arg");
+      w.String("-I.");
       w.EndArray();
 
       w.Key("use_precompiled_headers");
