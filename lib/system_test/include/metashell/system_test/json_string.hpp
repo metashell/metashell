@@ -19,6 +19,7 @@
 
 #include <boost/operators.hpp>
 
+#include <initializer_list>
 #include <iosfwd>
 #include <string>
 
@@ -26,16 +27,21 @@ namespace metashell
 {
   namespace system_test
   {
-    class json_string : boost::equality_comparable<json_string>
+    class json_string : boost::equality_comparable<json_string>,
+                        boost::addable<json_string>
     {
     public:
       explicit json_string(const std::string& json_ = std::string());
 
       const std::string& get() const;
 
+      json_string& operator+=(const json_string&);
+
     private:
       std::string _json;
     };
+
+    json_string array(std::initializer_list<json_string>);
 
     bool operator==(const json_string& a_, const json_string& b_);
     std::ostream& operator<<(std::ostream& out_, const json_string& s_);

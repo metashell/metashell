@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/json_string.hpp>
+
 #include <boost/filesystem/path.hpp>
 #include <boost/optional.hpp>
 
@@ -50,6 +52,8 @@ namespace metashell
     std::string new_line();
 
     void write_file(const boost::filesystem::path&, const std::string&);
+
+    json_string test_config(const std::string& name_);
   }
 }
 

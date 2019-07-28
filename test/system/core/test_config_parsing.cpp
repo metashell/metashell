@@ -42,7 +42,7 @@ namespace
   class config_parse_test
   {
   public:
-    std::string error_with_configs(const std::vector<std::string>& configs_)
+    std::string error_with_configs(const std::vector<json_string>& configs_)
     {
       try
       {
@@ -58,7 +58,7 @@ namespace
     }
 
     std::vector<json_string>
-    cmd_with_configs(const std::vector<std::string>& configs_,
+    cmd_with_configs(const std::vector<json_string>& configs_,
                      const std::vector<std::string>& cmds_)
     {
       metashell_instance mi(write_configs(configs_), {}, false);
@@ -80,16 +80,16 @@ namespace
     just::temp::directory _tmp;
 
     std::vector<std::string>
-    write_configs(const std::vector<std::string>& configs_)
+    write_configs(const std::vector<json_string>& configs_)
     {
       const boost::filesystem::path tmp(_tmp.path());
 
       std::vector<std::string> args;
-      for (std::vector<std::string>::size_type i = 0; i != configs_.size(); ++i)
+      for (std::vector<json_string>::size_type i = 0; i != configs_.size(); ++i)
       {
         const std::string config = (tmp / std::to_string(i)).string();
 
-        just::file::write(config, configs_[i]);
+        just::file::write(config, configs_[i].get());
 
         args.emplace_back("--load_configs");
         args.emplace_back(config);
@@ -120,14 +120,6 @@ namespace
     assert(!"This point should not be reached");
     return "";
   }
-
-  std::string test_config(const std::string& name_)
-  {
-    return "{\"name\":\"" + name_ +
-           "\",\"engine\":\"clang\","
-           "\"engine_args\":[\"arg\"],\"use_precompiled_headers\":"
-           "true,\"preprocessor_mode\":false}";
-  }
 }
 
 TEST(config_parsing, errors)
@@ -135,19 +127,21 @@ TEST(config_parsing, errors)
   const std::string nl = new_line() + new_line();
   config_parse_test t;
 
-  typedef std::pair<std::string, std::string> sp;
+  typedef std::pair<std::string, json_string> sp;
   typedef std::pair<std::string, value_type> sv;
 
-  for (sp p : {sp("integer", "13"), sp("double", "13.1"), sp("bool", "true"),
-               sp("string", "\"hello\"")})
+  for (sp p :
+       {sp("integer", json_string("13")), sp("double", json_string("13.1")),
+        sp("bool", json_string("true")),
+        sp("string", json_string("\"hello\""))})
   {
     ASSERT_EQ("JSON parsing failed: Unexpected " + p.first + " element: " +
-                  p.second + nl,
+                  p.second.get() + nl,
               t.error_with_configs({p.second}));
   }
 
   ASSERT_EQ("JSON parsing failed: Invalid key: hello" + nl,
-            t.error_with_configs({"{\"hello\":13}"}));
+            t.error_with_configs({json_string("{\"hello\":13}")}));
 
   typedef std::tuple<value_type, std::string, std::string> tup;
   const std::vector<tup> sample_value{
@@ -168,44 +162,46 @@ TEST(config_parsing, errors)
         ASSERT_EQ("JSON parsing failed: " + std::get<2>(smp) +
                       " is not a valid value for " + p.first +
                       ", which should be a " + to_string(p.second) + nl,
-                  t.error_with_configs(
-                      {"{\"" + p.first + "\":" + std::get<1>(smp) + "}"}));
+                  t.error_with_configs({json_string("{\"" + p.first + "\":" +
+                                                    std::get<1>(smp) + "}")}));
       }
     }
   }
 
   ASSERT_EQ("JSON parsing failed: Unexpected integer element: 13" + nl,
-            t.error_with_configs({"{\"engine_args\":[13]}"}));
+            t.error_with_configs({json_string("{\"engine_args\":[13]}")}));
 
   ASSERT_EQ("JSON parsing failed: Unexpected double element: 13.1" + nl,
-            t.error_with_configs({"{\"engine_args\":[13.1]}"}));
+            t.error_with_configs({json_string("{\"engine_args\":[13.1]}")}));
 
   ASSERT_EQ(
       "JSON parsing failed: false is not a valid value for engine_args, which "
       "should be a list of strings" +
           nl,
-      t.error_with_configs({"{\"engine_args\":[false]}"}));
+      t.error_with_configs({json_string("{\"engine_args\":[false]}")}));
 
   ASSERT_EQ(
       "JSON parsing failed: A list containing a list is not a valid value for "
       "engine_args, which should be a list of strings" +
           nl,
-      t.error_with_configs({"{\"engine_args\":[[]]}"}));
+      t.error_with_configs({json_string("{\"engine_args\":[[]]}")}));
 
   ASSERT_EQ("JSON parsing failed: The name of a config is missing" + nl,
-            t.error_with_configs({"{}"}));
+            t.error_with_configs({json_string("{}")}));
 
   ASSERT_EQ(
       "JSON parsing failed: More than one config provided with the name "
       "foo" +
           nl,
-      t.error_with_configs({"[{\"name\":\"foo\"},{\"name\":\"foo\"}]"}));
+      t.error_with_configs(
+          {json_string("[{\"name\":\"foo\"},{\"name\":\"foo\"}]")}));
 
   ASSERT_EQ(
       "JSON parsing failed: More than one config provided with the name "
       "foo" +
           nl,
-      t.error_with_configs({"{\"name\":\"foo\"}", "{\"name\":\"foo\"}"}));
+      t.error_with_configs({json_string("{\"name\":\"foo\"}"),
+                            json_string("{\"name\":\"foo\"}")}));
 
   ASSERT_TRUE(boost::starts_with(t.error_with_configs({test_config("")}),
                                  "Empty shell config name value"));
@@ -220,41 +216,40 @@ TEST(config_parsing, parsed_config)
 
   ASSERT_EQ(
       comment(" * default\n   test"),
-      t.cmd_with_configs({"[" + test_config("test") + "]"}, {"#msh all config"})
+      t.cmd_with_configs({array({test_config("test")})}, {"#msh all config"})
+          .front());
+
+  ASSERT_EQ(
+      comment(" * default\n   test1\n   test2"),
+      t.cmd_with_configs({array({test_config("test1"), test_config("test2")})},
+                         {"#msh all config"})
           .front());
 
   ASSERT_EQ(comment(" * default\n   test1\n   test2"),
-            t.cmd_with_configs({"[" + test_config("test1") + ", " +
-                                test_config("test2") + "]"},
-                               {"#msh all config"})
-                .front());
-
-  ASSERT_EQ(comment(" * default\n   test1\n   test2"),
-            t.cmd_with_configs({"[" + test_config("test1") + "]",
-                                "[" + test_config("test2") + "]"},
-                               {"#msh all config"})
-                .front());
-
-  ASSERT_EQ(comment(test_config("test")),
             t.cmd_with_configs(
-                 {"[" + test_config("test") + "]"}, {"#msh config show test"})
+                 {array({test_config("test1")}), array({test_config("test2")})},
+                 {"#msh all config"})
+                .front());
+
+  ASSERT_EQ(comment(test_config("test").get()),
+            t.cmd_with_configs(
+                 {array({test_config("test")})}, {"#msh config show test"})
                 .front());
 
   ASSERT_EQ(error("Error: Config test2 not found."),
             t.cmd_with_configs(
-                 {"[" + test_config("test1") + "]"}, {"#msh config show test2"})
+                 {array({test_config("test1")})}, {"#msh config show test2"})
                 .front());
 
-  ASSERT_EQ(
-      comment(" * default\n   1"),
-      t.cmd_with_configs({"[" + test_config("1") + "]"}, {"#msh all config"})
-          .front());
+  ASSERT_EQ(comment(" * default\n   1"),
+            t.cmd_with_configs({array({test_config("1")})}, {"#msh all config"})
+                .front());
 }
 
 TEST(config_parsing, switching_config)
 {
-  const std::vector<std::string> configs{
-      "[{\"name\":\"wave\",\"engine\":\"wave\"}]"};
+  const std::vector<json_string> configs{
+      json_string("[{\"name\":\"wave\",\"engine\":\"wave\"}]")};
   config_parse_test t;
 
   ASSERT_EQ(
