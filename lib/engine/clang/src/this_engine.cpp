@@ -31,8 +31,9 @@ namespace metashell
       {
         try
         {
-          return regex_search(process::run(clang_, {"-v"}, "").standard_error,
-                              std::regex("^clang version "));
+          return regex_search(
+              process::run(clang_, {"-v"}, "").standard_error,
+              std::regex("^(clang version |Apple LLVM version )"));
         }
         catch (const process::exception&)
         {
