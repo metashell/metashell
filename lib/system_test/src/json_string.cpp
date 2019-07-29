@@ -16,8 +16,10 @@
 
 #include <metashell/system_test/json_string.hpp>
 
-#include <iostream>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptor/transformed.hpp>
 
+#include <iostream>
 #include <regex>
 
 namespace metashell
@@ -27,6 +29,12 @@ namespace metashell
     json_string::json_string(const std::string& json_) : _json(json_) {}
 
     const std::string& json_string::get() const { return _json; }
+
+    json_string& json_string::operator+=(const json_string& s_)
+    {
+      _json += s_._json;
+      return *this;
+    }
 
     bool operator==(const json_string& a_, const json_string& b_)
     {
@@ -44,6 +52,16 @@ namespace metashell
     std::ostream& operator<<(std::ostream& out_, const json_string& s_)
     {
       return out_ << s_.get();
+    }
+
+    json_string array(std::initializer_list<json_string> items_)
+    {
+      return json_string(
+          "[" + boost::algorithm::join(
+                    items_ | boost::adaptors::transformed([](
+                                 const json_string& s_) { return s_.get(); }),
+                    ",") +
+          "]");
     }
   }
 }

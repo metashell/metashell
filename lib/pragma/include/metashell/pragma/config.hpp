@@ -2,7 +2,7 @@
 #define METASHELL_PRAGMA_CONFIG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma/without_arguments.hpp>
+#include <metashell/iface/pragma_handler.hpp>
 
 #include <string>
 
@@ -25,12 +25,17 @@ namespace metashell
 {
   namespace pragma
   {
-    class config : public without_arguments
+    class config : public iface::pragma_handler
     {
     public:
+      virtual std::string arguments() const override;
       virtual std::string description() const override;
 
-      virtual void run(iface::shell& shell_,
+      virtual void run(const data::command::iterator& name_begin_,
+                       const data::command::iterator& name_end_,
+                       const data::command::iterator& args_begin_,
+                       const data::command::iterator& args_end_,
+                       iface::shell& shell_,
                        iface::displayer& displayer_) const override;
     };
   }
