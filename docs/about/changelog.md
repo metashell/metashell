@@ -26,6 +26,10 @@
     * Improved input validation
     * Display the name of the underlying engine in error messages about missing
       features while using the `auto` engine
+    * **Breaking change** When shell configs have path separators (`\\` or `/`)
+      in their name, `#msh config` treats them as directories and behaves
+      similar to the `ls` command. The old behvaiour of `#msh config` is
+      available using the `#msh all config` pragma.
 
 ## Version 4.0.0
 

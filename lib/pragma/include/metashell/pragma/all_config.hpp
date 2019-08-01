@@ -1,8 +1,8 @@
-#ifndef METASHELL_SYSTEM_TEST_JSON_STRING_HPP
-#define METASHELL_SYSTEM_TEST_JSON_STRING_HPP
+#ifndef METASHELL_PRAGMA_ALL_CONFIG_HPP
+#define METASHELL_PRAGMA_ALL_CONFIG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,34 +17,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/operators.hpp>
+#include <metashell/pragma/without_arguments.hpp>
 
-#include <initializer_list>
-#include <iosfwd>
 #include <string>
 
 namespace metashell
 {
-  namespace system_test
+  namespace pragma
   {
-    class json_string : boost::equality_comparable<json_string>,
-                        boost::addable<json_string>
+    class all_config : public without_arguments
     {
     public:
-      explicit json_string(const std::string& json_ = std::string());
+      virtual std::string description() const override;
 
-      const std::string& get() const;
-
-      json_string& operator+=(const json_string&);
-
-    private:
-      std::string _json;
+      virtual void run(iface::shell& shell_,
+                       iface::displayer& displayer_) const override;
     };
-
-    json_string array(std::initializer_list<json_string>);
-
-    bool operator==(const json_string& a_, const json_string& b_);
-    std::ostream& operator<<(std::ostream& out_, const json_string& s_);
   }
 }
 

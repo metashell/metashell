@@ -19,6 +19,9 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
 #include <map>
 #include <stdexcept>
 #include <vector>
@@ -146,6 +149,35 @@ namespace metashell
       {
         throw std::runtime_error("Failed to create file " + p);
       }
+    }
+
+    json_string test_config(const std::string& name_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+      w.StartObject();
+
+      w.Key("name");
+      w.String(name_.c_str());
+
+      w.Key("engine");
+      w.String("internal");
+
+      w.Key("engine_args");
+      w.StartArray();
+      w.String("-I.");
+      w.EndArray();
+
+      w.Key("use_precompiled_headers");
+      w.Bool(true);
+
+      w.Key("preprocessor_mode");
+      w.Bool(false);
+
+      w.EndObject();
+
+      return json_string(buff.GetString());
     }
   }
 }

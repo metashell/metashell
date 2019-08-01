@@ -15,8 +15,11 @@ complete list of accepted forms. All of them are equivalent:
 Metashell supports the following pragmas:
 
 <!-- pragma_info -->
-* __`#msh config`__ <br />
+* __`#msh all config`__ <br />
 Lists all available configs.
+
+* __`#msh config [<name>]`__ <br />
+Lists the available configs and config folders in config folder <name>.
 
 * __`#msh config load <name>`__ <br />
 Loads the config in the shell (keeping the environment).
