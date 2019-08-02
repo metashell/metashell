@@ -59,11 +59,11 @@ namespace
 
 TEST(argument_parsing, recognising_engine_args)
 {
-  const std::vector<std::string> engine_args =
-      parse_config({"--", "foo"}).cfg.active_shell_config().engine_args;
+  const data::command_line_argument_list engine_args(
+      parse_config({"--", "foo"}).cfg.active_shell_config().engine_args);
 
   ASSERT_EQ(1u, engine_args.size());
-  ASSERT_EQ("foo", engine_args.front());
+  ASSERT_EQ(data::command_line_argument("foo"), engine_args.front());
 }
 
 TEST(argument_parsing, engine_args_are_not_parsed)

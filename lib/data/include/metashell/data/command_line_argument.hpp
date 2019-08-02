@@ -1,5 +1,5 @@
-#ifndef METASHELL_DATA_SHELL_CONFIG_DATA_HPP
-#define METASHELL_DATA_SHELL_CONFIG_DATA_HPP
+#ifndef METASHELL_DATA_COMMAND_LINE_ARGUMENT_HPP
+#define METASHELL_DATA_COMMAND_LINE_ARGUMENT_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,21 +17,39 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/command_line_argument_list.hpp>
-#include <metashell/data/engine_name.hpp>
+#include <metashell/data/string.hpp>
+
+#include <boost/filesystem/path.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    class shell_config_data
+    class command_line_argument : string<command_line_argument>
     {
     public:
-      command_line_argument_list engine_args;
-      bool use_precompiled_headers = false;
-      engine_name engine = engine_name("auto");
-      bool preprocessor_mode = false;
+      using string<command_line_argument>::string;
+      using string<command_line_argument>::value;
+
+      explicit command_line_argument(const boost::filesystem::path&);
+      explicit command_line_argument(const char*);
+
+      template <size_t Len>
+      bool starts_with(const char (&prefix_)[Len]) const
+      {
+        return starts_with_impl(prefix_);
+      }
+
+      static constexpr const char* name_of_type()
+      {
+        return "Command line argument";
+      }
+
+    private:
+      bool starts_with_impl(const char*) const;
     };
+
+    std::string quote(const command_line_argument&);
   }
 }
 

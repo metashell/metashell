@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/command_line.hpp>
 #include <metashell/data/process_output.hpp>
 
 #include <boost/filesystem/path.hpp>
@@ -29,8 +30,7 @@ namespace metashell
   namespace process
   {
     data::process_output
-    run(const boost::filesystem::path& binary_,
-        const std::vector<std::string>& args_,
+    run(const data::command_line&,
         const std::string& input_,
         const boost::filesystem::path& cwd_ = boost::filesystem::path());
   }

@@ -1,6 +1,3 @@
-#ifndef METASHELL_ENGINE_CLANG_THIS_ENGINE_HPP
-#define METASHELL_ENGINE_CLANG_THIS_ENGINE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,18 +14,39 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/executable_path.hpp>
+#include <metashell/data/command_line.hpp>
 
 namespace metashell
 {
-  namespace engine
+  namespace data
   {
-    namespace clang
+    command_line::command_line(executable_path exe_,
+                               command_line_argument_list args_)
+      : _exe(std::move(exe_)), _args(std::move(args_))
     {
-      bool is_clang(const data::executable_path&);
-      bool is_templight(const data::executable_path&);
+    }
+
+    std::vector<const char*> command_line::argv() const
+    {
+      return _args.argv(_exe);
+    }
+
+    const executable_path& command_line::executable() const { return _exe; }
+
+    const command_line_argument_list& command_line::arguments() const
+    {
+      return _args;
+    }
+
+    std::ostream& operator<<(std::ostream& out_, const command_line& c_)
+    {
+      return out_ << to_string(c_);
+    }
+
+    std::string to_string(const command_line& c_)
+    {
+      return data::to_string(c_.executable()) + " " +
+             data::to_string(c_.arguments());
     }
   }
 }
-
-#endif

@@ -17,7 +17,6 @@
 #include <metashell/engine/vc/header_discoverer.hpp>
 
 #include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/optional.hpp>
 
@@ -35,27 +34,26 @@ namespace metashell
     {
       namespace
       {
-        boost::optional<std::string>
-        include_path_addition(const std::string& arg_)
+        boost::optional<boost::filesystem::path>
+        include_path_addition(const data::command_line_argument& arg_)
         {
-          using boost::algorithm::starts_with;
-          using boost::algorithm::ends_with;
-
-          if ((starts_with(arg_, "\"/I") || starts_with(arg_, "/I\"")) &&
-              ends_with(arg_, "\""))
+          if ((starts_with(arg_, data::command_line_argument("\"/I")) ||
+               starts_with(arg_, data::command_line_argument("/I\""))) &&
+              ends_with(arg_, data::command_line_argument("\"")))
           {
-            return arg_.substr(3, arg_.size() - 4);
+            return boost::filesystem::path(
+                substr(arg_, 3, size(arg_) - 4).value());
           }
-          else if (starts_with(arg_, "/I"))
+          else if (starts_with(arg_, data::command_line_argument("/I")))
           {
-            return arg_.substr(2);
+            return boost::filesystem::path(substr(arg_, 2).value());
           }
 
           return boost::none;
         }
 
         data::includes
-        determine_includes(const std::vector<std::string>& cl_args_)
+        determine_includes(const data::command_line_argument_list& cl_args_)
         {
           const std::string include = just::environment::get("INCLUDE");
 
@@ -70,9 +68,9 @@ namespace metashell
                   [](const boost::filesystem::path& p_) { return p_.empty(); }),
               result.sys.end());
 
-          for (const std::string& arg : cl_args_)
+          for (const data::command_line_argument& arg : cl_args_)
           {
-            if (const boost::optional<std::string> path =
+            if (const boost::optional<boost::filesystem::path> path =
                     include_path_addition(arg))
             {
               result.sys.push_back(*path);

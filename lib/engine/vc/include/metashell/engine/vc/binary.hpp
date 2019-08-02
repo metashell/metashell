@@ -17,7 +17,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/command_line_argument_list.hpp>
 #include <metashell/data/cpp_code.hpp>
+#include <metashell/data/executable_path.hpp>
 #include <metashell/data/result.hpp>
 
 #include <metashell/iface/executable.hpp>
@@ -27,7 +29,6 @@
 #include <boost/filesystem/path.hpp>
 
 #include <string>
-#include <vector>
 
 namespace metashell
 {
@@ -38,27 +39,27 @@ namespace metashell
       class binary : public iface::executable
       {
       public:
-        binary(boost::filesystem::path cl_path_,
-               std::vector<std::string> base_args_,
+        binary(data::executable_path cl_path_,
+               data::command_line_argument_list base_args_,
                boost::filesystem::path temp_dir_,
                core::logger* logger_);
 
         virtual data::process_output
-        run(const std::vector<std::string>& args_,
+        run(const data::command_line_argument_list& args_,
             const std::string& stdin_) const override;
 
         const boost::filesystem::path& temp_dir() const;
-        const std::vector<std::string>& base_args() const;
+        const data::command_line_argument_list& base_args() const;
 
       private:
-        boost::filesystem::path _cl_path;
-        std::vector<std::string> _base_args;
+        data::executable_path _cl_path;
+        data::command_line_argument_list _base_args;
         boost::filesystem::path _temp_dir;
         core::logger* _logger;
       };
 
       data::process_output run(const binary& binary_,
-                               std::vector<std::string> args_,
+                               data::command_line_argument_list args_,
                                const data::cpp_code& input_);
 
       std::string error_report_on_stdout(const data::process_output& output_);

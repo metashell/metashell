@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/command_line.hpp>
 #include <metashell/data/exit_code_t.hpp>
 #include <metashell/data/process_output.hpp>
 
@@ -35,8 +36,7 @@ namespace metashell
     {
     public:
       execution(
-          const boost::filesystem::path& binary_,
-          const std::vector<std::string>& args_,
+          const data::command_line&,
           const boost::filesystem::path& cwd_ = boost::filesystem::path());
 
       execution(const execution&) = delete;

@@ -48,18 +48,16 @@ namespace metashell
                   data::feature::cpp_validator()};
         }
 
-        bool this_engine(const std::vector<std::string>& args_)
+        bool this_engine(const data::command_line_argument_list& args_)
         {
-          if (args_.empty())
+          if (const auto first = args_.front())
           {
-            return false;
-          }
-          else
-          {
+            const data::executable_path exe(*first);
             try
             {
               const std::string dash_v =
-                  process::run(args_.front(), {"-v"}, "").standard_error;
+                  process::run(data::command_line(exe, {"-v"}), "")
+                      .standard_error;
               return regex_search(dash_v, std::regex("^Microsoft ")) &&
                      regex_search(dash_v, std::regex("[\\n\\r]cl : .*-v"));
             }
@@ -68,51 +66,52 @@ namespace metashell
               return false;
             }
           }
+          else
+          {
+            return false;
+          }
         }
 
-        std::string
-        extract_vc_binary(const std::vector<std::string>& engine_args_,
+        data::executable_path
+        extract_vc_binary(const data::command_line_argument_list& engine_args_,
                           iface::environment_detector& env_detector_,
                           const std::string& metashell_path_,
                           const data::engine_name& engine_)
         {
-          if (engine_args_.empty())
+          if (const auto first = engine_args_.front())
           {
-            const std::string sample_path =
-                "\"C:\\Program Files (x86)\\Microsoft Visual Studio "
-                "14.0\\VC\\bin\\cl.exe\"";
-            throw data::exception(
-                "The engine requires that you specify the path to cl.exe"
-                " after --. For example: " +
-                metashell_path_ + " --engine " + engine_ + " -- " +
-                sample_path);
-          }
-          else
-          {
-            const std::string path = engine_args_.front();
-            if (env_detector_.file_exists(path))
+            const data::executable_path exe(*first);
+            if (env_detector_.file_exists(exe))
             {
-              return path;
+              return exe;
             }
             else
             {
               throw data::exception(
-                  "The path specified as the vc binary to use (" + path +
-                  ") does not exist.");
+                  "The path specified as the vc binary to use (" +
+                  to_string(exe) + ") does not exist.");
             }
+          }
+          else
+          {
+            throw data::exception(
+                "The engine requires that you specify the path to cl.exe after "
+                "--. For example: " +
+                metashell_path_ + " --engine " + engine_ +
+                " -- C:\\Program Files (x86)\\Microsoft Visual Studio "
+                "14.0\\VC\\bin\\cl.exe\"");
           }
         }
 
-        std::vector<std::string>
-        vc_args(const std::vector<std::string>& extra_vc_args_,
+        data::command_line_argument_list
+        vc_args(const data::command_line_argument_list& extra_vc_args_,
                 const boost::filesystem::path& internal_dir_)
         {
-          std::vector<std::string> args{"/I" + internal_dir_.string()};
+          data::command_line_argument_list args{"/I" + internal_dir_.string()};
 
           if (extra_vc_args_.size() > 1)
           {
-            args.insert(
-                args.end(), extra_vc_args_.begin() + 1, extra_vc_args_.end());
+            args.append(extra_vc_args_.begin() + 1, extra_vc_args_.end());
           }
 
           return args;
@@ -137,11 +136,10 @@ namespace metashell
                 " from the Visual Studio Developer Prompt.");
           }
 
-          const boost::filesystem::path vc_path = extract_vc_binary(
-              config_.active_shell_config().engine_args, env_detector_,
-              config_.metashell_binary, config_.active_shell_config().engine);
           binary cbin(
-              vc_path,
+              extract_vc_binary(config_.active_shell_config().engine_args,
+                                env_detector_, config_.metashell_binary,
+                                config_.active_shell_config().engine),
               vc_args(config_.active_shell_config().engine_args, internal_dir_),
               temp_dir_, logger_);
 

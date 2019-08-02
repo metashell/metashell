@@ -70,7 +70,12 @@ namespace metashell
         {
           const data::shell_config& cfg = config_.active_shell_config();
 
-          const std::string args = boost::algorithm::join(cfg.engine_args, " ");
+          const std::string args = boost::algorithm::join(
+              cfg.engine_args | boost::adaptors::transformed(
+                                    [](const data::command_line_argument& a_) {
+                                      return a_.value();
+                                    }),
+              " ");
 
           METASHELL_LOG(
               logger_,

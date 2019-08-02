@@ -97,7 +97,8 @@ namespace
     // Metashell's internal files and headers
     path_vector_pair result{{"metashell"}, {"metashell_environment.hpp"}};
 
-    for (const std::string& arg : system_test_config::metashell_args())
+    for (const metashell::data::command_line_argument& arg :
+         system_test_config::metashell_args())
     {
       if (const auto path = include_path_addition(arg))
       {

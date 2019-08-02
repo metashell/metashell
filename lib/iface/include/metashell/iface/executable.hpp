@@ -17,10 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/command_line_argument_list.hpp>
 #include <metashell/data/process_output.hpp>
 
 #include <string>
-#include <vector>
 
 namespace metashell
 {
@@ -31,7 +31,7 @@ namespace metashell
     public:
       virtual ~executable() {}
 
-      virtual data::process_output run(const std::vector<std::string>& args_,
+      virtual data::process_output run(const data::command_line_argument_list&,
                                        const std::string& stdin_) const = 0;
     };
   }

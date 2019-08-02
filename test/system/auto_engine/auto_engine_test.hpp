@@ -17,7 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/filesystem/path.hpp>
+#include <metashell/data/command_line_argument_list.hpp>
+#include <metashell/data/executable_path.hpp>
 
 #include <boost/optional.hpp>
 
@@ -26,14 +27,14 @@
 class auto_engine_test
 {
 public:
-  explicit auto_engine_test(boost::filesystem::path metashell_);
+  explicit auto_engine_test(metashell::data::executable_path metashell_);
 
-  void
-  test_engine_selection(const std::vector<std::string>& args_,
-                        const boost::optional<std::string>& expected_engine_);
+  void test_engine_selection(
+      const metashell::data::command_line_argument_list& args_,
+      const boost::optional<std::string>& expected_engine_);
 
 private:
-  boost::filesystem::path _metashell;
+  metashell::data::executable_path _metashell;
 };
 
 #endif

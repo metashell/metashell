@@ -57,7 +57,8 @@ TEST(evaluation, non_existing_class)
 
 TEST(evaluation, macro_in_config)
 {
-  metashell_instance mi({"--", "-DFOO=int"});
+  metashell_instance mi(
+      metashell::data::command_line_argument_list{"--", "-DFOO=int"});
 
   ASSERT_EQ(type("int"), mi.command("FOO").front());
 }
@@ -112,7 +113,8 @@ TEST(evaluation, warnings)
 
 TEST(evaluation, disabled_warnings)
 {
-  metashell_instance mi({"--", "-w"});
+  metashell_instance mi(
+      metashell::data::command_line_argument_list{"--", "-w"});
 
   ASSERT_EQ(prompt(">"), mi.command(generate_warning()).front());
 }

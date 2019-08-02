@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/command_line_argument_list.hpp>
 #include <metashell/data/engine_name.hpp>
 #include <metashell/data/feature.hpp>
 #include <metashell/data/markdown_string.hpp>
@@ -37,12 +38,12 @@ namespace metashell
     class engine_entry
     {
     public:
-      engine_entry(
-          engine_factory factory_,
-          std::string args_,
-          data::markdown_string description_,
-          std::vector<data::feature> features_,
-          std::function<bool(const std::vector<std::string>&)> this_engine_);
+      engine_entry(engine_factory factory_,
+                   std::string args_,
+                   data::markdown_string description_,
+                   std::vector<data::feature> features_,
+                   std::function<bool(const data::command_line_argument_list&)>
+                       this_engine_);
 
       std::unique_ptr<iface::engine>
       build(const data::config& config_,
@@ -60,17 +61,18 @@ namespace metashell
       const std::vector<data::feature>& features() const;
 
       bool usable_by_auto() const;
-      bool this_engine(const std::vector<std::string>&) const;
+      bool this_engine(const data::command_line_argument_list&) const;
 
     private:
       engine_factory _factory;
       std::string _args;
       data::markdown_string _description;
       std::vector<data::feature> _features;
-      std::function<bool(const std::vector<std::string>&)> _this_engine;
+      std::function<bool(const data::command_line_argument_list&)> _this_engine;
     };
 
-    std::function<bool(const std::vector<std::string>&)> never_used_by_auto();
+    std::function<bool(const data::command_line_argument_list&)>
+    never_used_by_auto();
 
     std::string list_features(const engine_entry& engine_);
     data::markdown_string

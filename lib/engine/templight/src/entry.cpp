@@ -50,17 +50,31 @@ namespace metashell
                   data::feature::macro_discovery()};
         }
 
-        bool
-        this_engine_internal_templight(const std::vector<std::string>& args_)
+        bool this_engine_internal_templight(
+            const data::command_line_argument_list& args_)
         {
-          return args_.empty() || boost::starts_with(args_.front(), "-");
+          if (const auto first = args_.front())
+          {
+            return boost::starts_with(first->value(), "-");
+          }
+          else
+          {
+            return true;
+          }
         }
 
-        bool
-        this_engine_external_templight(const std::vector<std::string>& args_)
+        bool this_engine_external_templight(
+            const data::command_line_argument_list& args_)
         {
-          return !args_.empty() && clang::is_clang(args_.front()) &&
-                 clang::is_templight(args_.front());
+          if (const auto first = args_.front())
+          {
+            const data::executable_path exe(*first);
+            return clang::is_clang(exe) && clang::is_templight(exe);
+          }
+          else
+          {
+            return false;
+          }
         }
 
         template <bool UseInternalTemplight>

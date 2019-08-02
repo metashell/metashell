@@ -35,9 +35,9 @@ namespace metashell
 
       out_.key("engine_args");
       out_.start_array();
-      for (const std::string& arg : cfg_.engine_args)
+      for (const data::command_line_argument& arg : cfg_.engine_args)
       {
-        out_.string(arg);
+        out_.string(arg.value());
       }
       out_.end_array();
 

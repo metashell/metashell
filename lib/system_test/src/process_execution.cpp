@@ -23,14 +23,14 @@ namespace metashell
 {
   namespace system_test
   {
-    process_execution::process_execution(std::vector<std::string> cmd_)
-      : _cmd(move(cmd_)), _stdin(), _stdout()
+    process_execution::process_execution(data::command_line_argument_list args_)
+      : _args(std::move(args_)), _stdin(), _stdout()
     {
     }
 
-    const std::vector<std::string>& process_execution::cmd() const
+    const data::command_line_argument_list& process_execution::args() const
     {
-      return _cmd;
+      return _args;
     }
 
     const std::string& process_execution::standard_input() const
@@ -48,7 +48,7 @@ namespace metashell
 
     std::ostream& operator<<(std::ostream& out_, const process_execution& e_)
     {
-      return out_ << "Command: " << to_json(e_.cmd()) << std::endl
+      return out_ << "Command: " << to_json(e_.args()) << std::endl
                   << std::endl
                   << "Standard input: " << to_json(e_.standard_input())
                   << std::endl

@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/command_line_argument_list.hpp>
 #include <metashell/data/wave_config.hpp>
 
 #include <metashell/iface/displayer.hpp>
@@ -27,7 +28,6 @@
 #include <boost/filesystem/path.hpp>
 
 #include <string>
-#include <vector>
 
 namespace metashell
 {
@@ -37,7 +37,7 @@ namespace metashell
     {
       data::wave_config
       parse_config(bool use_templight_headers_,
-                   const std::vector<std::string>& args_,
+                   const data::command_line_argument_list& args_,
                    const std::string& metashell_binary_,
                    const boost::filesystem::path& internal_dir_,
                    iface::environment_detector& env_detector_,

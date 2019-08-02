@@ -133,11 +133,12 @@ namespace metashell
         if (*_key == "command")
         {
           _data->engine_args.clear();
-          for (const std::string& s : data::shell_command_view(str_))
+          for (const data::command_line_argument& s :
+               data::shell_command_view(str_))
           {
-            if (!_data->engine_args.empty() &&
-                (_data->engine_args.back() == "-c" ||
-                 _data->engine_args.back() == "-o"))
+            const auto last = _data->engine_args.back();
+
+            if (last && (*last == "-c" || *last == "-o"))
             {
               _data->engine_args.pop_back();
             }

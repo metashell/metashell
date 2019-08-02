@@ -26,11 +26,9 @@
 namespace
 {
   boost::optional<std::string>
-  engine_selected(const boost::filesystem::path& metashell_,
-                  const std::vector<std::string>& args_)
+  engine_selected(const metashell::data::command_line& cmd_)
   {
-    const std::string out =
-        metashell::process::run(metashell_, args_, "").standard_output;
+    const std::string out = metashell::process::run(cmd_, "").standard_output;
 
     std::regex find_engine("Log: auto engine selected ([^\\r\\n ]*)");
     std::smatch sm;
@@ -45,42 +43,42 @@ namespace
   }
 }
 
-auto_engine_test::auto_engine_test(boost::filesystem::path metashell_)
+auto_engine_test::auto_engine_test(metashell::data::executable_path metashell_)
   : _metashell(std::move(metashell_))
 {
 }
 
 void auto_engine_test::test_engine_selection(
-    const std::vector<std::string>& args_,
+    const metashell::data::command_line_argument_list& args_,
     const boost::optional<std::string>& expected_engine_)
 {
   using boost::algorithm::join;
 
-  std::vector<std::string> args{
-      "--engine", "auto", "--log", "-", "--console", "plain", "--"};
-  args.insert(args.end(), args_.begin(), args_.end());
+  const metashell::data::command_line cmd(
+      _metashell,
+      metashell::data::command_line_argument_list{
+          "--engine", "auto", "--log", "-", "--console", "plain", "--"} +
+          args_);
 
-  const boost::optional<std::string> actual_engine =
-      engine_selected(_metashell, args);
+  const boost::optional<std::string> actual_engine = engine_selected(cmd);
 
   if (expected_engine_ && !actual_engine)
   {
-    throw std::runtime_error("Command \"" + _metashell.string() + " " +
-                             join(args, " ") + "\" expected to use engine " +
-                             *expected_engine_ + " but is not using any.");
+    throw std::runtime_error("Command \"" + to_string(cmd) +
+                             "\" expected to use engine " + *expected_engine_ +
+                             " but is not using any.");
   }
   else if (!expected_engine_ && actual_engine)
   {
     throw std::runtime_error(
-        "Command \"" + _metashell.string() + " " + join(args, " ") +
+        "Command \"" + to_string(cmd) +
         "\" is not expected to use any engine but is using " + *actual_engine +
         ".");
   }
   else if (expected_engine_ != actual_engine)
   {
-    throw std::runtime_error("Command \"" + _metashell.string() + " " +
-                             join(args, " ") + "\" expected to use engine " +
-                             *expected_engine_ + " but is using " +
-                             *actual_engine + ".");
+    throw std::runtime_error("Command \"" + to_string(cmd) +
+                             "\" expected to use engine " + *expected_engine_ +
+                             " but is using " + *actual_engine + ".");
   }
 }

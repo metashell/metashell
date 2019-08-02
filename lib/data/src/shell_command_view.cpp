@@ -40,19 +40,19 @@ namespace metashell
 
     shell_command_view::iterator& shell_command_view::iterator::operator++()
     {
-      _value = boost::none;
-
-      for (; _begin != _end && !(std::isspace(*_begin) && _value); ++_begin)
+      std::string value;
+      for (; _begin != _end && (!std::isspace(*_begin) || value.empty());
+           ++_begin)
       {
         if (!std::isspace(*_begin))
         {
-          if (!_value)
-          {
-            _value = std::string();
-          }
-          *_value += *_begin;
+          value += *_begin;
         }
       }
+
+      _value = value.empty() ?
+                   boost::none :
+                   boost::make_optional(command_line_argument(value));
 
       _begin =
           std::find_if(_begin, _end, [](char c_) { return !std::isspace(c_); });
@@ -60,7 +60,7 @@ namespace metashell
       return *this;
     }
 
-    const std::string& shell_command_view::iterator::operator*() const
+    const command_line_argument& shell_command_view::iterator::operator*() const
     {
       assert(_value);
       return *_value;

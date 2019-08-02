@@ -47,10 +47,17 @@ namespace metashell
                   data::feature::macro_discovery()};
         }
 
-        bool this_engine(const std::vector<std::string>& args_)
+        bool this_engine(const data::command_line_argument_list& args_)
         {
-          return !args_.empty() && is_clang(args_.front()) &&
-                 !is_templight(args_.front());
+          if (const auto front = args_.front())
+          {
+            const data::executable_path exe(*front);
+            return is_clang(exe) && !is_templight(exe);
+          }
+          else
+          {
+            return false;
+          }
         }
 
         std::unique_ptr<iface::engine> create_clang_engine(

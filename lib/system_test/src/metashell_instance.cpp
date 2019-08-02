@@ -20,8 +20,6 @@
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/system_test_config.hpp>
 
-#include <boost/filesystem.hpp>
-
 #include <algorithm>
 
 namespace metashell
@@ -39,7 +37,7 @@ namespace metashell
           ++engine;
           if (engine != args.end())
           {
-            return *engine;
+            return to_string(*engine);
           }
         }
         return "internal";
@@ -52,26 +50,26 @@ namespace metashell
                container_.end();
       }
 
-      std::vector<std::string>
-      construct_cmd(const std::vector<std::string>& extra_args_,
+      data::command_line_argument_list
+      construct_cmd(const data::command_line_argument_list& extra_args_,
                     bool allow_user_defined_args_,
                     bool allow_standard_headers_)
       {
-        std::vector<std::string> cmd{"--console=json", "--nosplash"};
+        data::command_line_argument_list cmd{"--console=json", "--nosplash"};
         if (allow_user_defined_args_)
         {
-          cmd.insert(cmd.end(), system_test_config::metashell_args().begin(),
-                     system_test_config::metashell_args().end());
+          cmd += system_test_config::metashell_args();
         }
-        if (!extra_args_.empty())
+        if (const auto first_extra = extra_args_.front())
         {
-          if (!contains(cmd, "--") || extra_args_.front() != "--")
+          if (!contains(cmd, "--") ||
+              *first_extra != data::command_line_argument("--"))
           {
-            cmd.insert(cmd.end(), extra_args_.begin(), extra_args_.end());
+            cmd += extra_args_;
           }
           else
           {
-            cmd.insert(cmd.end(), extra_args_.begin() + 1, extra_args_.end());
+            cmd.append(extra_args_.begin() + 1, extra_args_.end());
           }
         }
         if (!allow_standard_headers_ && !using_msvc())
@@ -93,22 +91,10 @@ namespace metashell
 
         return cmd;
       }
-
-      void
-      append_with_prefix(std::vector<std::string>& args_,
-                         const std::string& prefix_,
-                         const std::vector<boost::filesystem::path>& paths_)
-      {
-        args_.reserve(args_.size() + paths_.size());
-        for (const boost::filesystem::path& p : paths_)
-        {
-          args_.push_back(prefix_ + p.string());
-        }
-      }
     }
 
     metashell_instance::metashell_instance(
-        const std::vector<std::string>& extra_args_,
+        const data::command_line_argument_list& extra_args_,
         const boost::filesystem::path& cwd_,
         bool allow_user_defined_args_,
         bool allow_standard_headers_)
@@ -118,9 +104,10 @@ namespace metashell
                          "INCLUDE", "")),
         _process_execution(construct_cmd(
             extra_args_, allow_user_defined_args_, allow_standard_headers_)),
-        _child(absolute(system_test_config::metashell_binary()),
-               _process_execution.cmd(),
-               cwd_),
+        _child(
+            data::command_line(absolute(system_test_config::metashell_binary()),
+                               _process_execution.args()),
+            cwd_),
         _lines(),
         _last_line(),
         _initial_responses(responses_until_prompt())
@@ -210,40 +197,42 @@ namespace metashell
       return _initial_responses;
     }
 
-    std::vector<std::string>
-    with_sysincludes(std::vector<std::string> args_,
+    data::command_line_argument_list
+    with_sysincludes(data::command_line_argument_list args_,
                      const std::vector<boost::filesystem::path>& paths_)
     {
       if (using_wave())
       {
-        append_with_prefix(args_, "-S", paths_);
+        args_.append_with_prefix("-S", paths_);
+      }
+      else if (using_msvc())
+      {
+        args_.append_with_prefix("/I", paths_);
       }
       else
       {
-        append_with_prefix(args_, using_msvc() ? "/I" : "-I", paths_);
+        args_.append_with_prefix("-I", paths_);
       }
       return args_;
     }
 
-    std::vector<std::string>
-    with_quoteincludes(std::vector<std::string> args_,
+    data::command_line_argument_list
+    with_quoteincludes(data::command_line_argument_list args_,
                        const std::vector<boost::filesystem::path>& paths_)
     {
       if (using_msvc())
       {
-        append_with_prefix(args_, "/I", paths_);
+        args_.append_with_prefix("/I", paths_);
       }
       else if (using_wave())
       {
-        append_with_prefix(args_, "-I", paths_);
+        args_.append_with_prefix("-I", paths_);
       }
       else
       {
-        args_.reserve(args_.size() + paths_.size() * 2);
         for (const boost::filesystem::path& p : paths_)
         {
-          args_.push_back("-iquote");
-          args_.push_back(p.string());
+          args_.push_back("-iquote", p);
         }
       }
       return args_;
@@ -255,10 +244,10 @@ namespace metashell
       if (engine == "auto")
       {
         const auto& args = system_test_config::metashell_args();
-        return std::find_if(
-                   args.begin(), args.end(), [](const std::string& arg) {
-                     return arg.find("cl.exe") != std::string::npos;
-                   }) != args.end();
+        return std::find_if(args.begin(), args.end(),
+                            [](const data::command_line_argument& arg) {
+                              return find(arg, "cl.exe") != std::string::npos;
+                            }) != args.end();
       }
       else
       {

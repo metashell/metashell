@@ -91,12 +91,12 @@ namespace metashell
     }
 
     boost::optional<boost::filesystem::path>
-    include_path_addition(const std::string& arg_)
+    include_path_addition(const data::command_line_argument& arg_)
     {
       for (const auto& def : include_definitions())
       {
-        if (const auto path =
-                try_to_remove_prefix_suffix(def.first, arg_, def.second))
+        if (const auto path = try_to_remove_prefix_suffix(
+                def.first, arg_.value(), def.second))
         {
           return boost::filesystem::path(*path);
         }

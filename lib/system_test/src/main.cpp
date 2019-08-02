@@ -71,10 +71,10 @@ namespace metashell
         }
         std::cerr << std::endl;
 
-        system_test_config::metashell_binary(argv_[1]);
+        system_test_config::metashell_binary(data::executable_path(argv_[1]));
         for (auto i = argv_ + 2; i != sep; ++i)
         {
-          system_test_config::metashell_arg(*i);
+          system_test_config::metashell_arg(data::command_line_argument(*i));
         }
 
         std::vector<char*> gtest_args = {argv_[0]};

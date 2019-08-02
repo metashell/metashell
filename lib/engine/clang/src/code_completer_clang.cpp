@@ -150,16 +150,15 @@ namespace metashell
         const core::source_position sp =
             core::source_position_of(src.content());
 
-        std::vector<std::string> clang_args{"-fsyntax-only", "-Xclang",
-                                            "-code-completion-at=" +
-                                                src.filename().string() + ":" +
-                                                to_string(sp),
-                                            src.filename().string()};
+        data::command_line_argument_list clang_args{
+            "-fsyntax-only", "-Xclang",
+            "-code-completion-at=" + src.filename().string() + ":" +
+                to_string(sp),
+            src.filename().string()};
 
         if (use_precompiled_headers_)
         {
-          clang_args.push_back("-include");
-          clang_args.push_back(_env_path.string());
+          clang_args.push_back("-include", _env_path);
         }
 
         const data::process_output o = _binary.run(clang_args, "");

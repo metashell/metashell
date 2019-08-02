@@ -202,8 +202,10 @@ namespace metashell
         data::shell_config result(
             data::shell_config_name("default"), data::shell_config_data());
 
-        result.engine_args.insert(
-            result.engine_args.end(), extra_args_begin_, extra_args_end_);
+        for (auto i = extra_args_begin_; i != extra_args_end_; ++i)
+        {
+          result.engine_args.push_back(data::command_line_argument(*i));
+        }
 
         if (engine_)
         {

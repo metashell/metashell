@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/command_line_argument.hpp>
+
 #include <boost/operators.hpp>
 #include <boost/optional.hpp>
 
@@ -30,11 +32,12 @@ namespace metashell
     class shell_command_view
     {
     public:
-      class iterator : public boost::forward_iterator_helper<iterator,
-                                                             std::string,
-                                                             std::ptrdiff_t,
-                                                             std::string*,
-                                                             std::string&>
+      class iterator
+          : public boost::forward_iterator_helper<iterator,
+                                                  command_line_argument,
+                                                  std::ptrdiff_t,
+                                                  command_line_argument*,
+                                                  command_line_argument&>
       {
       public:
         iterator(std::string_view::const_iterator,
@@ -44,12 +47,12 @@ namespace metashell
 
         iterator& operator++();
 
-        const std::string& operator*() const;
+        const command_line_argument& operator*() const;
 
       private:
         std::string_view::const_iterator _begin;
         std::string_view::const_iterator _end;
-        boost::optional<std::string> _value;
+        boost::optional<command_line_argument> _value;
       };
 
       explicit shell_command_view(std::string_view);

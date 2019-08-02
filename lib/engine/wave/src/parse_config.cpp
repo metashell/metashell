@@ -37,6 +37,7 @@
 #include <set>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
 namespace metashell
 {
@@ -183,22 +184,24 @@ namespace metashell
                               iface::displayer& displayer_,
                               core::logger* logger_)
         {
-          const std::vector<std::string> extra_clang_args;
-
-          const clang::binary cbin(
-              true, clang::find_clang(true, extra_clang_args, metashell_binary_,
-                                      data::engine_name("internal"),
-                                      env_detector_, displayer_, logger_),
-              extra_clang_args, internal_dir_, env_detector_, logger_);
-
-          clang::header_discoverer header_discoverer(cbin);
-
           data::wave_config result;
-          result.includes.sys =
-              header_discoverer.include_path(data::include_type::sys);
-          result.includes.quote =
-              header_discoverer.include_path(data::include_type::quote);
-          result.macros = clang_macros(cbin, internal_dir_);
+          const data::command_line_argument_list extra_clang_args;
+          if (const auto clang_path = clang::find_clang_nothrow(
+                  true, extra_clang_args, metashell_binary_,
+                  data::engine_name("internal"), env_detector_, displayer_,
+                  logger_))
+          {
+            const clang::binary cbin(true, *clang_path, extra_clang_args,
+                                     internal_dir_, env_detector_, logger_);
+
+            clang::header_discoverer header_discoverer(cbin);
+
+            result.includes.sys =
+                header_discoverer.include_path(data::include_type::sys);
+            result.includes.quote =
+                header_discoverer.include_path(data::include_type::quote);
+            result.macros = clang_macros(cbin, internal_dir_);
+          }
           result.standard = data::wave_standard::cpp11;
           return result;
         }
@@ -287,7 +290,7 @@ namespace metashell
 
       data::wave_config
       parse_config(bool use_templight_headers_,
-                   const std::vector<std::string>& args_,
+                   const data::command_line_argument_list& args_,
                    const std::string& metashell_binary_,
                    const boost::filesystem::path& internal_dir_,
                    iface::environment_detector& env_detector_,
@@ -295,6 +298,13 @@ namespace metashell
                    core::logger* logger_)
       {
         using boost::program_options::command_line_parser;
+
+        std::vector<std::string> args;
+        args.reserve(args_.size());
+        std::transform(args_.begin(), args_.end(), std::back_inserter(args),
+                       [](const data::command_line_argument& arg_) {
+                         return arg_.value();
+                       });
 
         data::wave_config result =
             use_templight_headers_ ?
@@ -312,7 +322,7 @@ namespace metashell
                          result.macros);
 
         boost::program_options::variables_map vm;
-        store(command_line_parser(args_).options(desc).run(), vm);
+        store(command_line_parser(args).options(desc).run(), vm);
         notify(vm);
         validate(vm);
 

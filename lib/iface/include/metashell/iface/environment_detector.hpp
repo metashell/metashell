@@ -17,7 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/executable_path.hpp>
+
 #include <boost/filesystem/path.hpp>
+#include <boost/optional.hpp>
 
 namespace metashell
 {
@@ -28,8 +31,13 @@ namespace metashell
     public:
       virtual ~environment_detector() {}
 
-      virtual boost::filesystem::path search_clang_binary() = 0;
+      virtual boost::optional<data::executable_path> search_clang_binary() = 0;
       virtual bool file_exists(const boost::filesystem::path& path_) = 0;
+
+      bool file_exists(const data::executable_path& exe_)
+      {
+        return file_exists(exe_.value());
+      }
 
       // Available as a runtime function for cross-platform unit testing
       virtual bool on_windows() = 0;

@@ -35,7 +35,8 @@ namespace metashell
         std::string args_,
         data::markdown_string description_,
         std::vector<data::feature> features_,
-        std::function<bool(const std::vector<std::string>&)> this_engine_)
+        std::function<bool(const data::command_line_argument_list&)>
+            this_engine_)
       : _factory(move(factory_)),
         _args(move(args_)),
         _description(std::move(description_)),
@@ -73,7 +74,8 @@ namespace metashell
 
     bool engine_entry::usable_by_auto() const { return bool(_this_engine); }
 
-    bool engine_entry::this_engine(const std::vector<std::string>& args_) const
+    bool engine_entry::this_engine(
+        const data::command_line_argument_list& args_) const
     {
       return usable_by_auto() && _this_engine(args_);
     }
@@ -100,7 +102,8 @@ namespace metashell
                       data::markdown_string(", "));
     }
 
-    std::function<bool(const std::vector<std::string>&)> never_used_by_auto()
+    std::function<bool(const data::command_line_argument_list&)>
+    never_used_by_auto()
     {
       return {};
     }

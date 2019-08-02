@@ -61,7 +61,8 @@ int main(int argc_, char* argv_[])
     const boost::program_options::variables_map args =
         parse_arguments(argc_, argv_);
 
-    auto_engine_test test(args["metashell"].as<boost::filesystem::path>());
+    auto_engine_test test(metashell::data::executable_path(
+        args["metashell"].as<boost::filesystem::path>()));
 
     test.test_engine_selection({}, std::string("internal"));
     test.test_engine_selection({"-I."}, std::string("internal"));

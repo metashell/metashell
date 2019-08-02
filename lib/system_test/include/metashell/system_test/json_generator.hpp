@@ -19,6 +19,8 @@
 
 #include <metashell/system_test/json_string.hpp>
 
+#include <metashell/data/command_line_argument_list.hpp>
+
 #include <string>
 #include <vector>
 
@@ -31,6 +33,7 @@ namespace metashell
 
     json_string to_json(const std::string& s_);
     json_string to_json(const std::vector<std::string>& strings_);
+    json_string to_json(const data::command_line_argument_list&);
   }
 }
 

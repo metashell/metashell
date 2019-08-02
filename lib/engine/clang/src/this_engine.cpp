@@ -27,12 +27,13 @@ namespace metashell
   {
     namespace clang
     {
-      bool is_clang(const boost::filesystem::path& clang_)
+      bool is_clang(const data::executable_path& clang_)
       {
         try
         {
           return regex_search(
-              process::run(clang_, {"-v"}, "").standard_error,
+              process::run(data::command_line(clang_, {"-v"}), "")
+                  .standard_error,
               std::regex("^(clang version |Apple LLVM version )"));
         }
         catch (const process::exception&)
@@ -41,12 +42,13 @@ namespace metashell
         }
       }
 
-      bool is_templight(const boost::filesystem::path& clang_)
+      bool is_templight(const data::executable_path& clang_)
       {
         try
         {
           return regex_search(
-              process::run(clang_, {"--help"}, "").standard_output,
+              process::run(data::command_line(clang_, {"--help"}), "")
+                  .standard_output,
               std::regex("-Xtemplight "));
         }
         catch (const process::exception&)

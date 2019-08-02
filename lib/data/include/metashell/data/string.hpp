@@ -109,6 +109,13 @@ namespace metashell
         return s_.size();
       }
 
+      template <class CharT, class Traits, class Allocator, class... Args>
+      auto find(const std::basic_string<CharT, Traits, Allocator>& s_,
+                Args&&... args_)
+      {
+        return s_.find(std::forward<Args>(args_)...);
+      }
+
       template <class CharT, class Traits, class Allocator>
       auto substr(
           const std::basic_string<CharT, Traits, Allocator>& s_,
@@ -300,6 +307,13 @@ namespace metashell
       {
         using impl::size;
         return size(s_.value());
+      }
+
+      template <class... Args>
+      friend auto find(const Derived& s_, Args&&... args_)
+      {
+        using impl::find;
+        return find(s_.value(), std::forward<Args>(args_)...);
       }
 
       // requires requires { Derived(String()); };

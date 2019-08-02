@@ -60,7 +60,8 @@ namespace
     const auto end = system_test_config::metashell_args().end();
     return find_if(
                find(system_test_config::metashell_args().begin(), end, "--"),
-               end, [&path_](const std::string& arg) {
+               end,
+               [&path_](const metashell::data::command_line_argument& arg) {
                  const auto path = include_path_addition(arg);
                  return path && *path == path_;
                }) != end;

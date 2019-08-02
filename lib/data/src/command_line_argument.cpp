@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,30 +14,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/engine/clang/has_prefix.hpp>
+#include <metashell/data/command_line_argument.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 
-#include <algorithm>
-
 namespace metashell
 {
-  namespace engine
+  namespace data
   {
-    namespace clang
+    command_line_argument::command_line_argument(
+        const boost::filesystem::path& path_)
+      : string<command_line_argument>(path_.string())
     {
-      bool has_prefix(const std::vector<std::string>& args_,
-                      const std::vector<std::string>& prefixes_)
-      {
-        return std::any_of(
-            args_.begin(), args_.end(), [&prefixes_](const std::string& arg_) {
-              return std::any_of(prefixes_.begin(), prefixes_.end(),
-                                 [&arg_](const std::string& prefix_) {
-                                   return boost::algorithm::starts_with(
-                                       arg_, prefix_);
-                                 });
-            });
-      }
+    }
+
+    command_line_argument::command_line_argument(const char* value_)
+      : string<command_line_argument>(value_)
+    {
+    }
+
+    bool command_line_argument::starts_with_impl(const char* prefix_) const
+    {
+      return boost::starts_with(value(), prefix_);
+    }
+
+    std::string quote(const command_line_argument& arg_)
+    {
+      return arg_.value();
     }
   }
 }
