@@ -93,7 +93,7 @@ namespace metashell
         }
       } // anonymous namespace
 
-      data::engine_name name() { return data::engine_name("clang"); }
+      data::engine_name name() { return data::engine_name::clang; }
 
       core::engine_entry entry()
       {

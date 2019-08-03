@@ -391,7 +391,7 @@ namespace metashell
         const auto default_shell_config = parse_default_shell_config(
             vm, extra_args_begin, args_end,
             vm.count("engine") ?
-                boost::make_optional(data::engine_name(engine)) :
+                boost::make_optional(data::parse_engine_name(engine)) :
                 boost::none);
 
         cfg.push_back(default_shell_config);
@@ -446,7 +446,7 @@ namespace metashell
         else if (vm.count("help_engine"))
         {
           show_engine_help(
-              engines_, data::engine_name(help_engine), out_, argv_[0]);
+              engines_, data::parse_engine_name(help_engine), out_, argv_[0]);
           return parse_config_result::exit(false);
         }
         else

@@ -133,7 +133,7 @@ namespace metashell
         }
       }
 
-      data::engine_name name() { return data::engine_name("auto"); }
+      data::engine_name name() { return data::engine_name::auto_; }
 
       core::engine_entry
       entry(const std::map<data::engine_name, core::engine_entry>& engines_)

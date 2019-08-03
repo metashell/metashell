@@ -194,7 +194,7 @@ namespace metashell
           }
           else if (*_key == "engine")
           {
-            _data->engine = data::engine_name(str_);
+            _data->engine = data::parse_engine_name(str_);
           }
           else
           {

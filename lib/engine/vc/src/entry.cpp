@@ -152,7 +152,7 @@ namespace metashell
         }
       } // anonymous namespace
 
-      data::engine_name name() { return data::engine_name("msvc"); }
+      data::engine_name name() { return data::engine_name::msvc; }
 
       core::engine_entry entry()
       {

@@ -159,7 +159,7 @@ namespace metashell
         }
       } // anonymous namespace
 
-      data::engine_name name() { return data::engine_name("gcc"); }
+      data::engine_name name() { return data::engine_name::gcc; }
 
       core::engine_entry entry()
       {
@@ -168,12 +168,11 @@ namespace metashell
             "<gcc binary> -std=<standard to use> [<gcc args>]",
             data::markdown_string(
                 "Uses the [gcc compiler](https://gcc.gnu.org). `<gcc args>` "
-                "are "
-                "passed to the compiler as command line-arguments. Note that "
-                "Metashell requires C++11 or above. If your gcc uses such a "
-                "standard "
-                "by default, you can omit the `-std` argument. Also note that "
-                "currently only the preprocessor shell is supported."),
+                "are passed to the compiler as command line-arguments. Note "
+                "that Metashell requires C++11 or above. If your gcc uses such "
+                "a standard by default, you can omit the `-std` argument. Also "
+                "note that currently only the preprocessor shell is "
+                "supported."),
             supported_features(), this_engine);
       }
     }

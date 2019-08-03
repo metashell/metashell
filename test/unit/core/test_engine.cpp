@@ -32,14 +32,11 @@ namespace
   public:
     explicit test_engine(iface::engine& base_) : _base(base_) {}
 
-    data::engine_name name() const override
-    {
-      return data::engine_name("test");
-    }
+    data::engine_name name() const override { return data::engine_name::null; }
 
     data::engine_name display_name() const override
     {
-      return data::engine_name("test_engine");
+      return data::engine_name::internal;
     }
 
     iface::type_shell& type_shell() override
@@ -165,7 +162,7 @@ TEST(engine, limitation_results)
 
   // clang, internal, templight
   ASSERT_EQ(
-      std::string("Note that you are using the test engine, which means that "
+      std::string("Note that you are using the null engine, which means that "
                   "you can not use the preprocessor tracer. Metashell supports "
                   "different features if you use different compilers."),
       core::limitation(
@@ -175,7 +172,7 @@ TEST(engine, limitation_results)
 
   // wave, pure_wave
   ASSERT_EQ(
-      std::string("Note that you are using the test engine, which means that "
+      std::string("Note that you are using the null engine, which means that "
                   "you can not debug types or metaprograms, only the "
                   "preprocessor. Metashell supports different features if you "
                   "use different compilers."),
@@ -186,7 +183,7 @@ TEST(engine, limitation_results)
 
   // gcc
   ASSERT_EQ(
-      std::string("Note that you are using the test engine, which means that "
+      std::string("Note that you are using the null engine, which means that "
                   "you can not debug types or metaprograms, only the "
                   "preprocessor (but not trace it). Metashell supports "
                   "different features if you use different compilers."),
@@ -196,7 +193,7 @@ TEST(engine, limitation_results)
 
   // msvc
   ASSERT_EQ(
-      std::string("Note that you are using the test engine, which means that "
+      std::string("Note that you are using the null engine, which means that "
                   "you can not debug types or metaprograms, only the "
                   "preprocessor (but not trace it or query the defined "
                   "macros). Metashell supports different features if you use "
@@ -205,7 +202,7 @@ TEST(engine, limitation_results)
                                    header_discoverer, cpp_validator>(*base)));
 
   // null
-  ASSERT_EQ(std::string("Note that you are using the test engine, which means "
+  ASSERT_EQ(std::string("Note that you are using the null engine, which means "
                         "that you can not debug anything. Metashell supports "
                         "different features if you use different compilers."),
             core::limitation(test_engine<>(*base)));

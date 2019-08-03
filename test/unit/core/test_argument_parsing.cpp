@@ -173,13 +173,15 @@ TEST(argument_parsing, decommissioned_arguments_provide_an_error_message)
 
 TEST(argument_parsing, not_specifying_the_engine)
 {
-  ASSERT_EQ("auto", parse_config({}).cfg.active_shell_config().engine);
+  ASSERT_EQ(data::engine_name::auto_,
+            parse_config({}).cfg.active_shell_config().engine);
 }
 
 TEST(argument_parsing, specifying_the_engine)
 {
-  ASSERT_EQ("foo",
-            parse_config({"--engine", "foo"}).cfg.active_shell_config().engine);
+  ASSERT_EQ(
+      data::engine_name::null,
+      parse_config({"--engine", "null"}).cfg.active_shell_config().engine);
 }
 
 TEST(argument_parsing, metashell_path_is_filled)
