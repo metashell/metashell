@@ -72,7 +72,7 @@ namespace metashell
       boost::optional<data::executable_path> find_clang_nothrow(
           bool use_internal_templight_,
           const data::command_line_argument_list& extra_clang_args_,
-          const std::string& metashell_binary_,
+          const data::executable_path& metashell_binary_,
           const data::engine_name& engine_,
           iface::environment_detector& env_detector_,
           iface::displayer& displayer_,
@@ -81,7 +81,7 @@ namespace metashell
       data::executable_path
       find_clang(bool use_internal_templight_,
                  const data::command_line_argument_list& extra_clang_args_,
-                 const std::string& metashell_binary_,
+                 const data::executable_path& metashell_binary_,
                  const data::engine_name& engine_,
                  iface::environment_detector& env_detector_,
                  iface::displayer& displayer_,

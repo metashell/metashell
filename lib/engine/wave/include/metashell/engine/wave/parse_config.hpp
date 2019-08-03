@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/command_line_argument_list.hpp>
+#include <metashell/data/executable_path.hpp>
 #include <metashell/data/wave_config.hpp>
 
 #include <metashell/iface/displayer.hpp>
@@ -38,7 +39,7 @@ namespace metashell
       data::wave_config
       parse_config(bool use_templight_headers_,
                    const data::command_line_argument_list& args_,
-                   const std::string& metashell_binary_,
+                   const data::executable_path& metashell_binary_,
                    const boost::filesystem::path& internal_dir_,
                    iface::environment_detector& env_detector_,
                    iface::displayer& displayer_,

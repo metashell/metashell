@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/console_type.hpp>
+#include <metashell/data/executable_path.hpp>
 #include <metashell/data/logging_mode.hpp>
 #include <metashell/data/shell_config.hpp>
 
@@ -31,7 +32,7 @@ namespace metashell
     class config
     {
     public:
-      std::string metashell_binary;
+      executable_path metashell_binary;
 
       bool verbose = false;
       bool syntax_highlight = true;
@@ -41,6 +42,8 @@ namespace metashell
       bool splash_enabled = true;
       logging_mode log_mode = logging_mode::none;
       std::string log_file;
+
+      explicit config(executable_path);
 
       const std::vector<shell_config>& shell_configs() const;
 

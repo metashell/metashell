@@ -43,8 +43,8 @@ namespace
   std::vector<std::vector<boost::filesystem::path>> pragma_includes_displays()
   {
     std::unique_ptr<iface::engine> engine =
-        engine::constant::create_with_include_path(
-            Type, {"foo", "bar"})(data::config());
+        engine::constant::create_with_include_path(Type, {"foo", "bar"})(
+            data::config(data::executable_path("metashell")));
     NiceMock<mock::shell> sh;
     ON_CALL(sh, engine()).WillByDefault(ReturnRef(*engine));
 

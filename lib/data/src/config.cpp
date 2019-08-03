@@ -48,6 +48,11 @@ namespace metashell
       }
     }
 
+    config::config(executable_path metashell_binary_)
+      : metashell_binary(std::move(metashell_binary_))
+    {
+    }
+
     const std::vector<shell_config>& config::shell_configs() const
     {
       return _shell_configs;

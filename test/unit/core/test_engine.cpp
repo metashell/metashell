@@ -150,7 +150,8 @@ TEST(engine, limitation_results)
   using iface::preprocessor_tracer;
 
   std::unique_ptr<iface::engine> base =
-      metashell::engine::constant::create_failing()({});
+      metashell::engine::constant::create_failing()(metashell::data::config{
+          metashell::data::executable_path("metashell")});
 
   // complete
   ASSERT_EQ(

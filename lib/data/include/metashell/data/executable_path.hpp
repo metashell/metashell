@@ -46,6 +46,9 @@ namespace metashell
       std::string _value;
     };
 
+    std::string operator+(const executable_path&, const std::string&);
+    std::string operator+(const std::string&, const executable_path&);
+
     bool operator==(const executable_path&, const executable_path&);
 
     std::ostream& operator<<(std::ostream&, const executable_path&);

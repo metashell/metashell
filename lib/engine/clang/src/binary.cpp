@@ -38,7 +38,7 @@ namespace metashell
         data::executable_path extract_clang_binary(
             const data::command_line_argument_list& engine_args_,
             iface::environment_detector& env_detector_,
-            const std::string& metashell_path_,
+            const data::executable_path& metashell_path_,
             const data::engine_name& engine_)
         {
           if (const auto first_arg = engine_args_.front())
@@ -63,8 +63,7 @@ namespace metashell
                     "/usr/bin/clang++";
             throw std::runtime_error(
                 "The engine requires that you specify the path to the clang "
-                "compiler"
-                " after --. For example: " +
+                "compiler after --. For example: " +
                 metashell_path_ + " --engine " + engine_ + " -- " +
                 sample_path + " -std=c++11");
           }
@@ -467,7 +466,7 @@ namespace metashell
       boost::optional<data::executable_path> find_clang_nothrow(
           bool use_internal_templight_,
           const data::command_line_argument_list& extra_clang_args_,
-          const std::string& metashell_binary_,
+          const data::executable_path& metashell_binary_,
           const data::engine_name& engine_,
           iface::environment_detector& env_detector_,
           iface::displayer& displayer_,
@@ -482,7 +481,7 @@ namespace metashell
       data::executable_path
       find_clang(bool use_internal_templight_,
                  const data::command_line_argument_list& extra_clang_args_,
-                 const std::string& metashell_binary_,
+                 const data::executable_path& metashell_binary_,
                  const data::engine_name& engine_,
                  iface::environment_detector& env_detector_,
                  iface::displayer& displayer_,

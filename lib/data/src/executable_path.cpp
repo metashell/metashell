@@ -74,5 +74,15 @@ namespace metashell
     {
       return executable_path(absolute(exe_.value()));
     }
+
+    std::string operator+(const executable_path& lhs_, const std::string& rhs_)
+    {
+      return to_string(lhs_) + rhs_;
+    }
+
+    std::string operator+(const std::string& lhs_, const executable_path& rhs_)
+    {
+      return lhs_ + to_string(rhs_);
+    }
   }
 }

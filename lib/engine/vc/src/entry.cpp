@@ -75,7 +75,7 @@ namespace metashell
         data::executable_path
         extract_vc_binary(const data::command_line_argument_list& engine_args_,
                           iface::environment_detector& env_detector_,
-                          const std::string& metashell_path_,
+                          const data::executable_path& metashell_path_,
                           const data::engine_name& engine_)
         {
           if (const auto first = engine_args_.front())

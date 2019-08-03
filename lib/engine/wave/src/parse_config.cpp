@@ -178,7 +178,7 @@ namespace metashell
         }
 
         data::wave_config
-        internal_clang_config(const std::string& metashell_binary_,
+        internal_clang_config(const data::executable_path& metashell_binary_,
                               const boost::filesystem::path& internal_dir_,
                               iface::environment_detector& env_detector_,
                               iface::displayer& displayer_,
@@ -291,7 +291,7 @@ namespace metashell
       data::wave_config
       parse_config(bool use_templight_headers_,
                    const data::command_line_argument_list& args_,
-                   const std::string& metashell_binary_,
+                   const data::executable_path& metashell_binary_,
                    const boost::filesystem::path& internal_dir_,
                    iface::environment_detector& env_detector_,
                    iface::displayer& displayer_,

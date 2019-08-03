@@ -52,15 +52,26 @@ namespace
     std::ostringstream err;
     const core::parse_config_result r = parse_config(args_, nullptr, &err);
 
-    return core::parse_config_result::action_t::exit_with_error == r.action &&
-           !err.str().empty();
+    if (const core::exit* e = mpark::get_if<core::exit>(&r))
+    {
+      return e->with_error && !err.str().empty();
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+  data::config parse_valid_config(std::initializer_list<const char*> args_)
+  {
+    return mpark::get<data::config>(parse_config(args_));
   }
 }
 
 TEST(argument_parsing, recognising_engine_args)
 {
   const data::command_line_argument_list engine_args(
-      parse_config({"--", "foo"}).cfg.active_shell_config().engine_args);
+      parse_valid_config({"--", "foo"}).active_shell_config().engine_args);
 
   ASSERT_EQ(1u, engine_args.size());
   ASSERT_EQ(data::command_line_argument("foo"), engine_args.front());
@@ -68,82 +79,83 @@ TEST(argument_parsing, recognising_engine_args)
 
 TEST(argument_parsing, engine_args_are_not_parsed)
 {
-  ASSERT_TRUE(parse_config({"--", "foo"}).should_run_shell());
+  auto r = parse_config({"--", "foo"});
+  ASSERT_TRUE(mpark::get_if<data::config>(&r));
 }
 
 TEST(argument_parsing, saving_is_enabled_by_default_during_parsing)
 {
-  const data::config cfg = parse_config({}).cfg;
+  const data::config cfg = parse_valid_config({});
 
   ASSERT_TRUE(cfg.saving_enabled);
 }
 
 TEST(argument_parsing, disabling_saving)
 {
-  const data::config cfg = parse_config({"--disable_saving"}).cfg;
+  const data::config cfg = parse_valid_config({"--disable_saving"});
 
   ASSERT_FALSE(cfg.saving_enabled);
 }
 
 TEST(argument_parsing, default_console_type_is_readline)
 {
-  const data::config cfg = parse_config({}).cfg;
+  const data::config cfg = parse_valid_config({});
 
   ASSERT_EQ(data::console_type::readline, cfg.con_type);
 }
 
 TEST(argument_parsing, setting_console_type_to_plain)
 {
-  const data::config cfg = parse_config({"--console", "plain"}).cfg;
+  const data::config cfg = parse_valid_config({"--console", "plain"});
 
   ASSERT_EQ(data::console_type::plain, cfg.con_type);
 }
 
 TEST(argument_parsing, setting_console_type_to_readline)
 {
-  const data::config cfg = parse_config({"--console", "readline"}).cfg;
+  const data::config cfg = parse_valid_config({"--console", "readline"});
 
   ASSERT_EQ(data::console_type::readline, cfg.con_type);
 }
 
 TEST(argument_parsing, setting_console_type_to_json)
 {
-  const data::config cfg = parse_config({"--console", "json"}).cfg;
+  const data::config cfg = parse_valid_config({"--console", "json"});
 
   ASSERT_EQ(data::console_type::json, cfg.con_type);
 }
 
 TEST(argument_parsing, splash_is_enabled_by_default)
 {
-  const data::config cfg = parse_config({}).cfg;
+  const data::config cfg = parse_valid_config({});
 
   ASSERT_TRUE(cfg.splash_enabled);
 }
 
 TEST(argument_parsing, disabling_splash)
 {
-  const data::config cfg = parse_config({"--nosplash"}).cfg;
+  const data::config cfg = parse_valid_config({"--nosplash"});
 
   ASSERT_FALSE(cfg.splash_enabled);
 }
 
 TEST(argument_parsing, logging_mode_is_none_by_default)
 {
-  const data::config cfg = parse_config({}).cfg;
+  const data::config cfg = parse_valid_config({});
 
   ASSERT_EQ(data::logging_mode::none, cfg.log_mode);
 }
 
 TEST(argument_parsing, logging_to_console)
 {
-  const data::config cfg = parse_config({"--log", "-"}).cfg;
+  const data::config cfg = parse_valid_config({"--log", "-"});
 
   ASSERT_EQ(data::logging_mode::console, cfg.log_mode);
 }
 
 TEST(argument_parsing, logging_to_file)
 {
-  const data::config cfg = parse_config({"--log", "/tmp/foo.txt"}).cfg;
+  const data::config cfg = parse_valid_config({"--log", "/tmp/foo.txt"});
 
   ASSERT_EQ(data::logging_mode::file, cfg.log_mode);
   ASSERT_EQ("/tmp/foo.txt", cfg.log_file);
@@ -154,8 +166,10 @@ TEST(argument_parsing, it_is_an_error_to_specify_log_twice)
   const core::parse_config_result r =
       parse_config({"--log", "-", "--log", "-"});
 
-  ASSERT_FALSE(r.should_run_shell());
-  ASSERT_TRUE(r.should_error_at_exit());
+  const core::exit* const e = mpark::get_if<core::exit>(&r);
+
+  ASSERT_TRUE(e);
+  ASSERT_TRUE(e->with_error);
 }
 
 TEST(argument_parsing, decommissioned_arguments_provide_an_error_message)
@@ -174,14 +188,14 @@ TEST(argument_parsing, decommissioned_arguments_provide_an_error_message)
 TEST(argument_parsing, not_specifying_the_engine)
 {
   ASSERT_EQ(data::engine_name::auto_,
-            parse_config({}).cfg.active_shell_config().engine);
+            parse_valid_config({}).active_shell_config().engine);
 }
 
 TEST(argument_parsing, specifying_the_engine)
 {
   ASSERT_EQ(
       data::engine_name::null,
-      parse_config({"--engine", "null"}).cfg.active_shell_config().engine);
+      parse_valid_config({"--engine", "null"}).active_shell_config().engine);
 }
 
 TEST(argument_parsing, metashell_path_is_filled)
@@ -192,23 +206,22 @@ TEST(argument_parsing, metashell_path_is_filled)
   ON_CALL(env_detector, on_windows()).WillByDefault(Return(false));
   ON_CALL(env_detector, on_osx()).WillByDefault(Return(false));
 
-  const metashell::data::config cfg =
+  const metashell::data::config cfg = mpark::get<data::config>(
       core::parse_config(args.size(), args.data(),
                          std::map<data::engine_name, core::engine_entry>(),
-                         env_detector, nullptr, nullptr)
-          .cfg;
+                         env_detector, nullptr, nullptr));
 
-  ASSERT_EQ("the_path", cfg.metashell_binary);
+  ASSERT_EQ(data::executable_path("the_path"), cfg.metashell_binary);
 }
 
 TEST(argument_parsing, preprocessor_mode_is_off_by_default)
 {
-  ASSERT_FALSE(parse_config({}).cfg.active_shell_config().preprocessor_mode);
+  ASSERT_FALSE(parse_valid_config({}).active_shell_config().preprocessor_mode);
 }
 
 TEST(argument_parsing, preprocessor_mode_is_set_from_command_line)
 {
-  ASSERT_TRUE(parse_config({"--preprocessor"})
-                  .cfg.active_shell_config()
+  ASSERT_TRUE(parse_valid_config({"--preprocessor"})
+                  .active_shell_config()
                   .preprocessor_mode);
 }

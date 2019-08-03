@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/exception.hpp>
 #include <metashell/data/markdown_string.hpp>
 
 #include <metashell/core/engine_entry.hpp>
@@ -258,12 +259,12 @@ namespace metashell
       using boost::program_options::parse_command_line;
       using boost::program_options::value;
 
-      data::config cfg;
-
-      if (argc_ > 0)
+      if (argc_ <= 0)
       {
-        cfg.metashell_binary = argv_[0];
+        throw data::exception("No arguments and binary name provided.");
       }
+
+      data::config cfg{data::executable_path(argv_[0])};
 
       const char** args_end = argv_ + argc_;
 
@@ -441,73 +442,29 @@ namespace metashell
         if (vm.count("help"))
         {
           show_help(out_, desc);
-          return parse_config_result::exit(false);
+          return exit{false};
         }
         else if (vm.count("help_engine"))
         {
           show_engine_help(
               engines_, data::parse_engine_name(help_engine), out_, argv_[0]);
-          return parse_config_result::exit(false);
+          return exit{false};
         }
         else
         {
-          return parse_config_result::start_shell(cfg);
+          return cfg;
         }
       }
       catch (const json_parsing_error& e_)
       {
         show_error(err_, e_);
-        return parse_config_result::exit(true);
+        return exit{true};
       }
       catch (const std::exception& e_)
       {
         show_error(err_, e_);
         show_help(err_, desc);
-        return parse_config_result::exit(true);
-      }
-    }
-
-    parse_config_result parse_config_result::exit(bool with_error_)
-    {
-      parse_config_result r;
-      r.action = with_error_ ? action_t::exit_with_error :
-                               action_t::exit_without_error;
-      return r;
-    }
-
-    parse_config_result
-    parse_config_result::start_shell(const data::config& cfg_)
-    {
-      parse_config_result r;
-      r.action = action_t::run_shell;
-      r.cfg = cfg_;
-      return r;
-    }
-
-    bool parse_config_result::should_run_shell() const
-    {
-      return action == action_t::run_shell;
-    }
-
-    bool parse_config_result::should_error_at_exit() const
-    {
-      return action == action_t::exit_with_error;
-    }
-
-    std::ostream& operator<<(std::ostream& out_,
-                             parse_config_result::action_t a_)
-    {
-      switch (a_)
-      {
-      case parse_config_result::action_t::run_shell:
-        return out_ << "run_shell";
-      case parse_config_result::action_t::exit_with_error:
-        return out_ << "exit_with_error";
-      case parse_config_result::action_t::exit_without_error:
-        return out_ << "exit_without_error";
-      default:
-        assert(!"Invalid action");
-        std::abort();
+        return exit{true};
       }
     }
   }

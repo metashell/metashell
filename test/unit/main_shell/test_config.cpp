@@ -22,7 +22,7 @@ using namespace metashell::data;
 
 config metashell::test_config()
 {
-  config result;
+  config result(data::executable_path("metashell"));
   result.push_back(
       shell_config(data::shell_config_name("test"), data::shell_config_data()));
   return result;
