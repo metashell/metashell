@@ -102,14 +102,11 @@ namespace metashell
             "<Clang binary> -std=<standard to use> [<Clang args>]",
             data::markdown_string(
                 "Uses the [Clang compiler](http://clang.llvm.org). `<Clang "
-                "args>` "
-                "are passed to the compiler as command line-arguments. Note "
-                "that "
-                "Metashell requires C++11 or above. If your Clang uses such a "
-                "standard by default, you can omit the `-std` argument. "
-                "Metaprogram "
-                "debugging (MDB) is supported only when Clang has been patched "
-                "with "
+                "args>` are passed to the compiler as command line-arguments. "
+                "Note that Metashell requires C++11 or above. If your Clang "
+                "uses such a standard by default, you can omit the `-std` "
+                "argument. Metaprogram debugging (MDB) is supported only when "
+                "Clang has been patched with "
                 "[templight](https://github.com/mikael-s-persson/templight)"),
             supported_features(), this_engine);
       }
