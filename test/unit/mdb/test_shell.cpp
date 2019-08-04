@@ -31,7 +31,7 @@ namespace
 
   metashell::data::config get_shell_config()
   {
-    metashell::data::config cfg{metashell::data::executable_path("metashell")};
+    metashell::data::config cfg;
     cfg.push_back(metashell::data::shell_config(
         metashell::data::shell_config_name("test"),
         metashell::data::shell_config_data()));

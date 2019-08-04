@@ -67,13 +67,22 @@ int main(int argc_, const char* argv_[])
 {
   const std::string env_filename = "metashell_environment.hpp";
 
+  if (argc_ < 1)
+  {
+    std::cerr << "Error: no arguments (not even the path of the current "
+                 "binary) provided\n";
+    return 1;
+  }
+
+  const metashell::data::executable_path metashell_binary(argv_[0]);
+
   try
   {
     using metashell::core::parse_config;
     using metashell::core::parse_config_result;
 
     const std::map<metashell::data::engine_name, metashell::core::engine_entry>
-        engines = metashell::defaults::available_engines();
+        engines = metashell::defaults::available_engines(metashell_binary);
 
     metashell::core::default_environment_detector det(argv_[0]);
 

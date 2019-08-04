@@ -129,21 +129,21 @@ namespace metashell
           return args;
         }
 
-        std::unique_ptr<iface::engine> create_gcc_engine(
-            const data::config& config_,
-            const boost::filesystem::path& internal_dir_,
-            const boost::filesystem::path&,
-            const boost::filesystem::path& env_filename_,
-            const std::map<data::engine_name, core::engine_entry>&,
-            iface::environment_detector& env_detector_,
-            iface::displayer&,
-            core::logger* logger_)
+        std::unique_ptr<iface::engine>
+        create_gcc_engine(const data::config& config_,
+                          const data::executable_path& metashell_binary_,
+                          const boost::filesystem::path& internal_dir_,
+                          const boost::filesystem::path&,
+                          const boost::filesystem::path& env_filename_,
+                          iface::environment_detector& env_detector_,
+                          iface::displayer&,
+                          core::logger* logger_)
         {
           using core::not_supported;
 
           clang::binary cbin(
               extract_gcc_binary(config_.active_shell_config().engine_args,
-                                 env_detector_, config_.metashell_binary,
+                                 env_detector_, metashell_binary_,
                                  config_.active_shell_config().engine),
               gcc_args(
                   config_.active_shell_config().engine_args, internal_dir_),
@@ -161,10 +161,21 @@ namespace metashell
 
       data::engine_name name() { return data::engine_name::gcc; }
 
-      core::engine_entry entry()
+      core::engine_entry entry(data::executable_path metashell_binary_)
       {
         return core::engine_entry(
-            &create_gcc_engine,
+            [metashell_binary_](
+                const data::config& config_,
+                const boost::filesystem::path& internal_dir_,
+                const boost::filesystem::path& temp_dir_,
+                const boost::filesystem::path& env_filename_,
+                const std::map<data::engine_name, core::engine_entry>&,
+                iface::environment_detector& env_detector_,
+                iface::displayer& displayer_, core::logger* logger_) {
+              return create_gcc_engine(config_, metashell_binary_,
+                                       internal_dir_, temp_dir_, env_filename_,
+                                       env_detector_, displayer_, logger_);
+            },
             "<gcc binary> -std=<standard to use> [<gcc args>]",
             data::markdown_string(
                 "Uses the [gcc compiler](https://gcc.gnu.org). `<gcc args>` "

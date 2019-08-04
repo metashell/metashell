@@ -42,7 +42,7 @@ namespace
 
 TEST(shell_config, verbose_mode_is_disabled_from_config)
 {
-  metashell::data::config cfg{metashell::data::executable_path("metashell")};
+  metashell::data::config cfg;
   cfg.push_back(default_config());
   cfg.verbose = false;
 
@@ -54,7 +54,7 @@ TEST(shell_config, verbose_mode_is_disabled_from_config)
 
 TEST(shell_config, verbose_mode_is_enabled_from_config)
 {
-  metashell::data::config cfg{metashell::data::executable_path("metashell")};
+  metashell::data::config cfg;
   cfg.push_back(default_config());
   cfg.verbose = true;
 
@@ -66,7 +66,7 @@ TEST(shell_config, verbose_mode_is_enabled_from_config)
 
 TEST(shell_config, verbose_mode_is_enabled_at_runtime)
 {
-  metashell::data::config cfg{metashell::data::executable_path("metashell")};
+  metashell::data::config cfg;
   cfg.push_back(default_config());
   cfg.verbose = false;
 
@@ -79,7 +79,7 @@ TEST(shell_config, verbose_mode_is_enabled_at_runtime)
 
 TEST(shell_config, verbose_mode_is_disabled_at_runtime)
 {
-  metashell::data::config cfg{metashell::data::executable_path("metashell")};
+  metashell::data::config cfg;
   cfg.push_back(default_config());
   cfg.verbose = true;
 
@@ -111,7 +111,7 @@ TEST(shell_config, shell_stopped_after_stop)
 
 TEST(shell_config, shell_not_using_precompiled_headers)
 {
-  metashell::data::config cfg{metashell::data::executable_path("metashell")};
+  metashell::data::config cfg;
   cfg.push_back(default_config());
   cfg.active_shell_config().use_precompiled_headers = false;
 
@@ -124,7 +124,7 @@ TEST(shell_config, shell_not_using_precompiled_headers)
 
 TEST(shell_config, starting_shell_in_metaprogramming_mode)
 {
-  metashell::data::config cfg{metashell::data::executable_path("metashell")};
+  metashell::data::config cfg;
   cfg.push_back(default_config());
   cfg.active_shell_config().preprocessor_mode = false;
 
@@ -138,7 +138,7 @@ TEST(shell_config, starting_shell_in_metaprogramming_mode)
 
 TEST(shell_config, starting_shell_in_preprocessor_mode)
 {
-  metashell::data::config cfg{metashell::data::executable_path("metashell")};
+  metashell::data::config cfg;
   cfg.push_back(default_config());
   cfg.active_shell_config().preprocessor_mode = true;
 

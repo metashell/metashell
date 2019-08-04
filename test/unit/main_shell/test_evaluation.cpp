@@ -204,7 +204,7 @@ TEST(evaluation, comment_is_stored_in_history)
 
 TEST(evaluation, throwing_environment_update_not_breaking_shell)
 {
-  data::config cfg{data::executable_path("metashell")};
+  data::config cfg;
   cfg.push_back(data::shell_config(
       data::shell_config_name("test"), data::shell_config_data()));
 

@@ -31,7 +31,7 @@ using ::testing::_;
 
 TEST(evaluation, throwing_environment_not_breaking_validate)
 {
-  data::config cfg{data::executable_path("metashell")};
+  data::config cfg;
   cfg.push_back(data::shell_config(
       data::shell_config_name("test"), data::shell_config_data()));
 
@@ -47,7 +47,7 @@ TEST(evaluation, throwing_environment_not_breaking_validate)
   ON_CALL(det, file_exists(_)).WillByDefault(Return(true));
 
   const data::result r =
-      engine::templight::entry(true)
+      engine::templight::entry(true, data::executable_path("metashell"))
           .build(cfg, "", "", "env.hpp", {}, det, d, nullptr)
           ->cpp_validator()
           .validate_code(data::cpp_code("typedef int foo;"), cfg, e, false);

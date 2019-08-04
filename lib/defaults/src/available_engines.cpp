@@ -30,18 +30,21 @@ namespace metashell
 {
   namespace defaults
   {
-    std::map<data::engine_name, core::engine_entry> available_engines()
+    std::map<data::engine_name, core::engine_entry>
+    available_engines(const data::executable_path& metashell_binary_)
     {
       std::map<data::engine_name, core::engine_entry> result{
-          {engine::templight::name(true), engine::templight::entry(true)},
-          {engine::clang::name(), engine::clang::entry()},
-          {engine::templight::name(false), engine::templight::entry(false)},
+          {engine::templight::name(true),
+           engine::templight::entry(true, metashell_binary_)},
+          {engine::clang::name(), engine::clang::entry(metashell_binary_)},
+          {engine::templight::name(false),
+           engine::templight::entry(false, metashell_binary_)},
           {engine::null::name(), engine::null::entry()},
-          {engine::gcc::name(), engine::gcc::entry()},
-          {engine::vc::name(), engine::vc::entry()},
+          {engine::gcc::name(), engine::gcc::entry(metashell_binary_)},
+          {engine::vc::name(), engine::vc::entry(metashell_binary_)},
           {engine::wave::name_with_templight_headers(),
-           engine::wave::entry_with_templight_headers()},
-          {engine::wave::name(), engine::wave::entry()}};
+           engine::wave::entry_with_templight_headers(metashell_binary_)},
+          {engine::wave::name(), engine::wave::entry(metashell_binary_)}};
 
       result.insert({engine::auto_::name(), engine::auto_::entry(result)});
 

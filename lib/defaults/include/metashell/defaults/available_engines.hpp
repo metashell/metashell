@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/engine_name.hpp>
+#include <metashell/data/executable_path.hpp>
 
 #include <metashell/core/engine_entry.hpp>
 
@@ -27,7 +28,8 @@ namespace metashell
 {
   namespace defaults
   {
-    std::map<data::engine_name, core::engine_entry> available_engines();
+    std::map<data::engine_name, core::engine_entry>
+    available_engines(const data::executable_path& metashell_binary_);
   }
 }
 

@@ -32,8 +32,6 @@ namespace metashell
     class config
     {
     public:
-      executable_path metashell_binary;
-
       bool verbose = false;
       bool syntax_highlight = true;
       bool indent = true;
@@ -42,8 +40,6 @@ namespace metashell
       bool splash_enabled = true;
       logging_mode log_mode = logging_mode::none;
       std::string log_file;
-
-      explicit config(executable_path);
 
       const std::vector<shell_config>& shell_configs() const;
 

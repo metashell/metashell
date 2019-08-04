@@ -198,22 +198,6 @@ TEST(argument_parsing, specifying_the_engine)
       parse_valid_config({"--engine", "null"}).active_shell_config().engine);
 }
 
-TEST(argument_parsing, metashell_path_is_filled)
-{
-  std::vector<const char*> args{"the_path"};
-  NiceMock<mock::environment_detector> env_detector;
-
-  ON_CALL(env_detector, on_windows()).WillByDefault(Return(false));
-  ON_CALL(env_detector, on_osx()).WillByDefault(Return(false));
-
-  const metashell::data::config cfg = mpark::get<data::config>(
-      core::parse_config(args.size(), args.data(),
-                         std::map<data::engine_name, core::engine_entry>(),
-                         env_detector, nullptr, nullptr));
-
-  ASSERT_EQ(data::executable_path("the_path"), cfg.metashell_binary);
-}
-
 TEST(argument_parsing, preprocessor_mode_is_off_by_default)
 {
   ASSERT_FALSE(parse_valid_config({}).active_shell_config().preprocessor_mode);

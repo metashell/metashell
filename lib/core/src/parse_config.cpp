@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/exception.hpp>
 #include <metashell/data/markdown_string.hpp>
 
 #include <metashell/core/engine_entry.hpp>
@@ -259,12 +258,7 @@ namespace metashell
       using boost::program_options::parse_command_line;
       using boost::program_options::value;
 
-      if (argc_ <= 0)
-      {
-        throw data::exception("No arguments and binary name provided.");
-      }
-
-      data::config cfg{data::executable_path(argv_[0])};
+      data::config cfg;
 
       const char** args_end = argv_ + argc_;
 

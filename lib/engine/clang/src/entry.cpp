@@ -60,22 +60,22 @@ namespace metashell
           }
         }
 
-        std::unique_ptr<iface::engine> create_clang_engine(
-            const data::config& config_,
-            const boost::filesystem::path& internal_dir_,
-            const boost::filesystem::path& temp_dir_,
-            const boost::filesystem::path& env_filename_,
-            const std::map<data::engine_name, core::engine_entry>&,
-            iface::environment_detector& env_detector_,
-            iface::displayer& displayer_,
-            core::logger* logger_)
+        std::unique_ptr<iface::engine>
+        create_clang_engine(const data::config& config_,
+                            const data::executable_path& metashell_binary_,
+                            const boost::filesystem::path& internal_dir_,
+                            const boost::filesystem::path& temp_dir_,
+                            const boost::filesystem::path& env_filename_,
+                            iface::environment_detector& env_detector_,
+                            iface::displayer& displayer_,
+                            core::logger* logger_)
         {
           using core::not_supported;
 
           const binary cbin(
               false,
               find_clang(false, config_.active_shell_config().engine_args,
-                         config_.metashell_binary,
+                         metashell_binary_,
                          config_.active_shell_config().engine, env_detector_,
                          displayer_, logger_),
               config_.active_shell_config().engine_args, internal_dir_,
@@ -95,10 +95,21 @@ namespace metashell
 
       data::engine_name name() { return data::engine_name::clang; }
 
-      core::engine_entry entry()
+      core::engine_entry entry(data::executable_path metashell_binary_)
       {
         return core::engine_entry(
-            &create_clang_engine,
+            [metashell_binary_](
+                const data::config& config_,
+                const boost::filesystem::path& internal_dir_,
+                const boost::filesystem::path& temp_dir_,
+                const boost::filesystem::path& env_filename_,
+                const std::map<data::engine_name, core::engine_entry>&,
+                iface::environment_detector& env_detector_,
+                iface::displayer& displayer_, core::logger* logger_) {
+              return create_clang_engine(
+                  config_, metashell_binary_, internal_dir_, temp_dir_,
+                  env_filename_, env_detector_, displayer_, logger_);
+            },
             "<Clang binary> -std=<standard to use> [<Clang args>]",
             data::markdown_string(
                 "Uses the [Clang compiler](http://clang.llvm.org). `<Clang "

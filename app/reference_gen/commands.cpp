@@ -45,7 +45,7 @@ namespace
 
   void show_pragma_help(std::ostream& out_)
   {
-    metashell::data::config cfg{metashell::data::executable_path("metsahell")};
+    metashell::data::config cfg;
     cfg.push_back(metashell::data::shell_config(
         metashell::data::shell_config_name("default"),
         metashell::data::shell_config_data()));
@@ -92,9 +92,15 @@ namespace
     }
   }
 
+  metashell::data::executable_path metashell_binary()
+  {
+    return metashell::data::executable_path("metashell");
+  }
+
   void show_engine_help(std::ostream& out_)
   {
-    const auto engines = metashell::defaults::available_engines();
+    const auto engines =
+        metashell::defaults::available_engines(metashell_binary());
 
     for (const auto& engine : engines)
     {
@@ -114,7 +120,8 @@ namespace
 
   void show_engine_features(std::ostream& out_)
   {
-    const auto engines = metashell::defaults::available_engines();
+    const auto engines =
+        metashell::defaults::available_engines(metashell_binary());
     const auto features = metashell::data::feature::all();
 
     std::vector<metashell::data::markdown_string> header{

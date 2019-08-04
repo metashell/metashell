@@ -119,12 +119,11 @@ namespace metashell
 
         std::unique_ptr<iface::engine>
         create_vc_engine(const data::config& config_,
+                         const data::executable_path& metashell_binary_,
                          const boost::filesystem::path& internal_dir_,
                          const boost::filesystem::path& temp_dir_,
                          const boost::filesystem::path& env_filename_,
-                         const std::map<data::engine_name, core::engine_entry>&,
                          iface::environment_detector& env_detector_,
-                         iface::displayer&,
                          core::logger* logger_)
         {
           using core::not_supported;
@@ -138,7 +137,7 @@ namespace metashell
 
           binary cbin(
               extract_vc_binary(config_.active_shell_config().engine_args,
-                                env_detector_, config_.metashell_binary,
+                                env_detector_, metashell_binary_,
                                 config_.active_shell_config().engine),
               vc_args(config_.active_shell_config().engine_args, internal_dir_),
               temp_dir_, logger_);
@@ -154,21 +153,29 @@ namespace metashell
 
       data::engine_name name() { return data::engine_name::msvc; }
 
-      core::engine_entry entry()
+      core::engine_entry entry(data::executable_path metashell_binary_)
       {
         return core::engine_entry(
-            &create_vc_engine, "<path to cl.exe> [<cl.exe args>]",
+            [metashell_binary_](
+                const data::config& config_,
+                const boost::filesystem::path& internal_dir_,
+                const boost::filesystem::path& temp_dir_,
+                const boost::filesystem::path& env_filename_,
+                const std::map<data::engine_name, core::engine_entry>&,
+                iface::environment_detector& env_detector_, iface::displayer&,
+                core::logger* logger_) {
+              return create_vc_engine(config_, metashell_binary_, internal_dir_,
+                                      temp_dir_, env_filename_, env_detector_,
+                                      logger_);
+            },
+            "<path to cl.exe> [<cl.exe args>]",
             data::markdown_string(
                 "Uses the [Visual C++ "
                 "compiler](https://www.visualstudio.com/vs/cplusplus). "
-                "`<cl.exe "
-                "args>` are passed to the compiler as command line-arguments. "
-                "Note "
-                "that currently only the preprocessor shell is supported. You "
-                "need "
-                "to run Metashell from the Visual Studio Developer Prompt to "
-                "use "
-                "this engine."),
+                "`<cl.exe args>` are passed to the compiler as command "
+                "line-arguments. Note that currently only the preprocessor "
+                "shell is supported. You need to run Metashell from the Visual "
+                "Studio Developer Prompt to use this engine."),
             supported_features(), this_engine);
       }
     }
