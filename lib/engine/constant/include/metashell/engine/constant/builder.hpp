@@ -29,13 +29,13 @@ namespace metashell
   {
     namespace constant
     {
-      std::function<std::unique_ptr<iface::engine>(const data::config&)>
+      std::function<std::unique_ptr<iface::engine>(const data::shell_config&)>
       create_failing();
 
-      std::function<std::unique_ptr<iface::engine>(const data::config&)>
+      std::function<std::unique_ptr<iface::engine>(const data::shell_config&)>
       create_returning_type(const std::string& type_);
 
-      std::function<std::unique_ptr<iface::engine>(const data::config&)>
+      std::function<std::unique_ptr<iface::engine>(const data::shell_config&)>
       create_with_include_path(data::include_type type_,
                                std::vector<boost::filesystem::path> path_);
     }

@@ -46,7 +46,7 @@ namespace metashell
                        this_engine_);
 
       std::unique_ptr<iface::engine>
-      build(const data::config& config_,
+      build(const data::shell_config& config_,
             const boost::filesystem::path& internal_dir_,
             const boost::filesystem::path& temp_dir_,
             const boost::filesystem::path& env_filename_,

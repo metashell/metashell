@@ -49,8 +49,8 @@ namespace metashell
       shell(const data::config& config_,
             const boost::filesystem::path& internal_dir_,
             const boost::filesystem::path& env_filename_,
-            std::function<std::unique_ptr<iface::engine>(const data::config&)>
-                engine_builder_,
+            std::function<std::unique_ptr<iface::engine>(
+                const data::shell_config&)> engine_builder_,
             std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>
                 pragma_handlers_ = {},
             core::logger* logger_ = nullptr,
@@ -120,7 +120,7 @@ namespace metashell
       bool _stopped;
       std::stack<data::cpp_code> _environment_stack;
       core::logger* _logger;
-      std::function<std::unique_ptr<iface::engine>(const data::config&)>
+      std::function<std::unique_ptr<iface::engine>(const data::shell_config&)>
           _engine_builder;
       std::map<data::shell_config_name, std::unique_ptr<iface::engine>>
           _engines;

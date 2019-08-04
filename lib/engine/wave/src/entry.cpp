@@ -45,7 +45,7 @@ namespace metashell
 
         template <bool UseTemplightHeaders>
         std::unique_ptr<iface::engine>
-        create_wave_engine(const data::config& config_,
+        create_wave_engine(const data::shell_config& config_,
                            const data::executable_path& metashell_binary_,
                            const boost::filesystem::path& internal_dir_,
                            iface::environment_detector& env_detector_,
@@ -55,14 +55,13 @@ namespace metashell
           using core::not_supported;
 
           const data::wave_config cfg = parse_config(
-              UseTemplightHeaders, config_.active_shell_config().engine_args,
-              metashell_binary_, internal_dir_, env_detector_, displayer_,
-              logger_);
+              UseTemplightHeaders, config_.engine_args, metashell_binary_,
+              internal_dir_, env_detector_, displayer_, logger_);
           return make_engine(
               UseTemplightHeaders ? name_with_templight_headers() : name(),
-              config_.active_shell_config().engine, not_supported(),
-              preprocessor_shell(cfg), not_supported(), header_discoverer(cfg),
-              not_supported(), cpp_validator(cfg), macro_discovery(cfg),
+              config_.engine, not_supported(), preprocessor_shell(cfg),
+              not_supported(), header_discoverer(cfg), not_supported(),
+              cpp_validator(cfg), macro_discovery(cfg),
               preprocessor_tracer(cfg), supported_features());
         }
 
@@ -72,7 +71,7 @@ namespace metashell
         {
           return core::engine_entry(
               [metashell_binary_](
-                  const data::config& config_,
+                  const data::shell_config& config_,
                   const boost::filesystem::path& internal_dir_,
                   const boost::filesystem::path&,
                   const boost::filesystem::path&,

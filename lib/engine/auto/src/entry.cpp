@@ -59,7 +59,7 @@ namespace metashell
         }
 
         std::unique_ptr<iface::engine> choose_engine(
-            const data::config& config_,
+            const data::shell_config& config_,
             const boost::filesystem::path& internal_dir_,
             const boost::filesystem::path& temp_dir_,
             const boost::filesystem::path& env_filename_,
@@ -68,13 +68,11 @@ namespace metashell
             iface::displayer& displayer_,
             core::logger* logger_)
         {
-          const data::shell_config& cfg = config_.active_shell_config();
-
           const std::string args = boost::algorithm::join(
-              cfg.engine_args | boost::adaptors::transformed(
-                                    [](const data::command_line_argument& a_) {
-                                      return a_.value();
-                                    }),
+              config_.engine_args | boost::adaptors::transformed([](
+                                        const data::command_line_argument& a_) {
+                return a_.value();
+              }),
               " ");
 
           METASHELL_LOG(
@@ -85,7 +83,7 @@ namespace metashell
 
           for (const auto& engine : engines_)
           {
-            if (engine.second.this_engine(cfg.engine_args))
+            if (engine.second.this_engine(config_.engine_args))
             {
               METASHELL_LOG(
                   logger_, "Engine " + engine.first + " is suitable.");

@@ -79,7 +79,7 @@ namespace metashell
 
         template <bool UseInternalTemplight>
         std::unique_ptr<iface::engine>
-        create_templight_engine(const data::config& config_,
+        create_templight_engine(const data::shell_config& config_,
                                 const data::executable_path& metashell_binary_,
                                 const boost::filesystem::path& internal_dir_,
                                 const boost::filesystem::path& temp_dir_,
@@ -92,16 +92,13 @@ namespace metashell
 
           const clang::binary cbin(
               UseInternalTemplight,
-              clang::find_clang(UseInternalTemplight,
-                                config_.active_shell_config().engine_args,
-                                metashell_binary_,
-                                config_.active_shell_config().engine,
+              clang::find_clang(UseInternalTemplight, config_.engine_args,
+                                metashell_binary_, config_.engine,
                                 env_detector_, displayer_, logger_),
-              config_.active_shell_config().engine_args, internal_dir_,
-              env_detector_, logger_);
+              config_.engine_args, internal_dir_, env_detector_, logger_);
 
           return core::make_engine(
-              name(UseInternalTemplight), config_.active_shell_config().engine,
+              name(UseInternalTemplight), config_.engine,
               clang::type_shell(internal_dir_, env_filename_, cbin, logger_),
               clang::preprocessor_shell(cbin),
               clang::code_completer(
@@ -127,7 +124,7 @@ namespace metashell
                                &create_templight_engine<false>;
 
         auto factory = [factory_fun, metashell_binary_](
-            const data::config& config_,
+            const data::shell_config& config_,
             const boost::filesystem::path& internal_dir_,
             const boost::filesystem::path& temp_dir_,
             const boost::filesystem::path& env_filename_,

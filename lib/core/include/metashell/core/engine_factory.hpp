@@ -17,8 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/config.hpp>
 #include <metashell/data/engine_name.hpp>
+#include <metashell/data/shell_config.hpp>
 
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/engine.hpp>
@@ -38,7 +38,7 @@ namespace metashell
   namespace core
   {
     typedef std::function<std::unique_ptr<iface::engine>(
-        const data::config&,
+        const data::shell_config&,
         const boost::filesystem::path&,
         const boost::filesystem::path&,
         const boost::filesystem::path&,

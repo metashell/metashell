@@ -130,7 +130,7 @@ namespace metashell
         }
 
         std::unique_ptr<iface::engine>
-        create_gcc_engine(const data::config& config_,
+        create_gcc_engine(const data::shell_config& config_,
                           const data::executable_path& metashell_binary_,
                           const boost::filesystem::path& internal_dir_,
                           const boost::filesystem::path&,
@@ -142,15 +142,12 @@ namespace metashell
           using core::not_supported;
 
           clang::binary cbin(
-              extract_gcc_binary(config_.active_shell_config().engine_args,
-                                 env_detector_, metashell_binary_,
-                                 config_.active_shell_config().engine),
-              gcc_args(
-                  config_.active_shell_config().engine_args, internal_dir_),
-              logger_);
+              extract_gcc_binary(config_.engine_args, env_detector_,
+                                 metashell_binary_, config_.engine),
+              gcc_args(config_.engine_args, internal_dir_), logger_);
 
           return core::make_engine(
-              name(), config_.active_shell_config().engine, not_supported(),
+              name(), config_.engine, not_supported(),
               clang::preprocessor_shell(cbin), not_supported(),
               clang::header_discoverer(cbin), not_supported(),
               clang::cpp_validator(internal_dir_, env_filename_, cbin, logger_),
@@ -165,7 +162,7 @@ namespace metashell
       {
         return core::engine_entry(
             [metashell_binary_](
-                const data::config& config_,
+                const data::shell_config& config_,
                 const boost::filesystem::path& internal_dir_,
                 const boost::filesystem::path& temp_dir_,
                 const boost::filesystem::path& env_filename_,

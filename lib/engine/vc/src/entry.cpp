@@ -118,7 +118,7 @@ namespace metashell
         }
 
         std::unique_ptr<iface::engine>
-        create_vc_engine(const data::config& config_,
+        create_vc_engine(const data::shell_config& config_,
                          const data::executable_path& metashell_binary_,
                          const boost::filesystem::path& internal_dir_,
                          const boost::filesystem::path& temp_dir_,
@@ -135,17 +135,14 @@ namespace metashell
                 " from the Visual Studio Developer Prompt.");
           }
 
-          binary cbin(
-              extract_vc_binary(config_.active_shell_config().engine_args,
-                                env_detector_, metashell_binary_,
-                                config_.active_shell_config().engine),
-              vc_args(config_.active_shell_config().engine_args, internal_dir_),
-              temp_dir_, logger_);
+          binary cbin(extract_vc_binary(config_.engine_args, env_detector_,
+                                        metashell_binary_, config_.engine),
+                      vc_args(config_.engine_args, internal_dir_), temp_dir_,
+                      logger_);
 
           return make_engine(
-              name(), config_.active_shell_config().engine, not_supported(),
-              preprocessor_shell(cbin), not_supported(),
-              header_discoverer(cbin), not_supported(),
+              name(), config_.engine, not_supported(), preprocessor_shell(cbin),
+              not_supported(), header_discoverer(cbin), not_supported(),
               cpp_validator(internal_dir_, env_filename_, cbin, logger_),
               not_supported(), not_supported(), supported_features());
         }
@@ -157,7 +154,7 @@ namespace metashell
       {
         return core::engine_entry(
             [metashell_binary_](
-                const data::config& config_,
+                const data::shell_config& config_,
                 const boost::filesystem::path& internal_dir_,
                 const boost::filesystem::path& temp_dir_,
                 const boost::filesystem::path& env_filename_,

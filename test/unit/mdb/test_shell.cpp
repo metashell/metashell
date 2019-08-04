@@ -20,7 +20,7 @@
 
 #include <metashell/core/header_file_environment.hpp>
 
-#include <metashell/data/config.hpp>
+#include <metashell/data/shell_config.hpp>
 
 namespace
 {
@@ -29,20 +29,17 @@ namespace
 
   boost::filesystem::path env_filename() { return boost::filesystem::path(); }
 
-  metashell::data::config get_shell_config()
+  metashell::data::shell_config get_shell_config()
   {
-    metashell::data::config cfg;
-    cfg.push_back(metashell::data::shell_config(
+    return metashell::data::shell_config(
         metashell::data::shell_config_name("test"),
-        metashell::data::shell_config_data()));
-    return cfg;
+        metashell::data::shell_config_data());
   }
 
   metashell::iface::environment& get_env()
   {
     static metashell::core::header_file_environment env(
-        nullptr, get_shell_config().active_shell_config(), temp_dir(),
-        env_filename());
+        nullptr, get_shell_config(), temp_dir(), env_filename());
     return env;
   }
 

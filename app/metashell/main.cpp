@@ -136,14 +136,12 @@ int main(int argc_, const char* argv_[])
         // The shell should be destroyed when this scope is left, capturing
         // locals by reference should be safe.
         [&engines, &shell_dir, &temp_dir, &env_filename, &det, &ccfg,
-         &logger](const metashell::data::config& config_) {
-          const auto eentry =
-              engines.find(config_.active_shell_config().engine);
+         &logger](const metashell::data::shell_config& config_) {
+          const auto eentry = engines.find(config_.engine);
           if (eentry == engines.end())
           {
             throw std::runtime_error(
-                "Engine " + config_.active_shell_config().engine +
-                " not found. Available engines: " +
+                "Engine " + config_.engine + " not found. Available engines: " +
                 boost::algorithm::join(
                     engines | boost::adaptors::map_keys |
                         boost::adaptors::transformed(
