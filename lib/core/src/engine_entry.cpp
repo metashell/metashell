@@ -49,18 +49,17 @@ namespace metashell
       std::sort(_features.begin(), _features.end());
     }
 
-    std::unique_ptr<iface::engine> engine_entry::build(
-        const data::shell_config& config_,
-        const boost::filesystem::path& internal_dir_,
-        const boost::filesystem::path& temp_dir_,
-        const boost::filesystem::path& env_filename_,
-        const std::map<data::engine_name, engine_entry>& engines_,
-        iface::environment_detector& env_detector_,
-        iface::displayer& displayer_,
-        logger* logger_) const
+    std::unique_ptr<iface::engine>
+    engine_entry::build(const data::shell_config& config_,
+                        const boost::filesystem::path& internal_dir_,
+                        const boost::filesystem::path& temp_dir_,
+                        const boost::filesystem::path& env_filename_,
+                        iface::environment_detector& env_detector_,
+                        iface::displayer& displayer_,
+                        logger* logger_) const
     {
       return _factory(config_, internal_dir_, temp_dir_, env_filename_,
-                      engines_, env_detector_, displayer_, logger_);
+                      env_detector_, displayer_, logger_);
     }
 
     const std::string& engine_entry::args() const { return _args; }
@@ -112,24 +111,89 @@ namespace metashell
     }
 
     const engine_entry&
-    find(const std::map<data::engine_name, engine_entry>& engines_,
-         const data::engine_name& engine_)
+    find(const std::map<data::real_engine_name, engine_entry>& engines_,
+         const data::engine_name& engine_,
+         const data::command_line_argument_list& engine_args_,
+         logger* logger_)
     {
-      const auto eentry = engines_.find(engine_);
-      if (eentry == engines_.end())
+      if (auto engine = mpark::get_if<data::real_engine_name>(&engine_))
       {
-        throw data::exception(
-            "Engine " + engine_ + " not found. Available engines: " +
-            boost::algorithm::join(engines_ | boost::adaptors::map_keys |
-                                       boost::adaptors::transformed([](
-                                           const data::engine_name& engine_) {
-                                         return to_string(engine_);
-                                       }),
-                                   ", "));
+        const auto eentry = engines_.find(*engine);
+        if (eentry == engines_.end())
+        {
+          throw data::exception(
+              "Engine " + *engine + " not found. Available engines: " +
+              boost::algorithm::join(
+                  engines_ | boost::adaptors::map_keys |
+                      boost::adaptors::transformed(
+                          [](const data::real_engine_name& engine_) {
+                            return to_string(engine_);
+                          }),
+                  ", "));
+        }
+        else
+        {
+          return eentry->second;
+        }
       }
       else
       {
-        return eentry->second;
+        const std::string args = boost::algorithm::join(
+            engine_args_ | boost::adaptors::transformed(
+                               [](const data::command_line_argument& a_) {
+                                 return a_.value();
+                               }),
+            " ");
+
+        METASHELL_LOG(
+            logger_,
+            "auto engine determining engine to use. Arguments: " + args);
+
+        std::vector<data::real_engine_name> usable;
+
+        for (const auto& engine : engines_)
+        {
+          if (engine.second.this_engine(engine_args_))
+          {
+            METASHELL_LOG(logger_, "Engine " + engine.first + " is suitable.");
+            usable.push_back(engine.first);
+          }
+          else
+          {
+            METASHELL_LOG(
+                logger_, "Engine " + engine.first + " is not suitable.");
+          }
+        }
+
+        if (usable.empty())
+        {
+          throw data::exception(
+              "\"--engine auto\" could not use any of the available engines "
+              "with the following arguments: " +
+              args);
+        }
+        else if (usable.size() == 1)
+        {
+          METASHELL_LOG(logger_, "auto engine selected " + usable.front());
+
+          const auto engine = engines_.find(usable.front());
+          assert(engine != engines_.end());
+          return engine->second;
+        }
+        else
+        {
+          throw data::exception(
+              "\"--engine auto\" found multiple usabe engines for the "
+              "following arguments " +
+              args + ". Please use one of " +
+              boost::algorithm::join(
+                  usable | boost::adaptors::transformed(
+                               [](const data::engine_name& e_) -> std::string {
+                                 return "\"--engine " + e_ + "\"";
+                               }),
+                  ", ") +
+              "instead of \"--engine auto\".");
+        }
       }
     }
   }

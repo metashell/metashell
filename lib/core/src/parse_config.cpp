@@ -68,33 +68,36 @@ namespace metashell
       }
 
       void show_engine_help(
-          const std::map<data::engine_name, engine_entry>& engines_,
+          const std::map<data::real_engine_name, engine_entry>& engines_,
           const data::engine_name& engine_,
           std::ostream* out_,
           const std::string& app_name_)
       {
-        const auto e = engines_.find(engine_);
-        if (e == engines_.end())
+        if (auto engine = mpark::get_if<data::real_engine_name>(&engine_))
         {
-          throw std::runtime_error("Engine " + engine_ + " not found.");
+          const auto e = engines_.find(*engine);
+          if (e == engines_.end())
+          {
+            throw std::runtime_error("Engine " + *engine + " not found.");
+          }
+          else if (out_)
+          {
+            *out_ << "Usage: \n\n  " << app_name_ << " --engine " << e->first;
+            const auto args = e->second.args();
+            if (!args.empty())
+            {
+              *out_ << " -- " << e->second.args();
+            }
+            *out_ << "\n\n"
+                  << unformat(e->second.description())
+                  << "\n\nSupported features: " << list_features(e->second)
+                  << "\n\n";
+          }
         }
         else if (out_)
         {
-          *out_ << "Usage: " << std::endl
-                << std::endl
-                << "  " << app_name_ << " --engine " << e->first;
-          const auto args = e->second.args();
-          if (!args.empty())
-          {
-            *out_ << " -- " << e->second.args();
-          }
-          *out_ << std::endl
-                << std::endl
-                << unformat(e->second.description()) << std::endl
-                << std::endl
-                << "Supported features: " << list_features(e->second)
-                << std::endl
-                << std::endl;
+          *out_ << "Usage: \n\n  " << app_name_ << " --engine auto\n\n"
+                << unformat(data::auto_engine_description()) << "\n\n";
         }
       }
 
@@ -246,7 +249,7 @@ namespace metashell
     parse_config_result
     parse_config(int argc_,
                  const char* argv_[],
-                 const std::map<data::engine_name, engine_entry>& engines_,
+                 const std::map<data::real_engine_name, engine_entry>& engines_,
                  iface::environment_detector& env_detector_,
                  std::ostream* out_,
                  std::ostream* err_)
@@ -276,12 +279,12 @@ namespace metashell
       std::string engine;
 
       const std::string engine_info =
-          "The engine (C++ compiler) to use. Available engines: " +
+          "The engine (C++ compiler) to use. Available engines: auto, " +
           boost::algorithm::join(engines_ | boost::adaptors::map_keys |
-                                     boost::adaptors::transformed(
-                                         [](const data::engine_name& name_) {
-                                           return to_string(name_);
-                                         }),
+                                     boost::adaptors::transformed([](
+                                         const data::real_engine_name& name_) {
+                                       return to_string(name_);
+                                     }),
                                  ", ") +
           ". Default: " + data::shell_config_data().engine;
 

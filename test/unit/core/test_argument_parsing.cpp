@@ -42,9 +42,10 @@ namespace
     ON_CALL(env_detector, on_windows()).WillByDefault(Return(false));
     ON_CALL(env_detector, on_osx()).WillByDefault(Return(false));
 
-    return core::parse_config(args.size(), args.data(),
-                              std::map<data::engine_name, core::engine_entry>(),
-                              env_detector, out_, err_);
+    return core::parse_config(
+        args.size(), args.data(),
+        std::map<data::real_engine_name, core::engine_entry>(), env_detector,
+        out_, err_);
   }
 
   bool fails_and_displays_error(std::initializer_list<const char*> args_)

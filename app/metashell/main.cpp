@@ -79,7 +79,8 @@ int main(int argc_, const char* argv_[])
     using metashell::core::parse_config;
     using metashell::core::parse_config_result;
 
-    const std::map<metashell::data::engine_name, metashell::core::engine_entry>
+    const std::map<metashell::data::real_engine_name,
+                   metashell::core::engine_entry>
         engines = metashell::defaults::available_engines(metashell_binary);
 
     metashell::core::default_environment_detector det(argv_[0]);
@@ -135,8 +136,8 @@ int main(int argc_, const char* argv_[])
         // locals by reference should be safe.
         [&engines, &shell_dir, &temp_dir, &env_filename, &det, &ccfg,
          &logger](const metashell::data::shell_config& config_) {
-          return find(engines, config_.engine)
-              .build(config_, shell_dir, temp_dir, env_filename, engines, det,
+          return find(engines, config_.engine, config_.engine_args, &logger)
+              .build(config_, shell_dir, temp_dir, env_filename, det,
                      ccfg.displayer(), &logger);
         },
         metashell::defaults::pragma_map(

@@ -28,7 +28,6 @@ target_link_libraries(
   ${PROJECT_NAME}
 
   metashell::core
-  metashell::engine::auto
   metashell::engine::clang
   metashell::engine::gcc
   metashell::engine::null

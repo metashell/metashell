@@ -70,14 +70,13 @@ namespace metashell
         get_engine_entry(data::executable_path metashell_binary_)
         {
           return core::engine_entry(
-              [metashell_binary_](
-                  const data::shell_config& config_,
-                  const boost::filesystem::path& internal_dir_,
-                  const boost::filesystem::path&,
-                  const boost::filesystem::path&,
-                  const std::map<data::engine_name, core::engine_entry>&,
-                  iface::environment_detector& env_detector_,
-                  iface::displayer& displayer_, core::logger* logger_) {
+              [metashell_binary_](const data::shell_config& config_,
+                                  const boost::filesystem::path& internal_dir_,
+                                  const boost::filesystem::path&,
+                                  const boost::filesystem::path&,
+                                  iface::environment_detector& env_detector_,
+                                  iface::displayer& displayer_,
+                                  core::logger* logger_) {
                 return create_wave_engine<UseTemplightHeaders>(
                     config_, metashell_binary_, internal_dir_, env_detector_,
                     displayer_, logger_);

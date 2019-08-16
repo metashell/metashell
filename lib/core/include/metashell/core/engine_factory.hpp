@@ -17,7 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/engine_name.hpp>
 #include <metashell/data/shell_config.hpp>
 
 #include <metashell/iface/displayer.hpp>
@@ -30,7 +29,6 @@
 #include <boost/filesystem/path.hpp>
 
 #include <functional>
-#include <map>
 #include <memory>
 
 namespace metashell
@@ -42,7 +40,6 @@ namespace metashell
         const boost::filesystem::path&,
         const boost::filesystem::path&,
         const boost::filesystem::path&,
-        const std::map<data::engine_name, engine_entry>&,
         iface::environment_detector&,
         iface::displayer&,
         logger*)>

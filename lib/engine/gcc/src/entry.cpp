@@ -161,14 +161,13 @@ namespace metashell
       core::engine_entry entry(data::executable_path metashell_binary_)
       {
         return core::engine_entry(
-            [metashell_binary_](
-                const data::shell_config& config_,
-                const boost::filesystem::path& internal_dir_,
-                const boost::filesystem::path& temp_dir_,
-                const boost::filesystem::path& env_filename_,
-                const std::map<data::engine_name, core::engine_entry>&,
-                iface::environment_detector& env_detector_,
-                iface::displayer& displayer_, core::logger* logger_) {
+            [metashell_binary_](const data::shell_config& config_,
+                                const boost::filesystem::path& internal_dir_,
+                                const boost::filesystem::path& temp_dir_,
+                                const boost::filesystem::path& env_filename_,
+                                iface::environment_detector& env_detector_,
+                                iface::displayer& displayer_,
+                                core::logger* logger_) {
               return create_gcc_engine(config_, metashell_binary_,
                                        internal_dir_, temp_dir_, env_filename_,
                                        env_detector_, displayer_, logger_);

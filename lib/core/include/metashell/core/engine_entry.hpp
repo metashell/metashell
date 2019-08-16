@@ -50,7 +50,6 @@ namespace metashell
             const boost::filesystem::path& internal_dir_,
             const boost::filesystem::path& temp_dir_,
             const boost::filesystem::path& env_filename_,
-            const std::map<data::engine_name, engine_entry>& engines_,
             iface::environment_detector& env_detector_,
             iface::displayer& displayer_,
             logger* logger_) const;
@@ -79,8 +78,11 @@ namespace metashell
     data::markdown_string
     list_features_in_markdown(const engine_entry& engine_);
 
-    const engine_entry& find(const std::map<data::engine_name, engine_entry>&,
-                             const data::engine_name&);
+    const engine_entry&
+    find(const std::map<data::real_engine_name, engine_entry>&,
+         const data::engine_name&,
+         const data::command_line_argument_list&,
+         logger*);
   }
 }
 

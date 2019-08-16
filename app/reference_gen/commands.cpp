@@ -102,6 +102,10 @@ namespace
     const auto engines =
         metashell::defaults::available_engines(metashell_binary());
 
+    out_ << "* " << metashell::data::self_id("auto") << "<br />\n"
+         << "Usage: `metashell --engine auto`<br />\n<br />\n"
+         << metashell::data::auto_engine_description() << "<br />\n<br />\n";
+
     for (const auto& engine : engines)
     {
       out_ << "* " << metashell::data::self_id(to_string(engine.first))

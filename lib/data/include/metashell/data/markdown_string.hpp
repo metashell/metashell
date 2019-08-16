@@ -47,6 +47,8 @@ namespace metashell
                       std::ostream& out_);
 
     std::string unformat(const markdown_string& s_);
+
+    markdown_string auto_engine_description();
   }
 }
 

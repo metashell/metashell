@@ -142,5 +142,12 @@ namespace metashell
       return std::regex_replace(
           s, std::regex("\\[([^\\]]*)\\]\\(([^)]*)\\)"), "$01 (see $02)");
     }
+
+    markdown_string auto_engine_description()
+    {
+      return metashell::data::markdown_string(
+          "Chooses an engine based on the compiler "
+          "specified in the arguments.");
+    }
   }
 }

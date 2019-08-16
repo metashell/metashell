@@ -39,9 +39,8 @@ namespace metashell
         return core::engine_entry(
             [](const data::shell_config& config_,
                const boost::filesystem::path&, const boost::filesystem::path&,
-               const boost::filesystem::path&,
-               const std::map<data::engine_name, core::engine_entry>&,
-               iface::environment_detector&, iface::displayer&, core::logger*) {
+               const boost::filesystem::path&, iface::environment_detector&,
+               iface::displayer&, core::logger*) {
               return core::make_engine(name(), config_.engine, not_supported(),
                                        not_supported(), not_supported(),
                                        not_supported(), not_supported(),

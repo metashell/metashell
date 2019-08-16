@@ -16,7 +16,6 @@
 
 #include <metashell/defaults/available_engines.hpp>
 
-#include <metashell/engine/auto/entry.hpp>
 #include <metashell/engine/clang/entry.hpp>
 #include <metashell/engine/gcc/entry.hpp>
 #include <metashell/engine/null/entry.hpp>
@@ -30,10 +29,10 @@ namespace metashell
 {
   namespace defaults
   {
-    std::map<data::engine_name, core::engine_entry>
+    std::map<data::real_engine_name, core::engine_entry>
     available_engines(const data::executable_path& metashell_binary_)
     {
-      std::map<data::engine_name, core::engine_entry> result{
+      std::map<data::real_engine_name, core::engine_entry> result{
           {engine::templight::name(true),
            engine::templight::entry(true, metashell_binary_)},
           {engine::clang::name(), engine::clang::entry(metashell_binary_)},
@@ -45,8 +44,6 @@ namespace metashell
           {engine::wave::name_with_templight_headers(),
            engine::wave::entry_with_templight_headers(metashell_binary_)},
           {engine::wave::name(), engine::wave::entry(metashell_binary_)}};
-
-      result.insert({data::auto_engine_name(), engine::auto_::entry(result)});
 
       return result;
     }
