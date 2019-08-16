@@ -72,7 +72,7 @@ namespace metashell
         return [](const data::shell_config&) {
           const data::result result(false, "", "Using failing engine", "");
           const std::vector<boost::filesystem::path> empty;
-          const data::engine_name name = data::engine_name::null;
+          const data::real_engine_name name = data::real_engine_name::null;
 
           return core::make_engine(
               name, name, type_shell(result), preprocessor_shell(result),
@@ -88,7 +88,7 @@ namespace metashell
         return [type_](const data::shell_config&) {
           const data::result result(true, type_, "", "");
           const std::vector<boost::filesystem::path> empty;
-          const data::engine_name name = data::engine_name::null;
+          const data::real_engine_name name = data::real_engine_name::null;
 
           return core::make_engine(
               name, name, type_shell(result), preprocessor_shell(result),
@@ -104,7 +104,7 @@ namespace metashell
       {
         return [type_, path_](const data::shell_config&) {
           const data::result result(true, "int", "", "");
-          const data::engine_name name = data::engine_name::null;
+          const data::real_engine_name name = data::real_engine_name::null;
 
           return core::make_engine(
               name, name, type_shell(result), preprocessor_shell(result),

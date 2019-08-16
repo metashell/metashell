@@ -94,16 +94,19 @@ namespace metashell
         }
       } // anonymous namespace
 
-      data::engine_name name() { return data::engine_name::pure_wave; }
+      data::real_engine_name name()
+      {
+        return data::real_engine_name::pure_wave;
+      }
 
       core::engine_entry entry(data::executable_path metashell_binary_)
       {
         return get_engine_entry<false>(std::move(metashell_binary_));
       }
 
-      data::engine_name name_with_templight_headers()
+      data::real_engine_name name_with_templight_headers()
       {
-        return data::engine_name::wave;
+        return data::real_engine_name::wave;
       }
 
       core::engine_entry

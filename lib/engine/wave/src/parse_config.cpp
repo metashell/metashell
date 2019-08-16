@@ -188,7 +188,7 @@ namespace metashell
           const data::command_line_argument_list extra_clang_args;
           if (const auto clang_path = clang::find_clang_nothrow(
                   true, extra_clang_args, metashell_binary_,
-                  data::engine_name::internal, env_detector_, displayer_,
+                  data::real_engine_name::internal, env_detector_, displayer_,
                   logger_))
           {
             const clang::binary cbin(true, *clang_path, extra_clang_args,

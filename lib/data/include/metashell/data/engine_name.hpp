@@ -17,6 +17,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/auto_engine_name.hpp>
+#include <metashell/data/real_engine_name.hpp>
+
+#include <variant.hpp>
+
 #include <iosfwd>
 #include <string>
 #include <string_view>
@@ -25,18 +30,7 @@ namespace metashell
 {
   namespace data
   {
-    enum class engine_name
-    {
-      auto_,
-      clang,
-      gcc,
-      internal,
-      msvc,
-      null,
-      pure_wave,
-      templight,
-      wave
-    };
+    using engine_name = mpark::variant<auto_engine_name, real_engine_name>;
 
     std::string operator+(const std::string&, engine_name);
     std::string operator+(engine_name, const std::string&);

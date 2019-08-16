@@ -34,7 +34,7 @@ namespace metashell
         bool use_precompiled_headers_, bool preprocessor_mode_)
     {
       _defaults.use_precompiled_headers = use_precompiled_headers_;
-      _defaults.engine = data::engine_name::auto_,
+      _defaults.engine = data::auto_engine_name(),
       _defaults.preprocessor_mode = preprocessor_mode_;
     }
 

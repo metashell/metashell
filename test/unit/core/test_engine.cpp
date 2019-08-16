@@ -32,11 +32,14 @@ namespace
   public:
     explicit test_engine(iface::engine& base_) : _base(base_) {}
 
-    data::engine_name name() const override { return data::engine_name::null; }
+    data::real_engine_name name() const override
+    {
+      return data::real_engine_name::null;
+    }
 
     data::engine_name display_name() const override
     {
-      return data::engine_name::internal;
+      return data::real_engine_name::internal;
     }
 
     iface::type_shell& type_shell() override

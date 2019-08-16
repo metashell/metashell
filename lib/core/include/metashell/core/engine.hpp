@@ -80,7 +80,7 @@ namespace metashell
                                         PreprocessorTracer>::value,
                     "Preprocessor tracer is needed");
 
-      engine(data::engine_name name_,
+      engine(data::real_engine_name name_,
              data::engine_name display_name_,
              TypeShell type_shell_,
              PreprocessorShell preprocessor_shell_,
@@ -103,7 +103,7 @@ namespace metashell
       {
       }
 
-      virtual data::engine_name name() const override { return _name; }
+      virtual data::real_engine_name name() const override { return _name; }
 
       virtual data::engine_name display_name() const override
       {
@@ -202,7 +202,7 @@ namespace metashell
       }
 
     private:
-      data::engine_name _name;
+      data::real_engine_name _name;
       data::engine_name _display_name;
       TypeShell _type_shell;
       PreprocessorShell _preprocessor_shell;
@@ -230,7 +230,7 @@ namespace metashell
                            CppValidator,
                            MacroDiscovery,
                            PreprocessorTracer>>
-    make_engine(data::engine_name name_,
+    make_engine(data::real_engine_name name_,
                 data::engine_name display_name_,
                 TypeShell&& type_shell_,
                 PreprocessorShell&& preprocessor_shell_,

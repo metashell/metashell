@@ -110,10 +110,10 @@ namespace metashell
         }
       } // anonymous namespace
 
-      data::engine_name name(bool use_internal_templight_)
+      data::real_engine_name name(bool use_internal_templight_)
       {
-        return use_internal_templight_ ? data::engine_name::internal :
-                                         data::engine_name::templight;
+        return use_internal_templight_ ? data::real_engine_name::internal :
+                                         data::real_engine_name::templight;
       }
 
       core::engine_entry entry(bool use_internal_templight_,

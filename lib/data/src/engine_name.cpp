@@ -15,9 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/engine_name.hpp>
-#include <metashell/data/exception.hpp>
 
-#include <cassert>
 #include <iostream>
 
 namespace metashell
@@ -26,73 +24,13 @@ namespace metashell
   {
     engine_name parse_engine_name(const std::string_view& s_)
     {
-      if (s_ == "internal")
-      {
-        return engine_name::internal;
-      }
-      else if (s_ == "templight")
-      {
-        return engine_name::templight;
-      }
-      else if (s_ == "clang")
-      {
-        return engine_name::clang;
-      }
-      else if (s_ == "null")
-      {
-        return engine_name::null;
-      }
-      else if (s_ == "gcc")
-      {
-        return engine_name::gcc;
-      }
-      else if (s_ == "msvc")
-      {
-        return engine_name::msvc;
-      }
-      else if (s_ == "wave")
-      {
-        return engine_name::wave;
-      }
-      else if (s_ == "pure_wave")
-      {
-        return engine_name::pure_wave;
-      }
-      else if (s_ == "auto")
-      {
-        return engine_name::auto_;
-      }
-      else
-      {
-        throw exception("Invalid engine name: " + std::string(s_));
-      }
+      return s_ == "auto" ? engine_name(auto_engine_name()) :
+                            engine_name(parse_real_engine_name(s_));
     }
 
     std::string to_string(engine_name e_)
     {
-      switch (e_)
-      {
-      case engine_name::internal:
-        return "internal";
-      case engine_name::templight:
-        return "templight";
-      case engine_name::clang:
-        return "clang";
-      case engine_name::null:
-        return "null";
-      case engine_name::gcc:
-        return "gcc";
-      case engine_name::msvc:
-        return "msvc";
-      case engine_name::wave:
-        return "wave";
-      case engine_name::pure_wave:
-        return "pure_wave";
-      case engine_name::auto_:
-        return "auto";
-      }
-      assert(!"Invalid engine name");
-      return "";
+      return mpark::visit([](auto name_) { return to_string(name_); }, e_);
     }
 
     std::ostream& operator<<(std::ostream& out_, engine_name e_)

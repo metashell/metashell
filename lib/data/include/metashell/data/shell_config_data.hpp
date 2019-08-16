@@ -29,7 +29,7 @@ namespace metashell
     public:
       command_line_argument_list engine_args;
       bool use_precompiled_headers = false;
-      engine_name engine = engine_name::auto_;
+      engine_name engine = auto_engine_name();
       bool preprocessor_mode = false;
     };
   }

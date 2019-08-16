@@ -90,7 +90,7 @@ namespace metashell
         }
       } // anonymous namespace
 
-      data::engine_name name() { return data::engine_name::clang; }
+      data::real_engine_name name() { return data::real_engine_name::clang; }
 
       core::engine_entry entry(data::executable_path metashell_binary_)
       {

@@ -17,8 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/engine_name.hpp>
 #include <metashell/data/executable_path.hpp>
+#include <metashell/data/real_engine_name.hpp>
 
 #include <metashell/core/engine_entry.hpp>
 
@@ -28,7 +28,7 @@ namespace metashell
   {
     namespace templight
     {
-      data::engine_name name(bool use_internal_templight_);
+      data::real_engine_name name(bool use_internal_templight_);
 
       core::engine_entry entry(bool use_internal_templight_,
                                data::executable_path metashell_binary_);

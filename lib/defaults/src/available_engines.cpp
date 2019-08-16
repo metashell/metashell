@@ -46,7 +46,7 @@ namespace metashell
            engine::wave::entry_with_templight_headers(metashell_binary_)},
           {engine::wave::name(), engine::wave::entry(metashell_binary_)}};
 
-      result.insert({engine::auto_::name(), engine::auto_::entry(result)});
+      result.insert({data::auto_engine_name(), engine::auto_::entry(result)});
 
       return result;
     }

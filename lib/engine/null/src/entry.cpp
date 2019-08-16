@@ -30,7 +30,7 @@ namespace metashell
         std::vector<data::feature> supported_features() { return {}; }
       }
 
-      data::engine_name name() { return data::engine_name::null; }
+      data::real_engine_name name() { return data::real_engine_name::null; }
 
       core::engine_entry entry()
       {

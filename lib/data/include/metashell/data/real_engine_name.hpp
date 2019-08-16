@@ -1,5 +1,8 @@
+#ifndef METASHELL_REAL_ENGINE_NAME_HPP
+#define METASHELL_REAL_ENGINE_NAME_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,17 +17,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/some_feature_not_supported.hpp>
+#include <metashell/data/auto_engine_name.hpp>
+
+#include <iosfwd>
+#include <string>
+#include <string_view>
 
 namespace metashell
 {
   namespace data
   {
-    some_feature_not_supported::some_feature_not_supported(
-        const real_engine_name& engine_, const feature& feature_)
-      : exception("Feature " + to_string(feature_) +
-                  " is not supported by the " + engine_ + " engine.")
+    enum class real_engine_name
     {
-    }
+      clang,
+      gcc,
+      internal,
+      msvc,
+      null,
+      pure_wave,
+      templight,
+      wave
+    };
+
+    std::string operator+(const std::string&, real_engine_name);
+    std::string operator+(real_engine_name, const std::string&);
+
+    real_engine_name parse_real_engine_name(const std::string_view&);
+
+    std::string to_string(real_engine_name);
+    std::ostream& operator<<(std::ostream&, real_engine_name);
   }
 }
+
+#endif

@@ -187,14 +187,14 @@ TEST(argument_parsing, decommissioned_arguments_provide_an_error_message)
 
 TEST(argument_parsing, not_specifying_the_engine)
 {
-  ASSERT_EQ(data::engine_name::auto_,
+  ASSERT_EQ(data::engine_name(data::auto_engine_name()),
             parse_valid_config({}).active_shell_config().engine);
 }
 
 TEST(argument_parsing, specifying_the_engine)
 {
   ASSERT_EQ(
-      data::engine_name::null,
+      data::engine_name(data::real_engine_name::null),
       parse_valid_config({"--engine", "null"}).active_shell_config().engine);
 }
 
