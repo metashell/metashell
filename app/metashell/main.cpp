@@ -33,9 +33,7 @@
 
 #include <metashell/data/config.hpp>
 
-#include <boost/algorithm/string/join.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/range/adaptor/map.hpp>
 
 #include <just/temp.hpp>
 
@@ -137,25 +135,9 @@ int main(int argc_, const char* argv_[])
         // locals by reference should be safe.
         [&engines, &shell_dir, &temp_dir, &env_filename, &det, &ccfg,
          &logger](const metashell::data::shell_config& config_) {
-          const auto eentry = engines.find(config_.engine);
-          if (eentry == engines.end())
-          {
-            throw std::runtime_error(
-                "Engine " + config_.engine + " not found. Available engines: " +
-                boost::algorithm::join(
-                    engines | boost::adaptors::map_keys |
-                        boost::adaptors::transformed(
-                            [](const metashell::data::engine_name& engine_) {
-                              return to_string(engine_);
-                            }),
-                    ", "));
-          }
-          else
-          {
-            return eentry->second.build(config_, shell_dir, temp_dir,
-                                        env_filename, engines, det,
-                                        ccfg.displayer(), &logger);
-          }
+          return find(engines, config_.engine)
+              .build(config_, shell_dir, temp_dir, env_filename, engines, det,
+                     ccfg.displayer(), &logger);
         },
         metashell::defaults::pragma_map(
             &ccfg.processor_queue(), mdb_dir, &logger),

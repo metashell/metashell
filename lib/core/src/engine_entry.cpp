@@ -16,7 +16,10 @@
 
 #include <metashell/core/engine_entry.hpp>
 
+#include <metashell/data/exception.hpp>
+
 #include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptor/map.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 
 #include <algorithm>
@@ -106,6 +109,28 @@ namespace metashell
     never_used_by_auto()
     {
       return {};
+    }
+
+    const engine_entry&
+    find(const std::map<data::engine_name, engine_entry>& engines_,
+         const data::engine_name& engine_)
+    {
+      const auto eentry = engines_.find(engine_);
+      if (eentry == engines_.end())
+      {
+        throw data::exception(
+            "Engine " + engine_ + " not found. Available engines: " +
+            boost::algorithm::join(engines_ | boost::adaptors::map_keys |
+                                       boost::adaptors::transformed([](
+                                           const data::engine_name& engine_) {
+                                         return to_string(engine_);
+                                       }),
+                                   ", "));
+      }
+      else
+      {
+        return eentry->second;
+      }
     }
   }
 }

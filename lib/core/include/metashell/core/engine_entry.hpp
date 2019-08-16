@@ -75,8 +75,12 @@ namespace metashell
     never_used_by_auto();
 
     std::string list_features(const engine_entry& engine_);
+
     data::markdown_string
     list_features_in_markdown(const engine_entry& engine_);
+
+    const engine_entry& find(const std::map<data::engine_name, engine_entry>&,
+                             const data::engine_name&);
   }
 }
 
