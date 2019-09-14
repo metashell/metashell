@@ -23,8 +23,8 @@ namespace metashell
     wave_arg_parser::wave_arg_parser(bool use_templight_headers_)
     {
       _config.config.standard = use_templight_headers_ ?
-                                    boost::make_optional(wave_standard::cpp11) :
-                                    boost::none;
+                                    language_standard::cpp11 :
+                                    language_standard::cpp98;
       _config.ignore_macro_redefinition = use_templight_headers_;
       if (use_templight_headers_)
       {
@@ -72,7 +72,7 @@ namespace metashell
           "--c99",
           "enable C99 mode (implies `--variadics`)",
           [this] {
-            this->_config.config.standard = wave_standard::c99;
+            this->_config.config.standard = language_standard::c99;
             this->_config.long_long = true;
             this->_standards.emplace_back("c99");
           }
@@ -81,7 +81,7 @@ namespace metashell
           "--c++11",
           "enable C++11 mode (implies `--variadics` and `--long_long`)",
           [this] {
-            this->_config.config.standard = wave_standard::cpp11;
+            this->_config.config.standard = language_standard::cpp11;
             this->_config.long_long = true;
             this->_standards.emplace_back("c++11");
           }
@@ -91,7 +91,7 @@ namespace metashell
           use_templight_headers_ ?
             "don't add standard headers to the include path" :
             "ignored (accepted to be compatible with the `wave` engine)",
-          [this] { this->_config.config.use_standard_headers = false; }
+          [this] { this->_config.config.use_standard_headers = data::standard_headers_allowed::none; }
         )
       ;
       // clang-format on

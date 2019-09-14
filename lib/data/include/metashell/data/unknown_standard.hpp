@@ -1,5 +1,5 @@
-#ifndef METASHELL_DATA_ENGINE_CONFIG_HPP
-#define METASHELL_DATA_ENGINE_CONFIG_HPP
+#ifndef METASHELL_DATA_UNKNOWN_STANDARD_HPP
+#define METASHELL_DATA_UNKNOWN_STANDARD_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,25 +17,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/command_line_argument_list.hpp>
-#include <metashell/data/include_config.hpp>
-#include <metashell/data/language_standard.hpp>
-#include <metashell/data/standard_headers_allowed.hpp>
+#include <metashell/data/exception.hpp>
+#include <metashell/data/real_engine_name.hpp>
 
-#include <vector>
+#include <string>
 
 namespace metashell
 {
   namespace data
   {
-    struct engine_config
+    class unknown_standard : public exception
     {
-      include_config includes;
-
-      std::vector<std::string> macros;
-      language_standard standard = language_standard::cpp98;
-      standard_headers_allowed use_standard_headers =
-          standard_headers_allowed::all;
+    public:
+      unknown_standard(const real_engine_name&, const std::string&);
     };
   }
 }

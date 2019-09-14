@@ -61,43 +61,90 @@ namespace metashell
           }
         }
 
-        boost::wave::language_support apply(boost::wave::language_support lng_,
-                                            const data::wave_config& cfg_)
+        boost::wave::language_support
+        language_support(data::language_standard standard_)
         {
-          if (cfg_.config.standard)
+          switch (standard_)
           {
-            switch (*cfg_.config.standard)
-            {
-            case data::wave_standard::c99:
-              lng_ = boost::wave::language_support(
-                  boost::wave::support_c99 |
-                  boost::wave::support_option_convert_trigraphs |
-                  boost::wave::support_option_emit_line_directives |
-                  boost::wave::support_option_include_guard_detection |
-                  boost::wave::support_option_emit_pragma_directives |
-                  boost::wave::support_option_insert_whitespace);
-              break;
-            case data::wave_standard::cpp11:
-              lng_ = boost::wave::language_support(
-                  boost::wave::support_cpp0x |
-                  boost::wave::support_option_convert_trigraphs |
-                  boost::wave::support_option_long_long |
-                  boost::wave::support_option_emit_line_directives |
-                  boost::wave::support_option_include_guard_detection |
-                  boost::wave::support_option_emit_pragma_directives |
-                  boost::wave::support_option_insert_whitespace);
-              break;
-            }
+          case data::language_standard::c89:
+          case data::language_standard::gnu89:
+          case data::language_standard::c90:
+          case data::language_standard::iso9899_199409:
+          case data::language_standard::gnu90:
+            return boost::wave::language_support(
+                boost::wave::support_option_convert_trigraphs |
+                boost::wave::support_option_emit_line_directives |
+                boost::wave::support_option_include_guard_detection |
+                boost::wave::support_option_emit_pragma_directives |
+                boost::wave::support_option_insert_whitespace);
+          case data::language_standard::c9x:
+          case data::language_standard::gnu9x:
+          case data::language_standard::c99:
+          case data::language_standard::gnu99:
+          case data::language_standard::c1x:
+          case data::language_standard::gnu1x:
+          case data::language_standard::c11:
+          case data::language_standard::gnu11:
+            return boost::wave::language_support(
+                boost::wave::support_c99 |
+                boost::wave::support_option_convert_trigraphs |
+                boost::wave::support_option_emit_line_directives |
+                boost::wave::support_option_include_guard_detection |
+                boost::wave::support_option_emit_pragma_directives |
+                boost::wave::support_option_insert_whitespace);
+          case data::language_standard::cpp98:
+          case data::language_standard::gnu98:
+          case data::language_standard::cpp03:
+          case data::language_standard::gnu03:
+            return boost::wave::language_support(
+                boost::wave::support_option_convert_trigraphs |
+                boost::wave::support_option_emit_line_directives |
+                boost::wave::support_option_include_guard_detection |
+                boost::wave::support_option_emit_pragma_directives |
+                boost::wave::support_option_insert_whitespace);
+          case data::language_standard::cpp0x:
+          case data::language_standard::gnupp0x:
+          case data::language_standard::cpp11:
+          case data::language_standard::gnupp11:
+          case data::language_standard::cpp1y:
+          case data::language_standard::gnupp1y:
+          case data::language_standard::cpp14:
+          case data::language_standard::gnupp14:
+          case data::language_standard::cpp1z:
+          case data::language_standard::gnupp1z:
+          case data::language_standard::cpp17:
+          case data::language_standard::gnupp17:
+          case data::language_standard::cpp2a:
+          case data::language_standard::gnupp2a:
+          case data::language_standard::cpp20:
+          case data::language_standard::gnupp20:
+            return boost::wave::language_support(
+                boost::wave::support_cpp0x |
+                boost::wave::support_option_convert_trigraphs |
+                boost::wave::support_option_long_long |
+                boost::wave::support_option_emit_line_directives |
+                boost::wave::support_option_include_guard_detection |
+                boost::wave::support_option_emit_pragma_directives |
+                boost::wave::support_option_insert_whitespace);
           }
+          assert(!"Invalid language standard");
+          return boost::wave::language_support();
+        }
+
+        boost::wave::language_support
+        language_support(const data::wave_config& cfg_)
+        {
+          boost::wave::language_support result =
+              language_support(cfg_.config.standard);
           if (cfg_.long_long)
           {
-            lng_ = boost::wave::enable_long_long(lng_);
+            result = boost::wave::enable_long_long(result);
           }
           if (cfg_.variadics)
           {
-            lng_ = boost::wave::enable_variadics(lng_);
+            result = boost::wave::enable_variadics(result);
           }
-          return lng_;
+          return result;
         }
       }
 
@@ -107,7 +154,7 @@ namespace metashell
       {
         apply(ctx_, cfg_.config.includes, system_includes_);
 
-        ctx_.set_language(apply(ctx_.get_language(), cfg_));
+        ctx_.set_language(language_support(cfg_));
 
         for (const std::string& macro : cfg_.config.macros)
         {

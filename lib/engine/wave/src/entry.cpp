@@ -29,6 +29,7 @@
 #include <metashell/core/engine.hpp>
 #include <metashell/core/not_supported.hpp>
 
+#include <metashell/data/unsupported_standard_headers_allowed.hpp>
 #include <metashell/data/wave_arg_parser.hpp>
 
 namespace metashell
@@ -86,8 +87,26 @@ namespace metashell
               UseTemplightHeaders, config_.engine_args, metashell_binary_,
               internal_dir_, env_detector_, displayer_, logger_);
 
+          if (UseTemplightHeaders)
+          {
+            switch (cfg.config.use_standard_headers)
+            {
+            case data::standard_headers_allowed::none:
+            case data::standard_headers_allowed::all:
+              break;
+            case data::standard_headers_allowed::c:
+            case data::standard_headers_allowed::cpp:
+              throw data::unsupported_standard_headers_allowed(
+                  data::real_engine_name::wave,
+                  cfg.config.use_standard_headers);
+              break;
+            }
+          }
+
           const std::vector<boost::filesystem::path> system_includes =
-              UseTemplightHeaders && cfg.config.use_standard_headers ?
+              UseTemplightHeaders &&
+                      cfg.config.use_standard_headers ==
+                          data::standard_headers_allowed::all ?
                   determine_clang_system_includes(metashell_binary_,
                                                   internal_dir_, env_detector_,
                                                   displayer_, logger_) :

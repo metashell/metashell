@@ -1,8 +1,5 @@
-#ifndef METASHELL_DATA_WAVE_STANDARD_HPP
-#define METASHELL_DATA_WAVE_STANDARD_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,16 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/unknown_standard.hpp>
+
 namespace metashell
 {
   namespace data
   {
-    enum class wave_standard
+    unknown_standard::unknown_standard(const real_engine_name& engine_,
+                                       const std::string& std_)
+      : exception(
+            "Unknown " + to_string(engine_) + " language standard: " + std_ +
+            ". If this is a standard version supported by the compiler, please "
+            "report it at https://github.com/metashell/metashell/issues")
     {
-      cpp11,
-      c99
-    };
+    }
   }
 }
-
-#endif
