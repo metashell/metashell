@@ -14,6 +14,8 @@
       arguments, Metashell can now use the correct arguments for each config
       instead of using the arguments the shell config had, which was loaded
       first.
+    * `.` is not on the sysinclude path in the Wave engine
+    * Display all `-I` arguments with `#msh sysincludes` path in the Wave engine
 
 * Changes to existing behaviour
     * **Breaking change** Regular expression syntax for breakpoints changes

@@ -119,7 +119,11 @@ TEST(includes, tests)
 
   ASSERT_EQ(filename_list{}, sysincludes({}, {}));
   ASSERT_EQ((pv{a, b}), sysincludes({a, b}, {}));
-  if (!using_msvc())
+  if (using_wave())
+  {
+    ASSERT_EQ((pv{a, b}), sysincludes({}, {a, b}));
+  }
+  else if (!using_msvc())
   {
     ASSERT_EQ(pv{}, sysincludes({}, {a, b}));
   }

@@ -43,19 +43,16 @@ namespace metashell
         {
           for (const boost::filesystem::path& p : includes_.sys)
           {
-            auto cp = canonical_path(p);
-            if (cp)
+            if (auto cp = canonical_path(p))
             {
               ctx_.add_sysinclude_path(cp->string().c_str());
             }
           }
           for (const boost::filesystem::path& p : includes_.quote)
           {
-            auto cp = canonical_path(p);
-            if (cp)
+            if (auto cp = canonical_path(p))
             {
               ctx_.add_include_path(cp->string().c_str());
-              ctx_.add_sysinclude_path(cp->string().c_str());
             }
           }
         }

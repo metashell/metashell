@@ -270,19 +270,19 @@ namespace metashell
 
           boost::program_options::options_description desc("Wave options");
           // clang-format off
-    desc.add_options()
-      ("include,I", value(&quote_includes_),
-        "specify an additional include directory")
-      ("sysinclude,S", value(&sys_includes_),
-        "specify an additional system include directory")
-      ("define,D", value(&macros_),
-        "specify a macro to define (as `macro[=[value]]`)")
-      ("long_long", "enable long long support in C++ mode")
-      ("variadics", "enable certain C99 extensions in C++ mode")
-      ("c99", "enable C99 mode (implies `--variadics`)")
-      ("c++11", "enable C++11 mode (implies `--variadics` and `--long_long`)")
-      ("nostdinc++", nostdinc_help.c_str())
-      ;
+          desc.add_options()
+            ("include,I", value(&quote_includes_),
+              "specify an additional include directory")
+            ("sysinclude,S", value(&sys_includes_),
+              "specify an additional system include directory")
+            ("define,D", value(&macros_),
+              "specify a macro to define (as `macro[=[value]]`)")
+            ("long_long", "enable long long support in C++ mode")
+            ("variadics", "enable certain C99 extensions in C++ mode")
+            ("c99", "enable C99 mode (implies `--variadics`)")
+            ("c++11", "enable C++11 mode (implies `--variadics` and `--long_long`)")
+            ("nostdinc++", nostdinc_help.c_str())
+            ;
           // clang-format on
           return desc;
         }
@@ -337,6 +337,7 @@ namespace metashell
         }
 
         append(result.includes.quote, quote_includes);
+        append(result.includes.sys, quote_includes);
         append(result.includes.sys, sys_includes);
 
         result.long_long = vm.count("long_long");

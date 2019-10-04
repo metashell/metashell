@@ -308,7 +308,7 @@ TEST(include_types, tests)
           env.include_dir_used({capital_i, iquote}, nonstandard_header, type));
     }
 
-    if (!using_msvc() && (!using_wave() || type == quote))
+    if (!using_msvc())
     {
       ASSERT_EQ(capital_i, env.include_dir_used(
                                {capital_i, isystem}, nonstandard_header, type));
