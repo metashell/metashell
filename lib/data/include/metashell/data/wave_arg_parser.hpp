@@ -51,6 +51,7 @@ namespace metashell
       std::string description() const;
 
     private:
+      std::vector<boost::filesystem::path> _iquote;
       std::vector<boost::filesystem::path> _capital_i;
       std::vector<boost::filesystem::path> _capital_s;
       std::vector<command_line_argument> _standards;

@@ -188,11 +188,14 @@ TEST(include_types, tests)
 
     // -iquote
 
-    if (!using_msvc() && !using_wave())
+    if (!using_msvc())
     {
       ASSERT_EQ(type == sys ? none_found : iquote,
                 env.include_dir_used({iquote}, nonstandard_header, type));
+    }
 
+    if (!using_msvc() && !using_wave())
+    {
       ASSERT_EQ(type == sys ? system_found : iquote,
                 env.include_dir_used({iquote}, standard_c_header, type));
 
@@ -200,7 +203,7 @@ TEST(include_types, tests)
                 env.include_dir_used({iquote}, standard_cpp_header, type));
     }
 
-    if (!using_msvc() && !using_wave() && !std_headers_on_include_path)
+    if (!using_msvc() && !std_headers_on_include_path)
     {
       ASSERT_EQ(type == sys ? none_found : iquote,
                 env.include_dir_used({iquote}, standard_c_header, type,
@@ -301,15 +304,12 @@ TEST(include_types, tests)
      * Pairs
      */
 
-    if (!using_msvc() && !using_wave())
+    if (!using_msvc())
     {
       ASSERT_EQ(
           type == sys ? capital_i : iquote,
           env.include_dir_used({capital_i, iquote}, nonstandard_header, type));
-    }
 
-    if (!using_msvc())
-    {
       ASSERT_EQ(capital_i, env.include_dir_used(
                                {capital_i, isystem}, nonstandard_header, type));
     }
@@ -318,11 +318,17 @@ TEST(include_types, tests)
     {
       ASSERT_EQ(capital_i, env.include_dir_used({capital_i, idirafter},
                                                 nonstandard_header, type));
+    }
 
+    if (!using_msvc())
+    {
       ASSERT_EQ(
           type == sys ? isystem : iquote,
           env.include_dir_used({iquote, isystem}, nonstandard_header, type));
+    }
 
+    if (!using_msvc() && !using_wave())
+    {
       ASSERT_EQ(
           type == sys ? idirafter : iquote,
           env.include_dir_used({iquote, idirafter}, nonstandard_header, type));

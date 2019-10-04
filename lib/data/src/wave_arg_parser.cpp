@@ -49,6 +49,12 @@ namespace metashell
           _capital_s
         )
         .with_value(
+          "-iquote",
+          "specify an additional quote include directory",
+          [this](command_line_argument value_)
+          { this->_iquote.push_back(value_.value()); }
+        )
+        .with_value(
           "-D", "--define",
           "specify a macro to define (as `macro[=[value]]`)",
           _config.macros
@@ -117,6 +123,7 @@ namespace metashell
         _config.includes.quote.emplace_back(".");
       }
 
+      append(_config.includes.quote, _iquote);
       append(_config.includes.quote, _capital_i);
       append(_config.includes.sys, _capital_i);
       append(_config.includes.sys, _capital_s);

@@ -8,6 +8,8 @@
     * Support for displaying the currently used engine (`#msh engine show`)
     * Support loading compilation flags from `compile_commands.json` generated
       by CMake.
+    * Support `-iquote` arguments in the Wave engine adding elements to the
+      quote include path only.
 
 * Fixes
     * When multiple shell configs use the same engine with different engine
