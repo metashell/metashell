@@ -29,11 +29,11 @@ namespace metashell
     class command_line_argument : string<command_line_argument>
     {
     public:
-      using string<command_line_argument>::string;
       using string<command_line_argument>::value;
 
       explicit command_line_argument(const boost::filesystem::path&);
       explicit command_line_argument(const char*);
+      command_line_argument() = default;
 
       boost::optional<command_line_argument>
       remove_prefix(const command_line_argument&) const;

@@ -26,6 +26,8 @@
 #include <metashell/core/engine.hpp>
 #include <metashell/core/not_supported.hpp>
 
+#include <metashell/data/wave_arg_parser.hpp>
+
 namespace metashell
 {
   namespace engine
@@ -88,7 +90,8 @@ namespace metashell
                   (UseTemplightHeaders ? " It uses the headers of Templight "
                                          "deployed with Metashell." :
                                          std::string()) +
-                  "<br /><br />" + args(UseTemplightHeaders)),
+                  "<br /><br />" +
+                  data::wave_arg_parser(UseTemplightHeaders).description()),
               supported_features(), core::never_used_by_auto());
         }
       } // anonymous namespace

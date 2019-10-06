@@ -39,6 +39,7 @@ namespace metashell
         return "verbose mode";
       }
       assert(!"Invalid shell_flag");
+      return "";
     }
 
     std::ostream& operator<<(std::ostream& out_, shell_flag flag_)

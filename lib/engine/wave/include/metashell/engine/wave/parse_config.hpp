@@ -44,8 +44,6 @@ namespace metashell
                    iface::environment_detector& env_detector_,
                    iface::displayer& displayer_,
                    core::logger* logger_);
-
-      std::string args(bool use_templight_headers_);
     }
   }
 }

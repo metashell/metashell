@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/command_line_argument_list.hpp>
 #include <metashell/data/includes.hpp>
 #include <metashell/data/wave_standard.hpp>
 
