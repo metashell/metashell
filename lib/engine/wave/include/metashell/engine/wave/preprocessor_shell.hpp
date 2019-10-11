@@ -30,7 +30,7 @@ namespace metashell
       class preprocessor_shell : public iface::preprocessor_shell
       {
       public:
-        explicit preprocessor_shell(data::wave_config config_);
+        explicit preprocessor_shell(data::wave_config);
 
         virtual data::result precompile(const data::cpp_code& exp_) override;
 

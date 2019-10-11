@@ -31,7 +31,7 @@ namespace metashell
       std::vector<boost::filesystem::path>
       header_discoverer::include_path(data::include_type type_)
       {
-        return get(type_, _config.includes);
+        return _config.config.includes.get(type_);
       }
 
       std::set<boost::filesystem::path>

@@ -20,20 +20,11 @@ namespace metashell
 {
   namespace data
   {
-    namespace
-    {
-      void append(std::vector<boost::filesystem::path>& out_,
-                  const std::vector<boost::filesystem::path>& extension_)
-      {
-        out_.insert(out_.end(), extension_.begin(), extension_.end());
-      }
-    }
-
     wave_arg_parser::wave_arg_parser(bool use_templight_headers_)
     {
-      _config.standard = use_templight_headers_ ?
-                             boost::make_optional(wave_standard::cpp11) :
-                             boost::none;
+      _config.config.standard = use_templight_headers_ ?
+                                    boost::make_optional(wave_standard::cpp11) :
+                                    boost::none;
       _config.ignore_macro_redefinition = use_templight_headers_;
 
       // clang-format off
@@ -41,23 +32,22 @@ namespace metashell
         .with_value(
           "-I", "--include",
           "specify an additional include directory",
-          _capital_i
+          _includes.capital_i
         )
         .with_value(
           "-S", "--sysinclude",
           "specify an additional system include directory",
-          _capital_s
+          _includes.isystem
         )
         .with_value(
           "-iquote",
           "specify an additional quote include directory",
-          [this](command_line_argument value_)
-          { this->_iquote.push_back(value_.value()); }
+          _includes.iquote
         )
         .with_value(
           "-D", "--define",
           "specify a macro to define (as `macro[=[value]]`)",
-          _config.macros
+          _config.config.macros
         )
         .flag(
           "--long_long",
@@ -73,7 +63,7 @@ namespace metashell
           "--c99",
           "enable C99 mode (implies `--variadics`)",
           [this] {
-            this->_config.standard = wave_standard::c99;
+            this->_config.config.standard = wave_standard::c99;
             this->_config.long_long = true;
             this->_standards.emplace_back("c99");
           }
@@ -82,7 +72,7 @@ namespace metashell
           "--c++11",
           "enable C++11 mode (implies `--variadics` and `--long_long`)",
           [this] {
-            this->_config.standard = wave_standard::cpp11;
+            this->_config.config.standard = wave_standard::cpp11;
             this->_config.long_long = true;
             this->_standards.emplace_back("c++11");
           }
@@ -99,10 +89,10 @@ namespace metashell
     }
 
     void wave_arg_parser::parse(const command_line_argument_list& args_,
-                                includes sysincludes_,
+                                include_config sysincludes_,
                                 std::vector<std::string> sysmacros_)
     {
-      _config.macros = std::move(sysmacros_);
+      _config.config.macros = std::move(sysmacros_);
 
       _parser.parse(args_);
 
@@ -115,18 +105,15 @@ namespace metashell
 
       if (_use_stdincpp)
       {
-        _config.includes = std::move(sysincludes_);
+        _config.config.includes = std::move(sysincludes_);
       }
-      else if (std::find(sysincludes_.quote.begin(), sysincludes_.quote.end(),
-                         ".") != sysincludes_.quote.end())
+      else if (std::find(sysincludes_.iquote.begin(), sysincludes_.iquote.end(),
+                         ".") != sysincludes_.iquote.end())
       {
-        _config.includes.quote.emplace_back(".");
+        _config.config.includes.iquote.emplace_back(".");
       }
 
-      append(_config.includes.quote, _iquote);
-      append(_config.includes.quote, _capital_i);
-      append(_config.includes.sys, _capital_i);
-      append(_config.includes.sys, _capital_s);
+      _config.config.includes += _includes;
     }
 
     const wave_config& wave_arg_parser::result() const { return _config; }

@@ -21,6 +21,7 @@
 
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
+#include <metashell/data/wave_config.hpp>
 
 #include <memory>
 

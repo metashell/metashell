@@ -172,14 +172,14 @@ namespace metashell
           return result;
         }
 
-        data::wave_config
+        data::engine_config
         internal_clang_config(const data::executable_path& metashell_binary_,
                               const boost::filesystem::path& internal_dir_,
                               iface::environment_detector& env_detector_,
                               iface::displayer& displayer_,
                               core::logger* logger_)
         {
-          data::wave_config result;
+          data::engine_config result;
           const data::command_line_argument_list extra_clang_args;
           if (const auto clang_path = clang::find_clang_nothrow(
                   true, extra_clang_args, metashell_binary_,
@@ -191,9 +191,9 @@ namespace metashell
 
             clang::header_discoverer header_discoverer(cbin);
 
-            result.includes.sys =
+            result.includes.isystem =
                 header_discoverer.include_path(data::include_type::sys);
-            result.includes.quote =
+            result.includes.iquote =
                 header_discoverer.include_path(data::include_type::quote);
             result.macros = clang_macros(cbin, internal_dir_);
           }
@@ -219,11 +219,11 @@ namespace metashell
                    iface::displayer& displayer_,
                    core::logger* logger_)
       {
-        data::wave_config defaults =
+        data::engine_config defaults =
             use_templight_headers_ ?
                 internal_clang_config(metashell_binary_, internal_dir_,
                                       env_detector_, displayer_, logger_) :
-                data::wave_config();
+                data::engine_config();
         data::wave_arg_parser parser(use_templight_headers_);
         parser.parse(
             args_, std::move(defaults.includes), std::move(defaults.macros));

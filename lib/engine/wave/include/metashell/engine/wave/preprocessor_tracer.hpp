@@ -30,7 +30,7 @@ namespace metashell
       class preprocessor_tracer : public iface::preprocessor_tracer
       {
       public:
-        explicit preprocessor_tracer(data::wave_config config_);
+        explicit preprocessor_tracer(data::wave_config);
 
         virtual std::unique_ptr<iface::event_data_sequence>
         eval(iface::environment&,

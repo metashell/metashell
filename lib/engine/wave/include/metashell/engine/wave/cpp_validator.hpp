@@ -30,7 +30,7 @@ namespace metashell
       class cpp_validator : public iface::cpp_validator
       {
       public:
-        explicit cpp_validator(data::wave_config config_);
+        explicit cpp_validator(data::wave_config);
 
         virtual data::result
         validate_code(const data::cpp_code& src_,

@@ -30,7 +30,7 @@ namespace metashell
       class macro_discovery : public iface::macro_discovery
       {
       public:
-        explicit macro_discovery(data::wave_config config_);
+        explicit macro_discovery(data::wave_config);
 
         virtual data::cpp_code macros(const iface::environment& env_) override;
 

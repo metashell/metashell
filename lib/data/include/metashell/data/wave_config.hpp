@@ -17,13 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/command_line_argument_list.hpp>
-#include <metashell/data/includes.hpp>
-#include <metashell/data/wave_standard.hpp>
-
-#include <boost/optional.hpp>
-
-#include <vector>
+#include <metashell/data/engine_config.hpp>
 
 namespace metashell
 {
@@ -31,9 +25,8 @@ namespace metashell
   {
     struct wave_config
     {
-      data::includes includes;
-      std::vector<std::string> macros;
-      boost::optional<wave_standard> standard;
+      engine_config config;
+
       bool long_long = false;
       bool variadics = false;
       bool ignore_macro_redefinition = false;

@@ -39,16 +39,18 @@ namespace metashell
           return boost::none;
         }
 
-        void apply(context& ctx_, const data::includes& includes_)
+        void apply(context& ctx_, const data::include_config& includes_)
         {
-          for (const boost::filesystem::path& p : includes_.sys)
+          for (const boost::filesystem::path& p :
+               includes_.get(data::include_type::sys))
           {
             if (auto cp = canonical_path(p))
             {
               ctx_.add_sysinclude_path(cp->string().c_str());
             }
           }
-          for (const boost::filesystem::path& p : includes_.quote)
+          for (const boost::filesystem::path& p :
+               includes_.get(data::include_type::quote))
           {
             if (auto cp = canonical_path(p))
             {
@@ -60,9 +62,9 @@ namespace metashell
         boost::wave::language_support apply(boost::wave::language_support lng_,
                                             const data::wave_config& cfg_)
         {
-          if (cfg_.standard)
+          if (cfg_.config.standard)
           {
-            switch (*cfg_.standard)
+            switch (*cfg_.config.standard)
             {
             case data::wave_standard::c99:
               lng_ = boost::wave::language_support(
@@ -99,10 +101,11 @@ namespace metashell
 
       void apply(context& ctx_, const data::wave_config& cfg_)
       {
-        apply(ctx_, cfg_.includes);
+        apply(ctx_, cfg_.config.includes);
+
         ctx_.set_language(apply(ctx_.get_language(), cfg_));
 
-        for (const std::string& macro : cfg_.macros)
+        for (const std::string& macro : cfg_.config.macros)
         {
           ctx_.add_macro_definition(macro);
         }

@@ -1,8 +1,8 @@
-#ifndef METASHELL_ENGINE_WAVE_HEADER_DISCOVERER_HPP
-#define METASHELL_ENGINE_WAVE_HEADER_DISCOVERER_HPP
+#ifndef METASHELL_DATA_ENGINE_CONFIG_HPP
+#define METASHELL_DATA_ENGINE_CONFIG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,31 +17,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/header_discoverer.hpp>
+#include <metashell/data/command_line_argument_list.hpp>
+#include <metashell/data/include_config.hpp>
+#include <metashell/data/wave_standard.hpp>
 
-#include <metashell/data/wave_config.hpp>
+#include <boost/optional.hpp>
+
+#include <vector>
 
 namespace metashell
 {
-  namespace engine
+  namespace data
   {
-    namespace wave
+    struct engine_config
     {
-      class header_discoverer : public iface::header_discoverer
-      {
-      public:
-        explicit header_discoverer(data::wave_config);
+      include_config includes;
 
-        virtual std::vector<boost::filesystem::path>
-        include_path(data::include_type type_) override;
-
-        virtual std::set<boost::filesystem::path>
-        files_included_by(const data::cpp_code& exp_) override;
-
-      private:
-        data::wave_config _config;
-      };
-    }
+      std::vector<std::string> macros;
+      boost::optional<wave_standard> standard;
+    };
   }
 }
 

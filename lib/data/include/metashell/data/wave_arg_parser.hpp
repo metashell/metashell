@@ -19,7 +19,7 @@
 
 #include <metashell/data/arg_parser.hpp>
 #include <metashell/data/command_line_argument.hpp>
-#include <metashell/data/includes.hpp>
+#include <metashell/data/include_config.hpp>
 #include <metashell/data/wave_config.hpp>
 
 #include <boost/filesystem/path.hpp>
@@ -43,7 +43,7 @@ namespace metashell
       wave_arg_parser& operator=(wave_arg_parser&&) = delete;
 
       void parse(const command_line_argument_list& args_,
-                 includes sysincludes_,
+                 include_config sysincludes_,
                  std::vector<std::string> sysmacros_);
 
       const wave_config& result() const;
@@ -51,9 +51,7 @@ namespace metashell
       std::string description() const;
 
     private:
-      std::vector<boost::filesystem::path> _iquote;
-      std::vector<boost::filesystem::path> _capital_i;
-      std::vector<boost::filesystem::path> _capital_s;
+      data::include_config _includes;
       std::vector<command_line_argument> _standards;
       bool _use_stdincpp = true;
 
