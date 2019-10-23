@@ -23,8 +23,11 @@ namespace metashell
   {
     namespace wave
     {
-      macro_discovery::macro_discovery(data::wave_config config_)
-        : _config(std::move(config_))
+      macro_discovery::macro_discovery(
+          data::wave_config config_,
+          std::vector<boost::filesystem::path> system_includes_)
+        : _config(std::move(config_)),
+          _system_includes(std::move(system_includes_))
       {
       }
 
@@ -32,7 +35,7 @@ namespace metashell
       {
         const data::cpp_code code = env_.get_all() + data::cpp_code("\n");
         context ctx(begin(code), end(code), "<stdin>");
-        wave::apply(ctx, _config);
+        wave::apply(ctx, _config, _system_includes);
         preprocess(ctx);
 
         std::ostringstream result;

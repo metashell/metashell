@@ -34,7 +34,9 @@ namespace metashell
       std::vector<boost::filesystem::path> capital_i;
       std::vector<boost::filesystem::path> isystem;
 
-      std::vector<boost::filesystem::path> get(include_type) const;
+      std::vector<boost::filesystem::path>
+      get(include_type,
+          const std::vector<boost::filesystem::path>& system_) const;
 
       include_config& operator+=(const include_config&);
     };

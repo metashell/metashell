@@ -35,6 +35,7 @@ namespace metashell
 
       std::vector<std::string> macros;
       boost::optional<wave_standard> standard;
+      bool use_standard_headers = true;
     };
   }
 }

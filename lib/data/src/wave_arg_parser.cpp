@@ -26,6 +26,10 @@ namespace metashell
                                     boost::make_optional(wave_standard::cpp11) :
                                     boost::none;
       _config.ignore_macro_redefinition = use_templight_headers_;
+      if (use_templight_headers_)
+      {
+        _config.config.includes.iquote.emplace_back(".");
+      }
 
       // clang-format off
       _parser
@@ -82,14 +86,13 @@ namespace metashell
           use_templight_headers_ ?
             "don't add standard headers to the include path" :
             "ignored (accepted to be compatible with the `wave` engine)",
-          [this] { this->_use_stdincpp = false; }
+          [this] { this->_config.config.use_standard_headers = false; }
         )
       ;
       // clang-format on
     }
 
     void wave_arg_parser::parse(const command_line_argument_list& args_,
-                                include_config sysincludes_,
                                 std::vector<std::string> sysmacros_)
     {
       _config.config.macros = std::move(sysmacros_);
@@ -101,16 +104,6 @@ namespace metashell
         throw exception("Multiple standards (" +
                         join(_standards, command_line_argument(", ")) +
                         ") specified");
-      }
-
-      if (_use_stdincpp)
-      {
-        _config.config.includes = std::move(sysincludes_);
-      }
-      else if (std::find(sysincludes_.iquote.begin(), sysincludes_.iquote.end(),
-                         ".") != sysincludes_.iquote.end())
-      {
-        _config.config.includes.iquote.emplace_back(".");
       }
 
       _config.config.includes += _includes;

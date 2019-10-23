@@ -39,10 +39,12 @@ namespace metashell
           return boost::none;
         }
 
-        void apply(context& ctx_, const data::include_config& includes_)
+        void apply(context& ctx_,
+                   const data::include_config& includes_,
+                   const std::vector<boost::filesystem::path>& system_includes_)
         {
           for (const boost::filesystem::path& p :
-               includes_.get(data::include_type::sys))
+               includes_.get(data::include_type::sys, system_includes_))
           {
             if (auto cp = canonical_path(p))
             {
@@ -50,7 +52,7 @@ namespace metashell
             }
           }
           for (const boost::filesystem::path& p :
-               includes_.get(data::include_type::quote))
+               includes_.get(data::include_type::quote, system_includes_))
           {
             if (auto cp = canonical_path(p))
             {
@@ -99,9 +101,11 @@ namespace metashell
         }
       }
 
-      void apply(context& ctx_, const data::wave_config& cfg_)
+      void apply(context& ctx_,
+                 const data::wave_config& cfg_,
+                 const std::vector<boost::filesystem::path>& system_includes_)
       {
-        apply(ctx_, cfg_.config.includes);
+        apply(ctx_, cfg_.config.includes, system_includes_);
 
         ctx_.set_language(apply(ctx_.get_language(), cfg_));
 

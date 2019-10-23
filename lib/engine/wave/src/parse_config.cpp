@@ -18,7 +18,6 @@
 #include <metashell/engine/wave/parse_config.hpp>
 
 #include <metashell/engine/clang/binary.hpp>
-#include <metashell/engine/clang/header_discoverer.hpp>
 #include <metashell/engine/clang/macro_discovery.hpp>
 
 #include <metashell/core/wave_token.hpp>
@@ -172,8 +171,8 @@ namespace metashell
           return result;
         }
 
-        data::engine_config
-        internal_clang_config(const data::executable_path& metashell_binary_,
+        std::vector<std::string>
+        internal_clang_macros(const data::executable_path& metashell_binary_,
                               const boost::filesystem::path& internal_dir_,
                               iface::environment_detector& env_detector_,
                               iface::displayer& displayer_,
@@ -186,27 +185,12 @@ namespace metashell
                   data::real_engine_name::internal, env_detector_, displayer_,
                   logger_))
           {
-            const clang::binary cbin(true, *clang_path, extra_clang_args,
-                                     internal_dir_, env_detector_, logger_);
-
-            clang::header_discoverer header_discoverer(cbin);
-
-            result.includes.isystem =
-                header_discoverer.include_path(data::include_type::sys);
-            result.includes.iquote =
-                header_discoverer.include_path(data::include_type::quote);
-            result.macros = clang_macros(cbin, internal_dir_);
+            return clang_macros(
+                clang::binary(true, *clang_path, extra_clang_args,
+                              internal_dir_, env_detector_, logger_),
+                internal_dir_);
           }
-          return result;
-        }
-
-        template <class T, class U>
-        void push_back_times(int times_, T& out_, const U& value_)
-        {
-          for (int i = 0; i < times_; ++i)
-          {
-            out_.push_back(value_);
-          }
+          return {};
         }
       }
 
@@ -219,14 +203,12 @@ namespace metashell
                    iface::displayer& displayer_,
                    core::logger* logger_)
       {
-        data::engine_config defaults =
-            use_templight_headers_ ?
-                internal_clang_config(metashell_binary_, internal_dir_,
-                                      env_detector_, displayer_, logger_) :
-                data::engine_config();
         data::wave_arg_parser parser(use_templight_headers_);
-        parser.parse(
-            args_, std::move(defaults.includes), std::move(defaults.macros));
+        parser.parse(args_, use_templight_headers_ ?
+                                internal_clang_macros(
+                                    metashell_binary_, internal_dir_,
+                                    env_detector_, displayer_, logger_) :
+                                std::vector<std::string>());
         return parser.result();
       }
     }

@@ -22,8 +22,10 @@ namespace metashell
   {
     namespace wave
     {
-      cpp_validator::cpp_validator(data::wave_config config_)
-        : _preprocessor(std::move(config_))
+      cpp_validator::cpp_validator(
+          data::wave_config config_,
+          std::vector<boost::filesystem::path> system_includes_)
+        : _preprocessor(std::move(config_), std::move(system_includes_))
       {
       }
 

@@ -40,9 +40,11 @@ namespace metashell
       class trace_impl
       {
       public:
-        trace_impl(const data::cpp_code& env_,
-                   const boost::optional<data::cpp_code>& exp_,
-                   const data::wave_config& config_);
+        trace_impl(
+            const data::cpp_code& env_,
+            const boost::optional<data::cpp_code>& exp_,
+            const data::wave_config& config_,
+            const std::vector<boost::filesystem::path>& system_includes_);
 
         boost::optional<data::event_data> next();
 

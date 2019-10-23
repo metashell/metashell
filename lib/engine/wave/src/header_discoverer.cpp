@@ -23,15 +23,18 @@ namespace metashell
   {
     namespace wave
     {
-      header_discoverer::header_discoverer(data::wave_config config_)
-        : _config(std::move(config_))
+      header_discoverer::header_discoverer(
+          data::wave_config config_,
+          std::vector<boost::filesystem::path> system_includes_)
+        : _config(std::move(config_)),
+          _system_includes(std::move(system_includes_))
       {
       }
 
       std::vector<boost::filesystem::path>
       header_discoverer::include_path(data::include_type type_)
       {
-        return _config.config.includes.get(type_);
+        return _config.config.includes.get(type_, _system_includes);
       }
 
       std::set<boost::filesystem::path>
@@ -41,7 +44,7 @@ namespace metashell
         std::set<boost::filesystem::path> result;
         hooks hks(result);
         context ctx(begin(exp), end(exp), "<stdin>", hks);
-        wave::apply(ctx, _config);
+        wave::apply(ctx, _config, _system_includes);
         preprocess(ctx);
         return result;
       }

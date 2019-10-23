@@ -29,8 +29,9 @@ namespace metashell
       }
     }
 
-    std::vector<boost::filesystem::path>
-    include_config::get(include_type type_) const
+    std::vector<boost::filesystem::path> include_config::get(
+        include_type type_,
+        const std::vector<boost::filesystem::path>& system_) const
     {
       std::vector<boost::filesystem::path> result;
 
@@ -45,6 +46,7 @@ namespace metashell
 
       append(result, capital_i);
       append(result, isystem);
+      append(result, system_);
 
       return result;
     }

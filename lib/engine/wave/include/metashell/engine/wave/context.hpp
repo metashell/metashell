@@ -40,7 +40,9 @@ namespace metashell
           hooks>
           context;
 
-      void apply(context& ctx_, const data::wave_config& cfg_);
+      void apply(context& ctx_,
+                 const data::wave_config& cfg_,
+                 const std::vector<boost::filesystem::path>& system_includes_);
 
       void preprocess(context& ctx_);
 

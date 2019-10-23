@@ -23,6 +23,9 @@
 #include <metashell/engine/wave/preprocessor_shell.hpp>
 #include <metashell/engine/wave/preprocessor_tracer.hpp>
 
+#include <metashell/engine/clang/binary.hpp>
+#include <metashell/engine/clang/header_discoverer.hpp>
+
 #include <metashell/core/engine.hpp>
 #include <metashell/core/not_supported.hpp>
 
@@ -45,6 +48,29 @@ namespace metashell
                   data::feature::preprocessor_tracer()};
         }
 
+        std::vector<boost::filesystem::path> determine_clang_system_includes(
+            const data::executable_path& metashell_binary_,
+            const boost::filesystem::path& internal_dir_,
+            iface::environment_detector& env_detector_,
+            iface::displayer& displayer_,
+            core::logger* logger_)
+        {
+          std::vector<boost::filesystem::path> result;
+          const data::command_line_argument_list extra_clang_args;
+          if (const auto clang_path = clang::find_clang_nothrow(
+                  true, extra_clang_args, metashell_binary_,
+                  data::real_engine_name::internal, env_detector_, displayer_,
+                  logger_))
+          {
+
+            return clang::header_discoverer(
+                       clang::binary(true, *clang_path, extra_clang_args,
+                                     internal_dir_, env_detector_, logger_))
+                .include_path(data::include_type::sys);
+          }
+          return {};
+        }
+
         template <bool UseTemplightHeaders>
         std::unique_ptr<iface::engine>
         create_wave_engine(const data::shell_config& config_,
@@ -59,12 +85,22 @@ namespace metashell
           const data::wave_config cfg = parse_config(
               UseTemplightHeaders, config_.engine_args, metashell_binary_,
               internal_dir_, env_detector_, displayer_, logger_);
+
+          const std::vector<boost::filesystem::path> system_includes =
+              UseTemplightHeaders && cfg.config.use_standard_headers ?
+                  determine_clang_system_includes(metashell_binary_,
+                                                  internal_dir_, env_detector_,
+                                                  displayer_, logger_) :
+                  std::vector<boost::filesystem::path>();
+
           return make_engine(
               UseTemplightHeaders ? name_with_templight_headers() : name(),
-              config_.engine, not_supported(), preprocessor_shell(cfg),
-              not_supported(), header_discoverer(cfg), not_supported(),
-              cpp_validator(cfg), macro_discovery(cfg),
-              preprocessor_tracer(cfg), supported_features());
+              config_.engine, not_supported(),
+              preprocessor_shell(cfg, system_includes), not_supported(),
+              header_discoverer(cfg, system_includes), not_supported(),
+              cpp_validator(cfg, system_includes),
+              macro_discovery(cfg, system_includes),
+              preprocessor_tracer(cfg, system_includes), supported_features());
         }
 
         template <bool UseTemplightHeaders>

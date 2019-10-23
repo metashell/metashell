@@ -36,6 +36,8 @@
       available using the `#msh all config` pragma.
     * The default C++ standard version of the `internal` engine is C++14.
     * Using the Visual C++ system headers on Windows instead of the MinGW ones.
+    * Use the relative order of user provided and system include
+      directories in the `wave` engine, that GCC is using.
 
 ## Version 4.0.0
 

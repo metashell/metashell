@@ -30,7 +30,9 @@ namespace metashell
       class preprocessor_tracer : public iface::preprocessor_tracer
       {
       public:
-        explicit preprocessor_tracer(data::wave_config);
+        preprocessor_tracer(
+            data::wave_config,
+            std::vector<boost::filesystem::path> system_includes_);
 
         virtual std::unique_ptr<iface::event_data_sequence>
         eval(iface::environment&,
@@ -39,6 +41,7 @@ namespace metashell
 
       private:
         data::wave_config _config;
+        std::vector<boost::filesystem::path> _system_includes;
       };
     }
   }
