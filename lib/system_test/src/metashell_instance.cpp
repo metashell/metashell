@@ -197,6 +197,38 @@ namespace metashell
       return _initial_responses;
     }
 
+    std::string current_real_engine()
+    {
+      const std::string engine = current_engine();
+      if (engine != "auto")
+      {
+        return engine;
+      }
+      else if (using_internal())
+      {
+        return "internal";
+      }
+      else if (using_msvc())
+      {
+        return "msvc";
+      }
+
+      const auto first = system_test_config::engine_args().front();
+      assert(first);
+      if (first->contains("templight"))
+      {
+        return "templight";
+      }
+      else if (using_clang())
+      {
+        return "clang";
+      }
+      else
+      {
+        return "gcc";
+      }
+    }
+
     data::command_line_argument_list
     with_sysincludes(data::command_line_argument_list args_,
                      const std::vector<boost::filesystem::path>& paths_)
@@ -243,7 +275,7 @@ namespace metashell
       const auto engine = current_engine();
       if (engine == "auto")
       {
-        const auto& args = system_test_config::metashell_args();
+        const auto& args = system_test_config::engine_args();
         return std::find_if(args.begin(), args.end(),
                             [](const data::command_line_argument& arg) {
                               return find(arg, "cl.exe") != std::string::npos;
@@ -256,5 +288,35 @@ namespace metashell
     }
 
     bool using_wave() { return current_engine() == "wave"; }
+
+    bool using_internal()
+    {
+      const auto engine = current_engine();
+      if (engine == "auto")
+      {
+        const auto first = system_test_config::engine_args().front();
+        return !first || first->starts_with("-");
+      }
+      else
+      {
+        return engine == "internal";
+      }
+    }
+
+    bool using_clang()
+    {
+      const auto engine = current_engine();
+      if (engine == "auto")
+      {
+        const auto first = system_test_config::engine_args().front();
+        return !first || first->contains("clang") ||
+               first->contains("templight");
+      }
+      else
+      {
+        return engine == "internal" || engine == "templight" ||
+               engine == "clang";
+      }
+    }
   }
 }

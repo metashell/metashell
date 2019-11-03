@@ -38,6 +38,19 @@ namespace metashell
       return boost::starts_with(value(), prefix_);
     }
 
+    bool command_line_argument::contains_impl(const char* substr_) const
+    {
+      return value().find(substr_) != std::string::npos;
+    }
+
+    boost::optional<command_line_argument> command_line_argument::remove_prefix(
+        const command_line_argument& prefix_) const
+    {
+      return starts_with_impl(prefix_.value().c_str()) ?
+                 boost::make_optional(substr(*this, size(prefix_))) :
+                 boost::none;
+    }
+
     std::string quote(const command_line_argument& arg_)
     {
       std::string result("\"");

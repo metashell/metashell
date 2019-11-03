@@ -28,6 +28,7 @@ namespace metashell
     {
       boost::optional<data::executable_path> metashell_binary_path;
       data::command_line_argument_list metashell_args_impl;
+      data::command_line_argument_list engine_args_impl;
     }
 
     void system_test_config::metashell_binary(data::executable_path path_)
@@ -37,7 +38,16 @@ namespace metashell
 
     void system_test_config::metashell_arg(data::command_line_argument arg_)
     {
-      metashell_args_impl.push_back(std::move(arg_));
+      metashell_args_impl.push_back(arg_);
+      static bool was_dash_dash = false;
+      if (was_dash_dash)
+      {
+        engine_args_impl.push_back(std::move(arg_));
+      }
+      else if (arg_ == "--")
+      {
+        was_dash_dash = true;
+      }
     }
 
     data::executable_path system_test_config::metashell_binary()
@@ -49,6 +59,11 @@ namespace metashell
     const data::command_line_argument_list& system_test_config::metashell_args()
     {
       return metashell_args_impl;
+    }
+
+    const data::command_line_argument_list& system_test_config::engine_args()
+    {
+      return engine_args_impl;
     }
   }
 }

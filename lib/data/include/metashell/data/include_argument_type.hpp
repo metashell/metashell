@@ -1,8 +1,8 @@
-#ifndef METASHELL_SYSTEM_TEST_CONFIG_HPP
-#define METASHELL_SYSTEM_TEST_CONFIG_HPP
+#ifndef METASHELL_DATA_INCLUDE_ARGUMENT_TYPE_HPP
+#define METASHELL_DATA_INCLUDE_ARGUMENT_TYPE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,23 +17,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/command_line_argument.hpp>
-#include <metashell/data/command_line_argument_list.hpp>
-#include <metashell/data/executable_path.hpp>
+#include <array>
+#include <iosfwd>
+#include <string>
 
 namespace metashell
 {
-  namespace system_test
+  namespace data
   {
-    namespace system_test_config
+    enum class include_argument_type
     {
-      void metashell_binary(data::executable_path path_);
-      void metashell_arg(data::command_line_argument arg_);
+      iquote,
+      capital_i,
+      isystem,
+      idirafter
+    };
 
-      data::executable_path metashell_binary();
-      const data::command_line_argument_list& metashell_args();
-      const data::command_line_argument_list& engine_args();
-    }
+    std::string to_string(include_argument_type);
+    std::ostream& operator<<(std::ostream&, include_argument_type);
+
+    std::array<include_argument_type, 5> all_include_argument_types();
   }
 }
 

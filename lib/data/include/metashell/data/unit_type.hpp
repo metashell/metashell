@@ -1,8 +1,8 @@
-#ifndef METASHELL_SYSTEM_TEST_CONFIG_HPP
-#define METASHELL_SYSTEM_TEST_CONFIG_HPP
+#ifndef METASHELL_DATA_UNIT_TYPE_HPP
+#define METASHELL_DATA_UNIT_TYPE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,23 +17,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/command_line_argument.hpp>
-#include <metashell/data/command_line_argument_list.hpp>
-#include <metashell/data/executable_path.hpp>
+#include <iostream>
+#include <string>
 
 namespace metashell
 {
-  namespace system_test
+  namespace data
   {
-    namespace system_test_config
+    template <class Derived>
+    struct unit_type
     {
-      void metashell_binary(data::executable_path path_);
-      void metashell_arg(data::command_line_argument arg_);
+      friend bool operator==(Derived, Derived) { return true; }
+      friend bool operator!=(Derived, Derived) { return false; }
 
-      data::executable_path metashell_binary();
-      const data::command_line_argument_list& metashell_args();
-      const data::command_line_argument_list& engine_args();
-    }
+      friend std::string to_string(Derived) { return Derived::name(); }
+
+      friend std::ostream& operator<<(std::ostream& out_, Derived)
+      {
+        out_ << Derived::name();
+        return out_;
+      }
+    };
   }
 }
 

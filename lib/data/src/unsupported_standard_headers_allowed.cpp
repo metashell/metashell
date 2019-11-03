@@ -1,8 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_CONFIG_HPP
-#define METASHELL_SYSTEM_TEST_CONFIG_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,24 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/command_line_argument.hpp>
-#include <metashell/data/command_line_argument_list.hpp>
-#include <metashell/data/executable_path.hpp>
+#include <metashell/data/exception.hpp>
+#include <metashell/data/real_engine_name.hpp>
+#include <metashell/data/unsupported_standard_headers_allowed.hpp>
 
 namespace metashell
 {
-  namespace system_test
+  namespace data
   {
-    namespace system_test_config
+    unsupported_standard_headers_allowed::unsupported_standard_headers_allowed(
+        real_engine_name engine_, standard_headers_allowed config_)
+      : exception("The " + to_string(engine_) +
+                  " engine does not support the following config: " +
+                  to_string(config_))
     {
-      void metashell_binary(data::executable_path path_);
-      void metashell_arg(data::command_line_argument arg_);
-
-      data::executable_path metashell_binary();
-      const data::command_line_argument_list& metashell_args();
-      const data::command_line_argument_list& engine_args();
     }
   }
 }
-
-#endif
