@@ -10,6 +10,8 @@
       by CMake.
     * Support `-iquote` arguments in the Wave engine adding elements to the
       quote include path only.
+    * Support `-idirafter` arguments in the Wave engine adding elements to the
+      include path after the system header locations.
 
 * Fixes
     * When multiple shell configs use the same engine with different engine

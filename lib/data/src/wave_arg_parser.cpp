@@ -49,6 +49,11 @@ namespace metashell
           _includes.iquote
         )
         .with_value(
+          "-idirafter",
+          "specify an additional include directory to be checked after system headers",
+          _includes.idirafter
+        )
+        .with_value(
           "-D", "--define",
           "specify a macro to define (as `macro[=[value]]`)",
           _config.config.macros

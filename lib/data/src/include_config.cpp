@@ -47,6 +47,7 @@ namespace metashell
       append(result, capital_i);
       append(result, isystem);
       append(result, system_);
+      append(result, idirafter);
 
       return result;
     }
@@ -56,6 +57,7 @@ namespace metashell
       append(iquote, rhs_.iquote);
       append(capital_i, rhs_.capital_i);
       append(isystem, rhs_.isystem);
+      append(idirafter, rhs_.idirafter);
       return *this;
     }
   }

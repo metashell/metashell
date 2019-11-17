@@ -33,6 +33,7 @@ namespace metashell
       std::vector<boost::filesystem::path> iquote;
       std::vector<boost::filesystem::path> capital_i;
       std::vector<boost::filesystem::path> isystem;
+      std::vector<boost::filesystem::path> idirafter;
 
       std::vector<boost::filesystem::path>
       get(include_type,
