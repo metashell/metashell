@@ -112,11 +112,10 @@ namespace metashell
 
     const engine_entry&
     find(const std::map<data::real_engine_name, engine_entry>& engines_,
-         const data::engine_name& engine_,
-         const data::command_line_argument_list& engine_args_,
+         const data::engine_arguments& engine_,
          logger* logger_)
     {
-      if (auto engine = mpark::get_if<data::real_engine_name>(&engine_))
+      if (auto engine = mpark::get_if<data::real_engine_name>(&(engine_.name)))
       {
         const auto eentry = engines_.find(*engine);
         if (eentry == engines_.end())
@@ -139,7 +138,7 @@ namespace metashell
       else
       {
         const std::string args = boost::algorithm::join(
-            engine_args_ | boost::adaptors::transformed(
+            engine_.args | boost::adaptors::transformed(
                                [](const data::command_line_argument& a_) {
                                  return a_.value();
                                }),
@@ -153,7 +152,7 @@ namespace metashell
 
         for (const auto& engine : engines_)
         {
-          if (engine.second.this_engine(engine_args_))
+          if (engine.second.this_engine(engine_.args))
           {
             METASHELL_LOG(logger_, "Engine " + engine.first + " is suitable.");
             usable.push_back(engine.first);

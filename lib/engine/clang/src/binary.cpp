@@ -35,13 +35,12 @@ namespace metashell
     {
       namespace
       {
-        data::executable_path extract_clang_binary(
-            const data::command_line_argument_list& engine_args_,
-            iface::environment_detector& env_detector_,
-            const data::executable_path& metashell_path_,
-            const data::engine_name& engine_)
+        data::executable_path
+        extract_clang_binary(const data::engine_arguments& engine_,
+                             iface::environment_detector& env_detector_,
+                             const data::executable_path& metashell_path_)
         {
-          if (const auto first_arg = engine_args_.front())
+          if (const auto first_arg = engine_.args.front())
           {
             const boost::filesystem::path path = first_arg->value();
             if (env_detector_.file_exists(path))
@@ -64,7 +63,7 @@ namespace metashell
             throw std::runtime_error(
                 "The engine requires that you specify the path to the clang "
                 "compiler after --. For example: " +
-                metashell_path_ + " --engine " + engine_ + " -- " +
+                metashell_path_ + " --engine " + engine_.name + " -- " +
                 sample_path + " -std=c++11");
           }
         }
@@ -448,33 +447,31 @@ namespace metashell
                    precompile_result;
       }
 
-      boost::optional<data::executable_path> find_clang_nothrow(
-          bool use_internal_templight_,
-          const data::command_line_argument_list& extra_clang_args_,
-          const data::executable_path& metashell_binary_,
-          const data::engine_name& engine_,
-          iface::environment_detector& env_detector_,
-          iface::displayer& displayer_,
-          core::logger* logger_)
+      boost::optional<data::executable_path>
+      find_clang_nothrow(bool use_internal_templight_,
+                         const data::engine_arguments& engine_,
+                         const data::executable_path& metashell_binary_,
+                         iface::environment_detector& env_detector_,
+                         iface::displayer& displayer_,
+                         core::logger* logger_)
       {
         return use_internal_templight_ ?
                    detect_clang_binary(env_detector_, displayer_, logger_) :
-                   extract_clang_binary(extra_clang_args_, env_detector_,
-                                        metashell_binary_, engine_);
+                   extract_clang_binary(
+                       engine_, env_detector_, metashell_binary_);
       }
 
       data::executable_path
       find_clang(bool use_internal_templight_,
-                 const data::command_line_argument_list& extra_clang_args_,
+                 const data::engine_arguments& engine_,
                  const data::executable_path& metashell_binary_,
-                 const data::engine_name& engine_,
                  iface::environment_detector& env_detector_,
                  iface::displayer& displayer_,
                  core::logger* logger_)
       {
         if (const auto result = find_clang_nothrow(
-                use_internal_templight_, extra_clang_args_, metashell_binary_,
-                engine_, env_detector_, displayer_, logger_))
+                use_internal_templight_, engine_, metashell_binary_,
+                env_detector_, displayer_, logger_))
         {
           return *result;
         }

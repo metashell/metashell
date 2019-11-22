@@ -73,13 +73,12 @@ namespace metashell
           using core::not_supported;
 
           const binary cbin(
-              false,
-              find_clang(false, config_.engine_args, metashell_binary_,
-                         config_.engine, env_detector_, displayer_, logger_),
-              config_.engine_args, internal_dir_, env_detector_, logger_);
+              false, find_clang(false, config_.engine, metashell_binary_,
+                                env_detector_, displayer_, logger_),
+              config_.engine.args, internal_dir_, env_detector_, logger_);
 
           return core::make_engine(
-              name(), config_.engine,
+              name(), config_.engine.name,
               type_shell(internal_dir_, env_filename_, cbin, logger_),
               preprocessor_shell(cbin),
               code_completer(

@@ -59,9 +59,10 @@ namespace metashell
           std::vector<boost::filesystem::path> result;
           const data::command_line_argument_list extra_clang_args;
           if (const auto clang_path = clang::find_clang_nothrow(
-                  true, extra_clang_args, metashell_binary_,
-                  data::real_engine_name::internal, env_detector_, displayer_,
-                  logger_))
+                  true,
+                  data::engine_arguments{
+                      extra_clang_args, data::real_engine_name::internal},
+                  metashell_binary_, env_detector_, displayer_, logger_))
           {
 
             return clang::header_discoverer(
@@ -84,7 +85,7 @@ namespace metashell
           using core::not_supported;
 
           const data::wave_config cfg = parse_config(
-              UseTemplightHeaders, config_.engine_args, metashell_binary_,
+              UseTemplightHeaders, config_.engine.args, metashell_binary_,
               internal_dir_, env_detector_, displayer_, logger_);
 
           if (UseTemplightHeaders)
@@ -114,7 +115,7 @@ namespace metashell
 
           return make_engine(
               UseTemplightHeaders ? name_with_templight_headers() : name(),
-              config_.engine, not_supported(),
+              config_.engine.name, not_supported(),
               preprocessor_shell(cfg, system_includes), not_supported(),
               header_discoverer(cfg, system_includes), not_supported(),
               cpp_validator(cfg, system_includes),

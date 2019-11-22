@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/command_line_argument_list.hpp>
+#include <metashell/data/engine_arguments.hpp>
 #include <metashell/data/engine_name.hpp>
 #include <metashell/data/feature.hpp>
 #include <metashell/data/markdown_string.hpp>
@@ -80,8 +81,7 @@ namespace metashell
 
     const engine_entry&
     find(const std::map<data::real_engine_name, engine_entry>&,
-         const data::engine_name&,
-         const data::command_line_argument_list&,
+         const data::engine_arguments&,
          logger*);
   }
 }

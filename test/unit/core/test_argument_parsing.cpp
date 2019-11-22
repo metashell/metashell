@@ -72,7 +72,7 @@ namespace
 TEST(argument_parsing, recognising_engine_args)
 {
   const data::command_line_argument_list engine_args(
-      parse_valid_config({"--", "foo"}).active_shell_config().engine_args);
+      parse_valid_config({"--", "foo"}).active_shell_config().engine.args);
 
   ASSERT_EQ(1u, engine_args.size());
   ASSERT_EQ(data::command_line_argument("foo"), engine_args.front());
@@ -189,14 +189,15 @@ TEST(argument_parsing, decommissioned_arguments_provide_an_error_message)
 TEST(argument_parsing, not_specifying_the_engine)
 {
   ASSERT_EQ(data::engine_name(data::auto_engine_name()),
-            parse_valid_config({}).active_shell_config().engine);
+            parse_valid_config({}).active_shell_config().engine.name);
 }
 
 TEST(argument_parsing, specifying_the_engine)
 {
-  ASSERT_EQ(
-      data::engine_name(data::real_engine_name::null),
-      parse_valid_config({"--engine", "null"}).active_shell_config().engine);
+  ASSERT_EQ(data::engine_name(data::real_engine_name::null),
+            parse_valid_config({"--engine", "null"})
+                .active_shell_config()
+                .engine.name);
 }
 
 TEST(argument_parsing, preprocessor_mode_is_off_by_default)

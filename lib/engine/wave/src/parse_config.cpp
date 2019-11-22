@@ -184,9 +184,10 @@ namespace metashell
           data::engine_config result;
           const data::command_line_argument_list extra_clang_args;
           if (const auto clang_path = clang::find_clang_nothrow(
-                  true, extra_clang_args, metashell_binary_,
-                  data::real_engine_name::internal, env_detector_, displayer_,
-                  logger_))
+                  true,
+                  data::engine_arguments{
+                      extra_clang_args, data::real_engine_name::internal},
+                  metashell_binary_, env_detector_, displayer_, logger_))
           {
             return clang_macros(
                 clang::binary(true, *clang_path, extra_clang_args,

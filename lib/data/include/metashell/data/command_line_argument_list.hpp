@@ -51,6 +51,15 @@ namespace metashell
 
       command_line_argument_list(std::initializer_list<command_line_argument>);
 
+      template <class InputIt>
+      command_line_argument_list(InputIt begin_, InputIt end_)
+      {
+        for (InputIt i = begin_; i != end_; ++i)
+        {
+          _items.emplace_back(*i);
+        }
+      }
+
       command_line_argument_list&
       operator=(const command_line_argument_list&) = default;
 

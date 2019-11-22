@@ -1,5 +1,5 @@
-#ifndef METASHELL_DATA_SHELL_CONFIG_DATA_HPP
-#define METASHELL_DATA_SHELL_CONFIG_DATA_HPP
+#ifndef METASHELL_DATA_SHELL_ENGINE_ARGUMENTS_HPP
+#define METASHELL_DATA_SHELL_ENGINE_ARGUMENTS_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
@@ -18,19 +18,17 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/command_line_argument_list.hpp>
-#include <metashell/data/engine_arguments.hpp>
 #include <metashell/data/engine_name.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    class shell_config_data
+    class engine_arguments
     {
     public:
-      bool use_precompiled_headers = false;
-      bool preprocessor_mode = false;
-      engine_arguments engine;
+      command_line_argument_list args;
+      engine_name name = auto_engine_name();
     };
   }
 }
