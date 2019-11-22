@@ -135,12 +135,12 @@ namespace metashell
           }
 
           binary cbin(extract_vc_binary(
-                          config_.engine, env_detector_, metashell_binary_),
-                      vc_args(config_.engine.args, internal_dir_), temp_dir_,
+                          *config_.engine, env_detector_, metashell_binary_),
+                      vc_args(config_.engine->args, internal_dir_), temp_dir_,
                       logger_);
 
           return make_engine(
-              name(), config_.engine.name, not_supported(),
+              name(), config_.engine->name, not_supported(),
               preprocessor_shell(cbin), not_supported(),
               header_discoverer(cbin), not_supported(),
               cpp_validator(internal_dir_, env_filename_, cbin, logger_),

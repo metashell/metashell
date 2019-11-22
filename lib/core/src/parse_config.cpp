@@ -205,12 +205,12 @@ namespace metashell
         data::shell_config result(
             data::shell_config_name("default"), data::shell_config_data());
 
-        result.engine.args = data::command_line_argument_list(
+        result.engine.default_value().args = data::command_line_argument_list(
             extra_args_begin_, extra_args_end_);
 
         if (engine_)
         {
-          result.engine.name = *engine_;
+          result.engine.default_value().name = *engine_;
         }
         result.use_precompiled_headers = !vm_.count("no_precompiled_headers");
         result.preprocessor_mode = vm_.count("preprocessor");
@@ -284,7 +284,7 @@ namespace metashell
                                        return to_string(name_);
                                      }),
                                  ", ") +
-          ". Default: " + data::shell_config_data().engine.name;
+          ". Default: " + data::shell_config_data().engine->name;
 
       std::vector<boost::filesystem::path> configs_to_load;
       std::vector<boost::filesystem::path> compile_commands_to_load;

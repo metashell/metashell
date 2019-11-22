@@ -140,13 +140,13 @@ namespace metashell
         {
           using core::not_supported;
 
-          clang::binary cbin(extract_gcc_binary(config_.engine, env_detector_,
+          clang::binary cbin(extract_gcc_binary(*config_.engine, env_detector_,
                                                 metashell_binary_),
-                             gcc_args(config_.engine.args, internal_dir_),
+                             gcc_args(config_.engine->args, internal_dir_),
                              logger_);
 
           return core::make_engine(
-              name(), config_.engine.name, not_supported(),
+              name(), config_.engine->name, not_supported(),
               clang::preprocessor_shell(cbin), not_supported(),
               clang::header_discoverer(cbin), not_supported(),
               clang::cpp_validator(internal_dir_, env_filename_, cbin, logger_),

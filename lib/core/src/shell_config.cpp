@@ -31,11 +31,11 @@ namespace metashell
       out_.string(cfg_.name.value());
 
       out_.key("engine");
-      out_.string(to_string(cfg_.engine.name));
+      out_.string(to_string(cfg_.engine->name));
 
       out_.key("engine_args");
       out_.start_array();
-      for (const data::command_line_argument& arg : cfg_.engine.args)
+      for (const data::command_line_argument& arg : cfg_.engine->args)
       {
         out_.string(arg.value());
       }

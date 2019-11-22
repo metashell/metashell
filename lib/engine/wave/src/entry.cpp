@@ -85,7 +85,7 @@ namespace metashell
           using core::not_supported;
 
           const data::wave_config cfg = parse_config(
-              UseTemplightHeaders, config_.engine.args, metashell_binary_,
+              UseTemplightHeaders, config_.engine->args, metashell_binary_,
               internal_dir_, env_detector_, displayer_, logger_);
 
           if (UseTemplightHeaders)
@@ -115,7 +115,7 @@ namespace metashell
 
           return make_engine(
               UseTemplightHeaders ? name_with_templight_headers() : name(),
-              config_.engine.name, not_supported(),
+              config_.engine->name, not_supported(),
               preprocessor_shell(cfg, system_includes), not_supported(),
               header_discoverer(cfg, system_includes), not_supported(),
               cpp_validator(cfg, system_includes),

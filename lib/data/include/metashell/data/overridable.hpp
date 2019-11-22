@@ -1,5 +1,5 @@
-#ifndef METASHELL_DATA_SHELL_CONFIG_DATA_HPP
-#define METASHELL_DATA_SHELL_CONFIG_DATA_HPP
+#ifndef METASHELL_DATA_OVERRIDABLEHPP
+#define METASHELL_DATA_OVERRIDABLEHPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,21 +17,37 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/command_line_argument_list.hpp>
-#include <metashell/data/engine_arguments.hpp>
-#include <metashell/data/engine_name.hpp>
-#include <metashell/data/overridable.hpp>
+#include <boost/optional.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    class shell_config_data
+    template <class T>
+    class overridable
     {
     public:
-      bool use_precompiled_headers = false;
-      bool preprocessor_mode = false;
-      overridable<engine_arguments> engine;
+      overridable() = default;
+
+      overridable(const T& value_) : _default(value_) {}
+
+      overridable(T&& value_) : _default(std::move(value_)) {}
+
+      const T& operator*() const { return _override ? *_override : _default; }
+      const T* operator->() const { return &this->operator*(); }
+
+      const T& default_value() const { return _default; }
+      T& default_value() { return _default; }
+
+      void set_default(T value_) { _default = std::move(value_); }
+
+      void set_override(T value_) { _override = std::move(value_); }
+
+      void set_override() { _override = boost::none; }
+
+    private:
+      T _default;
+      boost::optional<T> _override;
     };
   }
 }

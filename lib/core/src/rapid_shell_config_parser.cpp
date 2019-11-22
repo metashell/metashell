@@ -194,7 +194,7 @@ namespace metashell
           }
           else if (*_key == "engine")
           {
-            _data->engine.name = data::parse_engine_name(str_);
+            _data->engine.default_value().name = data::parse_engine_name(str_);
           }
           else
           {
@@ -205,7 +205,8 @@ namespace metashell
         }
         else if (t == field_type::list_ && _in_engine_args)
         {
-          _data->engine.args.push_back(data::command_line_argument(str_));
+          _data->engine.default_value().args.push_back(
+              data::command_line_argument(str_));
           return true;
         }
         else

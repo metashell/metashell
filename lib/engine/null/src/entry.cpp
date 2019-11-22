@@ -42,10 +42,10 @@ namespace metashell
                const boost::filesystem::path&, iface::environment_detector&,
                iface::displayer&, core::logger*) {
               return core::make_engine(
-                  name(), config_.engine.name, not_supported(), not_supported(),
+                  name(), config_.engine->name, not_supported(),
                   not_supported(), not_supported(), not_supported(),
                   not_supported(), not_supported(), not_supported(),
-                  supported_features());
+                  not_supported(), supported_features());
             },
             "",
             data::markdown_string("An engine which does not support anything. "

@@ -92,13 +92,13 @@ namespace metashell
 
           const clang::binary cbin(
               UseInternalTemplight,
-              clang::find_clang(UseInternalTemplight, config_.engine,
+              clang::find_clang(UseInternalTemplight, *config_.engine,
                                 metashell_binary_, env_detector_, displayer_,
                                 logger_),
-              config_.engine.args, internal_dir_, env_detector_, logger_);
+              config_.engine->args, internal_dir_, env_detector_, logger_);
 
           return core::make_engine(
-              name(UseInternalTemplight), config_.engine.name,
+              name(UseInternalTemplight), config_.engine->name,
               clang::type_shell(internal_dir_, env_filename_, cbin, logger_),
               clang::preprocessor_shell(cbin),
               clang::code_completer(

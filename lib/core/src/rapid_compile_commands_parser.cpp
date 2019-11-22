@@ -59,7 +59,7 @@ namespace metashell
         bool use_precompiled_headers_, bool preprocessor_mode_)
     {
       _defaults.use_precompiled_headers = use_precompiled_headers_;
-      _defaults.engine.name = data::auto_engine_name(),
+      _defaults.engine.default_value().name = data::auto_engine_name(),
       _defaults.preprocessor_mode = preprocessor_mode_;
     }
 
@@ -157,7 +157,7 @@ namespace metashell
       {
         if (*_key == "command")
         {
-          _data->engine.args =
+          _data->engine.default_value().args =
               parse_compiler_command(data::shell_command_view(str_));
         }
         else if (*_key == "file")
