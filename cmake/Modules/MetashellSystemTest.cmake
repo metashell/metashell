@@ -34,13 +34,13 @@ function(register_system_test TEST_TARGET_NAME)
   elseif (APPLE)
     set(
       CLANG_FLAGS
-      "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
-      "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/libcxx"
+      "-idirafter$<TARGET_FILE_DIR:metashell>/../include/metashell/libcxx"
+      "-idirafter$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
     )
   else()
     set(
       CLANG_FLAGS
-      "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
+      "-idirafter$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
     )
   endif()
 

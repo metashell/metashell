@@ -40,7 +40,10 @@ namespace metashell
         }
         else
         {
-          return {{"-I", ""}};
+          return {{"-I", ""},
+                  {"-iquote", ""},
+                  {"-isystem", ""},
+                  {"-idirafter", ""}};
         }
       }
 

@@ -243,7 +243,7 @@ namespace metashell
             if (stdinc_allowed(extra_clang_args_))
             {
               args.append_with_prefix(
-                  "-I",
+                  "-idirafter",
                   determine_include_path(clang_path_, env_detector_, logger_));
             }
 
