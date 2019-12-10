@@ -116,7 +116,6 @@ v_add_f32 v0, |v0|, -v0 row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0
 //===----------------------------------------------------------------------===//
 
 // NOSICI: error:
-// VI9: v_nop row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0 ; encoding: [0xfa,0x00,0x00,0x7e,0x00,0x01,0x09,0xa1]
 v_nop row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0
 
 // NOSICI: error:
@@ -334,6 +333,26 @@ v_sin_f16 v1, v0 row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0
 // NOSICI: error:
 // VI9: v_cos_f16_dpp v1, v0 row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0 ; encoding: [0xfa,0x94,0x02,0x7e,0x00,0x01,0x09,0xa1]
 v_cos_f16 v1, v0 row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0
+
+// GFX9:   v_cvt_norm_i16_f16_dpp v5, |v1| quad_perm:[0,1,2,3] row_mask:0x0 bank_mask:0x0 ; encoding: [0xfa,0x9a,0x0a,0x7e,0x01,0xe4,0x20,0x00]
+// NOSICI: error
+// NOVI:   error
+v_cvt_norm_i16_f16_dpp v5, |v1| quad_perm:[0,1,2,3] row_mask:0x0 bank_mask:0x0
+
+// GFX9:   v_cvt_norm_u16_f16_dpp v5, v1 quad_perm:[3,2,1,0] row_mask:0x0 bank_mask:0x0 ; encoding: [0xfa,0x9c,0x0a,0x7e,0x01,0x1b,0x00,0x00]
+// NOSICI: error
+// NOVI:   error
+v_cvt_norm_u16_f16_dpp v5, v1 quad_perm:[3,2,1,0] row_mask:0x0 bank_mask:0x0
+
+// GFX9:   v_sat_pk_u8_i16_dpp v5, v1 row_ror:15 row_mask:0x0 bank_mask:0x0 ; encoding: [0xfa,0x9e,0x0a,0x7e,0x01,0x2f,0x01,0x00]
+// NOSICI: error
+// NOVI:   error
+v_sat_pk_u8_i16_dpp v5, v1 row_ror:15 row_mask:0x0 bank_mask:0x0
+
+// NOSICI: error:
+// NOVI: error:
+// GFX9: v_screen_partition_4se_b32_dpp v5, v1 quad_perm:[0,1,2,3] row_mask:0x0 bank_mask:0x0 bound_ctrl:0 ; encoding: [0xfa,0x6e,0x0a,0x7e,0x01,0xe4,0x08,0x00]
+v_screen_partition_4se_b32_dpp v5, v1 quad_perm:[0,1,2,3] row_mask:0x0 bank_mask:0x0 bound_ctrl:0
 
 //===----------------------------------------------------------------------===//
 // Check VOP2 opcodes
@@ -568,36 +587,78 @@ v_subb_co_u32 v1, vcc, v2, v3, vcc row_shl:1 row_mask:0xa bank_mask:0x1 bound_ct
 // GFX9: v_subbrev_co_u32_dpp v1, vcc, v2, v3, vcc row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0 ; encoding: [0xfa,0x06,0x02,0x3c,0x02,0x01,0x09,0xa1]
 v_subbrev_co_u32 v1, vcc, v2, v3, vcc row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0
 
+// NOSICI: error
+// VI9:    v_cndmask_b32_dpp v5, v1, v2, vcc quad_perm:[0,1,2,3] row_mask:0x0 bank_mask:0x0 ; encoding: [0xfa,0x04,0x0a,0x00,0x01,0xe4,0x00,0x00]
+v_cndmask_b32_dpp v5, v1, v2, vcc quad_perm:[0,1,2,3] row_mask:0x0 bank_mask:0x0
+
+// NOSICI: error
+// VI9:    v_cndmask_b32_dpp v5, v1, v2, vcc row_shl:15 row_mask:0x0 bank_mask:0x0 ; encoding: [0xfa,0x04,0x0a,0x00,0x01,0x0f,0x01,0x00]
+v_cndmask_b32_dpp v5, v1, v2, vcc row_shl:15 row_mask:0x0 bank_mask:0x0
+
 //===----------------------------------------------------------------------===//
 // Check that immideates and scalar regs are not supported
 //===----------------------------------------------------------------------===//
 
-// NOSICI: error:
-// NOVI: error:
-// NOGFX9: error:
+// NOSICI: error: not a valid operand
+// NOVI: error: invalid operand for instruction
+// NOGFX9: error: invalid operand for instruction
 v_mov_b32 v0, 1 row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0
 
-// NOSICI: error:
-// NOVI: error:
-// NOGFX9: error:
+// NOSICI: error: not a valid operand
+// NOVI: error: invalid operand for instruction
+// NOGFX9: error: invalid operand for instruction
 v_and_b32 v0, 42, v1 row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0
 
-// NOSICI: error:
-// NOVI: error:
-// NOGFX9: error:
+// NOSICI: error: not a valid operand
+// NOVI: error: invalid operand for instruction
+// NOGFX9: error: invalid operand for instruction
 v_add_f32 v0, v1, 345 row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0
 
-// NOSICI: error:
-// NOVI: error:
-// NOGFX9: error:
+// NOSICI: error: not a valid operand
+// NOVI: error: invalid operand for instruction
+// NOGFX9: error: invalid operand for instruction
 v_mov_b32 v0, s1 row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0
 
-// NOSICI: error:
-// NOVI: error:
-// NOGFX9: error:
+// NOSICI: error: not a valid operand
+// NOVI: error: invalid operand for instruction
+// NOGFX9: error: invalid operand for instruction
 v_and_b32 v0, s42, v1 row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0
 
-// NOSICI: error:
-// NOVI: error:
-// NOGFX9: error:
+// NOSICI: error: not a valid operand
+// NOVI: error: invalid operand for instruction
+// NOGFX9: error: invalid operand for instruction
 v_add_f32 v0, v1, s45 row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0
+
+//===----------------------------------------------------------------------===//
+// Validate register size checks (bug 37943)
+//===----------------------------------------------------------------------===//
+
+// NOSICI: error: not a valid operand
+// NOVI: error: invalid operand for instruction
+// NOGFX9: error: invalid operand for instruction
+v_add_f32_dpp v5, v[1:2], v2 quad_perm:[0,1,2,3] row_mask:0x0 bank_mask:0x0
+
+// NOSICI: error: not a valid operand
+// NOVI: error: invalid operand for instruction
+// NOGFX9: error: invalid operand for instruction
+v_add_f32_dpp v5, v[1:3], v2 quad_perm:[0,1,2,3] row_mask:0x0 bank_mask:0x0
+
+// NOSICI: error: not a valid operand
+// NOVI: error: invalid operand for instruction
+// NOGFX9: error: invalid operand for instruction
+v_add_f32_dpp v5, v1, v[1:2] quad_perm:[0,1,2,3] row_mask:0x0 bank_mask:0x0
+
+// NOSICI: error: not a valid operand
+// NOVI: error: invalid operand for instruction
+// NOGFX9: error: invalid operand for instruction
+v_add_f32_dpp v5, v1, v[1:4] quad_perm:[0,1,2,3] row_mask:0x0 bank_mask:0x0
+
+// NOSICI: error: not a valid operand
+// NOVI: error: invalid operand for instruction
+// NOGFX9: error: invalid operand for instruction
+v_add_f16 v1, v[2:3], v3 row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0
+
+// NOSICI: error: not a valid operand
+// NOVI: error: invalid operand for instruction
+// NOGFX9: error: invalid operand for instruction
+v_add_f16 v1, v3, v[2:3] row_shl:1 row_mask:0xa bank_mask:0x1 bound_ctrl:0

@@ -10,12 +10,14 @@ RUN: llvm-dwarfdump -gdb-index %p/Inputs/dwarfdump-gdbindex-v7.elf-x86-64 | File
 ; gcc version 5.3.1 20160413, GNU gold (GNU Binutils for Ubuntu 2.26) 1.11
 ; Info about gdb-index: https://sourceware.org/gdb/onlinedocs/gdb/Index-Section-Format.html
 
-; CHECK-LABEL: .gnu_index contents:
+; CHECK-LABEL: .gdb_index contents:
 ; CHECK: Version = 7
 
 ; CHECK:      CU list offset = 0x18, has 2 entries:
 ; CHECK-NEXT:   0: Offset = 0x0, Length = 0x34
 ; CHECK-NEXT:   1: Offset = 0x34, Length = 0x34
+
+; CHECK:      Types CU list offset = 0x38, has 0 entries:
 
 ; CHECK:      Address area offset = 0x38, has 2 entries:
 ; CHECK-NEXT:   Low/High address = [0x4000e8, 0x4000f3) (Size: 0xb), CU id = 0

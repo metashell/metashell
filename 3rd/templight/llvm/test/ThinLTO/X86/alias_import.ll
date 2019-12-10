@@ -1,8 +1,8 @@
 ; RUN: opt -module-summary %s -o %t1.bc
 ; RUN: opt -module-summary %p/Inputs/alias_import.ll -o %t2.bc
 ; RUN: llvm-lto -thinlto-action=thinlink -o %t.index.bc %t1.bc %t2.bc
-; RUN: llvm-lto -thinlto-action=promote -thinlto-index %t.index.bc %t2.bc -o - | llvm-dis -o - | FileCheck %s --check-prefix=PROMOTE
-; RUN: llvm-lto -thinlto-action=import -thinlto-index %t.index.bc %t1.bc -o - | llvm-dis -o - | FileCheck %s --check-prefix=IMPORT
+; RUN: llvm-lto -thinlto-action=promote -thinlto-index %t.index.bc %t2.bc -o - | llvm-dis -o - | FileCheck -allow-deprecated-dag-overlap %s --check-prefix=PROMOTE
+; RUN: llvm-lto -thinlto-action=import -thinlto-index %t.index.bc %t1.bc -o - | llvm-dis -o - | FileCheck -allow-deprecated-dag-overlap %s --check-prefix=IMPORT
 
 ; Alias can't point to "available_externally", so they are implemented by
 ; importing the alias as an available_externally definition copied from the
@@ -38,7 +38,7 @@
 ; PROMOTE-DAG: @linkonceODRfuncLinkonceAlias = weak alias void (...), bitcast (void ()* @linkonceODRfunc to void (...)*)
 ; PROMOTE-DAG: @linkonceODRfuncLinkonceODRAlias = weak_odr alias void (...), bitcast (void ()* @linkonceODRfunc to void (...)*)
 
-; PROMOTE-DAG: define void @globalfunc()
+; PROMOTE-DAG: define hidden void @globalfunc()
 ; PROMOTE-DAG: define internal void @internalfunc()
 ; PROMOTE-DAG: define weak_odr void @linkonceODRfunc()
 ; PROMOTE-DAG: define weak_odr void @weakODRfunc()
@@ -52,16 +52,16 @@
 ; IMPORT-DAG: define available_externally void @linkonceODRfuncAlias
 ; IMPORT-DAG: define available_externally void @linkonceODRfuncWeakODRAlias
 ; IMPORT-DAG: define available_externally void @linkonceODRfuncLinkonceODRAlias
-; IMPORT-DAG: define available_externally void @globalfuncAlias()
+; IMPORT-DAG: define available_externally dso_local void @globalfuncAlias()
 ; IMPORT-DAG: declare void @globalfuncWeakAlias()
 ; IMPORT-DAG: declare void @globalfuncLinkonceAlias()
-; IMPORT-DAG: define available_externally void @globalfuncWeakODRAlias()
-; IMPORT-DAG: define available_externally void @globalfuncLinkonceODRAlias()
-; IMPORT-DAG: define available_externally void @internalfuncAlias()
+; IMPORT-DAG: define available_externally dso_local void @globalfuncWeakODRAlias()
+; IMPORT-DAG: define available_externally dso_local void @globalfuncLinkonceODRAlias()
+; IMPORT-DAG: define available_externally dso_local void @internalfuncAlias()
 ; IMPORT-DAG: declare void @internalfuncWeakAlias()
 ; IMPORT-DAG: declare void @internalfuncLinkonceAlias()
-; IMPORT-DAG: define available_externally void @internalfuncWeakODRAlias()
-; IMPORT-DAG: define available_externally void @internalfuncLinkonceODRAlias()
+; IMPORT-DAG: define available_externally dso_local void @internalfuncWeakODRAlias()
+; IMPORT-DAG: define available_externally dso_local void @internalfuncLinkonceODRAlias()
 ; IMPORT-DAG: define available_externally void @weakODRfuncAlias()
 ; IMPORT-DAG: declare void @weakODRfuncWeakAlias()
 ; IMPORT-DAG: declare void @weakODRfuncLinkonceAlias()
@@ -82,6 +82,8 @@
 ; IMPORT-DAG: define available_externally void @linkonceODRfuncWeakODRAlias()
 ; IMPORT-DAG: declare void @linkonceODRfuncLinkonceAlias()
 ; IMPORT-DAG: define available_externally void @linkonceODRfuncLinkonceODRAlias()
+
+target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 
 define i32 @main() #0 {
 entry:

@@ -1,9 +1,8 @@
 //===- unittest/ProfileData/CoverageMappingTest.cpp -------------------------=//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -859,17 +858,34 @@ TEST_P(CoverageMappingTest, load_coverage_for_expanded_file) {
 TEST_P(CoverageMappingTest, skip_duplicate_function_record) {
   ProfileWriter.addRecord({"func", 0x1234, {1}}, Err);
 
+  // This record should be loaded.
   startFunction("func", 0x1234);
   addCMR(Counter::getCounter(0), "file1", 1, 1, 9, 9);
 
+  // This record should be loaded.
   startFunction("func", 0x1234);
   addCMR(Counter::getCounter(0), "file1", 1, 1, 9, 9);
+  addCMR(Counter::getCounter(0), "file2", 1, 1, 9, 9);
+
+  // This record should be skipped.
+  startFunction("func", 0x1234);
+  addCMR(Counter::getCounter(0), "file1", 1, 1, 9, 9);
+
+  // This record should be loaded.
+  startFunction("func", 0x1234);
+  addCMR(Counter::getCounter(0), "file2", 1, 1, 9, 9);
+  addCMR(Counter::getCounter(0), "file1", 1, 1, 9, 9);
+
+  // This record should be skipped.
+  startFunction("func", 0x1234);
+  addCMR(Counter::getCounter(0), "file1", 1, 1, 9, 9);
+  addCMR(Counter::getCounter(0), "file2", 1, 1, 9, 9);
 
   EXPECT_THAT_ERROR(loadCoverageMapping(), Succeeded());
 
   auto Funcs = LoadedCoverage->getCoveredFunctions();
   unsigned NumFuncs = std::distance(Funcs.begin(), Funcs.end());
-  ASSERT_EQ(1U, NumFuncs);
+  ASSERT_EQ(3U, NumFuncs);
 }
 
 // FIXME: Use ::testing::Combine() when llvm updates its copy of googletest.

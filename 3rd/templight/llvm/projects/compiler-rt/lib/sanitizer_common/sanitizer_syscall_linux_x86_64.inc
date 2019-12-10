@@ -1,9 +1,8 @@
 //===-- sanitizer_syscall_linux_x86_64.inc ----------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -19,9 +18,6 @@ static uptr internal_syscall(u64 nr) {
                "memory", "cc");
   return retval;
 }
-
-#define internal_syscall_ptr internal_syscall
-#define internal_syscall64 internal_syscall
 
 template <typename T1>
 static uptr internal_syscall(u64 nr, T1 arg1) {

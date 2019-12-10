@@ -224,8 +224,8 @@ define <4 x i32> @wrong_pred_for_smin_with_not(<4 x i32> %x) {
 ; CHECK:       # %bb.0:
 ; CHECK-NEXT:    vpcmpeqd %xmm1, %xmm1, %xmm1
 ; CHECK-NEXT:    vpxor %xmm1, %xmm0, %xmm1
-; CHECK-NEXT:    vpxor {{.*}}(%rip), %xmm0, %xmm0
-; CHECK-NEXT:    vpcmpgtd {{.*}}(%rip), %xmm0, %xmm0
+; CHECK-NEXT:    vpmaxud {{.*}}(%rip), %xmm0, %xmm2
+; CHECK-NEXT:    vpcmpeqd %xmm2, %xmm0, %xmm0
 ; CHECK-NEXT:    vmovaps {{.*#+}} xmm2 = [4294967291,4294967291,4294967291,4294967291]
 ; CHECK-NEXT:    vblendvps %xmm0, %xmm1, %xmm2, %xmm0
 ; CHECK-NEXT:    retq

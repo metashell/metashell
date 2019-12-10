@@ -1,9 +1,8 @@
 //===-- asan_memory_profile.cc.cc -----------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -31,9 +30,9 @@ struct AllocationSite {
 
 class HeapProfile {
  public:
-  HeapProfile() : allocations_(1024) {}
+  HeapProfile() { allocations_.reserve(1024); }
 
-  void ProcessChunk(const AsanChunkView& cv) {
+  void ProcessChunk(const AsanChunkView &cv) {
     if (cv.IsAllocated()) {
       total_allocated_user_size_ += cv.UsedSize();
       total_allocated_count_++;
@@ -49,10 +48,10 @@ class HeapProfile {
   }
 
   void Print(uptr top_percent, uptr max_number_of_contexts) {
-    InternalSort(&allocations_, allocations_.size(),
-                 [](const AllocationSite &a, const AllocationSite &b) {
-                   return a.total_size > b.total_size;
-                 });
+    Sort(allocations_.data(), allocations_.size(),
+         [](const AllocationSite &a, const AllocationSite &b) {
+           return a.total_size > b.total_size;
+         });
     CHECK(total_allocated_user_size_);
     uptr total_shown = 0;
     Printf("Live Heap Allocations: %zd bytes in %zd chunks; quarantined: "

@@ -1,9 +1,8 @@
 //===-- asan_mac.cc -------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -62,16 +61,36 @@ uptr FindDynamicShadowStart() {
   uptr space_size = kHighShadowEnd + left_padding;
 
   uptr largest_gap_found = 0;
-  uptr shadow_start = FindAvailableMemoryRange(space_size, alignment,
-                                               granularity, &largest_gap_found);
+  uptr max_occupied_addr = 0;
+  VReport(2, "FindDynamicShadowStart, space_size = %p\n", space_size);
+  uptr shadow_start =
+      FindAvailableMemoryRange(space_size, alignment, granularity,
+                               &largest_gap_found, &max_occupied_addr);
   // If the shadow doesn't fit, restrict the address space to make it fit.
   if (shadow_start == 0) {
+    VReport(
+        2,
+        "Shadow doesn't fit, largest_gap_found = %p, max_occupied_addr = %p\n",
+        largest_gap_found, max_occupied_addr);
     uptr new_max_vm = RoundDownTo(largest_gap_found << SHADOW_SCALE, alignment);
+    if (new_max_vm < max_occupied_addr) {
+      Report("Unable to find a memory range for dynamic shadow.\n");
+      Report(
+          "space_size = %p, largest_gap_found = %p, max_occupied_addr = %p, "
+          "new_max_vm = %p\n",
+          space_size, largest_gap_found, max_occupied_addr, new_max_vm);
+      CHECK(0 && "cannot place shadow");
+    }
     RestrictMemoryToMaxAddress(new_max_vm);
     kHighMemEnd = new_max_vm - 1;
     space_size = kHighShadowEnd + left_padding;
-    shadow_start =
-        FindAvailableMemoryRange(space_size, alignment, granularity, nullptr);
+    VReport(2, "FindDynamicShadowStart, space_size = %p\n", space_size);
+    shadow_start = FindAvailableMemoryRange(space_size, alignment, granularity,
+                                            nullptr, nullptr);
+    if (shadow_start == 0) {
+      Report("Unable to find a memory range after restricting VM.\n");
+      CHECK(0 && "cannot place shadow after restricting vm");
+    }
   }
   CHECK_NE((uptr)0, shadow_start);
   CHECK(IsAligned(shadow_start, alignment));
@@ -162,8 +181,8 @@ void asan_register_worker_thread(int parent_tid, StackTrace *stack) {
     t = AsanThread::Create(/* start_routine */ nullptr, /* arg */ nullptr,
                            parent_tid, stack, /* detached */ true);
     t->Init();
-    asanThreadRegistry().StartThread(t->tid(), GetTid(),
-                                     /* workerthread */ true, 0);
+    asanThreadRegistry().StartThread(t->tid(), GetTid(), ThreadType::Worker,
+                                     nullptr);
     SetCurrentThread(t);
   }
 }

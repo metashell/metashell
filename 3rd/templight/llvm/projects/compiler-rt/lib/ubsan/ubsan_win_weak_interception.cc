@@ -1,9 +1,8 @@
 //===-- ubsan_win_weak_interception.cc ------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 // This module should be included in Ubsan when it is implemented as a shared
@@ -14,6 +13,7 @@
 #ifdef SANITIZER_DYNAMIC
 #include "sanitizer_common/sanitizer_win_weak_interception.h"
 #include "ubsan_flags.h"
+#include "ubsan_monitor.h"
 // Check if strong definitions for weak functions are present in the main
 // executable. If that is the case, override dll functions to point to strong
 // implementations.

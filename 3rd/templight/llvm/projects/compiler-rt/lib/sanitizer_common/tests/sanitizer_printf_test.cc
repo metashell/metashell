@@ -1,9 +1,8 @@
 //===-- sanitizer_printf_test.cc ------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -148,6 +147,14 @@ TEST(Printf, Precision) {
   len = internal_snprintf(buf, sizeof(buf), "%.*s", 6, "12345");
   EXPECT_EQ(5U, len);
   EXPECT_STREQ("12345", buf);
+  len = internal_snprintf(buf, sizeof(buf), "%-6s", "12345");
+  EXPECT_EQ(6U, len);
+  EXPECT_STREQ("12345 ", buf);
+  // Check that width does not overflow the smaller buffer, although
+  // 10 chars is requested, it stops at the buffer size, 8.
+  len = internal_snprintf(buf, 8, "%-10s", "12345");
+  EXPECT_EQ(10U, len);  // The required size reported.
+  EXPECT_STREQ("12345  ", buf);
 }
 
 }  // namespace __sanitizer

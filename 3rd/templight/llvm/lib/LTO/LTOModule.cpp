@@ -1,9 +1,8 @@
 //===-- LTOModule.cpp - LLVM Link Time Optimizer --------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -14,9 +13,7 @@
 
 #include "llvm/LTO/legacy/LTOModule.h"
 #include "llvm/ADT/Triple.h"
-#include "llvm/Analysis/ObjectUtils.h"
 #include "llvm/Bitcode/BitcodeReader.h"
-#include "llvm/CodeGen/TargetLoweringObjectFile.h"
 #include "llvm/CodeGen/TargetSubtargetInfo.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/LLVMContext.h"
@@ -39,6 +36,7 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetLoweringObjectFile.h"
 #include "llvm/Transforms/Utils/GlobalStatus.h"
 #include <system_error>
 using namespace llvm;
@@ -57,11 +55,7 @@ LTOModule::~LTOModule() {}
 bool LTOModule::isBitcodeFile(const void *Mem, size_t Length) {
   Expected<MemoryBufferRef> BCData = IRObjectFile::findBitcodeInMemBuffer(
       MemoryBufferRef(StringRef((const char *)Mem, Length), "<mem>"));
-  if (!BCData) {
-    consumeError(BCData.takeError());
-    return false;
-  }
-  return true;
+  return !errorToBool(BCData.takeError());
 }
 
 bool LTOModule::isBitcodeFile(StringRef Path) {
@@ -72,17 +66,13 @@ bool LTOModule::isBitcodeFile(StringRef Path) {
 
   Expected<MemoryBufferRef> BCData = IRObjectFile::findBitcodeInMemBuffer(
       BufferOrErr.get()->getMemBufferRef());
-  if (!BCData) {
-    consumeError(BCData.takeError());
-    return false;
-  }
-  return true;
+  return !errorToBool(BCData.takeError());
 }
 
 bool LTOModule::isThinLTO() {
   Expected<BitcodeLTOInfo> Result = getBitcodeLTOInfo(MBRef);
   if (!Result) {
-    logAllUnhandledErrors(Result.takeError(), errs(), "");
+    logAllUnhandledErrors(Result.takeError(), errs());
     return false;
   }
   return Result->IsThinLTO;
@@ -92,10 +82,8 @@ bool LTOModule::isBitcodeForTarget(MemoryBuffer *Buffer,
                                    StringRef TriplePrefix) {
   Expected<MemoryBufferRef> BCOrErr =
       IRObjectFile::findBitcodeInMemBuffer(Buffer->getMemBufferRef());
-  if (!BCOrErr) {
-    consumeError(BCOrErr.takeError());
+  if (errorToBool(BCOrErr.takeError()))
     return false;
-  }
   LLVMContext Context;
   ErrorOr<std::string> TripleOrErr =
       expectedToErrorOrAndEmitErrors(Context, getBitcodeTargetTriple(*BCOrErr));
@@ -107,10 +95,8 @@ bool LTOModule::isBitcodeForTarget(MemoryBuffer *Buffer,
 std::string LTOModule::getProducerString(MemoryBuffer *Buffer) {
   Expected<MemoryBufferRef> BCOrErr =
       IRObjectFile::findBitcodeInMemBuffer(Buffer->getMemBufferRef());
-  if (!BCOrErr) {
-    consumeError(BCOrErr.takeError());
+  if (errorToBool(BCOrErr.takeError()))
     return "";
-  }
   LLVMContext Context;
   ErrorOr<std::string> ProducerOrErr = expectedToErrorOrAndEmitErrors(
       Context, getBitcodeProducerString(*BCOrErr));
@@ -144,7 +130,8 @@ LTOModule::createFromOpenFileSlice(LLVMContext &Context, int fd, StringRef path,
                                    size_t map_size, off_t offset,
                                    const TargetOptions &options) {
   ErrorOr<std::unique_ptr<MemoryBuffer>> BufferOrErr =
-      MemoryBuffer::getOpenFileSlice(fd, path, map_size, offset);
+      MemoryBuffer::getOpenFileSlice(sys::fs::convertFDToNativeFile(fd), path,
+                                     map_size, offset);
   if (std::error_code EC = BufferOrErr.getError()) {
     Context.emitError(EC.message());
     return EC;
@@ -220,7 +207,7 @@ LTOModule::makeLTOModule(MemoryBufferRef Buffer, const TargetOptions &options,
   std::string errMsg;
   const Target *march = TargetRegistry::lookupTarget(TripleStr, errMsg);
   if (!march)
-    return std::unique_ptr<LTOModule>(nullptr);
+    return make_error_code(object::object_error::arch_not_found);
 
   // construct LTOModule, hand over ownership of module and target
   SubtargetFeatures Features;
@@ -456,7 +443,7 @@ void LTOModule::addDefinedSymbol(StringRef Name, const GlobalValue *def,
     attr |= LTO_SYMBOL_SCOPE_HIDDEN;
   else if (def->hasProtectedVisibility())
     attr |= LTO_SYMBOL_SCOPE_PROTECTED;
-  else if (canBeOmittedFromSymbolTable(def))
+  else if (def->canBeOmittedFromSymbolTable())
     attr |= LTO_SYMBOL_SCOPE_DEFAULT_CAN_BE_HIDDEN;
   else
     attr |= LTO_SYMBOL_SCOPE_DEFAULT;
@@ -659,6 +646,32 @@ void LTOModule::parseMetadata() {
       continue;
     emitLinkerFlagsForGlobalCOFF(OS, Sym.symbol, TT, M);
   }
+}
 
-  // Add other interesting metadata here.
+lto::InputFile *LTOModule::createInputFile(const void *buffer,
+                                           size_t buffer_size, const char *path,
+                                           std::string &outErr) {
+  StringRef Data((const char *)buffer, buffer_size);
+  MemoryBufferRef BufferRef(Data, path);
+
+  Expected<std::unique_ptr<lto::InputFile>> ObjOrErr =
+      lto::InputFile::create(BufferRef);
+
+  if (ObjOrErr)
+    return ObjOrErr->release();
+
+  outErr = std::string(path) +
+           ": Could not read LTO input file: " + toString(ObjOrErr.takeError());
+  return nullptr;
+}
+
+size_t LTOModule::getDependentLibraryCount(lto::InputFile *input) {
+  return input->getDependentLibraries().size();
+}
+
+const char *LTOModule::getDependentLibrary(lto::InputFile *input, size_t index,
+                                           size_t *size) {
+  StringRef S = input->getDependentLibraries()[index];
+  *size = S.size();
+  return S.data();
 }

@@ -4,9 +4,9 @@
 define i32 @foo(<2 x i64> %c, i32 %a, i32 %b) {
 ; CHECK-LABEL: foo:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ptest %xmm0, %xmm0
-; CHECK-NEXT:    cmovnel %esi, %edi
 ; CHECK-NEXT:    movl %edi, %eax
+; CHECK-NEXT:    ptest %xmm0, %xmm0
+; CHECK-NEXT:    cmovnel %esi, %eax
 ; CHECK-NEXT:    retq
   %t1 = call i32 @llvm.x86.sse41.ptestz(<2 x i64> %c, <2 x i64> %c)
   %t2 = icmp ne i32 %t1, 0
@@ -53,9 +53,9 @@ define i16 @rnd16(i16 %arg) nounwind {
 ; CHECK:       # %bb.0:
 ; CHECK-NEXT:    xorl %eax, %eax
 ; CHECK-NEXT:    rdrandw %cx
-; CHECK-NEXT:    cmovbw %di, %ax
+; CHECK-NEXT:    cmovbl %edi, %eax
 ; CHECK-NEXT:    addl %ecx, %eax
-; CHECK-NEXT:    # kill: def %ax killed %ax killed %eax
+; CHECK-NEXT:    # kill: def $ax killed $ax killed $eax
 ; CHECK-NEXT:    retq
   %1 = tail call { i16, i32 } @llvm.x86.rdrand.16() nounwind
   %2 = extractvalue { i16, i32 } %1, 0
@@ -105,9 +105,9 @@ define i16 @seed16(i16 %arg) nounwind {
 ; CHECK:       # %bb.0:
 ; CHECK-NEXT:    xorl %eax, %eax
 ; CHECK-NEXT:    rdseedw %cx
-; CHECK-NEXT:    cmovbw %di, %ax
+; CHECK-NEXT:    cmovbl %edi, %eax
 ; CHECK-NEXT:    addl %ecx, %eax
-; CHECK-NEXT:    # kill: def %ax killed %ax killed %eax
+; CHECK-NEXT:    # kill: def $ax killed $ax killed $eax
 ; CHECK-NEXT:    retq
   %1 = tail call { i16, i32 } @llvm.x86.rdseed.16() nounwind
   %2 = extractvalue { i16, i32 } %1, 0

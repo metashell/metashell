@@ -5,10 +5,15 @@
 
 cmake_minimum_required(VERSION 3.4.3)
 
+if(POLICY CMP0075)
+  cmake_policy(SET CMP0075 NEW)
+endif()
+
 # Check if compiler-rt is built as a standalone project.
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR OR COMPILER_RT_STANDALONE_BUILD)
   project(CompilerRT C CXX ASM)
   set(COMPILER_RT_STANDALONE_BUILD TRUE)
+  set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()
 
 # Add path for custom compiler-rt modules.
@@ -28,6 +33,8 @@ include(CompilerRTUtils)
 
 option(COMPILER_RT_BUILD_BUILTINS "Build builtins" ON)
 mark_as_advanced(COMPILER_RT_BUILD_BUILTINS)
+option(COMPILER_RT_BUILD_CRT "Build crtbegin.o/crtend.o" ON)
+mark_as_advanced(COMPILER_RT_BUILD_CRT)
 option(COMPILER_RT_BUILD_SANITIZERS "Build sanitizers" ON)
 mark_as_advanced(COMPILER_RT_BUILD_SANITIZERS)
 option(COMPILER_RT_BUILD_XRAY "Build xray" ON)
@@ -58,19 +65,31 @@ if (NOT COMPILER_RT_ASAN_SHADOW_SCALE STREQUAL "")
       -D${COMPILER_RT_ASAN_SHADOW_SCALE_DEFINITION})
 endif()
 
-set(COMPILER_RT_BAREMETAL_BUILD OFF CACHE BOOLEAN
+set(COMPILER_RT_HWASAN_WITH_INTERCEPTORS ON CACHE BOOL
+    "Enable libc interceptors in HWASan (testing mode)")
+
+set(COMPILER_RT_BAREMETAL_BUILD OFF CACHE BOOL
   "Build for a bare-metal target.")
 
 if (COMPILER_RT_STANDALONE_BUILD)
   load_llvm_config()
+  if (TARGET intrinsics_gen)
+    # Loading the llvm config causes this target to be imported so place it
+    # under the appropriate folder in an IDE.
+    set_target_properties(intrinsics_gen PROPERTIES FOLDER "Compiler-RT Misc")
+  endif()
 
   # Find Python interpreter.
-  set(Python_ADDITIONAL_VERSIONS 2.7 2.6 2.5)
   include(FindPythonInterp)
   if(NOT PYTHONINTERP_FOUND)
     message(FATAL_ERROR "
       Unable to find Python interpreter required testing. Please install Python
       or specify the PYTHON_EXECUTABLE CMake variable.")
+  endif()
+
+  # Ensure that fat libraries are built correctly on Darwin
+  if(CMAKE_HOST_APPLE AND APPLE)
+    include(UseLibtool)
   endif()
 
   # Define default arguments to lit.
@@ -83,18 +102,23 @@ if (COMPILER_RT_STANDALONE_BUILD)
 endif()
 
 construct_compiler_rt_default_triple()
-if ("${COMPILER_RT_DEFAULT_TARGET_ABI}" MATCHES "hf$")
+if ("${COMPILER_RT_DEFAULT_TARGET_TRIPLE}" MATCHES ".*hf$")
   if (${COMPILER_RT_DEFAULT_TARGET_ARCH} MATCHES "^arm")
     set(COMPILER_RT_DEFAULT_TARGET_ARCH "armhf")
   endif()
 endif()
-if ("${COMPILER_RT_DEFAULT_TARGET_ABI}" MATCHES "^android")
+if ("${COMPILER_RT_DEFAULT_TARGET_TRIPLE}" MATCHES ".*android.*")
   set(ANDROID 1)
 endif()
 pythonize_bool(ANDROID)
 
+set(ANDROID_NDK_VERSION 18
+    CACHE STRING "Set this to the Android NDK version that you are using")
+
 set(COMPILER_RT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(COMPILER_RT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+pythonize_bool(LLVM_ENABLE_PER_TARGET_RUNTIME_DIR)
 
 # We support running instrumented tests when we're not cross compiling
 # and target a UNIX-like system or Windows.
@@ -112,8 +136,25 @@ option(COMPILER_RT_EXTERNALIZE_DEBUGINFO
 # COMPILER_RT_DEBUG_PYBOOL is used by lit.common.configured.in.
 pythonize_bool(COMPILER_RT_DEBUG)
 
-include(HandleCompilerRT)
-include(config-ix)
+option(COMPILER_RT_INTERCEPT_LIBDISPATCH
+  "Support interception of libdispatch (GCD). Requires '-fblocks'" OFF)
+option(COMPILER_RT_LIBDISPATCH_INSTALL_PATH
+  "Specify if libdispatch is installed in a custom location" "")
+if (COMPILER_RT_INTERCEPT_LIBDISPATCH AND NOT APPLE)
+  set(COMPILER_RT_LIBDISPATCH_CFLAGS -fblocks)
+  set(COMPILER_RT_TEST_LIBDISPATCH_CFLAGS)
+  if (COMPILER_RT_LIBDISPATCH_INSTALL_PATH)
+    list(APPEND COMPILER_RT_TEST_LIBDISPATCH_CFLAGS
+        -I${COMPILER_RT_LIBDISPATCH_INSTALL_PATH}/include
+        -L${COMPILER_RT_LIBDISPATCH_INSTALL_PATH}/lib
+        -Wl,-rpath=${COMPILER_RT_LIBDISPATCH_INSTALL_PATH}/lib)
+  endif()
+  list(APPEND COMPILER_RT_TEST_LIBDISPATCH_CFLAGS -lBlocksRuntime -ldispatch)
+endif()
+if (APPLE) # Always enable on Apple platforms.
+  set(COMPILER_RT_INTERCEPT_LIBDISPATCH ON)
+endif()
+pythonize_bool(COMPILER_RT_INTERCEPT_LIBDISPATCH)
 
 if(APPLE AND SANITIZER_MIN_OSX_VERSION AND SANITIZER_MIN_OSX_VERSION VERSION_LESS "10.9")
   # Mac OS X prior to 10.9 had problems with exporting symbols from
@@ -131,43 +172,66 @@ if (cxxabi_supported AND SANITIZER_ALLOW_CXXABI)
 endif()
 pythonize_bool(SANITIZER_CAN_USE_CXXABI)
 
+macro(handle_default_cxx_lib var)
+  if (${var} STREQUAL "default")
+    if (APPLE OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+      set(${var}_LIBNAME "libc++")
+      set(${var}_SYSTEM 1)
+    elseif (FUCHSIA)
+      set(${var}_LIBNAME "libc++")
+      set(${var}_INTREE 1)
+    else()
+      set(${var}_LIBNAME "libstdc++")
+      set(${var}_SYSTEM 1)
+    endif()
+  else()
+    set(${var}_LIBNAME "${${var}}")
+    set(${var}_SYSTEM 1)
+  endif()
+endmacro()
+
+# This is either directly the C++ ABI library or the full C++ library
+# which pulls in the ABI transitively.
 set(SANITIZER_CXX_ABI "default" CACHE STRING
     "Specify C++ ABI library to use.")
-set(CXXABIS none default libcxxabi libstdc++ libc++)
+set(CXXABIS none default libstdc++ libc++ libcxxabi)
 set_property(CACHE SANITIZER_CXX_ABI PROPERTY STRINGS ;${CXXABIS})
+handle_default_cxx_lib(SANITIZER_CXX_ABI)
 
-if (SANITIZER_CXX_ABI STREQUAL "default")
-  if (HAVE_LIBCXXABI AND COMPILER_RT_DEFAULT_TARGET_ONLY)
-    set(SANITIZER_CXX_ABI_LIBNAME "libcxxabi")
-    set(SANITIZER_CXX_ABI_INTREE 1)
-  elseif (APPLE)
-    set(SANITIZER_CXX_ABI_LIBNAME "libcxxabi")
-    set(SANITIZER_CXX_ABI_SYSTEM 1)
-  else()
-    set(SANITIZER_CXX_ABI_LIBNAME "libstdc++")
-  endif()
-else()
-  set(SANITIZER_CXX_ABI_LIBNAME "${SANITIZER_CXX_ABI}")
+# This needs to be a full C++ library for linking gtest and unit tests.
+set(SANITIZER_TEST_CXX "default" CACHE STRING
+    "Specify C++ library to use for tests.")
+set(CXXLIBS none default libstdc++ libc++)
+set_property(CACHE SANITIZER_TEST_CXX PROPERTY STRINGS ;${CXXLIBS})
+handle_default_cxx_lib(SANITIZER_TEST_CXX)
+
+set(DEFAULT_SANITIZER_USE_STATIC_LLVM_UNWINDER OFF)
+if (FUCHSIA)
+  set(DEFAULT_SANITIZER_USE_STATIC_LLVM_UNWINDER ON)
+elseif (DEFINED LIBUNWIND_ENABLE_SHARED AND NOT LIBUNWIND_ENABLE_SHARED)
+  set(DEFAULT_SANITIZER_USE_STATIC_LLVM_UNWINDER ON)
 endif()
 
-if (SANITIZER_CXX_ABI_LIBNAME STREQUAL "libcxxabi")
-  if (SANITIZER_CXX_ABI_INTREE)
-    if (TARGET unwind_shared OR HAVE_LIBUNWIND)
-      list(APPEND SANITIZER_CXX_ABI_LIBRARY unwind_shared)
-    endif()
-    if (TARGET cxxabi_shared OR HAVE_LIBCXXABI)
-      list(APPEND SANITIZER_CXX_ABI_LIBRARY cxxabi_shared)
-    endif()
-  else()
-    list(APPEND SANITIZER_CXX_ABI_LIBRARY "c++abi")
-  endif()
-elseif (SANITIZER_CXX_ABI_LIBNAME STREQUAL "libc++")
-  list(APPEND SANITIZER_CXX_ABI_LIBRARY "c++")
-elseif (SANITIZER_CXX_ABI_LIBNAME STREQUAL "libstdc++")
-  append_list_if(COMPILER_RT_HAS_LIBSTDCXX stdc++ SANITIZER_CXX_ABI_LIBRARY)
+option(SANITIZER_USE_STATIC_LLVM_UNWINDER
+  "Use static LLVM unwinder." ${DEFAULT_SANITIZER_USE_STATIC_LLVM_UNWINDER})
+
+set(DEFAULT_SANITIZER_USE_STATIC_CXX_ABI OFF)
+if (DEFINED LIBCXXABI_ENABLE_SHARED AND NOT LIBCXXABI_ENABLE_SHARED)
+  set(DEFAULT_SANITIZER_USE_STATIC_CXX_ABI ON)
 endif()
 
-option(SANITIZER_USE_COMPILER_RT "Use compiler-rt builtins instead of libgcc" OFF)
+option(SANITIZER_USE_STATIC_CXX_ABI
+  "Use static libc++abi." ${DEFAULT_SANITIZER_USE_STATIC_CXX_ABI})
+
+set(DEFAULT_COMPILER_RT_USE_BUILTINS_LIBRARY OFF)
+if (FUCHSIA)
+  set(DEFAULT_COMPILER_RT_USE_BUILTINS_LIBRARY ON)
+endif()
+
+option(COMPILER_RT_USE_BUILTINS_LIBRARY
+  "Use compiler-rt builtins instead of libgcc" ${DEFAULT_COMPILER_RT_USE_BUILTINS_LIBRARY})
+
+include(config-ix)
 
 #================================
 # Setup Compiler Flags
@@ -223,6 +287,15 @@ if(DEFINED TARGET_powerpc64le_CFLAGS)
   append_list_if(COMPILER_RT_HAS_FNO_FUNCTION_SECTIONS_FLAG -fno-function-sections TARGET_powerpc64le_CFLAGS)
 endif()
 
+# The following is a workaround for s390x.  This avoids creation of "partial
+# inline" function fragments when building the asan libraries with certain
+# GCC versions.  The presence of those fragments, in particular for the
+# interceptors, changes backtraces seen in asan error cases, which causes
+# testsuite failures.
+if("${COMPILER_RT_DEFAULT_TARGET_ARCH}" MATCHES "s390x")
+  append_list_if(COMPILER_RT_HAS_FNO_PARTIAL_INLINING_FLAG -fno-partial-inlining SANITIZER_COMMON_CFLAGS)
+endif()
+
 if(MSVC)
   # Replace the /M[DT][d] flags with /MT, and strip any definitions of _DEBUG,
   # which cause definition mismatches at link time.
@@ -274,19 +347,29 @@ else()
   set(SANITIZER_LIMIT_FRAME_SIZE FALSE)
 endif()
 
+if(FUCHSIA OR UNIX)
+  set(SANITIZER_USE_SYMBOLS TRUE)
+else()
+  set(SANITIZER_USE_SYMBOLS FALSE)
+endif()
+
 # Build sanitizer runtimes with debug info.
-if(COMPILER_RT_HAS_GLINE_TABLES_ONLY_FLAG AND NOT COMPILER_RT_DEBUG)
-  list(APPEND SANITIZER_COMMON_CFLAGS -gline-tables-only)
-elseif(COMPILER_RT_HAS_G_FLAG)
-  list(APPEND SANITIZER_COMMON_CFLAGS -g)
-elseif(MSVC)
+if(MSVC)
   # Use /Z7 instead of /Zi for the asan runtime. This avoids the LNK4099
   # warning from the MS linker complaining that it can't find the 'vc140.pdb'
   # file used by our object library compilations.
   list(APPEND SANITIZER_COMMON_CFLAGS /Z7)
-  llvm_replace_compiler_option(CMAKE_CXX_FLAGS "/Z[i7I]" "/Z7")
-  llvm_replace_compiler_option(CMAKE_CXX_FLAGS_DEBUG "/Z[i7I]" "/Z7")
-  llvm_replace_compiler_option(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/Z[i7I]" "/Z7")
+  foreach(var_to_update
+    CMAKE_CXX_FLAGS
+    CMAKE_CXX_FLAGS_DEBUG
+    CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+    string(REGEX REPLACE "(^| )/Z[i7I]($| )" " /Z7 "
+           "${var_to_update}" "${${var_to_update}}")
+  endforeach()
+elseif(COMPILER_RT_HAS_GLINE_TABLES_ONLY_FLAG AND NOT COMPILER_RT_DEBUG)
+  list(APPEND SANITIZER_COMMON_CFLAGS -gline-tables-only)
+elseif(COMPILER_RT_HAS_G_FLAG)
+  list(APPEND SANITIZER_COMMON_CFLAGS -g)
 endif()
 
 if(LLVM_ENABLE_MODULES)
@@ -306,13 +389,15 @@ append_list_if(COMPILER_RT_HAS_WD4391_FLAG /wd4391 SANITIZER_COMMON_CFLAGS)
 append_list_if(COMPILER_RT_HAS_WD4722_FLAG /wd4722 SANITIZER_COMMON_CFLAGS)
 append_list_if(COMPILER_RT_HAS_WD4800_FLAG /wd4800 SANITIZER_COMMON_CFLAGS)
 
+append_list_if(MINGW -fms-extensions SANITIZER_COMMON_CFLAGS)
+
 # Set common link flags.
 append_list_if(COMPILER_RT_HAS_NODEFAULTLIBS_FLAG -nodefaultlibs SANITIZER_COMMON_LINK_FLAGS)
+append_list_if(COMPILER_RT_HAS_Z_TEXT -Wl,-z,text SANITIZER_COMMON_LINK_FLAGS)
 
-if (SANITIZER_USE_COMPILER_RT)
-  list(APPEND SANITIZER_COMMON_LINK_FLAGS -rtlib=compiler-rt)
-  find_compiler_rt_library(builtins COMPILER_RT_BUILTINS_LIBRARY)
+if (COMPILER_RT_USE_BUILTINS_LIBRARY)
   list(APPEND SANITIZER_COMMON_LINK_LIBS ${COMPILER_RT_BUILTINS_LIBRARY})
+  string(REPLACE "-Wl,-z,defs" "" CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
 else()
   if (ANDROID)
     append_list_if(COMPILER_RT_HAS_GCC_LIB gcc SANITIZER_COMMON_LINK_LIBS)
@@ -328,6 +413,38 @@ if("${CMAKE_SYSTEM_NAME}" STREQUAL "Fuchsia")
   list(APPEND SANITIZER_COMMON_LINK_LIBS zircon)
 endif()
 
+macro(append_libcxx_libs var)
+  if (${var}_INTREE)
+    if (SANITIZER_USE_STATIC_LLVM_UNWINDER AND (TARGET unwind_static OR HAVE_LIBUNWIND))
+      list(APPEND ${var}_LIBRARIES unwind_static)
+    elseif (TARGET unwind_shared OR HAVE_LIBUNWIND)
+      list(APPEND ${var}_LIBRARIES unwind_shared)
+    endif()
+
+    if (SANITIZER_USE_STATIC_CXX_ABI AND (TARGET cxxabi_static OR HAVE_LIBCXXABI))
+      list(APPEND ${var}_LIBRARIES cxxabi_static)
+    elseif (TARGET cxxabi_shared OR HAVE_LIBCXXABI)
+      list(APPEND ${var}_LIBRARIES cxxabi_shared)
+    endif()
+  else()
+    append_list_if(COMPILER_RT_HAS_LIBCXX c++ ${var}_LIBRARIES)
+  endif()
+endmacro()
+
+if (SANITIZER_CXX_ABI_LIBNAME STREQUAL "libc++")
+  append_libcxx_libs(SANITIZER_CXX_ABI)
+elseif (SANITIZER_CXX_ABI_LIBNAME STREQUAL "libcxxabi")
+  list(APPEND SANITIZER_CXX_ABI_LIBRARIES "c++abi")
+elseif (SANITIZER_CXX_ABI_LIBNAME STREQUAL "libstdc++")
+  append_list_if(COMPILER_RT_HAS_LIBSTDCXX stdc++ SANITIZER_CXX_ABI_LIBRARIES)
+endif()
+
+if (SANITIZER_TEST_CXX_LIBNAME STREQUAL "libc++")
+  append_libcxx_libs(SANITIZER_TEST_CXX)
+elseif (SANITIZER_TEST_CXX_LIBNAME STREQUAL "libstdc++")
+  append_list_if(COMPILER_RT_HAS_LIBSTDCXX stdc++ SANITIZER_TEST_CXX_LIBRARIES)
+endif()
+
 # Warnings to turn off for all libraries, not just sanitizers.
 append_string_if(COMPILER_RT_HAS_WUNUSED_PARAMETER_FLAG -Wno-unused-parameter CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
 
@@ -339,20 +456,33 @@ if (CMAKE_LINKER MATCHES "link.exe$")
   # it, but CMake doesn't seem to have a way to set linker flags for
   # individual static libraries, so we enable the suppression flag for
   # the whole compiler-rt project.
-  append("/IGNORE:4221" CMAKE_STATIC_LINKER_FLAGS)
+  set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /IGNORE:4221")
 endif()
 
 add_subdirectory(include)
 
-foreach(path IN ITEMS ${LLVM_MAIN_SRC_DIR}/projects/libcxx
-                      ${LLVM_MAIN_SRC_DIR}/runtimes/libcxx
-                      ${LLVM_MAIN_SRC_DIR}/../libcxx
-                      ${LLVM_EXTERNAL_LIBCXX_SOURCE_DIR})
-  if(IS_DIRECTORY ${path})
-    set(COMPILER_RT_LIBCXX_PATH ${path})
-    break()
-  endif()
-endforeach()
+option(COMPILER_RT_USE_LIBCXX
+  "Enable compiler-rt to use libc++ from the source tree" ON)
+if(COMPILER_RT_USE_LIBCXX)
+  foreach(path IN ITEMS ${LLVM_MAIN_SRC_DIR}/projects/libcxx
+                        ${LLVM_MAIN_SRC_DIR}/runtimes/libcxx
+                        ${LLVM_MAIN_SRC_DIR}/../libcxx
+                        ${LLVM_EXTERNAL_LIBCXX_SOURCE_DIR})
+    if(IS_DIRECTORY ${path})
+      set(COMPILER_RT_LIBCXX_PATH ${path})
+      break()
+    endif()
+  endforeach()
+  foreach(path IN ITEMS ${LLVM_MAIN_SRC_DIR}/projects/libcxxabi
+                        ${LLVM_MAIN_SRC_DIR}/runtimes/libcxxabi
+                        ${LLVM_MAIN_SRC_DIR}/../libcxxabi
+                        ${LLVM_EXTERNAL_LIBCXXABI_SOURCE_DIR})
+    if(IS_DIRECTORY ${path})
+      set(COMPILER_RT_LIBCXXABI_PATH ${path})
+      break()
+    endif()
+  endforeach()
+endif()
 
 set(COMPILER_RT_LLD_PATH ${LLVM_MAIN_SRC_DIR}/tools/lld)
 if(EXISTS ${COMPILER_RT_LLD_PATH}/ AND LLVM_TOOL_LLD_BUILD)

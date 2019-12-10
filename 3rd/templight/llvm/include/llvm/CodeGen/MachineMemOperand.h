@@ -1,9 +1,8 @@
 //==- llvm/CodeGen/MachineMemOperand.h - MachineMemOperand class -*- C++ -*-==//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -19,8 +18,6 @@
 #include "llvm/ADT/BitmaskEnum.h"
 #include "llvm/ADT/PointerUnion.h"
 #include "llvm/CodeGen/PseudoSourceValue.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/Metadata.h"
 #include "llvm/IR/Value.h" // PointerLikeTypeTraits<Value*>
 #include "llvm/Support/AtomicOrdering.h"
 #include "llvm/Support/DataTypes.h"
@@ -184,7 +181,7 @@ public:
   /// atomic operations the atomic ordering requirements when store does not
   /// occur must also be specified.
   MachineMemOperand(MachinePointerInfo PtrInfo, Flags flags, uint64_t s,
-                    unsigned base_alignment,
+                    uint64_t a,
                     const AAMDNodes &AAInfo = AAMDNodes(),
                     const MDNode *Ranges = nullptr,
                     SyncScope::ID SSID = SyncScope::System,
@@ -222,6 +219,9 @@ public:
 
   /// Return the size in bytes of the memory reference.
   uint64_t getSize() const { return Size; }
+
+  /// Return the size in bits of the memory reference.
+  uint64_t getSizeInBits() const { return Size * 8; }
 
   /// Return the minimum known alignment in bytes of the actual memory
   /// reference.
@@ -267,13 +267,13 @@ public:
   bool isAtomic() const { return getOrdering() != AtomicOrdering::NotAtomic; }
 
   /// Returns true if this memory operation doesn't have any ordering
-  /// constraints other than normal aliasing. Volatile and atomic memory
-  /// operations can't be reordered.
-  ///
-  /// Currently, we don't model the difference between volatile and atomic
-  /// operations. They should retain their ordering relative to all memory
-  /// operations.
-  bool isUnordered() const { return !isVolatile(); }
+  /// constraints other than normal aliasing. Volatile and (ordered) atomic
+  /// memory operations can't be reordered. 
+  bool isUnordered() const {
+    return (getOrdering() == AtomicOrdering::NotAtomic ||
+            getOrdering() == AtomicOrdering::Unordered) &&
+           !isVolatile();
+  }
 
   /// Update this MachineMemOperand to reflect the alignment of MMO, if it has a
   /// greater alignment. This must only be used when the new alignment applies
@@ -295,6 +295,9 @@ public:
   /// @{
   void print(raw_ostream &OS) const;
   void print(raw_ostream &OS, ModuleSlotTracker &MST) const;
+  void print(raw_ostream &OS, ModuleSlotTracker &MST,
+             SmallVectorImpl<StringRef> &SSNs, const LLVMContext &Context,
+             const MachineFrameInfo *MFI, const TargetInstrInfo *TII) const;
   /// @}
 
   friend bool operator==(const MachineMemOperand &LHS,

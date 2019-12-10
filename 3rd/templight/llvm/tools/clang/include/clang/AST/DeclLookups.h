@@ -1,9 +1,8 @@
 //===- DeclLookups.h - Low-level interface to all names in a DC -*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -54,7 +53,7 @@ public:
       ++It;
     } while (It != End &&
              It->first == DeclarationName::getUsingDirectiveName());
-             
+
     return *this;
   }
 
@@ -86,16 +85,11 @@ inline DeclContext::lookups_range DeclContext::lookups() const {
   return lookups_range(all_lookups_iterator(), all_lookups_iterator());
 }
 
-inline DeclContext::all_lookups_iterator DeclContext::lookups_begin() const {
-  return lookups().begin();
-}
-
-inline DeclContext::all_lookups_iterator DeclContext::lookups_end() const {
-  return lookups().end();
-}
-
-inline DeclContext::lookups_range DeclContext::noload_lookups() const {
+inline DeclContext::lookups_range
+DeclContext::noload_lookups(bool PreserveInternalState) const {
   DeclContext *Primary = const_cast<DeclContext*>(this)->getPrimaryContext();
+  if (!PreserveInternalState)
+    Primary->loadLazyLocalLexicalLookups();
   if (StoredDeclsMap *Map = Primary->getLookupPtr())
     return lookups_range(all_lookups_iterator(Map->begin(), Map->end()),
                          all_lookups_iterator(Map->end(), Map->end()));
@@ -103,16 +97,6 @@ inline DeclContext::lookups_range DeclContext::noload_lookups() const {
   // Synthesize an empty range. This requires that two default constructed
   // versions of these iterators form a valid empty range.
   return lookups_range(all_lookups_iterator(), all_lookups_iterator());
-}
-
-inline
-DeclContext::all_lookups_iterator DeclContext::noload_lookups_begin() const {
-  return noload_lookups().begin();
-}
-
-inline
-DeclContext::all_lookups_iterator DeclContext::noload_lookups_end() const {
-  return noload_lookups().end();
 }
 
 } // namespace clang

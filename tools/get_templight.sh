@@ -75,7 +75,7 @@ then
 
     cd llvm
       CLANG_REV_FILE=../revision.txt
-      CLANG_REV_HEADER=../../../include/metashell/clang_revision.hpp
+      CLANG_REV_HEADER=../../../lib/core/include/metashell/core/clang_revision.hpp
 
       CLANG_REV="$(svn info | grep Revision | egrep -o '[0-9]+')"
       CLANG_REV_TEXT="${SVN_DIRECTORY} (r${CLANG_REV})"
@@ -103,8 +103,8 @@ then
       cd ..
 
       echo "Make the entire LLVM/Clang source code managed in one git repository"
-      sed -i '' 's/.*projects.*//g' .gitignore
-      sed -i '' 's/.*tools.*//g' .gitignore
+      sed -i 's/.*projects.*//g' .gitignore
+      sed -i 's/.*tools.*//g' .gitignore
 
       if [ -z "${DISABLE_TEMPLIGHT_PATCH}" ]
       then

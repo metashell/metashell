@@ -28,7 +28,7 @@ public:
 // CHECK-DAG:   [[SST_TY:%.+]] = type { double }
 // CHECK-DAG:   [[SS_TY:%.+]] = type { i32, i8, i32* }
 // CHECK-DAG:   [[IDENT_T_TY:%.+]] = type { i32, i32, i32, i32, i8* }
-// CHECK:       [[IMPLICIT_BARRIER_SINGLE_LOC:@.+]] = private unnamed_addr constant %{{.+}} { i32 0, i32 322, i32 0, i32 0, i8*
+// CHECK:       [[IMPLICIT_BARRIER_SINGLE_LOC:@.+]] = private unnamed_addr global %{{.+}} { i32 0, i32 322, i32 0, i32 0, i8*
 
 // CHECK:       define void [[FOO:@.+]]()
 
@@ -74,9 +74,12 @@ struct SST {
 // CHECK-LABEL: @main
 // TERM_DEBUG-LABEL: @main
 int main() {
+  // CHECK:     alloca i32
   // CHECK-DAG: [[A_ADDR:%.+]] = alloca i8
   // CHECK-DAG: [[A2_ADDR:%.+]] = alloca [2 x i8]
   // CHECK-DAG: [[C_ADDR:%.+]] = alloca [[TEST_CLASS_TY]]
+  // CHECK-DAG: [[DID_IT:%.+]] = alloca i32,
+  // CHECK-DAG: [[COPY_LIST:%.+]] = alloca [5 x i8*],
   char a;
   char a2[2];
   TestClass &c = tc;
@@ -84,9 +87,6 @@ int main() {
   SS ss(c.a);
 
 // CHECK:       [[GTID:%.+]] = call i32 @__kmpc_global_thread_num([[IDENT_T_TY]]* [[DEFAULT_LOC:@.+]])
-// CHECK-DAG:   [[DID_IT:%.+]] = alloca i32,
-// CHECK-DAG:   [[COPY_LIST:%.+]] = alloca [5 x i8*],
-
 // CHECK:       [[RES:%.+]] = call i32 @__kmpc_single([[IDENT_T_TY]]* [[DEFAULT_LOC]], i32 [[GTID]])
 // CHECK-NEXT:  [[IS_SINGLE:%.+]] = icmp ne i32 [[RES]], 0
 // CHECK-NEXT:  br i1 [[IS_SINGLE]], label {{%?}}[[THEN:.+]], label {{%?}}[[EXIT:.+]]
@@ -180,7 +180,7 @@ int main() {
 // CHECK: [[DST_A2_ADDR:%.+]] = load i8*, i8** [[DST_A2_ADDR_REF]],
 // CHECK: [[SRC_A2_ADDR_REF:%.+]] = getelementptr inbounds [5 x i8*], [5 x i8*]* [[SRC_ADDR]], i{{[0-9]+}} 0, i{{[0-9]+}} 3
 // CHECK: [[SRC_A2_ADDR:%.+]] = load i8*, i8** [[SRC_A2_ADDR_REF]],
-// CHECK: call void @llvm.memcpy.{{.+}}(i8* [[DST_A2_ADDR]], i8* [[SRC_A2_ADDR]], i{{[0-9]+}} 2, i{{[0-9]+}} 1, i1 false)
+// CHECK: call void @llvm.memcpy.{{.+}}(i8* align 1 [[DST_A2_ADDR]], i8* align 1 [[SRC_A2_ADDR]], i{{[0-9]+}} 2, i1 false)
 // CHECK: [[DST_TC2_ADDR_REF:%.+]] = getelementptr inbounds [5 x i8*], [5 x i8*]* [[DST_ADDR]], i{{[0-9]+}} 0, i{{[0-9]+}} 4
 // CHECK: [[DST_TC2_ADDR_VOID_PTR:%.+]] = load i8*, i8** [[DST_TC2_ADDR_REF]],
 // CHECK: [[DST_TC2_ADDR:%.+]] = bitcast i8* [[DST_TC2_ADDR_VOID_PTR]] to [[TEST_CLASS_TY]]*
@@ -221,7 +221,7 @@ struct St {
 };
 
 void array_func(int n, int a[n], St s[2]) {
-// ARRAY: call void @__kmpc_copyprivate(%ident_t* @{{.+}}, i32 %{{.+}}, i64 16, i8* %{{.+}}, void (i8*, i8*)* [[CPY:@.+]], i32 %{{.+}})
+// ARRAY: call void @__kmpc_copyprivate(%struct.ident_t* @{{.+}}, i32 %{{.+}}, i64 16, i8* %{{.+}}, void (i8*, i8*)* [[CPY:@.+]], i32 %{{.+}})
 #pragma omp single copyprivate(a, s)
   ;
 }

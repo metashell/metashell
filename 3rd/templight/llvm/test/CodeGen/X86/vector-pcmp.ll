@@ -86,10 +86,10 @@ define <2 x i64> @test_pcmpgtq(<2 x i64> %x) {
 define <1 x i128> @test_strange_type(<1 x i128> %x) {
 ; CHECK-LABEL: test_strange_type:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    sarq $63, %rsi
-; CHECK-NEXT:    notq %rsi
 ; CHECK-NEXT:    movq %rsi, %rax
-; CHECK-NEXT:    movq %rsi, %rdx
+; CHECK-NEXT:    sarq $63, %rax
+; CHECK-NEXT:    notq %rax
+; CHECK-NEXT:    movq %rax, %rdx
 ; CHECK-NEXT:    retq
   %sign = ashr <1 x i128> %x, <i128 127>
   %not = xor <1 x i128> %sign, <i128 -1>
@@ -409,15 +409,14 @@ define <8 x i32> @cmpgt_zext_v8i32(<8 x i32> %a, <8 x i32> %b) {
 define <2 x i64> @cmpgt_zext_v2i64(<2 x i64> %a, <2 x i64> %b) {
 ; SSE2-LABEL: cmpgt_zext_v2i64:
 ; SSE2:       # %bb.0:
-; SSE2-NEXT:    movdqa {{.*#+}} xmm2 = [2147483648,0,2147483648,0]
+; SSE2-NEXT:    movdqa {{.*#+}} xmm2 = [2147483648,2147483648]
 ; SSE2-NEXT:    pxor %xmm2, %xmm1
 ; SSE2-NEXT:    pxor %xmm2, %xmm0
 ; SSE2-NEXT:    movdqa %xmm0, %xmm2
 ; SSE2-NEXT:    pcmpgtd %xmm1, %xmm2
-; SSE2-NEXT:    pshufd {{.*#+}} xmm3 = xmm2[0,0,2,2]
 ; SSE2-NEXT:    pcmpeqd %xmm1, %xmm0
 ; SSE2-NEXT:    pshufd {{.*#+}} xmm1 = xmm0[1,1,3,3]
-; SSE2-NEXT:    pand %xmm3, %xmm1
+; SSE2-NEXT:    pand %xmm2, %xmm1
 ; SSE2-NEXT:    pshufd {{.*#+}} xmm0 = xmm2[1,1,3,3]
 ; SSE2-NEXT:    por %xmm1, %xmm0
 ; SSE2-NEXT:    pand {{.*}}(%rip), %xmm0
@@ -437,4 +436,125 @@ define <2 x i64> @cmpgt_zext_v2i64(<2 x i64> %a, <2 x i64> %b) {
   %cmp = icmp sgt <2 x i64> %a, %b
   %zext = zext <2 x i1> %cmp to <2 x i64>
   ret <2 x i64> %zext
+}
+
+; Test that we optimize a zext of a vector setcc ne zero where all bits but the
+; lsb are known to be zero.
+define <8 x i32> @cmpne_knownzeros_zext_v8i16_v8i32(<8 x i16> %x) {
+; SSE2-LABEL: cmpne_knownzeros_zext_v8i16_v8i32:
+; SSE2:       # %bb.0:
+; SSE2-NEXT:    movdqa %xmm0, %xmm1
+; SSE2-NEXT:    psrlw $15, %xmm1
+; SSE2-NEXT:    pxor %xmm2, %xmm2
+; SSE2-NEXT:    movdqa %xmm1, %xmm0
+; SSE2-NEXT:    punpcklwd {{.*#+}} xmm0 = xmm0[0],xmm2[0],xmm0[1],xmm2[1],xmm0[2],xmm2[2],xmm0[3],xmm2[3]
+; SSE2-NEXT:    punpckhwd {{.*#+}} xmm1 = xmm1[4],xmm2[4],xmm1[5],xmm2[5],xmm1[6],xmm2[6],xmm1[7],xmm2[7]
+; SSE2-NEXT:    retq
+;
+; SSE42-LABEL: cmpne_knownzeros_zext_v8i16_v8i32:
+; SSE42:       # %bb.0:
+; SSE42-NEXT:    psrlw $15, %xmm0
+; SSE42-NEXT:    pmovzxwd {{.*#+}} xmm2 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero
+; SSE42-NEXT:    pshufd {{.*#+}} xmm0 = xmm0[2,3,0,1]
+; SSE42-NEXT:    pmovzxwd {{.*#+}} xmm1 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero
+; SSE42-NEXT:    movdqa %xmm2, %xmm0
+; SSE42-NEXT:    retq
+;
+; AVX1-LABEL: cmpne_knownzeros_zext_v8i16_v8i32:
+; AVX1:       # %bb.0:
+; AVX1-NEXT:    vpsrlw $15, %xmm0, %xmm0
+; AVX1-NEXT:    vpxor %xmm1, %xmm1, %xmm1
+; AVX1-NEXT:    vpunpckhwd {{.*#+}} xmm1 = xmm0[4],xmm1[4],xmm0[5],xmm1[5],xmm0[6],xmm1[6],xmm0[7],xmm1[7]
+; AVX1-NEXT:    vpmovzxwd {{.*#+}} xmm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero
+; AVX1-NEXT:    vinsertf128 $1, %xmm1, %ymm0, %ymm0
+; AVX1-NEXT:    retq
+;
+; AVX2-LABEL: cmpne_knownzeros_zext_v8i16_v8i32:
+; AVX2:       # %bb.0:
+; AVX2-NEXT:    vpsrlw $15, %xmm0, %xmm0
+; AVX2-NEXT:    vpmovzxwd {{.*#+}} ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+; AVX2-NEXT:    retq
+  %a = lshr <8 x i16> %x, <i16 15, i16 15, i16 15, i16 15, i16 15, i16 15, i16 15, i16 15>
+  %b = icmp ne <8 x i16> %a, zeroinitializer
+  %c = zext <8 x i1> %b to <8 x i32>
+  ret <8 x i32> %c
+}
+
+define <8 x i32> @cmpne_knownzeros_zext_v8i32_v8i32(<8 x i32> %x) {
+; SSE-LABEL: cmpne_knownzeros_zext_v8i32_v8i32:
+; SSE:       # %bb.0:
+; SSE-NEXT:    psrld $31, %xmm0
+; SSE-NEXT:    psrld $31, %xmm1
+; SSE-NEXT:    retq
+;
+; AVX1-LABEL: cmpne_knownzeros_zext_v8i32_v8i32:
+; AVX1:       # %bb.0:
+; AVX1-NEXT:    vpsrld $31, %xmm0, %xmm1
+; AVX1-NEXT:    vextractf128 $1, %ymm0, %xmm0
+; AVX1-NEXT:    vpsrld $31, %xmm0, %xmm0
+; AVX1-NEXT:    vinsertf128 $1, %xmm0, %ymm1, %ymm0
+; AVX1-NEXT:    retq
+;
+; AVX2-LABEL: cmpne_knownzeros_zext_v8i32_v8i32:
+; AVX2:       # %bb.0:
+; AVX2-NEXT:    vpsrld $31, %ymm0, %ymm0
+; AVX2-NEXT:    retq
+  %a = lshr <8 x i32> %x, <i32 31, i32 31, i32 31, i32 31, i32 31, i32 31, i32 31, i32 31>
+  %b = icmp ne <8 x i32> %a, zeroinitializer
+  %c = zext <8 x i1> %b to <8 x i32>
+  ret <8 x i32> %c
+}
+
+define <8 x i16> @cmpne_knownzeros_zext_v8i32_v8i16(<8 x i32> %x) {
+; SSE2-LABEL: cmpne_knownzeros_zext_v8i32_v8i16:
+; SSE2:       # %bb.0:
+; SSE2-NEXT:    psrld $31, %xmm1
+; SSE2-NEXT:    psrld $31, %xmm0
+; SSE2-NEXT:    packuswb %xmm1, %xmm0
+; SSE2-NEXT:    retq
+;
+; SSE42-LABEL: cmpne_knownzeros_zext_v8i32_v8i16:
+; SSE42:       # %bb.0:
+; SSE42-NEXT:    psrld $31, %xmm1
+; SSE42-NEXT:    psrld $31, %xmm0
+; SSE42-NEXT:    packusdw %xmm1, %xmm0
+; SSE42-NEXT:    retq
+;
+; AVX1-LABEL: cmpne_knownzeros_zext_v8i32_v8i16:
+; AVX1:       # %bb.0:
+; AVX1-NEXT:    vextractf128 $1, %ymm0, %xmm1
+; AVX1-NEXT:    vpsrld $31, %xmm1, %xmm1
+; AVX1-NEXT:    vpsrld $31, %xmm0, %xmm0
+; AVX1-NEXT:    vpackusdw %xmm1, %xmm0, %xmm0
+; AVX1-NEXT:    vzeroupper
+; AVX1-NEXT:    retq
+;
+; AVX2-LABEL: cmpne_knownzeros_zext_v8i32_v8i16:
+; AVX2:       # %bb.0:
+; AVX2-NEXT:    vpsrld $31, %ymm0, %ymm0
+; AVX2-NEXT:    vextracti128 $1, %ymm0, %xmm1
+; AVX2-NEXT:    vpackusdw %xmm1, %xmm0, %xmm0
+; AVX2-NEXT:    vzeroupper
+; AVX2-NEXT:    retq
+  %a = lshr <8 x i32> %x, <i32 31, i32 31, i32 31, i32 31, i32 31, i32 31, i32 31, i32 31>
+  %b = icmp ne <8 x i32> %a, zeroinitializer
+  %c = zext <8 x i1> %b to <8 x i16>
+  ret <8 x i16> %c
+}
+
+; PR26697
+define <4 x i32> @cmpeq_one_mask_bit(<4 x i32> %mask) {
+; SSE-LABEL: cmpeq_one_mask_bit:
+; SSE:       # %bb.0:
+; SSE-NEXT:    psrad $31, %xmm0
+; SSE-NEXT:    retq
+;
+; AVX-LABEL: cmpeq_one_mask_bit:
+; AVX:       # %bb.0:
+; AVX-NEXT:    vpsrad $31, %xmm0, %xmm0
+; AVX-NEXT:    retq
+  %mask_signbit = and <4 x i32> %mask, <i32 2147483648, i32 2147483648, i32 2147483648, i32 2147483648>
+  %mask_bool = icmp ne <4 x i32> %mask_signbit, zeroinitializer
+  %mask_bool_ext = sext <4 x i1> %mask_bool to <4 x i32>
+  ret <4 x i32> %mask_bool_ext
 }

@@ -1,9 +1,8 @@
 //===-- llvm/BinaryFormat/COFF.h --------------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -110,6 +109,9 @@ enum MachineTypes : unsigned {
   IMAGE_FILE_MACHINE_POWERPC = 0x1F0,
   IMAGE_FILE_MACHINE_POWERPCFP = 0x1F1,
   IMAGE_FILE_MACHINE_R4000 = 0x166,
+  IMAGE_FILE_MACHINE_RISCV32 = 0x5032,
+  IMAGE_FILE_MACHINE_RISCV64 = 0x5064,
+  IMAGE_FILE_MACHINE_RISCV128 = 0x5128,
   IMAGE_FILE_MACHINE_SH3 = 0x1A2,
   IMAGE_FILE_MACHINE_SH3DSP = 0x1A3,
   IMAGE_FILE_MACHINE_SH4 = 0x1A6,
@@ -368,13 +370,15 @@ enum RelocationTypesARM : unsigned {
   IMAGE_REL_ARM_TOKEN = 0x0005,
   IMAGE_REL_ARM_BLX24 = 0x0008,
   IMAGE_REL_ARM_BLX11 = 0x0009,
+  IMAGE_REL_ARM_REL32 = 0x000A,
   IMAGE_REL_ARM_SECTION = 0x000E,
   IMAGE_REL_ARM_SECREL = 0x000F,
   IMAGE_REL_ARM_MOV32A = 0x0010,
   IMAGE_REL_ARM_MOV32T = 0x0011,
   IMAGE_REL_ARM_BRANCH20T = 0x0012,
   IMAGE_REL_ARM_BRANCH24T = 0x0014,
-  IMAGE_REL_ARM_BLX23T = 0x0015
+  IMAGE_REL_ARM_BLX23T = 0x0015,
+  IMAGE_REL_ARM_PAIR = 0x0016,
 };
 
 enum RelocationTypesARM64 : unsigned {
@@ -395,9 +399,10 @@ enum RelocationTypesARM64 : unsigned {
   IMAGE_REL_ARM64_ADDR64 = 0x000E,
   IMAGE_REL_ARM64_BRANCH19 = 0x000F,
   IMAGE_REL_ARM64_BRANCH14 = 0x0010,
+  IMAGE_REL_ARM64_REL32 = 0x0011,
 };
 
-enum COMDATType : unsigned {
+enum COMDATType : uint8_t {
   IMAGE_COMDAT_SELECT_NODUPLICATES = 1,
   IMAGE_COMDAT_SELECT_ANY,
   IMAGE_COMDAT_SELECT_SAME_SIZE,
@@ -460,7 +465,7 @@ union Auxiliary {
   AuxiliarySectionDefinition SectionDefinition;
 };
 
-/// @brief The Import Directory Table.
+/// The Import Directory Table.
 ///
 /// There is a single array of these and one entry per imported DLL.
 struct ImportDirectoryTableEntry {
@@ -471,7 +476,7 @@ struct ImportDirectoryTableEntry {
   uint32_t ImportAddressTableRVA;
 };
 
-/// @brief The PE32 Import Lookup Table.
+/// The PE32 Import Lookup Table.
 ///
 /// There is an array of these for each imported DLL. It represents either
 /// the ordinal to import from the target DLL, or a name to lookup and import
@@ -482,32 +487,32 @@ struct ImportDirectoryTableEntry {
 struct ImportLookupTableEntry32 {
   uint32_t data;
 
-  /// @brief Is this entry specified by ordinal, or name?
+  /// Is this entry specified by ordinal, or name?
   bool isOrdinal() const { return data & 0x80000000; }
 
-  /// @brief Get the ordinal value of this entry. isOrdinal must be true.
+  /// Get the ordinal value of this entry. isOrdinal must be true.
   uint16_t getOrdinal() const {
     assert(isOrdinal() && "ILT entry is not an ordinal!");
     return data & 0xFFFF;
   }
 
-  /// @brief Set the ordinal value and set isOrdinal to true.
+  /// Set the ordinal value and set isOrdinal to true.
   void setOrdinal(uint16_t o) {
     data = o;
     data |= 0x80000000;
   }
 
-  /// @brief Get the Hint/Name entry RVA. isOrdinal must be false.
+  /// Get the Hint/Name entry RVA. isOrdinal must be false.
   uint32_t getHintNameRVA() const {
     assert(!isOrdinal() && "ILT entry is not a Hint/Name RVA!");
     return data;
   }
 
-  /// @brief Set the Hint/Name entry RVA and set isOrdinal to false.
+  /// Set the Hint/Name entry RVA and set isOrdinal to false.
   void setHintNameRVA(uint32_t rva) { data = rva; }
 };
 
-/// @brief The DOS compatible header at the front of all PEs.
+/// The DOS compatible header at the front of all PEs.
 struct DOSHeader {
   uint16_t Magic;
   uint16_t UsedBytesInTheLastPage;

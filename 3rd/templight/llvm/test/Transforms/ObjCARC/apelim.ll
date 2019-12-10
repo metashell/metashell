@@ -1,7 +1,7 @@
 ; RUN: opt -S -objc-arc-apelim < %s | FileCheck %s
 ; rdar://10227311
 
-@llvm.global_ctors = appending global [2 x { i32, void ()* }] [{ i32, void ()* } { i32 65535, void ()* @_GLOBAL__I_x }, { i32, void ()* } { i32 65535, void ()* @_GLOBAL__I_y }]
+@llvm.global_ctors = appending global [2 x { i32, void ()*, i8* }] [{ i32, void ()*, i8* } { i32 65535, void ()* @_GLOBAL__I_x, i8* null }, { i32, void ()*, i8* } { i32 65535, void ()* @_GLOBAL__I_y, i8* null }]
 
 @x = global i32 0
 
@@ -31,25 +31,25 @@ entry:
 ; CHECK: }
 define internal void @_GLOBAL__I_x() {
 entry:
-  %0 = call i8* @objc_autoreleasePoolPush() nounwind
+  %0 = call i8* @llvm.objc.autoreleasePoolPush() nounwind
   call void @__cxx_global_var_init()
-  call void @objc_autoreleasePoolPop(i8* %0) nounwind
+  call void @llvm.objc.autoreleasePoolPop(i8* %0) nounwind
   ret void
 }
 
 ; CHECK: define internal void @_GLOBAL__I_y() {
-; CHECK: %0 = call i8* @objc_autoreleasePoolPush() [[NUW:#[0-9]+]]
-; CHECK: call void @objc_autoreleasePoolPop(i8* %0) [[NUW]]
+; CHECK: %0 = call i8* @llvm.objc.autoreleasePoolPush() [[NUW:#[0-9]+]]
+; CHECK: call void @llvm.objc.autoreleasePoolPop(i8* %0) [[NUW]]
 ; CHECK: }
 define internal void @_GLOBAL__I_y() {
 entry:
-  %0 = call i8* @objc_autoreleasePoolPush() nounwind
+  %0 = call i8* @llvm.objc.autoreleasePoolPush() nounwind
   call void @__dxx_global_var_init()
-  call void @objc_autoreleasePoolPop(i8* %0) nounwind
+  call void @llvm.objc.autoreleasePoolPop(i8* %0) nounwind
   ret void
 }
 
-declare i8* @objc_autoreleasePoolPush()
-declare void @objc_autoreleasePoolPop(i8*)
+declare i8* @llvm.objc.autoreleasePoolPush()
+declare void @llvm.objc.autoreleasePoolPop(i8*)
 
 ; CHECK: attributes #0 = { nounwind }

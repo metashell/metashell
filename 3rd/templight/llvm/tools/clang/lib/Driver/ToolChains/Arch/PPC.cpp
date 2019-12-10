@@ -1,9 +1,8 @@
 //===--- PPC.cpp - PPC Helpers for Tools ------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -106,6 +105,20 @@ void ppc::getPPCTargetFeatures(const Driver &D, const llvm::Triple &Triple,
   ppc::FloatABI FloatABI = ppc::getPPCFloatABI(D, Args);
   if (FloatABI == ppc::FloatABI::Soft)
     Features.push_back("-hard-float");
+
+  ppc::ReadGOTPtrMode ReadGOT = ppc::getPPCReadGOTPtrMode(D, Triple, Args);
+  if (ReadGOT == ppc::ReadGOTPtrMode::SecurePlt)
+    Features.push_back("+secure-plt");
+}
+
+ppc::ReadGOTPtrMode ppc::getPPCReadGOTPtrMode(const Driver &D, const llvm::Triple &Triple,
+                                              const ArgList &Args) {
+  if (Args.getLastArg(options::OPT_msecure_plt))
+    return ppc::ReadGOTPtrMode::SecurePlt;
+  if (Triple.isOSNetBSD() || Triple.isOSOpenBSD() || Triple.isMusl())
+    return ppc::ReadGOTPtrMode::SecurePlt;
+  else
+    return ppc::ReadGOTPtrMode::Bss;
 }
 
 ppc::FloatABI ppc::getPPCFloatABI(const Driver &D, const ArgList &Args) {

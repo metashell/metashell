@@ -9,7 +9,7 @@
 ; StructurizeCFG.
 
 ; IR-LABEL: @multi_divergent_region_exit_ret_ret(
-; IR: %1 = call { i1, i64 } @llvm.amdgcn.if(i1 %0)
+; IR: %1 = call { i1, i64 } @llvm.amdgcn.if.i64(i1 %0)
 ; IR: %2 = extractvalue { i1, i64 } %1, 0
 ; IR: %3 = extractvalue { i1, i64 } %1, 1
 ; IR: br i1 %2, label %LeafBlock1, label %Flow
@@ -17,7 +17,7 @@
 ; IR: Flow:
 ; IR: %4 = phi i1 [ true, %LeafBlock1 ], [ false, %entry ]
 ; IR: %5 = phi i1 [ %10, %LeafBlock1 ], [ false, %entry ]
-; IR: %6 = call { i1, i64 } @llvm.amdgcn.else(i64 %3)
+; IR: %6 = call { i1, i64 } @llvm.amdgcn.else.i64.i64(i64 %3)
 ; IR: %7 = extractvalue { i1, i64 } %6, 0
 ; IR: %8 = extractvalue { i1, i64 } %6, 1
 ; IR: br i1 %7, label %LeafBlock, label %Flow1
@@ -30,8 +30,8 @@
 
 ; IR:  Flow2:
 ; IR: %11 = phi i1 [ false, %exit1 ], [ %15, %Flow1 ]
-; IR: call void @llvm.amdgcn.end.cf(i64 %19)
-; IR: %12 = call { i1, i64 } @llvm.amdgcn.if(i1 %11)
+; IR: call void @llvm.amdgcn.end.cf.i64(i64 %19)
+; IR: %12 = call { i1, i64 } @llvm.amdgcn.if.i64(i1 %11)
 ; IR: %13 = extractvalue { i1, i64 } %12, 0
 ; IR: %14 = extractvalue { i1, i64 } %12, 1
 ; IR: br i1 %13, label %exit0, label %UnifiedReturnBlock
@@ -43,8 +43,8 @@
 ; IR: Flow1:
 ; IR: %15 = phi i1 [ %SwitchLeaf, %LeafBlock ], [ %4, %Flow ]
 ; IR: %16 = phi i1 [ %9, %LeafBlock ], [ %5, %Flow ]
-; IR: call void @llvm.amdgcn.end.cf(i64 %8)
-; IR: %17 = call { i1, i64 } @llvm.amdgcn.if(i1 %16)
+; IR: call void @llvm.amdgcn.end.cf.i64(i64 %8)
+; IR: %17 = call { i1, i64 } @llvm.amdgcn.if.i64(i1 %16)
 ; IR: %18 = extractvalue { i1, i64 } %17, 0
 ; IR: %19 = extractvalue { i1, i64 } %17, 1
 ; IR: br i1 %18, label %exit1, label %Flow2
@@ -54,36 +54,53 @@
 ; IR:  br label %Flow2
 
 ; IR: UnifiedReturnBlock:
-; IR: call void @llvm.amdgcn.end.cf(i64 %14)
+; IR: call void @llvm.amdgcn.end.cf.i64(i64 %14)
 ; IR: ret void
 
 
 ; GCN-LABEL: {{^}}multi_divergent_region_exit_ret_ret:
-; GCN: v_cmp_lt_i32_e32 vcc, 1
-; GCN: s_and_saveexec_b64
-; GCN: s_xor_b64
 
+; GCN-DAG:  s_mov_b64           [[EXIT1:s\[[0-9]+:[0-9]+\]]], 0
+; GCN-DAG:  v_cmp_lt_i32_e32    vcc, 1,
+; GCN-DAG:  s_mov_b64           [[EXIT0:s\[[0-9]+:[0-9]+\]]], 0
+; GCN-DAG:  s_and_saveexec_b64
+; GCN-DAG:  s_xor_b64
+
+; GCN: ; %LeafBlock1
+; GCN-NEXT: s_mov_b64           [[EXIT0]], exec
+; GCN-NEXT: v_cmp_ne_u32_e32    vcc, 2,
+; GCN-NEXT: s_and_b64           [[EXIT1]], vcc, exec
+
+; GCN: ; %Flow
+; GCN-NEXT: s_or_saveexec_b64
+; GCN-NEXT: s_xor_b64
 
 ; FIXME: Why is this compare essentially repeated?
-; GCN: v_cmp_eq_u32_e32 vcc, 1, [[REG:v[0-9]+]]
-; GCN: v_cndmask_b32_e64 v{{[0-9]+}}, 0, -1, vcc
-; GCN: v_cmp_ne_u32_e32 vcc, 1, [[REG]]
-; GCN: v_cndmask_b32_e64 v{{[0-9]+}}, 0, -1, vcc
+; GCN: ; %LeafBlock
+; GCN-DAG:  v_cmp_eq_u32_e32    vcc, 1,
+; GCN-DAG:  v_cmp_ne_u32_e64    [[TMP1:s\[[0-9]+:[0-9]+\]]], 1,
+; GCN-DAG:  s_andn2_b64         [[EXIT0]], [[EXIT0]], exec
+; GCN-DAG:  s_andn2_b64         [[EXIT1]], [[EXIT1]], exec
+; GCN-DAG:  s_and_b64           [[TMP0:s\[[0-9]+:[0-9]+\]]], vcc, exec
+; GCN-DAG:  s_and_b64           [[TMP1]], [[TMP1]], exec
+; GCN-DAG:  s_or_b64            [[EXIT0]], [[EXIT0]], [[TMP0]]
+; GCN-DAG:  s_or_b64            [[EXIT1]], [[EXIT1]], [[TMP1]]
 
-; GCN: ; %Flow1
-; GCN-NEXT: s_or_b64 exec, exec
-; GCN: v_cmp_ne_u32_e32 vcc, 0
+; GCN: ; %Flow4
+; GCN-NEXT: s_or_b64            exec, exec,
+; GCN-NEXT: s_and_saveexec_b64  {{s\[[0-9]+:[0-9]+\]}}, [[EXIT1]]
+; GCN-NEXT: s_xor_b64
 
 ; GCN: ; %exit1
-; GCN: ds_write_b32
+; GCN-DAG:  ds_write_b32
+; GCN-DAG:  s_andn2_b64         [[EXIT0]], [[EXIT0]], exec
 
-; GCN: %Flow2
-; GCN-NEXT: s_or_b64 exec, exec
-; GCN: v_cmp_ne_u32_e32 vcc, 0
-; GCN-NEXT: s_and_saveexec_b64
+; GCN: ; %Flow5
+; GCN-NEXT: s_or_b64            exec, exec,
+; GCN-NEXT; s_and_saveexec_b64  {{s\[[0-9]+:[0-9]+\]}}, [[EXIT0]]
 
 ; GCN: ; %exit0
-; GCN: buffer_store_dword
+; GCN:      buffer_store_dword
 
 ; GCN: ; %UnifiedReturnBlock
 ; GCN-NEXT: s_endpgm
@@ -124,13 +141,13 @@ exit1:                                     ; preds = %LeafBlock, %LeafBlock1
 }
 
 ; IR-LABEL: @multi_divergent_region_exit_unreachable_unreachable(
-; IR: %1 = call { i1, i64 } @llvm.amdgcn.if(i1 %0)
+; IR: %1 = call { i1, i64 } @llvm.amdgcn.if.i64(i1 %0)
 
-; IR: %6 = call { i1, i64 } @llvm.amdgcn.else(i64 %3)
+; IR: %6 = call { i1, i64 } @llvm.amdgcn.else.i64.i64(i64 %3)
 
 ; IR: %11 = phi i1 [ false, %exit1 ], [ %15, %Flow1 ]
-; IR: call void @llvm.amdgcn.end.cf(i64 %19)
-; IR: %12 = call { i1, i64 } @llvm.amdgcn.if(i1 %11)
+; IR: call void @llvm.amdgcn.end.cf.i64(i64 %19)
+; IR: %12 = call { i1, i64 } @llvm.amdgcn.if.i64(i1 %11)
 ; IR: br i1 %13, label %exit0, label %UnifiedUnreachableBlock
 
 
@@ -186,7 +203,7 @@ exit1:                                     ; preds = %LeafBlock, %LeafBlock1
 ; IR: {{^}}Flow:
 ; IR: %4 = phi i1 [ true, %LeafBlock1 ], [ false, %entry ]
 ; IR: %5 = phi i1 [ %10, %LeafBlock1 ], [ false, %entry ]
-; IR: %6 = call { i1, i64 } @llvm.amdgcn.else(i64 %3)
+; IR: %6 = call { i1, i64 } @llvm.amdgcn.else.i64.i64(i64 %3)
 ; IR: br i1 %7, label %LeafBlock, label %Flow1
 
 ; IR: {{^}}LeafBlock:
@@ -201,8 +218,8 @@ exit1:                                     ; preds = %LeafBlock, %LeafBlock1
 
 ; IR: Flow2:
 ; IR: %11 = phi i1 [ false, %exit1 ], [ %15, %Flow1 ]
-; IR: call void @llvm.amdgcn.end.cf(i64 %19)
-; IR: %12 = call { i1, i64 } @llvm.amdgcn.if(i1 %11)
+; IR: call void @llvm.amdgcn.end.cf.i64(i64 %19)
+; IR: %12 = call { i1, i64 } @llvm.amdgcn.if.i64(i1 %11)
 ; IR: br i1 %13, label %exit0, label %UnifiedReturnBlock
 
 ; IR: exit0:
@@ -212,8 +229,8 @@ exit1:                                     ; preds = %LeafBlock, %LeafBlock1
 ; IR: {{^}}Flow1:
 ; IR: %15 = phi i1 [ %divergent.cond1, %LeafBlock ], [ %4, %Flow ]
 ; IR: %16 = phi i1 [ %9, %LeafBlock ], [ %5, %Flow ]
-; IR: call void @llvm.amdgcn.end.cf(i64 %8)
-; IR: %17 = call { i1, i64 } @llvm.amdgcn.if(i1 %16)
+; IR: call void @llvm.amdgcn.end.cf.i64(i64 %8)
+; IR: %17 = call { i1, i64 } @llvm.amdgcn.if.i64(i1 %16)
 ; IR: %18 = extractvalue { i1, i64 } %17, 0
 ; IR: %19 = extractvalue { i1, i64 } %17, 1
 ; IR: br i1 %18, label %exit1, label %Flow2
@@ -223,7 +240,7 @@ exit1:                                     ; preds = %LeafBlock, %LeafBlock1
 ; IR: br label %Flow2
 
 ; IR: UnifiedReturnBlock:
-; IR: call void @llvm.amdgcn.end.cf(i64 %14)
+; IR: call void @llvm.amdgcn.end.cf.i64(i64 %14)
 ; IR: ret void
 define amdgpu_kernel void @multi_exit_region_divergent_ret_uniform_ret(i32 addrspace(1)* nocapture %arg0, i32 addrspace(1)* nocapture %arg1, i32 addrspace(1)* nocapture %arg2, i32 %arg3) #0 {
 entry:
@@ -262,17 +279,17 @@ exit1:                                     ; preds = %LeafBlock, %LeafBlock1
 }
 
 ; IR-LABEL: @multi_exit_region_uniform_ret_divergent_ret(
-; IR: %1 = call { i1, i64 } @llvm.amdgcn.if(i1 %0)
+; IR: %1 = call { i1, i64 } @llvm.amdgcn.if.i64(i1 %0)
 ; IR: br i1 %2, label %LeafBlock1, label %Flow
 
 ; IR: Flow:
 ; IR: %4 = phi i1 [ true, %LeafBlock1 ], [ false, %entry ]
 ; IR: %5 = phi i1 [ %10, %LeafBlock1 ], [ false, %entry ]
-; IR: %6 = call { i1, i64 } @llvm.amdgcn.else(i64 %3)
+; IR: %6 = call { i1, i64 } @llvm.amdgcn.else.i64.i64(i64 %3)
 
 ; IR: %11 = phi i1 [ false, %exit1 ], [ %15, %Flow1 ]
-; IR: call void @llvm.amdgcn.end.cf(i64 %19)
-; IR: %12 = call { i1, i64 } @llvm.amdgcn.if(i1 %11)
+; IR: call void @llvm.amdgcn.end.cf.i64(i64 %19)
+; IR: %12 = call { i1, i64 } @llvm.amdgcn.if.i64(i1 %11)
 
 define amdgpu_kernel void @multi_exit_region_uniform_ret_divergent_ret(i32 addrspace(1)* nocapture %arg0, i32 addrspace(1)* nocapture %arg1, i32 addrspace(1)* nocapture %arg2, i32 %arg3) #0 {
 entry:
@@ -312,13 +329,12 @@ exit1:                                     ; preds = %LeafBlock, %LeafBlock1
 
 ; IR-LABEL: @multi_divergent_region_exit_ret_ret_return_value(
 ; IR: Flow2:
-; IR: %11 = phi float [ 2.000000e+00, %exit1 ], [ undef, %Flow1 ]
-; IR: %12 = phi i1 [ false, %exit1 ], [ %16, %Flow1 ]
-; IR: call void @llvm.amdgcn.end.cf(i64 %20)
+; IR: %11 = phi i1 [ false, %exit1 ], [ %15, %Flow1 ]
+; IR: call void @llvm.amdgcn.end.cf.i64(i64 %19)
 
 ; IR: UnifiedReturnBlock:
-; IR: %UnifiedRetVal = phi float [ %11, %Flow2 ], [ 1.000000e+00, %exit0 ]
-; IR: call void @llvm.amdgcn.end.cf(i64 %15)
+; IR: %UnifiedRetVal = phi float [ 2.000000e+00, %Flow2 ], [ 1.000000e+00, %exit0 ]
+; IR: call void @llvm.amdgcn.end.cf.i64(i64 %14)
 ; IR: ret float %UnifiedRetVal
 define amdgpu_ps float @multi_divergent_region_exit_ret_ret_return_value(i32 %vgpr) #0 {
 entry:
@@ -353,9 +369,9 @@ exit1:                                     ; preds = %LeafBlock, %LeafBlock1
 ; GCN: {{^}}[[FLOW]]:
 ; GCN: s_cbranch_vccnz [[FLOW1:BB[0-9]+]]
 
-; GCN: v_mov_b32_e32 v0, 2.0
 ; GCN: s_or_b64 exec, exec
-; GCN: s_and_b64 exec, exec
+; GCN: v_mov_b32_e32 v0, 2.0
+; GCN-NOT: s_and_b64 exec, exec
 ; GCN: v_mov_b32_e32 v0, 1.0
 
 ; GCN: {{^BB[0-9]+_[0-9]+}}: ; %UnifiedReturnBlock
@@ -386,17 +402,17 @@ exit1:                                     ; preds = %LeafBlock, %LeafBlock1
 }
 
 ; IR-LABEL: @multi_divergent_region_exit_ret_unreachable(
-; IR: %1 = call { i1, i64 } @llvm.amdgcn.if(i1 %0)
+; IR: %1 = call { i1, i64 } @llvm.amdgcn.if.i64(i1 %0)
 
 ; IR: Flow:
 ; IR: %4 = phi i1 [ true, %LeafBlock1 ], [ false, %entry ]
 ; IR: %5 = phi i1 [ %10, %LeafBlock1 ], [ false, %entry ]
-; IR: %6 = call { i1, i64 } @llvm.amdgcn.else(i64 %3)
+; IR: %6 = call { i1, i64 } @llvm.amdgcn.else.i64.i64(i64 %3)
 
 ; IR: Flow2:
 ; IR: %11 = phi i1 [ false, %exit1 ], [ %15, %Flow1 ]
-; IR: call void @llvm.amdgcn.end.cf(i64 %19)
-; IR: %12 = call { i1, i64 } @llvm.amdgcn.if(i1 %11)
+; IR: call void @llvm.amdgcn.end.cf.i64(i64 %19)
+; IR: %12 = call { i1, i64 } @llvm.amdgcn.if.i64(i1 %11)
 ; IR: br i1 %13, label %exit0, label %UnifiedReturnBlock
 
 ; IR: exit0:
@@ -406,8 +422,8 @@ exit1:                                     ; preds = %LeafBlock, %LeafBlock1
 ; IR: Flow1:
 ; IR: %15 = phi i1 [ %SwitchLeaf, %LeafBlock ], [ %4, %Flow ]
 ; IR: %16 = phi i1 [ %9, %LeafBlock ], [ %5, %Flow ]
-; IR: call void @llvm.amdgcn.end.cf(i64 %8)
-; IR: %17 = call { i1, i64 } @llvm.amdgcn.if(i1 %16)
+; IR: call void @llvm.amdgcn.end.cf.i64(i64 %8)
+; IR: %17 = call { i1, i64 } @llvm.amdgcn.if.i64(i1 %16)
 ; IR: %18 = extractvalue { i1, i64 } %17, 0
 ; IR: %19 = extractvalue { i1, i64 } %17, 1
 ; IR: br i1 %18, label %exit1, label %Flow2
@@ -418,7 +434,7 @@ exit1:                                     ; preds = %LeafBlock, %LeafBlock1
 ; IR-NEXT: br label %Flow2
 
 ; IR: UnifiedReturnBlock:
-; IR-NEXT: call void @llvm.amdgcn.end.cf(i64 %14)
+; IR-NEXT: call void @llvm.amdgcn.end.cf.i64(i64 %14)
 ; IR-NEXT: ret void
 define amdgpu_kernel void @multi_divergent_region_exit_ret_unreachable(i32 addrspace(1)* nocapture %arg0, i32 addrspace(1)* nocapture %arg1, i32 addrspace(1)* nocapture %arg2) #0 {
 entry:
@@ -474,7 +490,7 @@ exit1:                                     ; preds = %LeafBlock, %LeafBlock1
 ; IR-NEXT: br label %Flow2
 
 ; IR: UnifiedReturnBlock:                               ; preds = %exit0, %Flow2
-; IR-NEXT: call void @llvm.amdgcn.end.cf(i64 %14)
+; IR-NEXT: call void @llvm.amdgcn.end.cf.i64(i64 %14)
 ; IR-NEXT: ret void
 define amdgpu_kernel void @indirect_multi_divergent_region_exit_ret_unreachable(i32 addrspace(1)* nocapture %arg0, i32 addrspace(1)* nocapture %arg1, i32 addrspace(1)* nocapture %arg2) #0 {
 entry:
@@ -629,7 +645,7 @@ uniform.ret:
 ; IR: br i1 %11, label %uniform.endif, label %uniform.ret0
 
 ; IR: UnifiedReturnBlock:                               ; preds = %Flow3, %Flow2
-; IR-NEXT: call void @llvm.amdgcn.end.cf(i64 %6)
+; IR-NEXT: call void @llvm.amdgcn.end.cf.i64(i64 %6)
 ; IR-NEXT: ret void
 define amdgpu_kernel void @uniform_complex_multi_ret_nest_in_divergent_triangle(i32 %arg0) #0 {
 entry:
@@ -642,12 +658,12 @@ uniform.multi.exit.region:
   br i1 %uniform.cond0, label %uniform.if, label %uniform.ret1
 
 uniform.if:
-  %sgpr0 = load volatile i32, i32 addrspace(2)* undef
+  %sgpr0 = load volatile i32, i32 addrspace(4)* undef
   %uniform.cond1 = icmp slt i32 %sgpr0, 1
   br i1 %uniform.cond1, label %uniform.then, label %uniform.endif
 
 uniform.then:
-  %sgpr1 = load volatile i32, i32 addrspace(2)* undef
+  %sgpr1 = load volatile i32, i32 addrspace(4)* undef
   %uniform.cond2 = icmp sge i32 %sgpr1, 4
   store volatile i32 33, i32 addrspace(1)* undef
   br i1 %uniform.cond2, label %uniform.ret0, label %uniform.endif
@@ -675,7 +691,7 @@ divergent.ret:
 ; IR-NEXT: br label %UnifiedReturnBlock
 
 ; IR: UnifiedReturnBlock:
-; IR-NEXT: call void @llvm.amdgcn.end.cf(i64
+; IR-NEXT: call void @llvm.amdgcn.end.cf.i64(i64
 ; IR-NEXT: ret void
 define amdgpu_kernel void @multi_divergent_unreachable_exit() #0 {
 bb:

@@ -1,9 +1,8 @@
 //===-- msan.cc -----------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -15,6 +14,7 @@
 #include "msan.h"
 #include "msan_chained_origin_depot.h"
 #include "msan_origin.h"
+#include "msan_report.h"
 #include "msan_thread.h"
 #include "msan_poisoning.h"
 #include "sanitizer_common/sanitizer_atomic.h"
@@ -56,6 +56,10 @@ THREADLOCAL u32 __msan_retval_origin_tls;
 
 SANITIZER_INTERFACE_ATTRIBUTE
 ALIGNED(16) THREADLOCAL u64 __msan_va_arg_tls[kMsanParamTlsSize / sizeof(u64)];
+
+SANITIZER_INTERFACE_ATTRIBUTE
+ALIGNED(16)
+THREADLOCAL u32 __msan_va_arg_origin_tls[kMsanParamTlsSize / sizeof(u32)];
 
 SANITIZER_INTERFACE_ATTRIBUTE
 THREADLOCAL u64 __msan_va_arg_overflow_size_tls;
@@ -171,12 +175,10 @@ static void InitializeFlags() {
   ubsan_parser.ParseString(ubsan_default_options);
 #endif
 
-  const char *msan_options = GetEnv("MSAN_OPTIONS");
-  parser.ParseString(msan_options);
+  parser.ParseStringFromEnv("MSAN_OPTIONS");
 #if MSAN_CONTAINS_UBSAN
-  ubsan_parser.ParseString(GetEnv("UBSAN_OPTIONS"));
+  ubsan_parser.ParseStringFromEnv("UBSAN_OPTIONS");
 #endif
-  VPrintf(1, "MSAN_OPTIONS: %s\n", msan_options ? msan_options : "<empty>");
 
   InitializeCommonFlags();
 
@@ -215,18 +217,6 @@ static void InitializeFlags() {
     Die();
   }
   if (f->store_context_size < 1) f->store_context_size = 1;
-}
-
-void GetStackTrace(BufferedStackTrace *stack, uptr max_s, uptr pc, uptr bp,
-                   void *context, bool request_fast_unwind) {
-  MsanThread *t = GetCurrentThread();
-  if (!t || !StackTrace::WillUseFastUnwind(request_fast_unwind)) {
-    // Block reports from our interceptors during _Unwind_Backtrace.
-    SymbolizerScope sym_scope;
-    return stack->Unwind(max_s, pc, bp, context, 0, 0, request_fast_unwind);
-  }
-  stack->Unwind(max_s, pc, bp, context, t->stack_top(), t->stack_bottom(),
-                request_fast_unwind);
 }
 
 void PrintWarning(uptr pc, uptr bp) {
@@ -276,6 +266,8 @@ void ScopedThreadLocalStateBackup::Restore() {
   internal_memset(__msan_param_tls, 0, sizeof(__msan_param_tls));
   internal_memset(__msan_retval_tls, 0, sizeof(__msan_retval_tls));
   internal_memset(__msan_va_arg_tls, 0, sizeof(__msan_va_arg_tls));
+  internal_memset(__msan_va_arg_origin_tls, 0,
+                  sizeof(__msan_va_arg_origin_tls));
 
   if (__msan_get_track_origins()) {
     internal_memset(&__msan_retval_origin_tls, 0,
@@ -306,6 +298,21 @@ u32 ChainOrigin(u32 id, StackTrace *stack) {
 }
 
 } // namespace __msan
+
+void __sanitizer::BufferedStackTrace::UnwindImpl(
+    uptr pc, uptr bp, void *context, bool request_fast, u32 max_depth) {
+  using namespace __msan;
+  MsanThread *t = GetCurrentThread();
+  if (!t || !StackTrace::WillUseFastUnwind(request_fast)) {
+    // Block reports from our interceptors during _Unwind_Backtrace.
+    SymbolizerScope sym_scope;
+    return Unwind(max_depth, pc, bp, context, 0, 0, false);
+  }
+  if (StackTrace::WillUseFastUnwind(request_fast))
+    Unwind(max_depth, pc, bp, nullptr, t->stack_top(), t->stack_bottom(), true);
+  else
+    Unwind(max_depth, pc, 0, context, 0, 0, false);
+}
 
 // Interface.
 
@@ -371,12 +378,20 @@ void __msan_warning_noreturn() {
 
 static void OnStackUnwind(const SignalContext &sig, const void *,
                           BufferedStackTrace *stack) {
-  GetStackTrace(stack, kStackTraceMax, sig.pc, sig.bp, sig.context,
+  stack->Unwind(sig.pc, sig.bp, sig.context,
                 common_flags()->fast_unwind_on_fatal);
 }
 
 static void MsanOnDeadlySignal(int signo, void *siginfo, void *context) {
   HandleDeadlySignal(siginfo, context, GetTid(), &OnStackUnwind, nullptr);
+}
+
+static void MsanCheckFailed(const char *file, int line, const char *cond,
+                            u64 v1, u64 v2) {
+  Report("MemorySanitizer CHECK failed: %s:%d \"%s\" (0x%zx, 0x%zx)\n", file,
+         line, cond, (uptr)v1, (uptr)v2);
+  PRINT_CURRENT_STACK_CHECK();
+  Die();
 }
 
 void __msan_init() {
@@ -386,14 +401,18 @@ void __msan_init() {
   SanitizerToolName = "MemorySanitizer";
 
   AvoidCVE_2016_2143();
-  InitTlsSize();
 
   CacheBinaryName();
   InitializeFlags();
 
+  // Install tool-specific callbacks in sanitizer_common.
+  SetCheckFailedCallback(MsanCheckFailed);
+
   __sanitizer_set_report_path(common_flags()->log_path);
 
   InitializeInterceptors();
+  CheckASLR();
+  InitTlsSize();
   InstallDeadlySignalHandlers(MsanOnDeadlySignal);
   InstallAtExitHandler(); // Needs __cxa_atexit interceptor.
 

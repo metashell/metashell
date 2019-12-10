@@ -1,7 +1,7 @@
 // RUN: %clang_cc1 -ffreestanding %s -triple=x86_64-apple-darwin -target-feature +bmi -emit-llvm -o - -Wall -Werror | FileCheck %s
 
 
-#include <x86intrin.h>
+#include <immintrin.h>
 
 // NOTE: This should match the tests in llvm/test/CodeGen/X86/bmi-intrinsics-fast-isel.ll
 
@@ -15,9 +15,7 @@
 
 unsigned short test__tzcnt_u16(unsigned short __X) {
   // CHECK-LABEL: test__tzcnt_u16
-  // CHECK: zext i16 %{{.*}} to i32
-  // CHECK: icmp ne i32 %{{.*}}, 0
-  // CHECK: i16 @llvm.cttz.i16(i16 %{{.*}}, i1 true)
+  // CHECK: i16 @llvm.cttz.i16(i16 %{{.*}}, i1 false)
   return __tzcnt_u16(__X);
 }
 
@@ -57,18 +55,17 @@ unsigned int test__blsr_u32(unsigned int __X) {
 
 unsigned int test__tzcnt_u32(unsigned int __X) {
   // CHECK-LABEL: test__tzcnt_u32
-  // CHECK: icmp ne i32 %{{.*}}, 0
-  // CHECK: i32 @llvm.cttz.i32(i32 %{{.*}}, i1 true)
+  // CHECK: i32 @llvm.cttz.i32(i32 %{{.*}}, i1 false)
   return __tzcnt_u32(__X);
 }
 
 int test_mm_tzcnt_32(unsigned int __X) {
   // CHECK-LABEL: test_mm_tzcnt_32
-  // CHECK: icmp ne i32 %{{.*}}, 0
-  // CHECK: i32 @llvm.cttz.i32(i32 %{{.*}}, i1 true)
+  // CHECK: i32 @llvm.cttz.i32(i32 %{{.*}}, i1 false)
   return _mm_tzcnt_32(__X);
 }
 
+#ifdef __x86_64__
 unsigned long long test__andn_u64(unsigned long __X, unsigned long __Y) {
   // CHECK-LABEL: test__andn_u64
   // CHECK: xor i64 %{{.*}}, -1
@@ -105,25 +102,22 @@ unsigned long long test__blsr_u64(unsigned long long __X) {
 
 unsigned long long test__tzcnt_u64(unsigned long long __X) {
   // CHECK-LABEL: test__tzcnt_u64
-  // CHECK: icmp ne i64 %{{.*}}, 0
-  // CHECK: i64 @llvm.cttz.i64(i64 %{{.*}}, i1 true)
+  // CHECK: i64 @llvm.cttz.i64(i64 %{{.*}}, i1 false)
   return __tzcnt_u64(__X);
 }
 
 long long test_mm_tzcnt_64(unsigned long long __X) {
   // CHECK-LABEL: test_mm_tzcnt_64
-  // CHECK: icmp ne i64 %{{.*}}, 0
-  // CHECK: i64 @llvm.cttz.i64(i64 %{{.*}}, i1 true)
+  // CHECK: i64 @llvm.cttz.i64(i64 %{{.*}}, i1 false)
   return _mm_tzcnt_64(__X);
 }
+#endif
 
 // Intel intrinsics
 
 unsigned short test_tzcnt_u16(unsigned short __X) {
   // CHECK-LABEL: test_tzcnt_u16
-  // CHECK: zext i16 %{{.*}} to i32
-  // CHECK: icmp ne i32 %{{.*}}, 0
-  // CHECK: i16 @llvm.cttz.i16(i16 %{{.*}}, i1 true)
+  // CHECK: i16 @llvm.cttz.i16(i16 %{{.*}}, i1 false)
   return _tzcnt_u16(__X);
 }
 
@@ -168,11 +162,11 @@ unsigned int test_blsr_u32(unsigned int __X) {
 
 unsigned int test_tzcnt_u32(unsigned int __X) {
   // CHECK-LABEL: test_tzcnt_u32
-  // CHECK: icmp ne i32 %{{.*}}, 0
-  // CHECK: i32 @llvm.cttz.i32(i32 %{{.*}}, i1 true)
+  // CHECK: i32 @llvm.cttz.i32(i32 %{{.*}}, i1 false)
   return _tzcnt_u32(__X);
 }
 
+#ifdef __x86_64__
 unsigned long long test_andn_u64(unsigned long __X, unsigned long __Y) {
   // CHECK-LABEL: test_andn_u64
   // CHECK: xor i64 %{{.*}}, -1
@@ -215,7 +209,7 @@ unsigned long long test_blsr_u64(unsigned long long __X) {
 
 unsigned long long test_tzcnt_u64(unsigned long long __X) {
   // CHECK-LABEL: test_tzcnt_u64
-  // CHECK: icmp ne i64 %{{.*}}, 0
-  // CHECK: i64 @llvm.cttz.i64(i64 %{{.*}}, i1 true)
+  // CHECK: i64 @llvm.cttz.i64(i64 %{{.*}}, i1 false)
   return _tzcnt_u64(__X);
 }
+#endif

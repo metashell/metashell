@@ -2,8 +2,6 @@
 # Extra parameters for `tblgen' may come after `ofn' parameter.
 # Adds the name of the generated file to TABLEGEN_OUTPUT.
 
-include(LLVMExternalProjectUtils)
-
 if(LLVM_MAIN_INCLUDE_DIR)
   set(LLVM_TABLEGEN_FLAGS -I ${LLVM_MAIN_INCLUDE_DIR})
 endif()
@@ -25,7 +23,7 @@ function(tablegen project ofn)
     file(RELATIVE_PATH ofn_rel
       ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/${ofn})
     set(additional_cmdline
-      -o ${ofn_rel}.tmp
+      -o ${ofn_rel}
       -d ${ofn_rel}.d
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       DEPFILE ${CMAKE_CURRENT_BINARY_DIR}/${ofn}.d
@@ -36,7 +34,7 @@ function(tablegen project ofn)
     file(GLOB local_tds "*.td")
     file(GLOB_RECURSE global_tds "${LLVM_MAIN_INCLUDE_DIR}/llvm/*.td")
     set(additional_cmdline
-      -o ${CMAKE_CURRENT_BINARY_DIR}/${ofn}.tmp
+      -o ${CMAKE_CURRENT_BINARY_DIR}/${ofn}
       )
   endif()
 
@@ -69,8 +67,7 @@ function(tablegen project ofn)
   # dependency twice in the result file when
   # ("${${project}_TABLEGEN_TARGET}" STREQUAL "${${project}_TABLEGEN_EXE}")
   # but lets us having smaller and cleaner code here.
-  add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${ofn}.tmp
-    # Generate tablegen output in a temporary file.
+  add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${ofn}
     COMMAND ${${project}_TABLEGEN_EXE} ${ARGN} -I ${CMAKE_CURRENT_SOURCE_DIR}
     ${LLVM_TABLEGEN_FLAGS}
     ${LLVM_TARGET_DEFINITIONS_ABSOLUTE}
@@ -83,20 +80,9 @@ function(tablegen project ofn)
     ${LLVM_TARGET_DEFINITIONS_ABSOLUTE}
     COMMENT "Building ${ofn}..."
     )
-  add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${ofn}
-    # Only update the real output file if there are any differences.
-    # This prevents recompilation of all the files depending on it if there
-    # aren't any.
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_BINARY_DIR}/${ofn}.tmp
-        ${CMAKE_CURRENT_BINARY_DIR}/${ofn}
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${ofn}.tmp
-    COMMENT "Updating ${ofn}..."
-    )
 
   # `make clean' must remove all those generated files:
-  set_property(DIRECTORY APPEND
-    PROPERTY ADDITIONAL_MAKE_CLEAN_FILES ${ofn}.tmp ${ofn})
+  set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES ${ofn})
 
   set(TABLEGEN_OUTPUT ${TABLEGEN_OUTPUT} ${CMAKE_CURRENT_BINARY_DIR}/${ofn} PARENT_SCOPE)
   set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/${ofn} PROPERTIES
@@ -133,43 +119,36 @@ macro(add_tablegen target project)
   set(${project}_TABLEGEN "${target}" CACHE
       STRING "Native TableGen executable. Saves building one when cross-compiling.")
 
-  # Upgrade existing LLVM_TABLEGEN setting.
-  if(${project} STREQUAL LLVM)
-    if(${LLVM_TABLEGEN} STREQUAL tblgen)
-      set(LLVM_TABLEGEN "${target}" CACHE
-          STRING "Native TableGen executable. Saves building one when cross-compiling."
-          FORCE)
-    endif()
-  endif()
-
   # Effective tblgen executable to be used:
   set(${project}_TABLEGEN_EXE ${${project}_TABLEGEN} PARENT_SCOPE)
   set(${project}_TABLEGEN_TARGET ${${project}_TABLEGEN} PARENT_SCOPE)
 
   if(LLVM_USE_HOST_TOOLS)
     if( ${${project}_TABLEGEN} STREQUAL "${target}" )
-      if (NOT CMAKE_CONFIGURATION_TYPES)
-        set(${project}_TABLEGEN_EXE "${LLVM_NATIVE_BUILD}/bin/${target}")
-      else()
-        set(${project}_TABLEGEN_EXE "${LLVM_NATIVE_BUILD}/Release/bin/${target}")
-      endif()
+      build_native_tool(${target} ${project}_TABLEGEN_EXE)
       set(${project}_TABLEGEN_EXE ${${project}_TABLEGEN_EXE} PARENT_SCOPE)
 
-      llvm_ExternalProject_BuildCmd(tblgen_build_cmd ${target}
-                                    ${LLVM_NATIVE_BUILD}
-                                    CONFIGURATION Release)
-      add_custom_command(OUTPUT ${${project}_TABLEGEN_EXE}
-        COMMAND ${tblgen_build_cmd}
-        DEPENDS CONFIGURE_LLVM_NATIVE ${target}
-        WORKING_DIRECTORY ${LLVM_NATIVE_BUILD}
-        COMMENT "Building native TableGen..."
-        USES_TERMINAL)
       add_custom_target(${project}-tablegen-host DEPENDS ${${project}_TABLEGEN_EXE})
       set(${project}_TABLEGEN_TARGET ${project}-tablegen-host PARENT_SCOPE)
+
+      # Create an artificial dependency between tablegen projects, because they
+      # compile the same dependencies, thus using the same build folders.
+      # FIXME: A proper fix requires sequentially chaining tablegens.
+      if (NOT ${project} STREQUAL LLVM AND TARGET ${project}-tablegen-host AND
+          TARGET LLVM-tablegen-host)
+        add_dependencies(${project}-tablegen-host LLVM-tablegen-host)
+      endif()
+
+      # If we're using the host tablegen, and utils were not requested, we have no
+      # need to build this tablegen.
+      if ( NOT LLVM_BUILD_UTILS )
+        set_target_properties(${target} PROPERTIES EXCLUDE_FROM_ALL ON)
+      endif()
     endif()
   endif()
 
-  if (${project} STREQUAL LLVM AND NOT LLVM_INSTALL_TOOLCHAIN_ONLY)
+  if (${project} STREQUAL LLVM AND NOT LLVM_INSTALL_TOOLCHAIN_ONLY AND LLVM_BUILD_UTILS)
+    set(export_to_llvmexports)
     if(${target} IN_LIST LLVM_DISTRIBUTION_COMPONENTS OR
         NOT LLVM_DISTRIBUTION_COMPONENTS)
       set(export_to_llvmexports EXPORT LLVMExports)

@@ -77,6 +77,10 @@ endif()
 set(TEMPLIGHT_BUILD "${CMAKE_BINARY_DIR}/../templight")
 
 set(
+  TEMPLIGHT_INCLUDE_PATH
+  "${TEMPLIGHT_INCLUDE_PATH};${CMAKE_SOURCE_DIR}/3rd/templight/llvm/tools/clang/lib/Headers"
+)
+set(
   TEMPLIGHT_INCLUDEDIR
   "${TEMPLIGHT_INCLUDEDIR};${CMAKE_SOURCE_DIR}/3rd/templight/llvm/tools/clang/include"
 )

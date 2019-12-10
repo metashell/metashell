@@ -4,8 +4,8 @@ target datalayout = "e-p:64:64:64"
 
 ; CHECK-LABEL: @foo(
 ; CHECK: entry.end_crit_edge:
-; CHECK: %[[INDEX:[a-z0-9.]+]] = sext i32 %x to i64{{$}}
-; CHECK: %[[ADDRESS:[a-z0-9.]+]] = getelementptr [100 x i32], [100 x i32]* @G, i64 0, i64 %[[INDEX]]{{$}}
+; CHECK: %[[INDEX:[a-z0-9.]+]] = sext i32 %x to i64{{.*}} !dbg [[ZERO_LOC:![0-9]+]]
+; CHECK: %[[ADDRESS:[a-z0-9.]+]] = getelementptr [100 x i32], [100 x i32]* @G, i64 0, i64 %[[INDEX]]{{.*}} !dbg [[ZERO_LOC]]
 ; CHECK:   %n.pre = load i32, i32* %[[ADDRESS]], !dbg [[N_LOC:![0-9]+]]
 ; CHECK: br label %end
 ; CHECK: then:
@@ -14,7 +14,8 @@ target datalayout = "e-p:64:64:64"
 ; CHECK:   %n = phi i32 [ %n.pre, %entry.end_crit_edge ], [ %z, %then ], !dbg [[N_LOC]]
 ; CHECK:   ret i32 %n
 
-; CHECK: [[N_LOC]] = !DILocation(line: 47, column: 1, scope: !{{.*}})
+; CHECK-DAG: [[N_LOC]] = !DILocation(line: 47, column: 1, scope: !{{.*}})
+; CHECK-DAG: [[ZERO_LOC]] = !DILocation(line: 0
 
 @G = external global [100 x i32]
 define i32 @foo(i32 %x, i32 %z) !dbg !6 {
@@ -44,7 +45,7 @@ end:
 !3 = !{}
 !4 = !DISubroutineType(types: !3)
 !5 = !DIFile(filename: "a.cc", directory: "/tmp")
-!6 = distinct !DISubprogram(name: "foo", scope: !5, file: !5, line: 42, type: !4, isLocal: false, isDefinition: true, scopeLine: 43, flags: DIFlagPrototyped, isOptimized: false, unit: !12, variables: !3)
+!6 = distinct !DISubprogram(name: "foo", scope: !5, file: !5, line: 42, type: !4, isLocal: false, isDefinition: true, scopeLine: 43, flags: DIFlagPrototyped, isOptimized: false, unit: !12, retainedNodes: !3)
 !7 = !DILocation(line: 43, column: 1, scope: !6)
 !8 = !DILocation(line: 44, column: 1, scope: !6)
 !9 = !DILocation(line: 45, column: 1, scope: !6)

@@ -1,9 +1,8 @@
 //===- CXIndexDataConsumer.h - Index data consumer for libclang--*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -260,7 +259,7 @@ public:
   }
   unsigned getNumAttrs() const { return (unsigned)CXAttrs.size(); }
 
-  /// \brief Retain/Release only useful when we allocate a AttrListInfo from the
+  /// Retain/Release only useful when we allocate a AttrListInfo from the
   /// BumpPtrAllocator, and not from the stack; so that we keep a pointer
   // in the EntityInfo
   void Retain() { ++ref_cnt; }
@@ -436,13 +435,15 @@ public:
                        const NamedDecl *Parent,
                        const DeclContext *DC,
                        const Expr *E = nullptr,
-                       CXIdxEntityRefKind Kind = CXIdxEntityRef_Direct);
+                       CXIdxEntityRefKind Kind = CXIdxEntityRef_Direct,
+                       CXSymbolRole Role = CXSymbolRole_None);
 
   bool handleReference(const NamedDecl *D, SourceLocation Loc,
                        const NamedDecl *Parent,
                        const DeclContext *DC,
                        const Expr *E = nullptr,
-                       CXIdxEntityRefKind Kind = CXIdxEntityRef_Direct);
+                       CXIdxEntityRefKind Kind = CXIdxEntityRef_Direct,
+                       CXSymbolRole Role = CXSymbolRole_None);
 
   bool isNotFromSourceFile(SourceLocation Loc) const;
 
@@ -463,12 +464,11 @@ public:
 private:
   bool handleDeclOccurence(const Decl *D, index::SymbolRoleSet Roles,
                            ArrayRef<index::SymbolRelation> Relations,
-                           FileID FID, unsigned Offset,
-                           ASTNodeInfo ASTNode) override;
+                           SourceLocation Loc, ASTNodeInfo ASTNode) override;
 
-  bool handleModuleOccurence(const ImportDecl *ImportD,
+  bool handleModuleOccurence(const ImportDecl *ImportD, const Module *Mod,
                              index::SymbolRoleSet Roles,
-                             FileID FID, unsigned Offset) override;
+                             SourceLocation Loc) override;
 
   void finish() override;
 

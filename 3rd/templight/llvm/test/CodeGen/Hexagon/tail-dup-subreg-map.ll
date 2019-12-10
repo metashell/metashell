@@ -1,11 +1,11 @@
-; RUN: llc -march=hexagon < %s | FileCheck %s
+; RUN: llc -march=hexagon -hexagon-initial-cfg-cleanup=0 < %s | FileCheck %s
 ; REQUIRES: asserts
 
 ; When tail-duplicating a block with PHI nodes that use subregisters, the
 ; subregisters were dropped by the tail duplicator, resulting in invalid
 ; COPY instructions being generated.
 
-; CHECK: = extractu(r{{[0-9]+}},#15,#17)
+; CHECK: = asl(r{{[0-9]+}}:{{[0-9]+}},#15)
 
 target triple = "hexagon"
 
@@ -14,10 +14,10 @@ target triple = "hexagon"
 
 declare hidden fastcc void @foo(%struct.0* noalias nocapture, i8 signext, i8 zeroext, i32, i64, i64) unnamed_addr #0
 
-define void @fred(%struct.0* noalias nocapture sret %agg.result, %struct.1* byval nocapture readonly align 8 %a) #1 {
+define void @fred(%struct.0* noalias nocapture sret %agg.result, %struct.1* byval nocapture readonly align 8 %a, i32 %a0) #1 {
 entry:
   %0 = load i64, i64* undef, align 8
-  switch i32 undef, label %if.else [
+  switch i32 %a0, label %if.else [
     i32 32767, label %if.then
     i32 0, label %if.then7
   ]
@@ -36,20 +36,20 @@ if.then5.i:                                       ; preds = %if.then.i
   br label %if.end.i
 
 if.else.i:                                        ; preds = %if.then.i
-  %shl12.i = shl i64 %0, undef
+  %shl12.i = shl i64 %0, 7
   br label %if.end.i
 
 if.end.i:                                         ; preds = %if.else.i, %if.then5.i
   %aSig0.0 = phi i64 [ undef, %if.then5.i ], [ %shl12.i, %if.else.i ]
   %storemerge43.i = phi i64 [ %shl.i21, %if.then5.i ], [ 0, %if.else.i ]
-  %sub15.i = sub nsw i32 -63, undef
+  %sub15.i = sub nsw i32 -63, 8
   br label %if.end13
 
 if.else16.i:                                      ; preds = %if.then7
   br label %if.end13
 
 if.else:                                          ; preds = %entry
-  %or12 = or i64 undef, 281474976710656
+  %or12 = or i64 9, 281474976710656
   br label %if.end13
 
 if.end13:                                         ; preds = %if.else, %if.else16.i, %if.end.i

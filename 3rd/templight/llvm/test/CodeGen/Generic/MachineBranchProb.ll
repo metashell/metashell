@@ -1,11 +1,8 @@
-; RUN: llc < %s -print-machineinstrs=expand-isel-pseudos -o /dev/null 2>&1 | FileCheck %s
+; RUN: llc < %s -print-after=finalize-isel -o /dev/null 2>&1 | FileCheck %s
 
 ; Hexagon runs passes that renumber the basic blocks, causing this test
 ; to fail.
 ; XFAIL: hexagon
-
-; Bug: PR31899
-; XFAIL: avr
 
 declare void @foo()
 
@@ -21,14 +18,14 @@ entry:
     i64 5, label %sw.bb1
     i64 15, label %sw.bb
   ], !prof !0
-; CHECK: %bb.0: derived from LLVM BB %entry
-; CHECK: Successors according to CFG: %bb.1({{[0-9a-fx/= ]+}}92.17%) %bb.4({{[0-9a-fx/= ]+}}7.83%)
-; CHECK: %bb.4: derived from LLVM BB %entry
-; CHECK: Successors according to CFG: %bb.2({{[0-9a-fx/= ]+}}75.29%) %bb.5({{[0-9a-fx/= ]+}}24.71%)
-; CHECK: %bb.5: derived from LLVM BB %entry
-; CHECK: Successors according to CFG: %bb.1({{[0-9a-fx/= ]+}}47.62%) %bb.6({{[0-9a-fx/= ]+}}52.38%)
-; CHECK: %bb.6: derived from LLVM BB %entry
-; CHECK: Successors according to CFG: %bb.1({{[0-9a-fx/= ]+}}36.36%) %bb.3({{[0-9a-fx/= ]+}}63.64%)
+; CHECK: bb.0.entry:
+; CHECK: successors: %bb.1(0x75f8ebf2), %bb.4(0x0a07140e)
+; CHECK: bb.4.entry:
+; CHECK: successors: %bb.2(0x60606068), %bb.5(0x1f9f9f98)
+; CHECK: bb.5.entry:
+; CHECK: successors: %bb.1(0x3cf3cf4b), %bb.6(0x430c30b5)
+; CHECK: bb.6.entry:
+; CHECK: successors: %bb.1(0x2e8ba2d7), %bb.3(0x51745d29)
 
 sw.bb:
 ; this call will prevent simplifyCFG from optimizing the block away in ARM/AArch64.
@@ -66,13 +63,13 @@ bb5: tail call void @g(i32 5) br label %return
 return: ret void
 
 ; Check that we set branch weights on the pivot cmp instruction correctly.
-; Cases {0,10,20,30} go on the left with weight 13; cases {40,50} go on the
+; Cases {0,100,200,300} go on the left with weight 13; cases {400,500} go on the
 ; right with weight 20.
 ;
 ; CHECK-LABEL: Machine code for function left_leaning_weight_balanced_tree:
-; CHECK: %bb.0: derived from LLVM BB %entry
+; CHECK: bb.0.entry:
 ; CHECK-NOT: Successors
-; CHECK: Successors according to CFG: %bb.8({{[0-9a-fx/= ]+}}39.71%) %bb.9({{[0-9a-fx/= ]+}}60.29%)
+; CHECK: successors: %bb.8(0x32d2d2d3), %bb.9(0x4d2d2d2d)
 }
 
 !1 = !{!"branch_weights",

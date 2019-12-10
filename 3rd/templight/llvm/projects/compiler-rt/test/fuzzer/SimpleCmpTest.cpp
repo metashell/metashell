@@ -1,5 +1,6 @@
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 // Simple test for a fuzzer. The fuzzer must find several narrow ranges.
 #include <cstdint>
@@ -17,15 +18,15 @@ bool PrintOnce(int Line) {
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
-  if (Size != 22) return 0;
+  if (Size != 24) return 0;
   uint64_t x = 0;
   int64_t  y = 0;
   int32_t z = 0;
-  uint16_t a = 0;
+  uint32_t a = 0;
   memcpy(&x, Data, 8);  // 8
   memcpy(&y, Data + 8, 8);  // 16
   memcpy(&z, Data + 16, sizeof(z));  // 20
-  memcpy(&a, Data + 20, sizeof(a));  // 22
+  memcpy(&a, Data + 20, sizeof(a));  // 24
   const bool k32bit = sizeof(void*) == 4;
 
   if ((k32bit || x > 1234567890) && PrintOnce(__LINE__) &&

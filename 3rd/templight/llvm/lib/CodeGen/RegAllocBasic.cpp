@@ -1,9 +1,8 @@
 //===-- RegAllocBasic.cpp - Basic Register Allocator ----------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -219,8 +218,8 @@ bool RABasic::spillInterferences(LiveInterval &VirtReg, unsigned PhysReg,
       Intfs.push_back(Intf);
     }
   }
-  DEBUG(dbgs() << "spilling " << printReg(PhysReg, TRI)
-               << " interferences with " << VirtReg << "\n");
+  LLVM_DEBUG(dbgs() << "spilling " << printReg(PhysReg, TRI)
+                    << " interferences with " << VirtReg << "\n");
   assert(!Intfs.empty() && "expected interference");
 
   // Spill each interfering vreg allocated to PhysReg or an alias.
@@ -292,7 +291,7 @@ unsigned RABasic::selectOrSplit(LiveInterval &VirtReg,
   }
 
   // No other spill candidates were found, so spill the current VirtReg.
-  DEBUG(dbgs() << "spilling: " << VirtReg << '\n');
+  LLVM_DEBUG(dbgs() << "spilling: " << VirtReg << '\n');
   if (!VirtReg.isSpillable())
     return ~0u;
   LiveRangeEdit LRE(&VirtReg, SplitVRegs, *MF, *LIS, VRM, this, &DeadRemats);
@@ -304,9 +303,8 @@ unsigned RABasic::selectOrSplit(LiveInterval &VirtReg,
 }
 
 bool RABasic::runOnMachineFunction(MachineFunction &mf) {
-  DEBUG(dbgs() << "********** BASIC REGISTER ALLOCATION **********\n"
-               << "********** Function: "
-               << mf.getName() << '\n');
+  LLVM_DEBUG(dbgs() << "********** BASIC REGISTER ALLOCATION **********\n"
+                    << "********** Function: " << mf.getName() << '\n');
 
   MF = &mf;
   RegAllocBase::init(getAnalysis<VirtRegMap>(),
@@ -323,7 +321,7 @@ bool RABasic::runOnMachineFunction(MachineFunction &mf) {
   postOptimization();
 
   // Diagnostic output before rewriting
-  DEBUG(dbgs() << "Post alloc VirtRegMap:\n" << *VRM << "\n");
+  LLVM_DEBUG(dbgs() << "Post alloc VirtRegMap:\n" << *VRM << "\n");
 
   releaseMemory();
   return true;

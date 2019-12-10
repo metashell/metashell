@@ -1,9 +1,8 @@
 //===-- asan_interface_test.cc --------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -102,6 +101,7 @@ TEST(AddressSanitizerInterface, GetHeapSizeTest) {
   }
 }
 
+#if !defined(__NetBSD__)
 static const size_t kManyThreadsMallocSizes[] = {5, 1UL<<10, 1UL<<14, 357};
 static const size_t kManyThreadsIterations = 250;
 static const size_t kManyThreadsNumThreads =
@@ -135,6 +135,7 @@ TEST(AddressSanitizerInterface, ManyThreadsWithStatsStressTest) {
   // so we can't check for equality here.
   EXPECT_LT(after_test, before_test + (1UL<<20));
 }
+#endif
 
 static void DoDoubleFree() {
   int *x = Ident(new int);

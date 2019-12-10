@@ -1,9 +1,8 @@
 //===---- MipsCCState.cpp - CCState with Mips specific extensions ---------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -24,10 +23,10 @@ static bool isF128SoftLibCall(const char *CallSym) {
       "__lttf2",       "__multf3",     "__netf2",       "__powitf2",
       "__subtf3",      "__trunctfdf2", "__trunctfsf2",  "__unordtf2",
       "ceill",         "copysignl",    "cosl",          "exp2l",
-      "expl",          "floorl",       "fmal",          "fmodl",
-      "log10l",        "log2l",        "logl",          "nearbyintl",
-      "powl",          "rintl",        "roundl",        "sinl",
-      "sqrtl",         "truncl"};
+      "expl",          "floorl",       "fmal",          "fmaxl",
+      "fmodl",         "log10l",       "log2l",         "logl",
+      "nearbyintl",    "powl",         "rintl",         "roundl",
+      "sinl",          "sqrtl",        "truncl"};
 
   // Check that LibCalls is sorted alphabetically.
   auto Comp = [](const char *S1, const char *S2) { return strcmp(S1, S2) < 0; };

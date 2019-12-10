@@ -1,9 +1,8 @@
 //===- llvm/Support/DiagnosticInfo.cpp - Diagnostic Definitions -*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -33,7 +32,9 @@
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ErrorHandling.h"
+#include "llvm/Support/Path.h"
 #include "llvm/Support/Regex.h"
+#include "llvm/Support/ScopedPrinter.h"
 #include "llvm/Support/raw_ostream.h"
 #include <atomic>
 #include <cassert>
@@ -102,10 +103,15 @@ void DiagnosticInfoPGOProfile::print(DiagnosticPrinter &DP) const {
   DP << getMsg();
 }
 
+void DiagnosticInfo::anchor() {}
+void DiagnosticInfoStackSize::anchor() {}
+void DiagnosticInfoWithLocationBase::anchor() {}
+void DiagnosticInfoIROptimization::anchor() {}
+
 DiagnosticLocation::DiagnosticLocation(const DebugLoc &DL) {
   if (!DL)
     return;
-  Filename = DL->getFilename();
+  File = DL->getFile();
   Line = DL->getLine();
   Column = DL->getColumn();
 }
@@ -113,17 +119,36 @@ DiagnosticLocation::DiagnosticLocation(const DebugLoc &DL) {
 DiagnosticLocation::DiagnosticLocation(const DISubprogram *SP) {
   if (!SP)
     return;
-  Filename = SP->getFilename();
+  
+  File = SP->getFile();
   Line = SP->getScopeLine();
   Column = 0;
 }
 
-void DiagnosticInfoWithLocationBase::getLocation(StringRef *Filename,
-                                                 unsigned *Line,
-                                                 unsigned *Column) const {
-  *Filename = Loc.getFilename();
-  *Line = Loc.getLine();
-  *Column = Loc.getColumn();
+StringRef DiagnosticLocation::getRelativePath() const {
+  return File->getFilename();
+}
+
+std::string DiagnosticLocation::getAbsolutePath() const {
+  StringRef Name = File->getFilename();
+  if (sys::path::is_absolute(Name))
+    return Name;
+
+  SmallString<128> Path;
+  sys::path::append(Path, File->getDirectory(), Name);
+  return sys::path::remove_leading_dotslash(Path).str();
+}
+
+std::string DiagnosticInfoWithLocationBase::getAbsolutePath() const {
+  return Loc.getAbsolutePath();
+}
+
+void DiagnosticInfoWithLocationBase::getLocation(StringRef &RelativePath,
+                                                 unsigned &Line,
+                                                 unsigned &Column) const {
+  RelativePath = Loc.getRelativePath();
+  Line = Loc.getLine();
+  Column = Loc.getColumn();
 }
 
 const std::string DiagnosticInfoWithLocationBase::getLocationStr() const {
@@ -131,7 +156,7 @@ const std::string DiagnosticInfoWithLocationBase::getLocationStr() const {
   unsigned Line = 0;
   unsigned Column = 0;
   if (isLocationAvailable())
-    getLocation(&Filename, &Line, &Column);
+    getLocation(Filename, Line, Column);
   return (Filename + ":" + Twine(Line) + ":" + Twine(Column)).str();
 }
 
@@ -144,7 +169,7 @@ DiagnosticInfoOptimizationBase::Argument::Argument(StringRef Key, const Value *V
   else if (auto *I = dyn_cast<Instruction>(V))
     Loc = I->getDebugLoc();
 
-  // Only include names that correspond to user variables.  FIXME: we should use
+  // Only include names that correspond to user variables.  FIXME: We should use
   // debug info if available to get the name of the user variable.
   if (isa<llvm::Argument>(V) || isa<GlobalValue>(V))
     Val = GlobalValue::dropLLVMManglingEscape(V->getName());
@@ -166,6 +191,9 @@ DiagnosticInfoOptimizationBase::Argument::Argument(StringRef Key, StringRef S)
 
 DiagnosticInfoOptimizationBase::Argument::Argument(StringRef Key, int N)
     : Key(Key), Val(itostr(N)) {}
+
+DiagnosticInfoOptimizationBase::Argument::Argument(StringRef Key, float N)
+    : Key(Key), Val(llvm::to_string(N)) {}
 
 DiagnosticInfoOptimizationBase::Argument::Argument(StringRef Key, long N)
     : Key(Key), Val(itostr(N)) {}
@@ -342,82 +370,5 @@ std::string DiagnosticInfoOptimizationBase::getMsg() const {
   return OS.str();
 }
 
-namespace llvm {
-namespace yaml {
-
-void MappingTraits<DiagnosticInfoOptimizationBase *>::mapping(
-    IO &io, DiagnosticInfoOptimizationBase *&OptDiag) {
-  assert(io.outputting() && "input not yet implemented");
-
-  if (io.mapTag("!Passed",
-                (OptDiag->getKind() == DK_OptimizationRemark ||
-                 OptDiag->getKind() == DK_MachineOptimizationRemark)))
-    ;
-  else if (io.mapTag(
-               "!Missed",
-               (OptDiag->getKind() == DK_OptimizationRemarkMissed ||
-                OptDiag->getKind() == DK_MachineOptimizationRemarkMissed)))
-    ;
-  else if (io.mapTag(
-               "!Analysis",
-               (OptDiag->getKind() == DK_OptimizationRemarkAnalysis ||
-                OptDiag->getKind() == DK_MachineOptimizationRemarkAnalysis)))
-    ;
-  else if (io.mapTag("!AnalysisFPCommute",
-                     OptDiag->getKind() ==
-                         DK_OptimizationRemarkAnalysisFPCommute))
-    ;
-  else if (io.mapTag("!AnalysisAliasing",
-                     OptDiag->getKind() ==
-                         DK_OptimizationRemarkAnalysisAliasing))
-    ;
-  else if (io.mapTag("!Failure", OptDiag->getKind() == DK_OptimizationFailure))
-    ;
-  else
-    llvm_unreachable("Unknown remark type");
-
-  // These are read-only for now.
-  DiagnosticLocation DL = OptDiag->getLocation();
-  StringRef FN =
-      GlobalValue::dropLLVMManglingEscape(OptDiag->getFunction().getName());
-
-  StringRef PassName(OptDiag->PassName);
-  io.mapRequired("Pass", PassName);
-  io.mapRequired("Name", OptDiag->RemarkName);
-  if (!io.outputting() || DL.isValid())
-    io.mapOptional("DebugLoc", DL);
-  io.mapRequired("Function", FN);
-  io.mapOptional("Hotness", OptDiag->Hotness);
-  io.mapOptional("Args", OptDiag->Args);
-}
-
-template <> struct MappingTraits<DiagnosticLocation> {
-  static void mapping(IO &io, DiagnosticLocation &DL) {
-    assert(io.outputting() && "input not yet implemented");
-
-    StringRef File = DL.getFilename();
-    unsigned Line = DL.getLine();
-    unsigned Col = DL.getColumn();
-
-    io.mapRequired("File", File);
-    io.mapRequired("Line", Line);
-    io.mapRequired("Column", Col);
-  }
-
-  static const bool flow = true;
-};
-
-// Implement this as a mapping for now to get proper quotation for the value.
-template <> struct MappingTraits<DiagnosticInfoOptimizationBase::Argument> {
-  static void mapping(IO &io, DiagnosticInfoOptimizationBase::Argument &A) {
-    assert(io.outputting() && "input not yet implemented");
-    io.mapRequired(A.Key.data(), A.Val);
-    if (A.Loc.isValid())
-      io.mapOptional("DebugLoc", A.Loc);
-  }
-};
-
-} // end namespace yaml
-} // end namespace llvm
-
-LLVM_YAML_IS_SEQUENCE_VECTOR(DiagnosticInfoOptimizationBase::Argument)
+void OptimizationRemarkAnalysisFPCommute::anchor() {}
+void OptimizationRemarkAnalysisAliasing::anchor() {}

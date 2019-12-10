@@ -1,9 +1,8 @@
 //===-- sanitizer_allocator_primary64.h -------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -46,6 +45,7 @@ struct SizeClassAllocator64FlagMasks {  //  Bit masks.
 template <class Params>
 class SizeClassAllocator64 {
  public:
+  using AddressSpaceView = typename Params::AddressSpaceView;
   static const uptr kSpaceBeg = Params::kSpaceBeg;
   static const uptr kSpaceSize = Params::kSpaceSize;
   static const uptr kMetadataSize = Params::kMetadataSize;
@@ -72,14 +72,18 @@ class SizeClassAllocator64 {
   void Init(s32 release_to_os_interval_ms) {
     uptr TotalSpaceSize = kSpaceSize + AdditionalSize();
     if (kUsingConstantSpaceBeg) {
-      CHECK_EQ(kSpaceBeg, address_range.Init(TotalSpaceSize, AllocatorName(),
-                                             kSpaceBeg));
+      CHECK_EQ(kSpaceBeg, address_range.Init(TotalSpaceSize,
+                                             PrimaryAllocatorName, kSpaceBeg));
     } else {
-      NonConstSpaceBeg = address_range.Init(TotalSpaceSize, AllocatorName());
+      NonConstSpaceBeg = address_range.Init(TotalSpaceSize,
+                                            PrimaryAllocatorName);
       CHECK_NE(NonConstSpaceBeg, ~(uptr)0);
     }
     SetReleaseToOSIntervalMs(release_to_os_interval_ms);
-    MapWithCallbackOrDie(SpaceEnd(), AdditionalSize());
+    MapWithCallbackOrDie(SpaceEnd(), AdditionalSize(),
+                         "SizeClassAllocator: region info");
+    // Check that the RegionInfo array is aligned on the CacheLine size.
+    DCHECK_EQ(SpaceEnd() % kCacheLineSize, 0);
   }
 
   s32 ReleaseToOSIntervalMs() const {
@@ -115,8 +119,12 @@ class SizeClassAllocator64 {
     // Failure to allocate free array space while releasing memory is non
     // recoverable.
     if (UNLIKELY(!EnsureFreeArraySpace(region, region_beg,
-                                       new_num_freed_chunks)))
-      DieOnFailure::OnOOM();
+                                       new_num_freed_chunks))) {
+      Report("FATAL: Internal error: %s's allocator exhausted the free list "
+             "space for size class %zd (%zd bytes).\n", SanitizerToolName,
+             class_id, ClassIdToSize(class_id));
+      Die();
+    }
     for (uptr i = 0; i < n_chunks; i++)
       free_array[old_num_chunks + i] = chunks[i];
     region->num_freed_chunks = new_num_freed_chunks;
@@ -146,7 +154,7 @@ class SizeClassAllocator64 {
     return true;
   }
 
-  bool PointerIsMine(const void *p) {
+  bool PointerIsMine(const void *p) const {
     uptr P = reinterpret_cast<uptr>(p);
     if (kUsingConstantSpaceBeg && (kSpaceBeg % kSpaceSize) == 0)
       return P / kSpaceSize == kSpaceBeg / kSpaceSize;
@@ -181,7 +189,7 @@ class SizeClassAllocator64 {
     uptr beg = chunk_idx * size;
     uptr next_beg = beg + size;
     if (class_id >= kNumClasses) return nullptr;
-    RegionInfo *region = GetRegionInfo(class_id);
+    const RegionInfo *region = AddressSpaceView::Load(GetRegionInfo(class_id));
     if (region->mapped_user >= next_beg)
       return reinterpret_cast<void*>(reg_beg + beg);
     return nullptr;
@@ -192,7 +200,7 @@ class SizeClassAllocator64 {
     return ClassIdToSize(GetSizeClass(p));
   }
 
-  uptr ClassID(uptr size) { return SizeClassMap::ClassID(size); }
+  static uptr ClassID(uptr size) { return SizeClassMap::ClassID(size); }
 
   void *GetMetaData(const void *p) {
     uptr class_id = GetSizeClass(p);
@@ -287,8 +295,10 @@ class SizeClassAllocator64 {
       RegionInfo *region = GetRegionInfo(class_id);
       uptr chunk_size = ClassIdToSize(class_id);
       uptr region_beg = SpaceBeg() + class_id * kRegionSize;
+      uptr region_allocated_user_size =
+          AddressSpaceView::Load(region)->allocated_user;
       for (uptr chunk = region_beg;
-           chunk < region_beg + region->allocated_user;
+           chunk < region_beg + region_allocated_user_size;
            chunk += chunk_size) {
         // Too slow: CHECK_EQ((void *)chunk, GetBlockBegin((void *)chunk));
         callback(chunk, arg);
@@ -544,7 +554,6 @@ class SizeClassAllocator64 {
   friend class MemoryMapper;
 
   ReservedAddressRange address_range;
-  static const char *AllocatorName() { return "sanitizer_allocator"; }
 
   static const uptr kRegionSize = kSpaceSize / kNumClassesRounded;
   // FreeArray is the array of free-d chunks (stored as 4-byte offsets).
@@ -584,7 +593,7 @@ class SizeClassAllocator64 {
     u64 last_released_bytes;
   };
 
-  struct RegionInfo {
+  struct ALIGNED(SANITIZER_CACHE_LINE_SIZE) RegionInfo {
     BlockingMutex mutex;
     uptr num_freed_chunks;  // Number of elements in the freearray.
     uptr mapped_free_array;  // Bytes mapped for freearray.
@@ -597,12 +606,11 @@ class SizeClassAllocator64 {
     Stats stats;
     ReleaseToOsInfo rtoi;
   };
-  COMPILER_CHECK(sizeof(RegionInfo) >= kCacheLineSize);
+  COMPILER_CHECK(sizeof(RegionInfo) % kCacheLineSize == 0);
 
   RegionInfo *GetRegionInfo(uptr class_id) const {
-    CHECK_LT(class_id, kNumClasses);
-    RegionInfo *regions =
-        reinterpret_cast<RegionInfo *>(SpaceBeg() + kSpaceSize);
+    DCHECK_LT(class_id, kNumClasses);
+    RegionInfo *regions = reinterpret_cast<RegionInfo *>(SpaceEnd());
     return &regions[class_id];
   }
 
@@ -626,8 +634,8 @@ class SizeClassAllocator64 {
     return reinterpret_cast<CompactPtrT *>(GetMetadataEnd(region_beg));
   }
 
-  bool MapWithCallback(uptr beg, uptr size) {
-    uptr mapped = address_range.Map(beg, size);
+  bool MapWithCallback(uptr beg, uptr size, const char *name) {
+    uptr mapped = address_range.Map(beg, size, name);
     if (UNLIKELY(!mapped))
       return false;
     CHECK_EQ(beg, mapped);
@@ -635,8 +643,8 @@ class SizeClassAllocator64 {
     return true;
   }
 
-  void MapWithCallbackOrDie(uptr beg, uptr size) {
-    CHECK_EQ(beg, address_range.MapOrDie(beg, size));
+  void MapWithCallbackOrDie(uptr beg, uptr size, const char *name) {
+    CHECK_EQ(beg, address_range.MapOrDie(beg, size, name));
     MapUnmapCallback().OnMap(beg, size);
   }
 
@@ -654,7 +662,8 @@ class SizeClassAllocator64 {
       uptr current_map_end = reinterpret_cast<uptr>(GetFreeArray(region_beg)) +
                              region->mapped_free_array;
       uptr new_map_size = new_mapped_free_array - region->mapped_free_array;
-      if (UNLIKELY(!MapWithCallback(current_map_end, new_map_size)))
+      if (UNLIKELY(!MapWithCallback(current_map_end, new_map_size,
+                                    "SizeClassAllocator: freearray")))
         return false;
       region->mapped_free_array = new_mapped_free_array;
     }
@@ -705,7 +714,8 @@ class SizeClassAllocator64 {
       if (UNLIKELY(IsRegionExhausted(region, class_id, user_map_size)))
         return false;
       if (UNLIKELY(!MapWithCallback(region_beg + region->mapped_user,
-                                    user_map_size)))
+                                    user_map_size,
+                                    "SizeClassAllocator: region data")))
         return false;
       stat->Add(AllocatorStatMapped, user_map_size);
       region->mapped_user += user_map_size;
@@ -725,7 +735,7 @@ class SizeClassAllocator64 {
           return false;
         if (UNLIKELY(!MapWithCallback(
             GetMetadataEnd(region_beg) - region->mapped_meta - meta_map_size,
-            meta_map_size)))
+            meta_map_size, "SizeClassAllocator: region metadata")))
           return false;
         region->mapped_meta += meta_map_size;
       }

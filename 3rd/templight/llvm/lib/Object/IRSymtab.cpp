@@ -1,9 +1,8 @@
 //===- IRSymtab.cpp - implementation of IR symbol tables ------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -15,7 +14,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Triple.h"
-#include "llvm/Analysis/ObjectUtils.h"
+#include "llvm/Config/llvm-config.h"
 #include "llvm/IR/Comdat.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/GlobalAlias.h"
@@ -41,6 +40,12 @@
 
 using namespace llvm;
 using namespace irsymtab;
+
+static const char *LibcallRoutineNames[] = {
+#define HANDLE_LIBCALL(code, name) name,
+#include "llvm/IR/RuntimeLibcalls.def"
+#undef HANDLE_LIBCALL
+};
 
 namespace {
 
@@ -83,6 +88,8 @@ struct Builder {
 
   std::string COFFLinkerOpts;
   raw_string_ostream COFFLinkerOptsOS{COFFLinkerOpts};
+
+  std::vector<storage::Str> DependentLibraries;
 
   void setStr(storage::Str &S, StringRef Value) {
     S.Offset = StrtabBuilder.add(Value);
@@ -132,6 +139,20 @@ Error Builder::addModule(Module *M) {
       for (MDNode *MDOptions : LinkerOptions->operands())
         for (const MDOperand &MDOption : cast<MDNode>(MDOptions)->operands())
           COFFLinkerOptsOS << " " << cast<MDString>(MDOption)->getString();
+    }
+  }
+
+  if (TT.isOSBinFormatELF()) {
+    if (auto E = M->materializeMetadata())
+      return E;
+    if (NamedMDNode *N = M->getNamedMetadata("llvm.dependent-libraries")) {
+      for (MDNode *MDOptions : N->operands()) {
+        const auto OperandStr =
+            cast<MDString>(cast<MDNode>(MDOptions)->getOperand(0))->getString();
+        storage::Str Specifier;
+        setStr(Specifier, OperandStr);
+        DependentLibraries.emplace_back(Specifier);
+      }
     }
   }
 
@@ -226,13 +247,19 @@ Error Builder::addSymbol(const ModuleSymbolTable &Msymtab,
 
   setStr(Sym.IRName, GV->getName());
 
-  if (Used.count(GV))
+  bool IsBuiltinFunc = false;
+
+  for (const char *LibcallName : LibcallRoutineNames)
+    if (GV->getName() == LibcallName)
+      IsBuiltinFunc = true;
+
+  if (Used.count(GV) || IsBuiltinFunc)
     Sym.Flags |= 1 << storage::Symbol::FB_used;
   if (GV->isThreadLocal())
     Sym.Flags |= 1 << storage::Symbol::FB_tls;
   if (GV->hasGlobalUnnamedAddr())
     Sym.Flags |= 1 << storage::Symbol::FB_unnamed_addr;
-  if (canBeOmittedFromSymbolTable(GV))
+  if (GV->canBeOmittedFromSymbolTable())
     Sym.Flags |= 1 << storage::Symbol::FB_may_omit;
   Sym.Flags |= unsigned(GV->getVisibility()) << storage::Symbol::FB_visibility;
 
@@ -301,7 +328,7 @@ Error Builder::build(ArrayRef<Module *> IRMods) {
   writeRange(Hdr.Comdats, Comdats);
   writeRange(Hdr.Symbols, Syms);
   writeRange(Hdr.Uncommons, Uncommons);
-
+  writeRange(Hdr.DependentLibraries, DependentLibraries);
   *reinterpret_cast<storage::Header *>(Symtab.data()) = Hdr;
   return Error::success();
 }

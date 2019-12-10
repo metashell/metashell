@@ -1,5 +1,5 @@
 ; ModuleID = 'bugpoint-reduced-instructions.bc'
-; RUN: llc -O2 -o - %s | FileCheck %s
+; RUN: llc -O2 -o - %s -verify-machineinstrs | FileCheck %s
 source_filename = "bugpoint-output-9ad75f8.bc"
 target datalayout = "e-m:e-i64:64-n32:64"
 target triple = "powerpc64le-unknown-linux-gnu"
@@ -10,7 +10,8 @@ entry:
   br i1 undef, label %land.lhs.true, label %if.end
 
 ; CHECK: # %land.lhs.true
-; CHECK-NEXT: bclr
+; Test updated due D63152 where any load/store prevents shrink-wrapping
+; CHECK-NEXT: bc
 ; CHECK-NEXT: # %if.end4
 land.lhs.true:                                    ; preds = %entry
   br i1 undef, label %return, label %if.end4

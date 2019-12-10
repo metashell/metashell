@@ -1,9 +1,8 @@
 //===--- X86DomainReassignment.cpp - Selectively switch register classes---===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -30,10 +29,6 @@
 #include <bitset>
 
 using namespace llvm;
-
-namespace llvm {
-void initializeX86DomainReassignmentPass(PassRegistry &);
-}
 
 #define DEBUG_TYPE "x86-domain-reassignment"
 
@@ -217,6 +212,27 @@ public:
   InstrCOPYReplacer(unsigned SrcOpcode, RegDomain DstDomain, unsigned DstOpcode)
       : InstrReplacer(SrcOpcode, DstOpcode), DstDomain(DstDomain) {}
 
+  bool isLegal(const MachineInstr *MI,
+               const TargetInstrInfo *TII) const override {
+    if (!InstrConverterBase::isLegal(MI, TII))
+      return false;
+
+    // Don't allow copies to/flow GR8/GR16 physical registers.
+    // FIXME: Is there some better way to support this?
+    unsigned DstReg = MI->getOperand(0).getReg();
+    if (TargetRegisterInfo::isPhysicalRegister(DstReg) &&
+        (X86::GR8RegClass.contains(DstReg) ||
+         X86::GR16RegClass.contains(DstReg)))
+      return false;
+    unsigned SrcReg = MI->getOperand(1).getReg();
+    if (TargetRegisterInfo::isPhysicalRegister(SrcReg) &&
+        (X86::GR8RegClass.contains(SrcReg) ||
+         X86::GR16RegClass.contains(SrcReg)))
+      return false;
+
+    return true;
+  }
+
   double getExtraCost(const MachineInstr *MI,
                       MachineRegisterInfo *MRI) const override {
     assert(MI->getOpcode() == TargetOpcode::COPY && "Expected a COPY");
@@ -340,7 +356,7 @@ public:
       if (!First)
         dbgs() << ", ";
       First = false;
-      dbgs() << printReg(Reg, MRI->getTargetRegisterInfo());
+      dbgs() << printReg(Reg, MRI->getTargetRegisterInfo(), 0, MRI);
     }
     dbgs() << "\n" << "Instructions:";
     for (MachineInstr *MI : Instrs) {
@@ -370,9 +386,7 @@ class X86DomainReassignment : public MachineFunctionPass {
 public:
   static char ID;
 
-  X86DomainReassignment() : MachineFunctionPass(ID) {
-    initializeX86DomainReassignmentPass(*PassRegistry::getPassRegistry());
-  }
+  X86DomainReassignment() : MachineFunctionPass(ID) { }
 
   bool runOnMachineFunction(MachineFunction &MF) override;
 
@@ -540,6 +554,7 @@ void X86DomainReassignment::buildClosure(Closure &C, unsigned Reg) {
     // Register already in this closure.
     if (!C.insertEdge(CurReg))
       continue;
+    EnclosedEdges.insert(Reg);
 
     MachineInstr *DefMI = MRI->getVRegDef(CurReg);
     encloseInstr(C, DefMI);
@@ -708,13 +723,17 @@ bool X86DomainReassignment::runOnMachineFunction(MachineFunction &MF) {
   if (DisableX86DomainReassignment)
     return false;
 
-  DEBUG(dbgs() << "***** Machine Function before Domain Reassignment *****\n");
-  DEBUG(MF.print(dbgs()));
+  LLVM_DEBUG(
+      dbgs() << "***** Machine Function before Domain Reassignment *****\n");
+  LLVM_DEBUG(MF.print(dbgs()));
 
   STI = &MF.getSubtarget<X86Subtarget>();
   // GPR->K is the only transformation currently supported, bail out early if no
   // AVX512.
-  if (!STI->hasAVX512())
+  // TODO: We're also bailing of AVX512BW isn't supported since we use VK32 and
+  // VK64 for GR32/GR64, but those aren't legal classes on KNL. If the register
+  // coalescer doesn't clean it up and we generate a spill we will crash.
+  if (!STI->hasAVX512() || !STI->hasBWI())
     return false;
 
   MRI = &MF.getRegInfo();
@@ -752,7 +771,7 @@ bool X86DomainReassignment::runOnMachineFunction(MachineFunction &MF) {
   }
 
   for (Closure &C : Closures) {
-    DEBUG(C.dump(MRI));
+    LLVM_DEBUG(C.dump(MRI));
     if (isReassignmentProfitable(C, MaskDomain)) {
       reassign(C, MaskDomain);
       ++NumClosuresConverted;
@@ -762,8 +781,9 @@ bool X86DomainReassignment::runOnMachineFunction(MachineFunction &MF) {
 
   DeleteContainerSeconds(Converters);
 
-  DEBUG(dbgs() << "***** Machine Function after Domain Reassignment *****\n");
-  DEBUG(MF.print(dbgs()));
+  LLVM_DEBUG(
+      dbgs() << "***** Machine Function after Domain Reassignment *****\n");
+  LLVM_DEBUG(MF.print(dbgs()));
 
   return Changed;
 }

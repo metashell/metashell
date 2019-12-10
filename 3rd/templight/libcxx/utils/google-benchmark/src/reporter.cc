@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "benchmark/reporter.h"
+#include "benchmark/benchmark.h"
 #include "timers.h"
 
 #include <cstdlib>
@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "check.h"
-#include "stat.h"
+#include "string_util.h"
 
 namespace benchmark {
 
@@ -31,17 +31,40 @@ BenchmarkReporter::BenchmarkReporter()
 
 BenchmarkReporter::~BenchmarkReporter() {}
 
-void BenchmarkReporter::PrintBasicContext(std::ostream *out_ptr,
+void BenchmarkReporter::PrintBasicContext(std::ostream *out,
                                           Context const &context) {
-  CHECK(out_ptr) << "cannot be null";
-  auto &Out = *out_ptr;
-
-  Out << "Run on (" << context.num_cpus << " X " << context.mhz_per_cpu
-      << " MHz CPU " << ((context.num_cpus > 1) ? "s" : "") << ")\n";
+  CHECK(out) << "cannot be null";
+  auto &Out = *out;
 
   Out << LocalDateTimeString() << "\n";
 
-  if (context.cpu_scaling_enabled) {
+  if (context.executable_name)
+    Out << "Running " << context.executable_name << "\n";
+
+  const CPUInfo &info = context.cpu_info;
+  Out << "Run on (" << info.num_cpus << " X "
+      << (info.cycles_per_second / 1000000.0) << " MHz CPU "
+      << ((info.num_cpus > 1) ? "s" : "") << ")\n";
+  if (info.caches.size() != 0) {
+    Out << "CPU Caches:\n";
+    for (auto &CInfo : info.caches) {
+      Out << "  L" << CInfo.level << " " << CInfo.type << " "
+          << (CInfo.size / 1000) << "K";
+      if (CInfo.num_sharing != 0)
+        Out << " (x" << (info.num_cpus / CInfo.num_sharing) << ")";
+      Out << "\n";
+    }
+  }
+  if (!info.load_avg.empty()) {
+    Out << "Load Average: ";
+    for (auto It = info.load_avg.begin(); It != info.load_avg.end();) {
+      Out << StrFormat("%.2f", *It++);
+      if (It != info.load_avg.end()) Out << ", ";
+    }
+    Out << "\n";
+  }
+
+  if (info.scaling_enabled) {
     Out << "***WARNING*** CPU scaling is enabled, the benchmark "
            "real time measurements may be noisy and will incur extra "
            "overhead.\n";
@@ -51,6 +74,20 @@ void BenchmarkReporter::PrintBasicContext(std::ostream *out_ptr,
   Out << "***WARNING*** Library was built as DEBUG. Timings may be "
          "affected.\n";
 #endif
+}
+
+// No initializer because it's already initialized to NULL.
+const char *BenchmarkReporter::Context::executable_name;
+
+BenchmarkReporter::Context::Context()
+    : cpu_info(CPUInfo::Get()), sys_info(SystemInfo::Get()) {}
+
+std::string BenchmarkReporter::Run::benchmark_name() const {
+  std::string name = run_name;
+  if (run_type == RT_Aggregate) {
+    name += "_" + aggregate_name;
+  }
+  return name;
 }
 
 double BenchmarkReporter::Run::GetAdjustedRealTime() const {

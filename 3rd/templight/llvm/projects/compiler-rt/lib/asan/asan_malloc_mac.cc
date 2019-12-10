@@ -1,9 +1,8 @@
 //===-- asan_malloc_mac.cc ------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -19,6 +18,7 @@
 #include "asan_report.h"
 #include "asan_stack.h"
 #include "asan_stats.h"
+#include "lsan/lsan_common.h"
 
 using namespace __asan;
 #define COMMON_MALLOC_ZONE_NAME "asan"
@@ -38,6 +38,9 @@ using namespace __asan;
 #define COMMON_MALLOC_CALLOC(count, size) \
   GET_STACK_TRACE_MALLOC; \
   void *p = asan_calloc(count, size, &stack);
+#define COMMON_MALLOC_POSIX_MEMALIGN(memptr, alignment, size) \
+  GET_STACK_TRACE_MALLOC; \
+  int res = asan_posix_memalign(memptr, alignment, size, &stack);
 #define COMMON_MALLOC_VALLOC(size) \
   GET_STACK_TRACE_MALLOC; \
   void *p = asan_memalign(GetPageSizeCached(), size, &stack, FROM_MALLOC);
@@ -55,7 +58,45 @@ using namespace __asan;
   GET_STACK_TRACE_FREE; \
   ReportMacMzReallocUnknown((uptr)ptr, (uptr)zone_ptr, zone_name, &stack);
 #define COMMON_MALLOC_NAMESPACE __asan
+#define COMMON_MALLOC_HAS_ZONE_ENUMERATOR 0
+#define COMMON_MALLOC_HAS_EXTRA_INTROSPECTION_INIT 1
 
 #include "sanitizer_common/sanitizer_malloc_mac.inc"
+
+namespace COMMON_MALLOC_NAMESPACE {
+
+bool HandleDlopenInit() {
+  static_assert(SANITIZER_SUPPORTS_INIT_FOR_DLOPEN,
+                "Expected SANITIZER_SUPPORTS_INIT_FOR_DLOPEN to be true");
+  // We have no reliable way of knowing how we are being loaded
+  // so make it a requirement on Apple platforms to set this environment
+  // variable to indicate that we want to perform initialization via
+  // dlopen().
+  auto init_str = GetEnv("APPLE_ASAN_INIT_FOR_DLOPEN");
+  if (!init_str)
+    return false;
+  if (internal_strncmp(init_str, "1", 1) != 0)
+    return false;
+  // When we are loaded via `dlopen()` path we still initialize the malloc zone
+  // so Symbolication clients (e.g. `leaks`) that load the ASan allocator can
+  // find an initialized malloc zone.
+  InitMallocZoneFields();
+  return true;
+}
+}  // namespace COMMON_MALLOC_NAMESPACE
+
+namespace {
+
+void mi_extra_init(sanitizer_malloc_introspection_t *mi) {
+  uptr last_byte_plus_one = 0;
+  mi->allocator_ptr = 0;
+  // Range is [begin_ptr, end_ptr)
+  __lsan::GetAllocatorGlobalRange(&(mi->allocator_ptr), &last_byte_plus_one);
+  CHECK_NE(mi->allocator_ptr, 0);
+  CHECK_GT(last_byte_plus_one, mi->allocator_ptr);
+  mi->allocator_size = last_byte_plus_one - (mi->allocator_ptr);
+  CHECK_GT(mi->allocator_size, 0);
+}
+}  // namespace
 
 #endif

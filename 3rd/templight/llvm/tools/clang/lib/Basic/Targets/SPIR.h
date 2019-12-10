@@ -1,9 +1,8 @@
 //===--- SPIR.h - Declare SPIR target feature support -----------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -47,6 +46,8 @@ public:
     LongWidth = LongAlign = 64;
     AddrSpaceMap = &SPIRAddrSpaceMap;
     UseAddrSpaceMapMangling = true;
+    HasLegalHalfType = true;
+    HasFloat16 = true;
     // Define available target features
     // These must be defined in sorted order!
     NoAsmVariants = true;
@@ -58,6 +59,10 @@ public:
   bool hasFeature(StringRef Feature) const override {
     return Feature == "spir";
   }
+
+  // SPIR supports the half type and the only llvm intrinsic allowed in SPIR is
+  // memcpy as per section 3 of the SPIR spec.
+  bool useFP16ConversionIntrinsics() const override { return false; }
 
   ArrayRef<Builtin::Info> getTargetBuiltins() const override { return None; }
 
@@ -83,7 +88,7 @@ public:
                                                             : CCCR_Warning;
   }
 
-  CallingConv getDefaultCallingConv(CallingConvMethodType MT) const override {
+  CallingConv getDefaultCallingConv() const override {
     return CC_SpirFunction;
   }
 

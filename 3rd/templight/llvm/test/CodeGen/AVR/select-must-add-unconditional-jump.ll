@@ -1,4 +1,4 @@
-; RUN: llc -march=avr -print-after=expand-isel-pseudos -cgp-freq-ratio-to-skip-merge=10 < %s 2>&1 | FileCheck %s
+; RUN: llc -march=avr -print-after=finalize-isel -cgp-freq-ratio-to-skip-merge=10 < %s 2>&1 | FileCheck %s
 
 ; Because `switch` seems to trigger Machine Basic Blocks to be ordered
 ; in a different order than they were constructed, this exposes an
@@ -9,14 +9,14 @@
 ;
 ; This issue manifests in a CFG that looks something like this:
 ;
-; %bb.2: derived from LLVM BB %finish
+; %bb.2.finish:
+;     successors: %bb.5(?%) %bb.6(?%)
 ;     Predecessors according to CFG: %bb.0 %bb.1
 ;         %0 = PHI %3, <%bb.0>, %5, <%bb.1>
 ;         %7 = LDIRdK 2
 ;         %8 = LDIRdK 1
 ;         CPRdRr %2, %0, implicit-def %SREG
 ;         BREQk <%bb.6>, implicit %SREG
-;     Successors according to CFG: %bb.5(?%) %bb.6(?%)
 ;
 ; The code assumes it the fallthrough block after this is %bb.5, but
 ; it's actually %bb.3! To be proper, there should be an unconditional
@@ -49,10 +49,10 @@ dead:
 ; basic block containing `select` needs to contain explicit jumps to
 ; both successors.
 
-; CHECK: %bb.2: derived from LLVM BB %finish
+; CHECK: bb.2.finish:
+; CHECK: successors:
 ; CHECK: BREQk [[BRANCHED:%bb.[0-9]+]]
 ; CHECK: RJMPk [[DIRECT:%bb.[0-9]+]]
-; CHECK: Successors according to CFG
 ; CHECK-SAME-DAG: {{.*}}[[BRANCHED]]
 ; CHECK-SAME-DAG: {{.*}}[[DIRECT]]
-; CHECK: %bb.3: derived from LLVM BB
+; CHECK: bb.3.dead:

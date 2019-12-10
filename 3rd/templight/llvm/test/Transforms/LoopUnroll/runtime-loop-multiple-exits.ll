@@ -1,8 +1,8 @@
-; RUN: opt < %s -loop-unroll -unroll-runtime=true -unroll-runtime-epilog=true -unroll-runtime-multi-exit=true -verify-dom-info -verify-loop-info -S | FileCheck %s -check-prefix=EPILOG-NO-IC
-; RUN: opt < %s -loop-unroll -unroll-runtime=true -unroll-runtime-epilog=true -unroll-runtime-multi-exit=true -verify-dom-info -verify-loop-info -instcombine -S | FileCheck %s -check-prefix=EPILOG
-; RUN: opt < %s -loop-unroll -unroll-runtime -unroll-count=2 -unroll-runtime-epilog=true -unroll-runtime-multi-exit=true -verify-dom-info -verify-loop-info -instcombine
-; RUN: opt < %s -loop-unroll -unroll-runtime=true -unroll-runtime-epilog=false -unroll-runtime-multi-exit=true -verify-dom-info -verify-loop-info -instcombine -S | FileCheck %s -check-prefix=PROLOG
-; RUN: opt < %s -loop-unroll -unroll-runtime -unroll-runtime-epilog=false -unroll-count=2 -unroll-runtime-multi-exit=true -verify-dom-info -verify-loop-info -instcombine
+; RUN: opt < %s -loop-unroll -unroll-runtime=true -unroll-runtime-epilog=true -unroll-runtime-multi-exit=true -verify-loop-lcssa -verify-dom-info -verify-loop-info -S | FileCheck %s -check-prefix=EPILOG-NO-IC
+; RUN: opt < %s -loop-unroll -unroll-runtime=true -unroll-runtime-epilog=true -unroll-runtime-multi-exit=true -verify-loop-lcssa -verify-dom-info -verify-loop-info -instcombine -S | FileCheck %s -check-prefix=EPILOG
+; RUN: opt < %s -loop-unroll -unroll-runtime -unroll-count=2 -unroll-runtime-epilog=true -unroll-runtime-multi-exit=true -verify-loop-lcssa -verify-dom-info -verify-loop-info -instcombine
+; RUN: opt < %s -loop-unroll -unroll-runtime=true -unroll-runtime-epilog=false -unroll-runtime-multi-exit=true -verify-loop-lcssa -verify-dom-info -verify-loop-info -instcombine -S | FileCheck %s -check-prefix=PROLOG
+; RUN: opt < %s -loop-unroll -unroll-runtime -unroll-runtime-epilog=false -unroll-count=2 -unroll-runtime-multi-exit=true -verify-loop-lcssa -verify-dom-info -verify-loop-info -instcombine
 
 ; REQUIRES: asserts
 
@@ -172,7 +172,7 @@ define void @test3(i64 %trip, i64 %add) {
 ; PROLOG:  loop_exiting_bb1.7:
 ; PROLOG-NEXT:     switch i64 %sum.next.6, label %loop_latch.7
 ; PROLOG:  loop_latch.7:
-; PROLOG-NEXT:     %iv_next.7 = add nsw i64 %iv, 8
+; PROLOG-NEXT:     %iv_next.7 = add nuw nsw i64 %iv, 8
 ; PROLOG-NEXT:     %sum.next.7 = add i64 %sum.next.6, %add
 ; PROLOG-NEXT:     %cmp.7 = icmp eq i64 %iv_next.7, %trip
 ; PROLOG-NEXT:     br i1 %cmp.7, label %exit2.loopexit.unr-lcssa, label %loop_header
@@ -207,43 +207,165 @@ exit2.loopexit:
 }
 
 ; FIXME: Support multiple exiting blocks to the same latch exit block.
-define i32 @test4(i32* nocapture %a, i64 %n, i1 %cond) {
-; EPILOG: test4(
+; Three exiting blocks where header and latch exit to same LatchExit.
+define i32 @hdr_latch_same_exit(i32* nocapture %a, i64 %n, i1 %cond) {
+; EPILOG: hdr_latch_same_exit(
 ; EPILOG-NOT: .unr
 ; EPILOG-NOT: .epil
 
-; PROLOG: test4(
+; PROLOG: hdr_latch_same_exit(
 ; PROLOG-NOT: .unr
 ; PROLOG-NOT: .prol
 entry:
   br label %header
 
 header:
-  %indvars.iv = phi i64 [ %indvars.iv.next, %for.body ], [ 0, %entry ]
-  %sum.02 = phi i32 [ %add, %for.body ], [ 0, %entry ]
-  br i1 %cond, label %for.end, label %for.exiting_block
+  %indvars.iv = phi i64 [ %indvars.iv.next, %latch ], [ 0, %entry ]
+  %sum.02 = phi i32 [ %add, %latch ], [ 0, %entry ]
+  br i1 %cond, label %latchExit, label %for.exiting_block
 
 for.exiting_block:
  %cmp = icmp eq i64 %n, 42
- br i1 %cmp, label %for.exit2, label %for.body
+ br i1 %cmp, label %for.exit2, label %latch
 
-for.body:                                         ; preds = %for.body, %entry
+latch:                                         ; preds = %latch, %entry
   %arrayidx = getelementptr inbounds i32, i32* %a, i64 %indvars.iv
   %0 = load i32, i32* %arrayidx, align 4
   %add = add nsw i32 %0, %sum.02
   %indvars.iv.next = add i64 %indvars.iv, 1
   %exitcond = icmp eq i64 %indvars.iv.next, %n
-  br i1 %exitcond, label %for.end, label %header
+  br i1 %exitcond, label %latchExit, label %header
 
-for.end:                                          ; preds = %for.body, %entry
-  %sum.0.lcssa = phi i32 [ 0, %header ], [ %add, %for.body ]
-  ret i32 %sum.0.lcssa
+latchExit:                                          ; preds = %latch, %entry
+  %result = phi i32 [ 0, %header ], [ %add, %latch ]
+  ret i32 %result
 
 for.exit2:
   ret i32 42
 }
 
-; FIXME: Support multiple exiting blocks to the unique exit block.
+; Two exiting blocks to latch where the exiting blocks are Latch and a
+; non-header
+; FIXME: We should unroll this loop.
+define i32 @otherblock_latch_same_exit(i32* nocapture %a, i64 %n, i1 %cond) {
+; EPILOG: otherblock_latch_same_exit(
+; EPILOG-NOT: .unr
+; EPILOG-NOT: .epil
+
+; PROLOG: otherblock_latch_same_exit(
+; PROLOG-NOT: .unr
+; PROLOG-NOT: .prol
+entry:
+  br label %header
+
+header:
+  %indvars.iv = phi i64 [ %indvars.iv.next, %latch ], [ 0, %entry ]
+  %sum.02 = phi i32 [ %add, %latch ], [ 0, %entry ]
+  br i1 %cond, label %for.exit2, label %for.exiting_block
+
+for.exiting_block:
+ %cmp = icmp eq i64 %n, 42
+ br i1 %cmp, label %latchExit, label %latch
+
+latch:                                         ; preds = %latch, %entry
+  %arrayidx = getelementptr inbounds i32, i32* %a, i64 %indvars.iv
+  %0 = load i32, i32* %arrayidx, align 4
+  %add = add nsw i32 %0, %sum.02
+  %indvars.iv.next = add i64 %indvars.iv, 1
+  %exitcond = icmp eq i64 %indvars.iv.next, %n
+  br i1 %exitcond, label %latchExit, label %header
+
+latchExit:                                          ; preds = %latch, %entry
+  %result = phi i32 [ 2, %for.exiting_block ], [ %add, %latch ]
+  ret i32 %result
+
+for.exit2:
+  ret i32 42
+}
+
+; Two exiting blocks to latch where the exiting blocks are Latch and a
+; non-header
+; Same as above test except the incoming value for latch Phi is from the header
+; FIXME: We should be able to runtime unroll.
+define i32 @otherblock_latch_same_exit2(i32* nocapture %a, i64 %n, i1 %cond) {
+; EPILOG: otherblock_latch_same_exit2(
+; EPILOG-NOT: .unr
+; EPILOG-NOT: .epil
+
+; PROLOG: otherblock_latch_same_exit2(
+; PROLOG-NOT: .unr
+; PROLOG-NOT: .prol
+entry:
+  br label %header
+
+header:
+  %indvars.iv = phi i64 [ %indvars.iv.next, %latch ], [ 0, %entry ]
+  %sum.02 = phi i32 [ %add, %latch ], [ 0, %entry ]
+  br i1 %cond, label %for.exit2, label %for.exiting_block
+
+for.exiting_block:
+ %cmp = icmp eq i64 %n, 42
+ br i1 %cmp, label %latchExit, label %latch
+
+latch:                                         ; preds = %latch, %entry
+  %arrayidx = getelementptr inbounds i32, i32* %a, i64 %indvars.iv
+  %0 = load i32, i32* %arrayidx, align 4
+  %add = add nsw i32 %0, %sum.02
+  %indvars.iv.next = add i64 %indvars.iv, 1
+  %exitcond = icmp eq i64 %indvars.iv.next, %n
+  br i1 %exitcond, label %latchExit, label %header
+
+latchExit:                                          ; preds = %latch, %entry
+  %result = phi i32 [ %sum.02, %for.exiting_block ], [ %add, %latch ]
+  ret i32 %result
+
+for.exit2:
+  ret i32 42
+}
+
+; Two exiting blocks to latch where the exiting blocks are Latch and a
+; non-header
+; Same as above test except the incoming value for cloned latch Phi is from the
+; for.exiting_block.
+; FIXME: We should be able to runtime unroll.
+define i32 @otherblock_latch_same_exit3(i32* nocapture %a, i64 %n, i1 %cond) {
+; EPILOG: otherblock_latch_same_exit3(
+; EPILOG-NOT: .unr
+; EPILOG-NOT: .epil
+
+; PROLOG: otherblock_latch_same_exit3(
+; PROLOG-NOT: .unr
+; PROLOG-NOT: .prol
+entry:
+  br label %header
+
+header:
+  %indvars.iv = phi i64 [ %indvars.iv.next, %latch ], [ 0, %entry ]
+  %sum.02 = phi i32 [ %add, %latch ], [ 0, %entry ]
+  br i1 %cond, label %for.exit2, label %for.exiting_block
+
+for.exiting_block:
+ %arrayidx = getelementptr inbounds i32, i32* %a, i64 %indvars.iv
+ %0 = load i32, i32* %arrayidx, align 4
+ %add = add nsw i32 %0, %sum.02
+ %cmp = icmp eq i64 %n, 42
+ br i1 %cmp, label %latchExit, label %latch
+
+latch:                                         ; preds = %latch, %entry
+  %indvars.iv.next = add i64 %indvars.iv, 1
+  %exitcond = icmp eq i64 %indvars.iv.next, %n
+  br i1 %exitcond, label %latchExit, label %header
+
+latchExit:                                          ; preds = %latch, %entry
+  %result = phi i32 [ %sum.02, %for.exiting_block ], [ %add, %latch ]
+  ret i32 %result
+
+for.exit2:
+  ret i32 42
+}
+
+; FIXME: Support multiple exiting blocks to the unique exit block (LatchExit).
+; Only 2 blocks in loop: header and latch where both exit to same LatchExit.
 define void @unique_exit(i32 %arg) {
 ; EPILOG: unique_exit(
 ; EPILOG-NOT: .unr
@@ -259,22 +381,22 @@ entry:
 preheader:                                 ; preds = %entry
   br label %header
 
-LoopExit:                                ; preds = %header, %latch
-  %tmp2.ph = phi i32 [ %tmp4, %header ], [ -1, %latch ]
-  br label %returnblock
-
-returnblock:                                         ; preds = %LoopExit, %entry
-  %tmp2 = phi i32 [ -1, %entry ], [ %tmp2.ph, %LoopExit ]
-  ret void
-
 header:                                           ; preds = %preheader, %latch
   %tmp4 = phi i32 [ %inc, %latch ], [ %arg, %preheader ]
   %inc = add nsw i32 %tmp4, 1
-  br i1 true, label %LoopExit, label %latch
+  br i1 true, label %latchExit, label %latch
 
 latch:                                            ; preds = %header
   %cmp = icmp slt i32 %inc, undef
-  br i1 %cmp, label %header, label %LoopExit
+  br i1 %cmp, label %header, label %latchExit
+
+latchExit:                                ; preds = %header, %latch
+  %tmp2.ph = phi i32 [ %tmp4, %header ], [ -1, %latch ]
+  br label %returnblock
+
+returnblock:                                         ; preds = %latchExit, %entry
+  %tmp2 = phi i32 [ -1, %entry ], [ %tmp2.ph, %latchExit ]
+  ret void
 }
 
 ; two exiting and two exit blocks.
@@ -304,7 +426,7 @@ define i64 @test5(i64 %trip, i64 %add, i1 %cond) {
 ; PROLOG-NEXT:      %result = phi i64 [ %result.ph, %exit1.loopexit ], [ %ivy.prol, %exit1.loopexit1 ]
 ; PROLOG-NEXT:      ret i64 %result
 ; PROLOG:   loop_latch.7:
-; PROLOG:      %iv_next.7 = add nsw i64 %iv, 8
+; PROLOG:      %iv_next.7 = add nuw nsw i64 %iv, 8
 entry:
   br label %loop_header
 
@@ -438,7 +560,7 @@ loopexit1:                                             ; preds = %header
 }
 
 ; Nested loop and inner loop is unrolled
-; FIXME: we cannot unroll with epilog remainder currently, because 
+; FIXME: we cannot unroll with epilog remainder currently, because
 ; the outer loop does not contain the epilog preheader and epilog exit (while
 ; infact it should). This causes us to choke up on LCSSA form being incorrect in
 ; outer loop. However, the exit block where LCSSA fails, is infact still within
@@ -456,7 +578,7 @@ define void @test8() {
 ; PROLOG:      %lcmp.mod = icmp eq i64
 ; PROLOG-NEXT: br i1 %lcmp.mod, label %innerH.prol.loopexit, label %innerH.prol.preheader
 ; PROLOG: latch.6:
-; PROLOG-NEXT: %tmp4.7 = add nsw i64 %tmp3, 8
+; PROLOG-NEXT: %tmp4.7 = add nuw nsw i64 %tmp3, 8
 ; PROLOG-NEXT: br i1 false, label %outerloop.loopexit.loopexit, label %latch.7
 ; PROLOG: latch.7
 ; PROLOG-NEXT: %tmp6.7 = icmp ult i64 %tmp4.7, 100

@@ -1,16 +1,15 @@
 //===- AArch64FalkorHWPFFix.cpp - Avoid HW prefetcher pitfalls on Falkor --===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 /// \file For Falkor, we want to avoid HW prefetcher instruction tag collisions
 /// that may inhibit the HW prefetching.  This is done in two steps.  Before
 /// ISel, we mark strided loads (i.e. those that will likely benefit from
 /// prefetching) with metadata.  Then, after opcodes have been finalized, we
-/// insert MOVs and re-write loads to prevent unintnentional tag collisions.
+/// insert MOVs and re-write loads to prevent unintentional tag collisions.
 // ===---------------------------------------------------------------------===//
 
 #include "AArch64.h"
@@ -60,7 +59,7 @@ STATISTIC(NumStridedLoadsMarked, "Number of strided loads marked");
 STATISTIC(NumCollisionsAvoided,
           "Number of HW prefetch tag collisions avoided");
 STATISTIC(NumCollisionsNotAvoided,
-          "Number of HW prefetch tag collisions not avoided due to lack of regsiters");
+          "Number of HW prefetch tag collisions not avoided due to lack of registers");
 DEBUG_COUNTER(FixCounter, "falkor-hwpf",
               "Controls which tag collisions are avoided");
 
@@ -169,7 +168,7 @@ bool FalkorMarkStridedAccesses::runOnLoop(Loop &L) {
       LoadI->setMetadata(FALKOR_STRIDED_ACCESS_MD,
                          MDNode::get(LoadI->getContext(), {}));
       ++NumStridedLoadsMarked;
-      DEBUG(dbgs() << "Load: " << I << " marked as strided\n");
+      LLVM_DEBUG(dbgs() << "Load: " << I << " marked as strided\n");
       MadeChange = true;
     }
   }
@@ -190,6 +189,7 @@ public:
   bool runOnMachineFunction(MachineFunction &Fn) override;
 
   void getAnalysisUsage(AnalysisUsage &AU) const override {
+    AU.setPreservesCFG();
     AU.addRequired<MachineLoopInfo>();
     MachineFunctionPass::getAnalysisUsage(AU);
   }
@@ -212,8 +212,8 @@ private:
 struct LoadInfo {
   LoadInfo() = default;
 
-  unsigned DestReg = 0;
-  unsigned BaseReg = 0;
+  Register DestReg;
+  Register BaseReg;
   int BaseRegIdx = -1;
   const MachineOperand *OffsetOpnd = nullptr;
   bool IsPrePost = false;
@@ -647,7 +647,7 @@ static Optional<LoadInfo> getLoadInfo(const MachineInstr &MI) {
     return None;
 
   LoadInfo LI;
-  LI.DestReg = DestRegIdx == -1 ? 0 : MI.getOperand(DestRegIdx).getReg();
+  LI.DestReg = DestRegIdx == -1 ? Register() : MI.getOperand(DestRegIdx).getReg();
   LI.BaseReg = BaseReg;
   LI.BaseRegIdx = BaseRegIdx;
   LI.OffsetOpnd = OffsetIdx == -1 ? nullptr : &MI.getOperand(OffsetIdx);
@@ -730,10 +730,10 @@ void FalkorHWPFFix::runOnLoop(MachineLoop &L, MachineFunction &Fn) {
         continue;
 
       bool Fixed = false;
-      DEBUG(dbgs() << "Attempting to fix tag collision: " << MI);
+      LLVM_DEBUG(dbgs() << "Attempting to fix tag collision: " << MI);
 
       if (!DebugCounter::shouldExecute(FixCounter)) {
-        DEBUG(dbgs() << "Skipping fix due to debug counter:\n  " << MI);
+        LLVM_DEBUG(dbgs() << "Skipping fix due to debug counter:\n  " << MI);
         continue;
       }
 
@@ -758,8 +758,8 @@ void FalkorHWPFFix::runOnLoop(MachineLoop &L, MachineFunction &Fn) {
         if (TagMap.count(NewTag))
           continue;
 
-        DEBUG(dbgs() << "Changing base reg to: " << printReg(ScratchReg, TRI)
-                     << '\n');
+        LLVM_DEBUG(dbgs() << "Changing base reg to: "
+                          << printReg(ScratchReg, TRI) << '\n');
 
         // Rewrite:
         //   Xd = LOAD Xb, off
@@ -777,8 +777,8 @@ void FalkorHWPFFix::runOnLoop(MachineLoop &L, MachineFunction &Fn) {
         // If the load does a pre/post increment, then insert a MOV after as
         // well to update the real base register.
         if (LdI.IsPrePost) {
-          DEBUG(dbgs() << "Doing post MOV of incremented reg: "
-                       << printReg(ScratchReg, TRI) << '\n');
+          LLVM_DEBUG(dbgs() << "Doing post MOV of incremented reg: "
+                            << printReg(ScratchReg, TRI) << '\n');
           MI.getOperand(0).setReg(
               ScratchReg); // Change tied operand pre/post update dest.
           BuildMI(*MBB, std::next(MachineBasicBlock::iterator(MI)), DL,

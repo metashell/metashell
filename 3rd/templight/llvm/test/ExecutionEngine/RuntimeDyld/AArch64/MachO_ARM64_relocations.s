@@ -1,6 +1,6 @@
 # RUN: rm -rf %t && mkdir -p %t
 # RUN: llvm-mc -triple=arm64-apple-ios7.0.0 -filetype=obj -o %t/foo.o %s
-# RUN: llvm-rtdyld -triple=arm64-apple-ios7.0.0 -map-section foo.o,__text=0x10bc0 -verify -check=%s %t/foo.o
+# RUN: llvm-rtdyld -triple=arm64-apple-ios7.0.0 -map-section foo.o,__text=0x10bc0 -dummy-extern _dummy1=0x100000 -verify -check=%s %t/foo.o
 
     .section  __TEXT,__text,regular,pure_instructions
     .ios_version_min 7, 0
@@ -23,6 +23,13 @@ br1:
     b _foo
     ret
 
+    .globl  _test_branch_reloc_bl
+    .align  2
+# rtdyld-check:  decode_operand(br2, 0)[25:0] = (_foo - br2)[27:2]
+_test_branch_reloc_bl:
+br2:
+    bl _foo
+    ret	
 
 # Test ARM64_RELOC_PAGE21 and ARM64_RELOC_PAGEOFF12 relocation. adrp encodes
 # the PC-relative page (4 KiB) difference between the adrp instruction and the
@@ -44,9 +51,9 @@ ldr1:
 # adrp instruction and the GOT entry for ptr. ldr encodes the offset of the GOT
 # entry within the page. The ldr instruction perfroms an implicit shift on the
 # encoded immediate (imm<<3).
-# rtdyld-check:  *{8}(stub_addr(foo.o, __text, _ptr)) = _ptr
-# rtdyld-check:  decode_operand(adrp2, 1) = (stub_addr(foo.o, __text, _ptr)[32:12] - adrp2[32:12])
-# rtdyld-check:  decode_operand(ldr2, 2) = stub_addr(foo.o, __text, _ptr)[11:3]
+# rtdyld-check:  *{8}(stub_addr(foo.o/__text, _ptr)) = _ptr
+# rtdyld-check:  decode_operand(adrp2, 1) = (stub_addr(foo.o/__text, _ptr)[32:12] - adrp2[32:12])
+# rtdyld-check:  decode_operand(ldr2, 2) = stub_addr(foo.o/__text, _ptr)[11:3]
     .globl  _test_adrp_ldr
     .align  2
 _test_got_adrp_ldr:
@@ -83,3 +90,15 @@ _ptr:
 # rtdyld-check: *{8}_subtractor_result = _test_branch_reloc - _foo
 _subtractor_result:
     .quad _test_branch_reloc - _foo
+
+# Test 32-bit relative ARM64_RELOC_POINTER_TO_GOT
+# rtdyld-check: *{4}_pointer_to_got_32_rel = (stub_addr(foo.o/__data, _dummy1) - _pointer_to_got_32_rel)
+_pointer_to_got_32_rel:
+    .long _dummy1@got - .
+
+# Test 64-bit absolute ARM64_RELOC_POINTER_TO_GOT
+# rtdyld-check: *{8}_pointer_to_got_64_abs = stub_addr(foo.o/__data, _dummy1)
+_pointer_to_got_64_abs:
+    .quad _dummy1@got
+
+.subsections_via_symbols

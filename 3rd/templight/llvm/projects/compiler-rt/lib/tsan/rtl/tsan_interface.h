@@ -1,9 +1,8 @@
 //===-- tsan_interface.h ----------------------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -117,6 +116,19 @@ int __tsan_get_report_data(void *report, const char **description, int *count,
                            int *unique_tid_count, void **sleep_trace,
                            uptr trace_size);
 
+/// Retrieves the "tag" from a report (for external-race report types). External
+/// races can be associated with a tag which give them more meaning. For example
+/// tag value '1' means "Swift access race". Tag value '0' indicated a plain
+/// external race.
+///
+/// \param report opaque pointer to the current report (obtained as argument in
+///               __tsan_on_report, or from __tsan_get_current_report)
+/// \param [out] tag points to storage that will be filled with the tag value
+///
+/// \returns non-zero value on success, zero on failure
+SANITIZER_INTERFACE_ATTRIBUTE
+int __tsan_get_report_tag(void *report, uptr *tag);
+
 // Returns information about stack traces included in the report.
 SANITIZER_INTERFACE_ATTRIBUTE
 int __tsan_get_report_stack(void *report, uptr idx, void **trace,
@@ -187,7 +199,7 @@ __extension__ typedef __int128 a128;
 #endif
 
 // Part of ABI, do not change.
-// http://llvm.org/viewvc/llvm-project/libcxx/trunk/include/atomic?view=markup
+// https://github.com/llvm/llvm-project/blob/master/libcxx/include/atomic
 typedef enum {
   mo_relaxed,
   mo_consume,

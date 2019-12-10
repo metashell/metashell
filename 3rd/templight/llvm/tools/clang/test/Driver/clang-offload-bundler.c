@@ -74,10 +74,10 @@
 // CK-ERR6: error: invalid file type specified.
 
 // RUN: not clang-offload-bundler 2>&1 | FileCheck %s --check-prefix CK-ERR7
-// CK-ERR7-DAG: clang-offload-bundler: for the -type option: must be specified at least once!
-// CK-ERR7-DAG: clang-offload-bundler: for the -inputs option: must be specified at least once!
-// CK-ERR7-DAG: clang-offload-bundler: for the -outputs option: must be specified at least once!
-// CK-ERR7-DAG: clang-offload-bundler: for the -targets option: must be specified at least once!
+// CK-ERR7-DAG: clang-offload-bundler: for the --type option: must be specified at least once!
+// CK-ERR7-DAG: clang-offload-bundler: for the --inputs option: must be specified at least once!
+// CK-ERR7-DAG: clang-offload-bundler: for the --outputs option: must be specified at least once!
+// CK-ERR7-DAG: clang-offload-bundler: for the --targets option: must be specified at least once!
 
 // RUN: not clang-offload-bundler -type=i -targets=hxst-powerpcxxle-ibm-linux-gnu,openxp-pxxerpc64le-ibm-linux-gnu,xpenmp-x86_xx-pc-linux-gnu -inputs=%t.i,%t.tgt1,%t.tgt2 -outputs=%t.bundle.i 2>&1 | FileCheck %s --check-prefix CK-ERR8
 // CK-ERR8: error: invalid target 'hxst-powerpcxxle-ibm-linux-gnu', unknown offloading kind 'hxst', unknown target triple 'powerpcxxle-ibm-linux-gnu'.
@@ -115,7 +115,7 @@
 // CK-TEXTI: // __CLANG_OFFLOAD_BUNDLE____END__ openmp-x86_64-pc-linux-gnu
 
 // CK-TEXTLL: ; __CLANG_OFFLOAD_BUNDLE____START__ host-powerpc64le-ibm-linux-gnu
-// CK-TEXTLL: @A = global i32 0
+// CK-TEXTLL: @A = dso_local global i32 0
 // CK-TEXTLL: define {{.*}}@test_func()
 // CK-TEXTLL: ; __CLANG_OFFLOAD_BUNDLE____END__ host-powerpc64le-ibm-linux-gnu
 // CK-TEXTLL: ; __CLANG_OFFLOAD_BUNDLE____START__ openmp-powerpc64le-ibm-linux-gnu

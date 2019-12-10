@@ -10,8 +10,7 @@ define void @fptrunc_frommem2(<2 x double>* %in, <2 x float>* %out) {
 ; X32-SSE-NEXT:    movl {{[0-9]+}}(%esp), %eax
 ; X32-SSE-NEXT:    movl {{[0-9]+}}(%esp), %ecx
 ; X32-SSE-NEXT:    cvtpd2ps (%ecx), %xmm0
-; X32-SSE-NEXT:    extractps $1, %xmm0, 4(%eax)
-; X32-SSE-NEXT:    movss %xmm0, (%eax)
+; X32-SSE-NEXT:    movlpd %xmm0, (%eax)
 ; X32-SSE-NEXT:    retl
 ;
 ; X32-AVX-LABEL: fptrunc_frommem2:
@@ -19,8 +18,7 @@ define void @fptrunc_frommem2(<2 x double>* %in, <2 x float>* %out) {
 ; X32-AVX-NEXT:    movl {{[0-9]+}}(%esp), %eax
 ; X32-AVX-NEXT:    movl {{[0-9]+}}(%esp), %ecx
 ; X32-AVX-NEXT:    vcvtpd2psx (%ecx), %xmm0
-; X32-AVX-NEXT:    vextractps $1, %xmm0, 4(%eax)
-; X32-AVX-NEXT:    vmovss %xmm0, (%eax)
+; X32-AVX-NEXT:    vmovlpd %xmm0, (%eax)
 ; X32-AVX-NEXT:    retl
 ;
 ; X64-SSE-LABEL: fptrunc_frommem2:
@@ -101,9 +99,8 @@ define void @fptrunc_frommem8(<8 x double>* %in, <8 x float>* %out) {
 ; X32-AVX-NEXT:    movl {{[0-9]+}}(%esp), %ecx
 ; X32-AVX-NEXT:    vcvtpd2psy (%ecx), %xmm0
 ; X32-AVX-NEXT:    vcvtpd2psy 32(%ecx), %xmm1
-; X32-AVX-NEXT:    vinsertf128 $1, %xmm1, %ymm0, %ymm0
-; X32-AVX-NEXT:    vmovups %ymm0, (%eax)
-; X32-AVX-NEXT:    vzeroupper
+; X32-AVX-NEXT:    vmovupd %xmm1, 16(%eax)
+; X32-AVX-NEXT:    vmovupd %xmm0, (%eax)
 ; X32-AVX-NEXT:    retl
 ;
 ; X64-SSE-LABEL: fptrunc_frommem8:
@@ -122,9 +119,8 @@ define void @fptrunc_frommem8(<8 x double>* %in, <8 x float>* %out) {
 ; X64-AVX:       # %bb.0: # %entry
 ; X64-AVX-NEXT:    vcvtpd2psy (%rdi), %xmm0
 ; X64-AVX-NEXT:    vcvtpd2psy 32(%rdi), %xmm1
-; X64-AVX-NEXT:    vinsertf128 $1, %xmm1, %ymm0, %ymm0
-; X64-AVX-NEXT:    vmovups %ymm0, (%rsi)
-; X64-AVX-NEXT:    vzeroupper
+; X64-AVX-NEXT:    vmovupd %xmm1, 16(%rsi)
+; X64-AVX-NEXT:    vmovupd %xmm0, (%rsi)
 ; X64-AVX-NEXT:    retq
 entry:
   %0 = load <8 x double>, <8 x double>* %in

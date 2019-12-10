@@ -35,12 +35,12 @@ SRCS="
 	../../sanitizer_common/sanitizer_stackdepot.cc
 	../../sanitizer_common/sanitizer_stacktrace.cc
 	../../sanitizer_common/sanitizer_symbolizer.cc
+	../../sanitizer_common/sanitizer_symbolizer_report.cc
 	../../sanitizer_common/sanitizer_termination.cc
 "
 
 if [ "`uname -a | grep Linux`" != "" ]; then
-	SUFFIX="linux_amd64"
-	OSCFLAGS="-fPIC -ffreestanding -Wno-maybe-uninitialized -Wno-unused-const-variable -Werror -Wno-unknown-warning-option"
+	OSCFLAGS="-fPIC -Wno-maybe-uninitialized"
 	OSLDFLAGS="-lpthread -fPIC -fpie"
 	SRCS="
 		$SRCS
@@ -52,40 +52,58 @@ if [ "`uname -a | grep Linux`" != "" ]; then
 		../../sanitizer_common/sanitizer_linux.cc
 		../../sanitizer_common/sanitizer_linux_libcdep.cc
 		../../sanitizer_common/sanitizer_stoptheworld_linux_libcdep.cc
-	"
+		../../sanitizer_common/sanitizer_stoptheworld_netbsd_libcdep.cc
+		"
+	if [ "`uname -a | grep ppc64le`" != "" ]; then
+		SUFFIX="linux_ppc64le"
+		ARCHCFLAGS="-m64"
+	elif [ "`uname -a | grep x86_64`" != "" ]; then
+		SUFFIX="linux_amd64"
+		ARCHCFLAGS="-m64"
+		OSCFLAGS="$OSCFLAGS -ffreestanding -Wno-unused-const-variable -Werror -Wno-unknown-warning-option"
+	elif [ "`uname -a | grep aarch64`" != "" ]; then
+		SUFFIX="linux_arm64"
+		ARCHCFLAGS=""
+	fi
 elif [ "`uname -a | grep FreeBSD`" != "" ]; then
 	SUFFIX="freebsd_amd64"
 	OSCFLAGS="-fno-strict-aliasing -fPIC -Werror"
+	ARCHCFLAGS="-m64"
 	OSLDFLAGS="-lpthread -fPIC -fpie"
 	SRCS="
 		$SRCS
 		../rtl/tsan_platform_linux.cc
 		../../sanitizer_common/sanitizer_posix.cc
 		../../sanitizer_common/sanitizer_posix_libcdep.cc
+		../../sanitizer_common/sanitizer_procmaps_bsd.cc
 		../../sanitizer_common/sanitizer_procmaps_common.cc
-		../../sanitizer_common/sanitizer_procmaps_freebsd.cc
 		../../sanitizer_common/sanitizer_linux.cc
 		../../sanitizer_common/sanitizer_linux_libcdep.cc
 		../../sanitizer_common/sanitizer_stoptheworld_linux_libcdep.cc
+		../../sanitizer_common/sanitizer_stoptheworld_netbsd_libcdep.cc
 	"
 elif [ "`uname -a | grep NetBSD`" != "" ]; then
 	SUFFIX="netbsd_amd64"
 	OSCFLAGS="-fno-strict-aliasing -fPIC -Werror"
+	ARCHCFLAGS="-m64"
 	OSLDFLAGS="-lpthread -fPIC -fpie"
 	SRCS="
 		$SRCS
 		../rtl/tsan_platform_linux.cc
 		../../sanitizer_common/sanitizer_posix.cc
 		../../sanitizer_common/sanitizer_posix_libcdep.cc
+		../../sanitizer_common/sanitizer_procmaps_bsd.cc
 		../../sanitizer_common/sanitizer_procmaps_common.cc
-		../../sanitizer_common/sanitizer_procmaps_freebsd.cc
 		../../sanitizer_common/sanitizer_linux.cc
 		../../sanitizer_common/sanitizer_linux_libcdep.cc
+		../../sanitizer_common/sanitizer_netbsd.cc
 		../../sanitizer_common/sanitizer_stoptheworld_linux_libcdep.cc
+		../../sanitizer_common/sanitizer_stoptheworld_netbsd_libcdep.cc
 	"
 elif [ "`uname -a | grep Darwin`" != "" ]; then
 	SUFFIX="darwin_amd64"
-	OSCFLAGS="-fPIC -Wno-unused-const-variable -Wno-unknown-warning-option -isysroot $(xcodebuild -version -sdk macosx Path) -mmacosx-version-min=10.7"
+	OSCFLAGS="-fPIC -Wno-unused-const-variable -Wno-unknown-warning-option -mmacosx-version-min=10.7"
+	ARCHCFLAGS="-m64"
 	OSLDFLAGS="-lpthread -fPIC -fpie -mmacosx-version-min=10.7"
 	SRCS="
 		$SRCS
@@ -98,6 +116,7 @@ elif [ "`uname -a | grep Darwin`" != "" ]; then
 elif [ "`uname -a | grep MINGW`" != "" ]; then
 	SUFFIX="windows_amd64"
 	OSCFLAGS="-Wno-error=attributes -Wno-attributes -Wno-unused-const-variable -Wno-unknown-warning-option"
+	ARCHCFLAGS="-m64"
 	OSLDFLAGS=""
 	SRCS="
 		$SRCS
@@ -130,9 +149,14 @@ for F in $SRCS; do
 	cat $F >> $DIR/gotsan.cc
 done
 
-FLAGS=" -I../rtl -I../.. -I../../sanitizer_common -I../../../include -std=c++11 -m64 -Wall -fno-exceptions -fno-rtti -DSANITIZER_GO=1 -DSANITIZER_DEADLOCK_DETECTOR_VERSION=2 $OSCFLAGS"
+FLAGS=" -I../rtl -I../.. -I../../sanitizer_common -I../../../include -std=c++11 -Wall -fno-exceptions -fno-rtti -DSANITIZER_GO=1 -DSANITIZER_DEADLOCK_DETECTOR_VERSION=2 $OSCFLAGS $ARCHCFLAGS"
 if [ "$DEBUG" = "" ]; then
-	FLAGS="$FLAGS -DSANITIZER_DEBUG=0 -O3 -msse3 -fomit-frame-pointer"
+	FLAGS="$FLAGS -DSANITIZER_DEBUG=0 -O3 -fomit-frame-pointer"
+	if [ "$SUFFIX" = "linux_ppc64le" ]; then
+		FLAGS="$FLAGS -mcpu=power8 -fno-function-sections"
+	elif [ "$SUFFIX" = "linux_amd64" ]; then
+		FLAGS="$FLAGS -msse3"
+	fi
 else
 	FLAGS="$FLAGS -DSANITIZER_DEBUG=1 -g"
 fi
@@ -142,7 +166,7 @@ if [ "$SILENT" != "1" ]; then
 fi
 $CC $DIR/gotsan.cc -c -o $DIR/race_$SUFFIX.syso $FLAGS $CFLAGS
 
-$CC $OSCFLAGS test.c $DIR/race_$SUFFIX.syso -m64 -g -o $DIR/test $OSLDFLAGS $LDFLAGS
+$CC $OSCFLAGS $ARCHCFLAGS test.c $DIR/race_$SUFFIX.syso -g -o $DIR/test $OSLDFLAGS $LDFLAGS
 
 export GORACE="exitcode=0 atexit_sleep_ms=0"
 if [ "$SILENT" != "1" ]; then

@@ -1,3 +1,8 @@
+import os
+from clang.cindex import Config
+if 'CLANG_LIBRARY_PATH' in os.environ:
+    Config.set_library_path(os.environ['CLANG_LIBRARY_PATH'])
+
 from clang.cindex import CompilationDatabase
 from clang.cindex import CompilationDatabaseError
 from clang.cindex import CompileCommands
@@ -5,17 +10,30 @@ from clang.cindex import CompileCommand
 import os
 import gc
 import unittest
+import sys
+from .util import skip_if_no_fspath
+from .util import str_to_path
 
 
 kInputsDir = os.path.join(os.path.dirname(__file__), 'INPUTS')
 
 
+@unittest.skipIf(sys.platform == 'win32', "TODO: Fix these tests on Windows")
 class TestCDB(unittest.TestCase):
     def test_create_fail(self):
         """Check we fail loading a database with an assertion"""
         path = os.path.dirname(__file__)
+
+        # clang_CompilationDatabase_fromDirectory calls fprintf(stderr, ...)
+        # Suppress its output.
+        stderr = os.dup(2)
+        with open(os.devnull, 'wb') as null:
+            os.dup2(null.fileno(), 2)
         with self.assertRaises(CompilationDatabaseError) as cm:
             cdb = CompilationDatabase.fromDirectory(path)
+        os.dup2(stderr, 2)
+        os.close(stderr)
+
         e = cm.exception
         self.assertEqual(e.cdb_error,
             CompilationDatabaseError.ERROR_CANNOTLOADDATABASE)
@@ -24,15 +42,17 @@ class TestCDB(unittest.TestCase):
         """Check we can load a compilation database"""
         cdb = CompilationDatabase.fromDirectory(kInputsDir)
 
-    def test_lookup_fail(self):
-        """Check file lookup failure"""
-        cdb = CompilationDatabase.fromDirectory(kInputsDir)
-        self.assertIsNone(cdb.getCompileCommands('file_do_not_exist.cpp'))
-
     def test_lookup_succeed(self):
         """Check we get some results if the file exists in the db"""
         cdb = CompilationDatabase.fromDirectory(kInputsDir)
         cmds = cdb.getCompileCommands('/home/john.doe/MyProject/project.cpp')
+        self.assertNotEqual(len(cmds), 0)
+
+    @skip_if_no_fspath
+    def test_lookup_succeed_pathlike(self):
+        """Same as test_lookup_succeed, but with PathLikes"""
+        cdb = CompilationDatabase.fromDirectory(str_to_path(kInputsDir))
+        cmds = cdb.getCompileCommands(str_to_path('/home/john.doe/MyProject/project.cpp'))
         self.assertNotEqual(len(cmds), 0)
 
     def test_all_compilecommand(self):
@@ -43,15 +63,16 @@ class TestCDB(unittest.TestCase):
         expected = [
             { 'wd': '/home/john.doe/MyProject',
               'file': '/home/john.doe/MyProject/project.cpp',
-              'line': ['clang++', '-o', 'project.o', '-c',
+              'line': ['clang++', '--driver-mode=g++', '-o', 'project.o', '-c',
                        '/home/john.doe/MyProject/project.cpp']},
             { 'wd': '/home/john.doe/MyProjectA',
               'file': '/home/john.doe/MyProject/project2.cpp',
-              'line': ['clang++', '-o', 'project2.o', '-c',
+              'line': ['clang++', '--driver-mode=g++', '-o', 'project2.o', '-c',
                        '/home/john.doe/MyProject/project2.cpp']},
             { 'wd': '/home/john.doe/MyProjectB',
               'file': '/home/john.doe/MyProject/project2.cpp',
-              'line': ['clang++', '-DFEATURE=1', '-o', 'project2-feature.o', '-c',
+              'line': ['clang++', '--driver-mode=g++', '-DFEATURE=1', '-o',
+                       'project2-feature.o', '-c',
                        '/home/john.doe/MyProject/project2.cpp']},
 
             ]
@@ -69,7 +90,7 @@ class TestCDB(unittest.TestCase):
         self.assertEqual(len(cmds), 1)
         self.assertEqual(cmds[0].directory, os.path.dirname(file))
         self.assertEqual(cmds[0].filename, file)
-        expected = [ 'clang++', '-o', 'project.o', '-c',
+        expected = [ 'clang++', '--driver-mode=g++', '-o', 'project.o', '-c',
                      '/home/john.doe/MyProject/project.cpp']
         for arg, exp in zip(cmds[0].arguments, expected):
             self.assertEqual(arg, exp)
@@ -81,10 +102,11 @@ class TestCDB(unittest.TestCase):
         self.assertEqual(len(cmds), 2)
         expected = [
             { 'wd': '/home/john.doe/MyProjectA',
-              'line': ['clang++', '-o', 'project2.o', '-c',
+              'line': ['clang++', '--driver-mode=g++', '-o', 'project2.o', '-c',
                        '/home/john.doe/MyProject/project2.cpp']},
             { 'wd': '/home/john.doe/MyProjectB',
-              'line': ['clang++', '-DFEATURE=1', '-o', 'project2-feature.o', '-c',
+              'line': ['clang++', '--driver-mode=g++', '-DFEATURE=1', '-o',
+                       'project2-feature.o', '-c',
                        '/home/john.doe/MyProject/project2.cpp']}
             ]
         for i in range(len(cmds)):

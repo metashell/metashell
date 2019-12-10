@@ -1,9 +1,8 @@
 //===-- X86FixupBWInsts.cpp - Fixup Byte or Word instructions -----------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 /// \file
@@ -103,9 +102,7 @@ public:
 
   StringRef getPassName() const override { return FIXUPBW_DESC; }
 
-  FixupBWInstPass() : MachineFunctionPass(ID) {
-    initializeFixupBWInstPassPass(*PassRegistry::getPassRegistry());
-  }
+  FixupBWInstPass() : MachineFunctionPass(ID) { }
 
   void getAnalysisUsage(AnalysisUsage &AU) const override {
     AU.addRequired<MachineLoopInfo>(); // Machine loop info is used to
@@ -151,22 +148,22 @@ bool FixupBWInstPass::runOnMachineFunction(MachineFunction &MF) {
 
   this->MF = &MF;
   TII = MF.getSubtarget<X86Subtarget>().getInstrInfo();
-  OptForSize = MF.getFunction().optForSize();
+  OptForSize = MF.getFunction().hasOptSize();
   MLI = &getAnalysis<MachineLoopInfo>();
   LiveRegs.init(TII->getRegisterInfo());
 
-  DEBUG(dbgs() << "Start X86FixupBWInsts\n";);
+  LLVM_DEBUG(dbgs() << "Start X86FixupBWInsts\n";);
 
   // Process all basic blocks.
   for (auto &MBB : MF)
     processBasicBlock(MF, MBB);
 
-  DEBUG(dbgs() << "End X86FixupBWInsts\n";);
+  LLVM_DEBUG(dbgs() << "End X86FixupBWInsts\n";);
 
   return true;
 }
 
-/// \brief Check if after \p OrigMI the only portion of super register
+/// Check if after \p OrigMI the only portion of super register
 /// of the destination register of \p OrigMI that is alive is that
 /// destination register.
 ///
@@ -249,15 +246,16 @@ bool FixupBWInstPass::getSuperRegDestIfDead(MachineInstr *OrigMI,
 
     assert((MO.isDef() || MO.isUse()) && "Expected Def or Use only!");
 
-    for (MCSuperRegIterator Supers(OrigDestReg, TRI, true); Supers.isValid();
-         ++Supers) {
-      if (*Supers == MO.getReg()) {
-        if (MO.isDef())
-          IsDefined = true;
-        else
-          return false; // SuperReg Imp-used' -> live before the MI
-      }
-    }
+    if (MO.isDef() && TRI->isSuperRegisterEq(OrigDestReg, MO.getReg()))
+        IsDefined = true;
+
+    // If MO is a use of any part of the destination register but is not equal
+    // to OrigDestReg or one of its subregisters, we cannot use SuperDestReg.
+    // For example, if OrigDestReg is %al then an implicit use of %ah, %ax,
+    // %eax, or %rax will prevent us from using the %eax register.
+    if (MO.isUse() && !TRI->isSubRegisterEq(OrigDestReg, MO.getReg()) &&
+        TRI->regsOverlap(SuperDestReg, MO.getReg()))
+      return false;
   }
   // Reg is not Imp-def'ed -> it's live both before/after the instruction.
   if (!IsDefined)
@@ -287,7 +285,7 @@ MachineInstr *FixupBWInstPass::tryReplaceLoad(unsigned New32BitOpcode,
   for (unsigned i = 1; i < NumArgs; ++i)
     MIB.add(MI->getOperand(i));
 
-  MIB->setMemRefs(MI->memoperands_begin(), MI->memoperands_end());
+  MIB.setMemRefs(MI->memoperands());
 
   return MIB;
 }

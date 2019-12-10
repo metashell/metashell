@@ -1,9 +1,8 @@
 //===-- sanitizer_common_nolibc.cc ----------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -21,7 +20,6 @@ namespace __sanitizer {
 // bypassing libc.
 #if !SANITIZER_WINDOWS
 #if SANITIZER_LINUX
-bool ShouldLogAfterPrintf() { return false; }
 void LogMessageOnPrintf(const char *str) {}
 #endif
 void WriteToSyslog(const char *buffer) {}

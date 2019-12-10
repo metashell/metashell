@@ -9,7 +9,7 @@ define i8* @start(i8 %v) {
   %c1 = icmp eq i8 %v, 0
   br i1 %c1, label %true, label %false
 true:
-  ; CHECK: %ca = musttail call i8* @side_effects(i8 %v)
+  ; CHECK: %ca = musttail call i8* @side_effects(i8 0)
   ; CHECK: ret i8* %ca
   %ca = musttail call i8* @side_effects(i8 %v)
   ret i8* %ca
@@ -17,9 +17,8 @@ false:
   %c2 = icmp eq i8 %v, 1
   br i1 %c2, label %c2_true, label %c2_false
 c2_true:
-  ; CHECK: %ca1 = musttail call i8* @no_side_effects(i8 %v)
-  ; CHECK: ret i8* %ca1
   %ca1 = musttail call i8* @no_side_effects(i8 %v)
+  ; CHECK: ret i8* null
   ret i8* %ca1
 c2_false:
   ; CHECK: %ca2 = musttail call i8* @dont_zap_me(i8 %v)
@@ -35,7 +34,7 @@ define internal i8* @side_effects(i8 %v) {
   ; is always `null`.
   ; The call can't be removed due to `external` call above, though.
 
-  ; CHECK: %ca = musttail call i8* @start(i8 %v)
+  ; CHECK: %ca = musttail call i8* @start(i8 0)
   %ca = musttail call i8* @start(i8 %v)
 
   ; Thus the result must be returned anyway
@@ -44,7 +43,8 @@ define internal i8* @side_effects(i8 %v) {
 }
 
 define internal i8* @no_side_effects(i8 %v) readonly nounwind {
-  ; CHECK: ret i8* null
+  ; The call to this function is removed, so the return value must be zapped
+  ; CHECK: ret i8* undef
   ret i8* null
 }
 

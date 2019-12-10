@@ -10,16 +10,18 @@ define { i8, i1 } @test_cmpxchg_8(i8* %addr, i8 %desired, i8 %new) nounwind {
 ; CHECK:     dmb ish
 ; CHECK:     uxtb [[DESIRED:r[0-9]+]], [[DESIRED]]
 ; CHECK: [[RETRY:.LBB[0-9]+_[0-9]+]]:
-; CHECK:     ldrexb [[OLD:r[0-9]+]], [r0]
+; CHECK:     ldrexb [[OLD:[lr0-9]+]], [r0]
 ; CHECK:     cmp [[OLD]], [[DESIRED]]
 ; CHECK:     bne [[DONE:.LBB[0-9]+_[0-9]+]]
 ; CHECK:     strexb [[STATUS:r[0-9]+]], r2, [r0]
 ; CHECK:     cmp{{(\.w)?}} [[STATUS]], #0
 ; CHECK:     bne [[RETRY]]
 ; CHECK: [[DONE]]:
-; CHECK:     uxtb [[DESIRED_ZEXT:r[0-9]+]], [[DESIRED]]
-; CHECK:     cmp{{(\.w)?}} [[OLD]], [[DESIRED_ZEXT]]
-; CHECK:     {{moveq|movweq}} {{r[0-9]+}}, #1
+; Materialisation of a boolean is done with sub/clz/lsr
+; CHECK:     uxtb [[CMP1:r[0-9]+]], [[DESIRED]]
+; CHECK:     sub{{(\.w)?}} [[CMP1]], [[OLD]], [[CMP1]]
+; CHECK:     clz [[CMP2:r[0-9]+]], [[CMP1]]
+; CHECK:     lsr{{(s)?}} {{r[0-9]+}}, [[CMP2]], #5
 ; CHECK:     dmb ish
   %res = cmpxchg i8* %addr, i8 %desired, i8 %new seq_cst monotonic
   ret { i8, i1 } %res
@@ -30,16 +32,18 @@ define { i16, i1 } @test_cmpxchg_16(i16* %addr, i16 %desired, i16 %new) nounwind
 ; CHECK:     dmb ish
 ; CHECK:     uxth [[DESIRED:r[0-9]+]], [[DESIRED]]
 ; CHECK: [[RETRY:.LBB[0-9]+_[0-9]+]]:
-; CHECK:     ldrexh [[OLD:r[0-9]+]], [r0]
+; CHECK:     ldrexh [[OLD:[lr0-9]+]], [r0]
 ; CHECK:     cmp [[OLD]], [[DESIRED]]
 ; CHECK:     bne [[DONE:.LBB[0-9]+_[0-9]+]]
 ; CHECK:     strexh [[STATUS:r[0-9]+]], r2, [r0]
 ; CHECK:     cmp{{(\.w)?}} [[STATUS]], #0
 ; CHECK:     bne [[RETRY]]
 ; CHECK: [[DONE]]:
-; CHECK:     uxth [[DESIRED_ZEXT:r[0-9]+]], [[DESIRED]]
-; CHECK:     cmp{{(\.w)?}} [[OLD]], [[DESIRED_ZEXT]]
-; CHECK:     {{moveq|movweq}} {{r[0-9]+}}, #1
+; Materialisation of a boolean is done with sub/clz/lsr
+; CHECK:     uxth [[CMP1:r[0-9]+]], [[DESIRED]]
+; CHECK:     sub{{(\.w)?}} [[CMP1]], [[OLD]], [[CMP1]]
+; CHECK:     clz [[CMP2:r[0-9]+]], [[CMP1]]
+; CHECK:     lsr{{(s)?}} {{r[0-9]+}}, [[CMP2]], #5
 ; CHECK:     dmb ish
   %res = cmpxchg i16* %addr, i16 %desired, i16 %new seq_cst monotonic
   ret { i16, i1 } %res
@@ -57,8 +61,10 @@ define { i32, i1 } @test_cmpxchg_32(i32* %addr, i32 %desired, i32 %new) nounwind
 ; CHECK:     cmp{{(\.w)?}} [[STATUS]], #0
 ; CHECK:     bne [[RETRY]]
 ; CHECK: [[DONE]]:
-; CHECK:     cmp{{(\.w)?}} [[OLD]], [[DESIRED]]
-; CHECK:     {{moveq|movweq}} {{r[0-9]+}}, #1
+; Materialisation of a boolean is done with sub/clz/lsr
+; CHECK:     sub{{(s)?}} [[CMP1:r[0-9]+]], [[OLD]], [[DESIRED]]
+; CHECK:     clz [[CMP2:r[0-9]+]], [[CMP1]]
+; CHECK:     lsr{{(s)?}} {{r[0-9]+}}, [[CMP2]], #5
 ; CHECK:     dmb ish
   %res = cmpxchg i32* %addr, i32 %desired, i32 %new seq_cst monotonic
   ret { i32, i1 } %res
@@ -73,7 +79,7 @@ define { i64, i1 } @test_cmpxchg_64(i64* %addr, i64 %desired, i64 %new) nounwind
 ; CHECK:     cmp [[OLDLO]], r6
 ; CHECK:     cmpeq [[OLDHI]], r7
 ; CHECK:     bne [[DONE:.LBB[0-9]+_[0-9]+]]
-; CHECK:     strexd [[STATUS:r[0-9]+]], r4, r5, [r0]
+; CHECK:     strexd [[STATUS:[lr0-9]+]], r4, r5, [r0]
 ; CHECK:     cmp{{(\.w)?}} [[STATUS]], #0
 ; CHECK:     bne [[RETRY]]
 ; CHECK: [[DONE]]:

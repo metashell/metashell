@@ -1,9 +1,8 @@
 //===--- TokenConcatenation.cpp - Token Concatenation Avoidance -----------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -67,7 +66,7 @@ bool TokenConcatenation::IsIdentifierStringPrefix(const Token &Tok) const {
   return IsStringPrefix(StringRef(PP.getSpelling(Tok)), LangOpts.CPlusPlus11);
 }
 
-TokenConcatenation::TokenConcatenation(Preprocessor &pp) : PP(pp) {
+TokenConcatenation::TokenConcatenation(const Preprocessor &pp) : PP(pp) {
   memset(TokenInfo, 0, sizeof(TokenInfo));
 
   // These tokens have custom code in AvoidConcat.
@@ -126,7 +125,7 @@ TokenConcatenation::TokenConcatenation(Preprocessor &pp) : PP(pp) {
 
 /// GetFirstChar - Get the first character of the token \arg Tok,
 /// avoiding calls to getSpelling where possible.
-static char GetFirstChar(Preprocessor &PP, const Token &Tok) {
+static char GetFirstChar(const Preprocessor &PP, const Token &Tok) {
   if (IdentifierInfo *II = Tok.getIdentifierInfo()) {
     // Avoid spelling identifiers, the most common form of token.
     return II->getNameStart()[0];
@@ -161,6 +160,11 @@ static char GetFirstChar(Preprocessor &PP, const Token &Tok) {
 bool TokenConcatenation::AvoidConcat(const Token &PrevPrevTok,
                                      const Token &PrevTok,
                                      const Token &Tok) const {
+  // Conservatively assume that every annotation token that has a printable
+  // form requires whitespace.
+  if (PrevTok.isAnnotation())
+    return true;
+
   // First, check to see if the tokens were directly adjacent in the original
   // source.  If they were, it must be okay to stick them together: if there
   // were an issue, the tokens would have been lexed differently.

@@ -2,20 +2,18 @@
 # FIXME: Make the other headers DWARF-64 also.
 # FIXME: Add variants for earlier DWARF versions.
 
-# Lines beginning with @ELF@ should be preserved for ELF targets;
-# lines beginning with @MACHO@ should be preserved for Mach-O targets.
+# RUN: llvm-mc -triple x86_64-unknown-linux --defsym ELF=0 \
+# RUN:     -filetype=obj -o - %s | llvm-dwarfdump -v - | FileCheck %s
 
-# RUN: sed -e 's/@ELF@//;s/@MACHO@.*//' %s | \
-# RUN: llvm-mc -triple x86_64-unknown-linux -filetype=obj -o - | \
-# RUN: llvm-dwarfdump -v - | FileCheck %s
+# RUN: llvm-mc -triple x86_64-apple-darwin --defsym MACHO=0 \
+# RUN:     -filetype=obj -o - %s | llvm-dwarfdump -v - | FileCheck %s
 
-# RUN: sed -e 's/@ELF@.*//;s/@MACHO@//' %s | \
-# RUN: llvm-mc -triple x86_64-apple-darwin -filetype=obj -o - | \
-# RUN: llvm-dwarfdump -v - | FileCheck %s
-
-
-@ELF@   .section .debug_str,"MS",@progbits,1
-@MACHO@ .section __DWARF,__debug_str,regular,debug
+.ifdef ELF
+        .section .debug_str,"MS",@progbits,1
+.endif
+.ifdef MACHO
+        .section __DWARF,__debug_str,regular,debug
+.endif
 str_producer:
         .asciz  "Handmade DWARF producer"
 str_CU_5:
@@ -25,8 +23,12 @@ str_LT_5a:
 str_LT_5b:
         .asciz  "Directory5b"
 
-@ELF@   .section .debug_abbrev,"",@progbits
-@MACHO@ .section __DWARF,__debug_abbrev,regular,debug
+.ifdef ELF
+        .section .debug_abbrev,"",@progbits
+.endif
+.ifdef MACHO
+        .section __DWARF,__debug_abbrev,regular,debug
+.endif
 abbrev:
         .byte   0x01    # Abbrev code
         .byte   0x11    # DW_TAG_compile_unit
@@ -40,8 +42,12 @@ abbrev:
         .byte   0x00    # EOM(1)
         .byte   0x00    # EOM(2)
 
-@ELF@   .section .debug_info,"",@progbits
-@MACHO@ .section __DWARF,__debug_info,regular,debug
+.ifdef ELF
+        .section .debug_info,"",@progbits
+.endif
+.ifdef MACHO
+        .section __DWARF,__debug_info,regular,debug
+.endif
 
 # DWARF-32 v5 normal CU header.
 Lset0 = CU_5_end-CU_5_version   # Length of Unit
@@ -50,14 +56,22 @@ CU_5_version:
         .short  5               # DWARF version number
         .byte   1               # DWARF Unit Type
         .byte   8               # Address Size (in bytes)
-@ELF@   .long   abbrev          # Offset Into Abbrev. Section
-@MACHO@ .long   0
+.ifdef ELF
+        .long   abbrev          # Offset Into Abbrev. Section
+.endif
+.ifdef MACHO
+        .long   0
+.endif
 # The compile-unit DIE, with DW_AT_producer, DW_AT_name, DW_AT_stmt_list.
         .byte   1
         .long   str_producer
         .long   str_CU_5
-@ELF@   .long   LH_5_start
-@MACHO@ .long   0
+.ifdef ELF
+        .long   LH_5_start
+.endif
+.ifdef MACHO
+        .long   0
+.endif
         .byte   0 # NULL
 CU_5_end:
 
@@ -68,8 +82,12 @@ CU_5_end:
 # CHECK-NEXT: DW_AT_name {{.*}} "V5_compile_unit"
 # CHECK-NEXT: DW_AT_stmt_list {{.*}} (0x00000000)
 
-@ELF@   .section .debug_line,"",@progbits
-@MACHO@ .section __DWARF,__debug_line,regular,debug
+.ifdef ELF
+        .section .debug_line,"",@progbits
+.endif
+.ifdef MACHO
+        .section __DWARF,__debug_line,regular,debug
+.endif
 
 # DWARF-64 v5 line-table header.
 LH_5_start:
@@ -122,11 +140,11 @@ LH_5_params:
         # File table entries
         .byte   2               # Two files
         .asciz "File5a"
-        .byte   1
+        .byte   0
         .byte   0x51
         .byte   0x52
         .asciz "File5b"
-        .byte   2
+        .byte   1
         .byte   0x53
         .byte   0x54
 LH_5_header_end:
@@ -141,9 +159,17 @@ LH_5_end:
 # CHECK: seg_select_size: 0
 # CHECK: prologue_length: 0x00000044
 # CHECK: max_ops_per_inst: 1
-# CHECK: include_directories[  1] = 'Directory5a'
-# CHECK: include_directories[  2] = 'Directory5b'
+# CHECK: include_directories[  0] = .debug_str[0x00000028] = "Directory5a"
+# CHECK: include_directories[  1] = .debug_str[0x00000034] = "Directory5b"
 # CHECK-NOT: include_directories
-# CHECK: file_names[  1]    1 0x00000051 0x00000052 File5a{{$}}
-# CHECK: file_names[  2]    2 0x00000053 0x00000054 File5b{{$}}
+# CHECK: file_names[  0]:
+# CHECK-NEXT: name: "File5a"
+# CHECK-NEXT: dir_index: 0
+# CHECK-NEXT: mod_time: 0x00000051
+# CHECK-NEXT: length: 0x00000052
+# CHECK: file_names[  1]:
+# CHECK-NEXT: name: "File5b"
+# CHECK-NEXT: dir_index: 1
+# CHECK-NEXT: mod_time: 0x00000053
+# CHECK-NEXT: length: 0x00000054
 # CHECK-NOT: file_names

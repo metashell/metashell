@@ -1,9 +1,8 @@
 //===-- scudo_allocator.h ---------------------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 ///
@@ -59,9 +58,17 @@ const uptr MaxAlignmentLog = 24;  // 16 MB
 const uptr MinAlignment = 1 << MinAlignmentLog;
 const uptr MaxAlignment = 1 << MaxAlignmentLog;
 
-const uptr ChunkHeaderSize = sizeof(PackedHeader);
-const uptr AlignedChunkHeaderSize =
-    (ChunkHeaderSize + MinAlignment - 1) & ~(MinAlignment - 1);
+// constexpr version of __sanitizer::RoundUp without the extraneous CHECK.
+// This way we can use it in constexpr variables and functions declarations.
+constexpr uptr RoundUpTo(uptr Size, uptr Boundary) {
+  return (Size + Boundary - 1) & ~(Boundary - 1);
+}
+
+namespace Chunk {
+  constexpr uptr getHeaderSize() {
+    return RoundUpTo(sizeof(PackedHeader), MinAlignment);
+  }
+}
 
 #if SANITIZER_CAN_USE_ALLOCATOR64
 const uptr AllocatorSpace = ~0ULL;
@@ -73,51 +80,40 @@ struct AP64 {
   typedef NoOpMapUnmapCallback MapUnmapCallback;
   static const uptr kFlags =
       SizeClassAllocator64FlagMasks::kRandomShuffleChunks;
+  using AddressSpaceView = LocalAddressSpaceView;
 };
-typedef SizeClassAllocator64<AP64> PrimaryAllocator;
+typedef SizeClassAllocator64<AP64> PrimaryT;
 #else
-static const uptr NumRegions = SANITIZER_MMAP_RANGE_SIZE >> RegionSizeLog;
-# if SANITIZER_WORDSIZE == 32
-typedef FlatByteMap<NumRegions> ByteMap;
-# elif SANITIZER_WORDSIZE == 64
-typedef TwoLevelByteMap<(NumRegions >> 12), 1 << 12> ByteMap;
-# endif  // SANITIZER_WORDSIZE
 struct AP32 {
   static const uptr kSpaceBeg = 0;
   static const u64 kSpaceSize = SANITIZER_MMAP_RANGE_SIZE;
   static const uptr kMetadataSize = 0;
   typedef __scudo::SizeClassMap SizeClassMap;
   static const uptr kRegionSizeLog = RegionSizeLog;
-  typedef __scudo::ByteMap ByteMap;
+  using AddressSpaceView = LocalAddressSpaceView;
   typedef NoOpMapUnmapCallback MapUnmapCallback;
   static const uptr kFlags =
       SizeClassAllocator32FlagMasks::kRandomShuffleChunks |
       SizeClassAllocator32FlagMasks::kUseSeparateSizeClassForBatch;
 };
-typedef SizeClassAllocator32<AP32> PrimaryAllocator;
+typedef SizeClassAllocator32<AP32> PrimaryT;
 #endif  // SANITIZER_CAN_USE_ALLOCATOR64
 
-// __sanitizer::RoundUp has a CHECK that is extraneous for us. Use our own.
-INLINE uptr RoundUpTo(uptr Size, uptr Boundary) {
-  return (Size + Boundary - 1) & ~(Boundary - 1);
-}
-
 #include "scudo_allocator_secondary.h"
+
+typedef LargeMmapAllocator SecondaryT;
+
 #include "scudo_allocator_combined.h"
 
-typedef SizeClassAllocatorLocalCache<PrimaryAllocator> AllocatorCache;
-typedef ScudoLargeMmapAllocator SecondaryAllocator;
-typedef ScudoCombinedAllocator<PrimaryAllocator, AllocatorCache,
-    SecondaryAllocator> ScudoBackendAllocator;
+typedef CombinedAllocator BackendT;
+typedef CombinedAllocator::AllocatorCache AllocatorCacheT;
 
 void initScudo();
 
-void *scudoMalloc(uptr Size, AllocType Type);
-void scudoFree(void *Ptr, AllocType Type);
-void scudoSizedFree(void *Ptr, uptr Size, AllocType Type);
+void *scudoAllocate(uptr Size, uptr Alignment, AllocType Type);
+void scudoDeallocate(void *Ptr, uptr Size, uptr Alignment, AllocType Type);
 void *scudoRealloc(void *Ptr, uptr Size);
 void *scudoCalloc(uptr NMemB, uptr Size);
-void *scudoMemalign(uptr Alignment, uptr Size);
 void *scudoValloc(uptr Size);
 void *scudoPvalloc(uptr Size);
 int scudoPosixMemalign(void **MemPtr, uptr Alignment, uptr Size);

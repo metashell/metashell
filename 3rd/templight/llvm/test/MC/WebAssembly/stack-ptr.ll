@@ -1,4 +1,6 @@
-; RUN: llc -mtriple wasm32-unknown-unknown-wasm -filetype=obj %s -o - | obj2yaml | FileCheck %s
+; RUN: llc -filetype=obj %s -o - | obj2yaml | FileCheck %s
+
+target triple = "wasm32-unknown-unknown"
 
 ; Function that uses explict stack, and should generate a reference to
 ; __stack_pointer, along with the corresponding reloction entry.
@@ -17,5 +19,5 @@ entry:
 ; CHECK:         GlobalMutable:   true
 ; CHECK:   - Type:            CODE
 ; CHECK:     Relocations:
-; CHECK:       - Type:            R_WEBASSEMBLY_GLOBAL_INDEX_LEB
+; CHECK:       - Type:            R_WASM_GLOBAL_INDEX_LEB
 ; CHECK:         Index:           0

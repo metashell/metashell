@@ -1,9 +1,8 @@
 //===-- sanitizer_syscall_linux_aarch64.inc --------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -126,9 +125,6 @@ static uptr __internal_syscall(u64 nr, u64 arg1, long arg2, long arg3,
   __SYSCALL_CONCAT(b, __SYSCALL_NARGS(__VA_ARGS__))(__VA_ARGS__)
 
 #define internal_syscall(...) __SYSCALL_DISP(__internal_syscall, __VA_ARGS__)
-
-#define internal_syscall_ptr internal_syscall
-#define internal_syscall64 internal_syscall
 
 // Helper function used to avoid cobbler errno.
 bool internal_iserror(uptr retval, int *rverrno) {

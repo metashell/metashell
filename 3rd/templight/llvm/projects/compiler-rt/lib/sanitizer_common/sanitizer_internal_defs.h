@@ -1,9 +1,8 @@
 //===-- sanitizer_internal_defs.h -------------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -18,6 +17,9 @@
 #ifndef SANITIZER_DEBUG
 # define SANITIZER_DEBUG 0
 #endif
+
+#define SANITIZER_STRINGIFY_(S) #S
+#define SANITIZER_STRINGIFY(S) SANITIZER_STRINGIFY_(S)
 
 // Only use SANITIZER_*ATTRIBUTE* before the function return type!
 #if SANITIZER_WINDOWS
@@ -36,7 +38,8 @@
 #endif
 
 // TLS is handled differently on different platforms
-#if SANITIZER_LINUX || SANITIZER_NETBSD
+#if SANITIZER_LINUX || SANITIZER_NETBSD || \
+  SANITIZER_FREEBSD || SANITIZER_OPENBSD
 # define SANITIZER_TLS_INITIAL_EXEC_ATTRIBUTE \
     __attribute__((tls_model("initial-exec"))) thread_local
 #else
@@ -65,7 +68,13 @@
 // SANITIZER_SUPPORTS_WEAK_HOOKS means that we support real weak functions that
 // will evaluate to a null pointer when not defined.
 #ifndef SANITIZER_SUPPORTS_WEAK_HOOKS
-#if (SANITIZER_LINUX || SANITIZER_MAC || SANITIZER_SOLARIS) && !SANITIZER_GO
+#if (SANITIZER_LINUX || SANITIZER_SOLARIS) && !SANITIZER_GO
+# define SANITIZER_SUPPORTS_WEAK_HOOKS 1
+// Before Xcode 4.5, the Darwin linker doesn't reliably support undefined
+// weak symbols.  Mac OS X 10.9/Darwin 13 is the first release only supported
+// by Xcode >= 4.5.
+#elif SANITIZER_MAC && \
+    __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ >= 1090 && !SANITIZER_GO
 # define SANITIZER_SUPPORTS_WEAK_HOOKS 1
 #else
 # define SANITIZER_SUPPORTS_WEAK_HOOKS 0
@@ -88,9 +97,16 @@
 
 // We can use .preinit_array section on Linux to call sanitizer initialization
 // functions very early in the process startup (unless PIC macro is defined).
+//
+// On FreeBSD, .preinit_array functions are called with rtld_bind_lock writer
+// lock held. It will lead to dead lock if unresolved PLT functions (which helds
+// rtld_bind_lock reader lock) are called inside .preinit_array functions.
+//
 // FIXME: do we have anything like this on Mac?
-#if SANITIZER_LINUX && !SANITIZER_ANDROID && !defined(PIC)
-# define SANITIZER_CAN_USE_PREINIT_ARRAY 1
+#ifndef SANITIZER_CAN_USE_PREINIT_ARRAY
+#if ((SANITIZER_LINUX && !SANITIZER_ANDROID) || SANITIZER_OPENBSD || \
+     SANITIZER_FUCHSIA) && !defined(PIC)
+#define SANITIZER_CAN_USE_PREINIT_ARRAY 1
 // Before Solaris 11.4, .preinit_array is fully supported only with GNU ld.
 // FIXME: Check for those conditions.
 #elif SANITIZER_SOLARIS && !defined(PIC)
@@ -98,10 +114,16 @@
 #else
 # define SANITIZER_CAN_USE_PREINIT_ARRAY 0
 #endif
+#endif  // SANITIZER_CAN_USE_PREINIT_ARRAY
 
 // GCC does not understand __has_feature
 #if !defined(__has_feature)
 # define __has_feature(x) 0
+#endif
+
+// Older GCCs do not understand __has_attribute.
+#if !defined(__has_attribute)
+# define __has_attribute(x) 0
 #endif
 
 // For portability reasons we do not include stddef.h, stdint.h or any other
@@ -147,7 +169,9 @@ typedef long pid_t;
 typedef int pid_t;
 #endif
 
-#if SANITIZER_FREEBSD || SANITIZER_NETBSD || SANITIZER_MAC || \
+#if SANITIZER_FREEBSD || SANITIZER_NETBSD || \
+    SANITIZER_OPENBSD || SANITIZER_MAC || \
+    (SANITIZER_SOLARIS && (defined(_LP64) || _FILE_OFFSET_BITS == 64)) || \
     (SANITIZER_LINUX && defined(__x86_64__))
 typedef u64 OFF_T;
 #else
@@ -158,7 +182,7 @@ typedef u64  OFF64_T;
 #if (SANITIZER_WORDSIZE == 64) || SANITIZER_MAC
 typedef uptr operator_new_size_type;
 #else
-# if defined(__s390__) && !defined(__s390x__)
+# if SANITIZER_OPENBSD || defined(__s390__) && !defined(__s390x__)
 // Special case: 31-bit s390 has unsigned long as size_t.
 typedef unsigned long operator_new_size_type;
 # else
@@ -166,18 +190,15 @@ typedef u32 operator_new_size_type;
 # endif
 #endif
 
-#if SANITIZER_MAC
-// On Darwin, thread IDs are 64-bit even on 32-bit systems.
 typedef u64 tid_t;
-#else
-typedef uptr tid_t;
-#endif
 
 // ----------- ATTENTION -------------
 // This header should NOT include any other headers to avoid portability issues.
 
 // Common defs.
+#ifndef INLINE
 #define INLINE inline
+#endif
 #define INTERFACE_ATTRIBUTE SANITIZER_INTERFACE_ATTRIBUTE
 #define SANITIZER_WEAK_DEFAULT_IMPL \
   extern "C" SANITIZER_INTERFACE_ATTRIBUTE SANITIZER_WEAK_ATTRIBUTE NOINLINE
@@ -197,6 +218,7 @@ typedef uptr tid_t;
 # define LIKELY(x) (x)
 # define UNLIKELY(x) (x)
 # define PREFETCH(x) /* _mm_prefetch(x, _MM_HINT_NTA) */ (void)0
+# define WARN_UNUSED_RESULT
 #else  // _MSC_VER
 # define ALWAYS_INLINE inline __attribute__((always_inline))
 # define ALIAS(x) __attribute__((alias(x)))
@@ -215,6 +237,7 @@ typedef uptr tid_t;
 # else
 #  define PREFETCH(x) __builtin_prefetch(x)
 # endif
+# define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #endif  // _MSC_VER
 
 #if !defined(_MSC_VER) || defined(__clang__)
@@ -254,8 +277,6 @@ typedef thread_return_t (THREAD_CALLING_CONV *thread_callback_t)(void* arg);
 // NOTE: Functions below must be defined in each run-time.
 void NORETURN Die();
 
-// FIXME: No, this shouldn't be in the sanitizer interface.
-SANITIZER_INTERFACE_ATTRIBUTE
 void NORETURN CheckFailed(const char *file, int line, const char *cond,
                           u64 v1, u64 v2);
 
@@ -343,6 +364,12 @@ void NORETURN CheckFailed(const char *file, int line, const char *cond,
 #define INT64_MAX              (__INT64_C(9223372036854775807))
 #undef UINT64_MAX
 #define UINT64_MAX             (__UINT64_C(18446744073709551615))
+#undef UINTPTR_MAX
+#if SANITIZER_WORDSIZE == 64
+# define UINTPTR_MAX           (18446744073709551615UL)
+#else
+# define UINTPTR_MAX           (4294967295U)
+#endif  // SANITIZER_WORDSIZE == 64
 
 enum LinkerInitialized { LINKER_INITIALIZED = 0 };
 
@@ -395,7 +422,6 @@ inline void Trap() {
 namespace __asan  { using namespace __sanitizer; }  // NOLINT
 namespace __dsan  { using namespace __sanitizer; }  // NOLINT
 namespace __dfsan { using namespace __sanitizer; }  // NOLINT
-namespace __esan  { using namespace __sanitizer; }  // NOLINT
 namespace __lsan  { using namespace __sanitizer; }  // NOLINT
 namespace __msan  { using namespace __sanitizer; }  // NOLINT
 namespace __hwasan  { using namespace __sanitizer; }  // NOLINT
@@ -404,6 +430,7 @@ namespace __scudo { using namespace __sanitizer; }  // NOLINT
 namespace __ubsan { using namespace __sanitizer; }  // NOLINT
 namespace __xray  { using namespace __sanitizer; }  // NOLINT
 namespace __interception  { using namespace __sanitizer; }  // NOLINT
+namespace __hwasan  { using namespace __sanitizer; }  // NOLINT
 
 
 #endif  // SANITIZER_DEFS_H

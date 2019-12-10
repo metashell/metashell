@@ -1,9 +1,8 @@
 //==- CodeViewYAMLTypeHashing.h - CodeView YAMLIO Type hashing ----*- C++-*-==//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -32,10 +31,10 @@ namespace CodeViewYAML {
 struct GlobalHash {
   GlobalHash() = default;
   explicit GlobalHash(StringRef S) : Hash(S) {
-    assert(S.size() == 20 && "Invalid hash size!");
+    assert(S.size() == 8 && "Invalid hash size!");
   }
   explicit GlobalHash(ArrayRef<uint8_t> S) : Hash(S) {
-    assert(S.size() == 20 && "Invalid hash size!");
+    assert(S.size() == 8 && "Invalid hash size!");
   }
   yaml::BinaryRef Hash;
 };
@@ -47,7 +46,7 @@ struct DebugHSection {
   std::vector<GlobalHash> Hashes;
 };
 
-DebugHSection fromDebugH(ArrayRef<uint8_t> DebugT);
+DebugHSection fromDebugH(ArrayRef<uint8_t> DebugH);
 ArrayRef<uint8_t> toDebugH(const DebugHSection &DebugH,
                            BumpPtrAllocator &Alloc);
 

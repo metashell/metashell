@@ -93,7 +93,7 @@ TEST(completion, included)
 {
   code_completer c("#include <vector>");
 
-  ASSERT_EQ(code_completion_result{"r"}, c("std::vecto"));
+  ASSERT_EQ((code_completion_result{"r", "r<_Tp,"}), c("std::vecto"));
 }
 
 TEST(completion, code_completion_cpp_can_not_be_included)

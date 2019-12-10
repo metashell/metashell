@@ -14,8 +14,18 @@
      !__has_builtin(__builtin_convertvector) || \
      !__has_builtin(__builtin_trap) || \
      !__has_builtin(__c11_atomic_init) || \
+     !__has_builtin(__builtin_launder) || \
      !__has_feature(attribute_analyzer_noreturn) || \
      !__has_feature(attribute_overloadable)
+#error Clang should have these
+#endif
+
+// These are technically implemented as keywords, but __has_builtin should
+// still return true.
+#if !__has_builtin(__builtin_LINE) || \
+    !__has_builtin(__builtin_FILE) || \
+    !__has_builtin(__builtin_FUNCTION) || \
+    !__has_builtin(__builtin_COLUMN)
 #error Clang should have these
 #endif
 

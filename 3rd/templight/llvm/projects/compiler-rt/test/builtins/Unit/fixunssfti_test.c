@@ -1,10 +1,10 @@
 // RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- fixunssfti_test.c - Test __fixunssfti -----------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -87,18 +87,18 @@ int main()
         return 1;
 #endif
 
-    if (test__fixunssfti(0x1.FFFFFEp+63F, 0xFFFFFF0000000000LL))
+    if (test__fixunssfti(0x1.FFFFFEp+63F, 0xFFFFFF0000000000ULL))
         return 1;
-    if (test__fixunssfti(0x1.000000p+63F, 0x8000000000000000LL))
+    if (test__fixunssfti(0x1.000000p+63F, 0x8000000000000000ULL))
         return 1;
     if (test__fixunssfti(0x1.FFFFFEp+62F, 0x7FFFFF8000000000LL))
         return 1;
     if (test__fixunssfti(0x1.FFFFFCp+62F, 0x7FFFFF0000000000LL))
         return 1;
 
-    if (test__fixunssfti(0x1.FFFFFEp+127F, make_ti(0xFFFFFF0000000000LL, 0)))
+    if (test__fixunssfti(0x1.FFFFFEp+127F, make_ti(0xFFFFFF0000000000ULL, 0)))
         return 1;
-    if (test__fixunssfti(0x1.000000p+127F, make_ti(0x8000000000000000LL, 0)))
+    if (test__fixunssfti(0x1.000000p+127F, make_ti(0x8000000000000000ULL, 0)))
         return 1;
     if (test__fixunssfti(0x1.FFFFFEp+126F, make_ti(0x7FFFFF8000000000LL, 0)))
         return 1;

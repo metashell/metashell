@@ -1,12 +1,12 @@
 //===- unittest/Tooling/RefactoringTest.cpp - Refactoring unit tests ------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
+#include "clang/Tooling/Refactoring.h"
 #include "ReplacementTest.h"
 #include "RewriterTestContext.h"
 #include "clang/AST/ASTConsumer.h"
@@ -19,16 +19,15 @@
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/SourceManager.h"
-#include "clang/Basic/VirtualFileSystem.h"
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Rewrite/Core/Rewriter.h"
-#include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/Refactoring/AtomicChange.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm/Support/VirtualFileSystem.h"
 #include "gtest/gtest.h"
 
 namespace clang {
@@ -1032,10 +1031,10 @@ TEST_F(MergeReplacementsTest, OverlappingRanges) {
 
 TEST(DeduplicateByFileTest, PathsWithDots) {
   std::map<std::string, Replacements> FileToReplaces;
-  llvm::IntrusiveRefCntPtr<vfs::InMemoryFileSystem> VFS(
-      new vfs::InMemoryFileSystem());
+  llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> VFS(
+      new llvm::vfs::InMemoryFileSystem());
   FileManager FileMgr(FileSystemOptions(), VFS);
-#if !defined(LLVM_ON_WIN32)
+#if !defined(_WIN32)
   StringRef Path1 = "a/b/.././c.h";
   StringRef Path2 = "a/c.h";
 #else
@@ -1053,10 +1052,10 @@ TEST(DeduplicateByFileTest, PathsWithDots) {
 
 TEST(DeduplicateByFileTest, PathWithDotSlash) {
   std::map<std::string, Replacements> FileToReplaces;
-  llvm::IntrusiveRefCntPtr<vfs::InMemoryFileSystem> VFS(
-      new vfs::InMemoryFileSystem());
+  llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> VFS(
+      new llvm::vfs::InMemoryFileSystem());
   FileManager FileMgr(FileSystemOptions(), VFS);
-#if !defined(LLVM_ON_WIN32)
+#if !defined(_WIN32)
   StringRef Path1 = "./a/b/c.h";
   StringRef Path2 = "a/b/c.h";
 #else
@@ -1074,10 +1073,10 @@ TEST(DeduplicateByFileTest, PathWithDotSlash) {
 
 TEST(DeduplicateByFileTest, NonExistingFilePath) {
   std::map<std::string, Replacements> FileToReplaces;
-  llvm::IntrusiveRefCntPtr<vfs::InMemoryFileSystem> VFS(
-      new vfs::InMemoryFileSystem());
+  llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> VFS(
+      new llvm::vfs::InMemoryFileSystem());
   FileManager FileMgr(FileSystemOptions(), VFS);
-#if !defined(LLVM_ON_WIN32)
+#if !defined(_WIN32)
   StringRef Path1 = "./a/b/c.h";
   StringRef Path2 = "a/b/c.h";
 #else
@@ -1123,11 +1122,11 @@ TEST_F(AtomicChangeTest, AtomicChangeToYAML) {
                "Key:             'input.cpp:20'\n"
                "FilePath:        input.cpp\n"
                "Error:           ''\n"
-               "InsertedHeaders: \n" // Extra whitespace here!
+               "InsertedHeaders:\n"
                "  - a.h\n"
-               "RemovedHeaders:  \n" // Extra whitespace here!
+               "RemovedHeaders:\n"
                "  - b.h\n"
-               "Replacements:    \n" // Extra whitespace here!
+               "Replacements:\n"
                "  - FilePath:        input.cpp\n"
                "    Offset:          20\n"
                "    Length:          0\n"
@@ -1145,11 +1144,11 @@ TEST_F(AtomicChangeTest, YAMLToAtomicChange) {
                             "Key:             'input.cpp:20'\n"
                             "FilePath:        input.cpp\n"
                             "Error:           'ok'\n"
-                            "InsertedHeaders: \n" // Extra whitespace here!
+                            "InsertedHeaders:\n"
                             "  - a.h\n"
-                            "RemovedHeaders:  \n" // Extra whitespace here!
+                            "RemovedHeaders:\n"
                             "  - b.h\n"
-                            "Replacements:    \n" // Extra whitespace here!
+                            "Replacements:\n"
                             "  - FilePath:        input.cpp\n"
                             "    Offset:          20\n"
                             "    Length:          0\n"

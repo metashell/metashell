@@ -11,10 +11,12 @@ define void @bar() #0 {
 }
 
 ; Verifies that inline assembly is correctly handled by giving a list of clobbered registers
-; CHECK: foo Clobbered Registers: %ah %al %ax %ch %cl %cx %di %dil %eax %ecx %edi %rax %rcx %rdi
+; CHECK: foo Clobbered Registers: $ah $al $ax $ch $cl $cx $di $dih $dil $eax $ecx $edi $hax $hcx $hdi $rax $rcx $rdi
 define void @foo() #0 {
   call void asm sideeffect "", "~{eax},~{ecx},~{edi}"() #0
   ret void
 }
+
+@llvm.used = appending global [2 x i8*] [i8* bitcast (void ()* @foo to i8*), i8* bitcast (void ()* @bar to i8*)]
 
 attributes #0 = { nounwind }

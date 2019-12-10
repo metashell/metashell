@@ -1,9 +1,8 @@
 //===----- SymbolStringPoolTest.cpp - Unit tests for SymbolStringPool -----===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -32,6 +31,12 @@ TEST(SymbolStringPool, UniquingAndComparisons) {
   // however we can't test the actual result as this is a pointer comparison and
   // SymbolStringPtr doesn't expose the underlying address of the string.
   (void)(P1 < P3);
+}
+
+TEST(SymbolStringPool, Dereference) {
+  SymbolStringPool SP;
+  auto Foo = SP.intern("foo");
+  EXPECT_EQ(*Foo, "foo") << "Equality on dereferenced string failed";
 }
 
 TEST(SymbolStringPool, ClearDeadEntries) {

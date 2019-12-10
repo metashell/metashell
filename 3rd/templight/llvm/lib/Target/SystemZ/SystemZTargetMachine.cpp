@@ -1,9 +1,8 @@
 //===-- SystemZTargetMachine.cpp - Define TargetMachine for SystemZ -------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -12,18 +11,19 @@
 #include "SystemZ.h"
 #include "SystemZMachineScheduler.h"
 #include "SystemZTargetTransformInfo.h"
+#include "TargetInfo/SystemZTargetInfo.h"
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/CodeGen/Passes.h"
-#include "llvm/CodeGen/TargetLoweringObjectFile.h"
 #include "llvm/CodeGen/TargetLoweringObjectFileImpl.h"
 #include "llvm/CodeGen/TargetPassConfig.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/CodeGen.h"
 #include "llvm/Support/TargetRegistry.h"
+#include "llvm/Target/TargetLoweringObjectFile.h"
 #include "llvm/Transforms/Scalar.h"
 #include <string>
 
@@ -128,10 +128,16 @@ static Reloc::Model getEffectiveRelocModel(Optional<Reloc::Model> RM) {
 //   in range of LARL.  However, the JIT environment has no equivalent
 //   of copy relocs, so locally-binding data symbols might not be in
 //   the range of LARL.  We need the Medium model in that case.
-static CodeModel::Model getEffectiveCodeModel(Optional<CodeModel::Model> CM,
-                                              Reloc::Model RM, bool JIT) {
-  if (CM)
+static CodeModel::Model
+getEffectiveSystemZCodeModel(Optional<CodeModel::Model> CM, Reloc::Model RM,
+                             bool JIT) {
+  if (CM) {
+    if (*CM == CodeModel::Tiny)
+      report_fatal_error("Target does not support the tiny CodeModel", false);
+    if (*CM == CodeModel::Kernel)
+      report_fatal_error("Target does not support the kernel CodeModel", false);
     return *CM;
+  }
   if (JIT)
     return RM == Reloc::PIC_ ? CodeModel::Small : CodeModel::Medium;
   return CodeModel::Small;
@@ -146,7 +152,8 @@ SystemZTargetMachine::SystemZTargetMachine(const Target &T, const Triple &TT,
     : LLVMTargetMachine(
           T, computeDataLayout(TT, CPU, FS), TT, CPU, FS, Options,
           getEffectiveRelocModel(RM),
-          getEffectiveCodeModel(CM, getEffectiveRelocModel(RM), JIT), OL),
+          getEffectiveSystemZCodeModel(CM, getEffectiveRelocModel(RM), JIT),
+          OL),
       TLOF(llvm::make_unique<TargetLoweringObjectFileELF>()),
       Subtarget(TT, CPU, FS, *this) {
   initAsmInfo();
@@ -176,6 +183,7 @@ public:
   void addIRPasses() override;
   bool addInstSelector() override;
   bool addILPOpts() override;
+  void addPostRewrite() override;
   void addPreSched2() override;
   void addPreEmitPass() override;
 };
@@ -205,7 +213,16 @@ bool SystemZPassConfig::addILPOpts() {
   return true;
 }
 
+void SystemZPassConfig::addPostRewrite() {
+  addPass(createSystemZPostRewritePass(getSystemZTargetMachine()));
+}
+
 void SystemZPassConfig::addPreSched2() {
+  // PostRewrite needs to be run at -O0 also (in which case addPostRewrite()
+  // is not called).
+  if (getOptLevel() == CodeGenOpt::None)
+    addPass(createSystemZPostRewritePass(getSystemZTargetMachine()));
+
   addPass(createSystemZExpandPseudoPass(getSystemZTargetMachine()));
 
   if (getOptLevel() != CodeGenOpt::None)

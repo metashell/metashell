@@ -24,12 +24,8 @@ entry:
 ; ARMT2: movwgt [[R]], #123
 
 ; THUMB1-LABEL: t1:
-; THUMB1: mov     r1, r0
-; THUMB1: movs    r2, #255
-; THUMB1: adds    r2, #102
-; THUMB1: movs    r0, #123
-; THUMB1: cmp     r1, #1
-; THUMB1: bgt
+; THUMB1: cmp     r0, #1
+; THUMB1: bgt     .LBB0_2
 
 ; THUMB2-LABEL: t1:
 ; THUMB2: movw [[R:r[0-1]]], #357
@@ -67,23 +63,20 @@ entry:
 define i32 @t3(i32 %a) nounwind readnone {
 entry:
 ; ARM-LABEL: t3:
-; ARM: mov [[R:r[0-1]]], #0
-; ARM: moveq [[R]], #1
+; ARM: rsbs r1, r0, #0
+; ARM: adc  r0, r0, r1
 
 ; ARMT2-LABEL: t3:
-; ARMT2: mov [[R:r[0-1]]], #0
-; ARMT2: movweq [[R]], #1
+; ARMT2: clz r0, r0
+; ARMT2: lsr r0, r0, #5
 
 ; THUMB1-LABEL: t3:
-; THUMB1: mov     r1, r0
-; THUMB1: movs    r0, #1
-; THUMB1: movs    r2, #0
-; THUMB1: cmp     r1, #160
-; THUMB1: beq
+; THUMB1: rsbs r1, r0, #0
+; THUMB1: adcs r0, r1
 
 ; THUMB2-LABEL: t3:
-; THUMB2: mov{{(s|\.w)}} [[R:r[0-1]]], #0
-; THUMB2: moveq [[R]], #1
+; THUMB2: clz r0, r0
+; THUMB2: lsrs r0, r0, #5
   %0 = icmp eq i32 %a, 160
   %1 = zext i1 %0 to i32
   ret i32 %1
@@ -115,21 +108,22 @@ define i32 @t5(i32 %a) nounwind {
 entry:
 ; ARM-LABEL: t5:
 ; ARM-NOT: mov
-; ARM: cmp r0, #1
+; ARM: sub  r0, r0, #1
 ; ARM-NOT: mov
-; ARM: movne r0, #0
+; ARM: rsbs r1, r0, #0
+; ARM: adc  r0, r0, r1
 
 ; THUMB1-LABEL: t5:
-; THUMB1: mov     r1, r0
-; THUMB1: movs    r0, #0
-; THUMB1: cmp     r1, #1
-; THUMB1: bne
+; THUMB1-NOT: bne
+; THUMB1: rsbs r0, r1, #0
+; THUMB1: adcs r0, r1
 
 ; THUMB2-LABEL: t5:
 ; THUMB2-NOT: mov
-; THUMB2: cmp r0, #1
-; THUMB2: it ne
-; THUMB2: movne r0, #0
+; THUMB2: subs r0, #1
+; THUMB2: clz  r0, r0
+; THUMB2: lsrs r0, r0, #5
+
   %cmp = icmp eq i32 %a, 1
   %conv = zext i1 %cmp to i32
   ret i32 %conv
@@ -143,8 +137,8 @@ entry:
 ; ARM: movne r0, #1
 
 ; THUMB1-LABEL: t6:
-; THUMB1: cmp r{{[0-9]+}}, #0
-; THUMB1: bne
+; THUMB1: subs r1, r0, #1
+; THUMB1: sbcs r0, r1
 
 ; THUMB2-LABEL: t6:
 ; THUMB2-NOT: mov
@@ -159,32 +153,26 @@ entry:
 define i32 @t7(i32 %a, i32 %b) nounwind readnone {
 entry:
 ; ARM-LABEL: t7:
-; ARM: mov     r2, #0
-; ARM: cmp     r0, r1
-; ARM: movne   r2, #1
-; ARM: lsl     r0, r2, #2
+; ARM: subs r0, r0, r1
+; ARM: movne   r0, #1
+; ARM: lsl     r0, r0, #2
 
 ; ARMT2-LABEL: t7:
-; ARMT2: mov     r2, #0
-; ARMT2: cmp     r0, r1
-; ARMT2: movwne  r2, #1
-; ARMT2: lsl     r0, r2, #2
+; ARMT2: subs r0, r0, r1
+; ARMT2: movwne r0, #1
+; ARMT2: lsl     r0, r0, #2
 
 ; THUMB1-LABEL: t7:
-; THUMB1: movs    r2, #1
-; THUMB1: movs    r3, #0
-; THUMB1: cmp     r0, r1
-; THUMB1: bne     .LBB6_2
-; THUMB1: mov     r2, r3
-; THUMB1: .LBB6_2:
-; THUMB1: lsls    r0, r2, #2
+; THUMB1: subs r0, r0, r1
+; THUMB1: subs r1, r0, #1
+; THUMB1: sbcs r0, r1
+; THUMB1: lsls r0, r0, #2
 
 ; THUMB2-LABEL: t7:
-; THUMB2: movs    r2, #0
-; THUMB2: cmp     r0, r1
-; THUMB2: it      ne
-; THUMB2: movne   r2, #1
-; THUMB2: lsls    r0, r2, #2
+; THUMB2: subs r0, r0, r1
+; THUMB2: it ne
+; THUMB2: movne r0, #1
+; THUMB2: lsls    r0, r0, #2
   %0 = icmp ne i32 %a, %b
   %1 = select i1 %0, i32 4, i32 0
   ret i32 %1
@@ -196,27 +184,26 @@ entry:
 ; ARM scheduler emits icmp/zext before both calls, so isn't relevant
 
 ; ARMT2-LABEL: t8:
-; ARMT2: mov     r1, r0
-; ARMT2: mov     r0, #9
-; ARMT2: mov     r4, #0
-; ARMT2: cmp     r1, #5
-; ARMT2: movweq  r4, #1
-; ARMT2: bl      t7
+; ARMT2: bl t7
+; ARMT2: mov r1, r0
+; ARMT2: sub r0, r4, #5
+; ARMT2: clz r0, r0
+; ARMT2: lsr r0, r0, #5
 
 ; THUMB1-LABEL: t8:
-; THUMB1: mov     r1, r0
-; THUMB1: movs    r4, #1
-; THUMB1: movs    r0, #0
-; THUMB1: cmp     r1, #5
-; THUMB1: beq     .LBB7_2
-; THUMB1: mov     r4, r0
+; THUMB1: bl t7
+; THUMB1: mov r1, r0
+; THUMB1: subs r2, r4, #5
+; THUMB1: rsbs r0, r2, #0
+; THUMB1: adcs r0, r2
 
 ; THUMB2-LABEL: t8:
-; THUMB2: mov     r1, r0
-; THUMB2: movs    r4, #0
-; THUMB2: cmp     r1, #5
-; THUMB2: it      eq
-; THUMB2: moveq   r4, #1
+; THUMB2: bl t7
+; THUMB2: mov r1, r0
+; THUMB2: subs r0, r4, #5
+; THUMB2: clz r0, r0
+; THUMB2: lsrs r0, r0, #5
+
   %cmp = icmp eq i32 %a, 5
   %conv = zext i1 %cmp to i32
   %call = tail call i32 @t7(i32 9, i32 %a)
@@ -230,18 +217,38 @@ entry:
 ; ARM scheduler emits icmp/zext before both calls, so isn't relevant
 
 ; ARMT2-LABEL: t9:
-; ARMT2: cmp     r4, r4
-; ARMT2: movweq  r0, #1
+; ARMT2: bl f
+; ARMT2: uxtb r0, r4
+; ARMT2: cmp  r0, r0
+; ARMT2: add  r1, r4, #1
+; ARMT2: mov  r2, r0
+; ARMT2: add  r2, r2, #1
+; ARMT2: add  r1, r1, #1
+; ARMT2: uxtb r3, r2
+; ARMT2: cmp  r3, r0
 
 ; THUMB1-LABEL: t9:
-; THUMB1: cmp     r4, r4
-; THUMB1: beq     .LBB8_2
-; THUMB1: mov     r0, r1
+; THUMB1: bl f
+; THUMB1: sxtb r1, r4
+; THUMB1: uxtb r0, r1
+; THUMB1: cmp  r0, r0
+; THUMB1: adds r1, r1, #1
+; THUMB1: mov  r2, r0
+; THUMB1: adds r1, r1, #1
+; THUMB1: adds r2, r2, #1
+; THUMB1: uxtb r3, r2
+; THUMB1: cmp  r3, r0
 
 ; THUMB2-LABEL: t9:
-; THUMB2: cmp     r4, r4
-; THUMB2: it      eq
-; THUMB2: moveq   r0, #1
+; THUMB2: bl f
+; THUMB2: uxtb r0, r4
+; THUMB2: cmp  r0, r0
+; THUMB2: adds r1, r4, #1
+; THUMB2: mov  r2, r0
+; THUMB2: adds r2, #1
+; THUMB2: adds r1, #1
+; THUMB2: uxtb r3, r2
+; THUMB2: cmp  r3, r0
 
   %0 = load i8, i8* %a
   %conv = sext i8 %0 to i32
@@ -284,27 +291,20 @@ entry:
   ret i1 %cmp
 
 ; ARM-LABEL: t10:
-; ARM: mov     r0, #0
-; ARM: cmn     r1, #3
-; ARM: moveq   r0, #1
+; ARM: rsbs r1, r0, #0
+; ARM: adc  r0, r0, r1
 
 ; ARMT2-LABEL: t10:
-; ARMT2: mov     r0, #0
-; ARMT2: cmn     r1, #3
-; ARMT2: movweq  r0, #1
+; ARMT2: clz r0, r0
+; ARMT2: lsr r0, r0, #5
 
 ; THUMB1-LABEL: t10:
-; THUMB1: movs    r0, #1
-; THUMB1: movs    r1, #0
-; THUMB1: cmp     r2, r5
-; THUMB1: beq     .LBB9_2
-; THUMB1: mov     r0, r1
+; THUMB1: rsbs r0, r1, #0
+; THUMB1: adcs r0, r1
 
 ; THUMB2-LABEL: t10:
-; THUMB2: adds    r0, #3
-; THUMB2: mov.w   r0, #0
-; THUMB2: it      eq
-; THUMB2: moveq   r0, #1
+; THUMB2: clz r0, r0
+; THUMB2: lsrs r0, r0, #5
 
 ; V8MBASE-LABEL: t10:
 ; V8MBASE-NOT: movs r0, #0
@@ -331,26 +331,66 @@ entry:
   ret i1 %cmp
 
 ; ARM-LABEL: t11:
-; ARM: mov     r0, #0
-; ARM: cmp     r1, #3
-; ARM: moveq   r0, #1
+; ARM: rsbs r1, r0, #0
+; ARM: adc  r0, r0, r1
 
 ; ARMT2-LABEL: t11:
-; ARMT2: mov     r0, #0
-; ARMT2: cmp     r1, #3
-; ARMT2: movweq  r0, #1
+; ARMT2: clz r0, r0
+; ARMT2: lsr r0, r0, #5
 
 ; THUMB1-LABEL: t11:
 ; THUMB1-NOT: movs r0, #0
 ; THUMB1: movs r0, #5
 
 ; THUMB2-LABEL: t11:
-; THUMB2: movs    r0, #0
-; THUMB2: cmp     r1, #3
-; THUMB2: it      eq
-; THUMB2: moveq   r0, #1
+; THUMB2: clz r0, r0
+; THUMB2: lsrs r0, r0, #5
 
 ; V8MBASE-LABEL: t11:
 ; V8MBASE-NOT: movs r0, #0
-; V8MBASE: movw  r0, #40960
+; V8MBASE: movw	r0, #40960
+}
+
+define i32 @t12(i32 %a) nounwind {
+entry:
+; ARM-LABEL: t12:
+; ARM-NOT: mov
+; ARM: cmp r0, #0
+; ARM: movne r0, #1
+
+; THUMB1-LABEL: t12:
+; THUMB1: subs r1, r0, #1
+; THUMB1: sbcs r0, r1
+; THUMB1: lsls r0, r0, #1
+
+; THUMB2-LABEL: t12:
+; THUMB2-NOT: mov
+; THUMB2: cmp r0, #0
+; THUMB2: it ne
+; THUMB2: movne r0, #1
+  %tobool = icmp ne i32 %a, 0
+  %lnot.ext = select i1 %tobool, i32 2, i32 0
+  ret i32 %lnot.ext
+}
+
+define i32 @t13(i32 %a) nounwind {
+entry:
+; ARM-LABEL: t13:
+; ARM-NOT: mov
+; ARM: cmp r0, #0
+; ARM: movne r0, #3
+
+; THUMB1-LABEL: t13:
+; THUMB1: cmp r0, #0
+; THUMB1: beq
+; THUMB1: movs r0, #3
+
+; THUMB2-LABEL: t13:
+; THUMB2-NOT: mov
+; THUMB2: cmp r0, #0
+; THUMB2: it ne
+; THUMB2: movne r0, #3
+  %tobool = icmp ne i32 %a, 0
+  %lnot.ext = select i1 %tobool, i32 3, i32 0
+  ret i32 %lnot.ext
 }

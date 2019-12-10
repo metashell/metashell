@@ -1,9 +1,8 @@
 //===---------------------- RemoteObjectLayerTest.cpp ---------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -24,8 +23,7 @@ public:
 
   using ObjHandleT = uint64_t;
 
-  using ObjectPtr =
-    std::shared_ptr<object::OwningBinary<object::ObjectFile>>;
+  using ObjectPtr = std::unique_ptr<MemoryBuffer>;
 
   using LookupFn = std::function<JITSymbol(StringRef, bool)>;
   using SymbolLookupTable = std::map<ObjHandleT, LookupFn>;
@@ -43,7 +41,7 @@ public:
 
   Expected<ObjHandleT> addObject(ObjectPtr Obj,
             std::shared_ptr<JITSymbolResolver> Resolver) {
-    return AddObject(Obj, SymTab);
+    return AddObject(std::move(Obj), SymTab);
   }
 
   Error removeObject(ObjHandleT H) {
@@ -96,14 +94,18 @@ MockObjectLayer::ObjectPtr createTestObject() {
   LLVMContext Ctx;
   ModuleBuilder MB(Ctx, TM->getTargetTriple().str(), "TestModule");
   MB.getModule()->setDataLayout(TM->createDataLayout());
-  auto *Main = MB.createFunctionDecl<void(int, char**)>("main");
+  auto *Main = MB.createFunctionDecl(
+      FunctionType::get(Type::getInt32Ty(Ctx),
+                        {Type::getInt32Ty(Ctx),
+                         Type::getInt8PtrTy(Ctx)->getPointerTo()},
+                        false),
+      "main");
   Main->getBasicBlockList().push_back(BasicBlock::Create(Ctx));
   IRBuilder<> B(&Main->back());
   B.CreateRet(ConstantInt::getSigned(Type::getInt32Ty(Ctx), 42));
 
   SimpleCompiler IRCompiler(*TM);
-  return std::make_shared<object::OwningBinary<object::ObjectFile>>(
-           IRCompiler(*MB.getModule()));
+  return IRCompiler(*MB.getModule());
 }
 
 TEST(RemoteObjectLayer, AddObject) {
@@ -114,19 +116,19 @@ TEST(RemoteObjectLayer, AddObject) {
 
   auto Channels = createPairedQueueChannels();
 
-  auto ReportError =
-    [](Error Err) {
-      logAllUnhandledErrors(std::move(Err), llvm::errs(), "");
-    };
+  auto ReportError = [](Error Err) {
+    logAllUnhandledErrors(std::move(Err), llvm::errs());
+  };
 
   // Copy the bytes out of the test object: the copy will be used to verify
   // that the original is correctly transmitted over RPC to the mock layer.
-  StringRef ObjBytes = TestObject->getBinary()->getData();
+  StringRef ObjBytes = TestObject->getBuffer();
   std::vector<char> ObjContents(ObjBytes.size());
   std::copy(ObjBytes.begin(), ObjBytes.end(), ObjContents.begin());
 
   RPCEndpoint ClientEP(*Channels.first, true);
-  RemoteObjectClientLayer<RPCEndpoint> Client(ClientEP, ReportError);
+  RemoteObjectClientLayer<RPCEndpoint> Client(AcknowledgeORCv1Deprecation,
+                                              ClientEP, ReportError);
 
   RPCEndpoint ServerEP(*Channels.second, true);
   MockObjectLayer BaseLayer(
@@ -134,7 +136,7 @@ TEST(RemoteObjectLayer, AddObject) {
                    MockObjectLayer::SymbolLookupTable &SymTab) {
 
       // Check that the received object file content matches the original.
-      StringRef RPCObjContents = Obj->getBinary()->getData();
+      StringRef RPCObjContents = Obj->getBuffer();
       EXPECT_EQ(RPCObjContents.size(), ObjContents.size())
         << "RPC'd object file has incorrect size";
       EXPECT_TRUE(std::equal(RPCObjContents.begin(), RPCObjContents.end(),
@@ -143,9 +145,8 @@ TEST(RemoteObjectLayer, AddObject) {
 
       return 1;
     });
-  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(BaseLayer,
-                                                               ServerEP,
-                                                               ReportError);
+  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(
+      AcknowledgeORCv1Deprecation, BaseLayer, ServerEP, ReportError);
 
   bool Finished = false;
   ServerEP.addHandler<remote::utils::TerminateSession>(
@@ -159,7 +160,7 @@ TEST(RemoteObjectLayer, AddObject) {
     });
 
   cantFail(Client.addObject(std::move(TestObject),
-                            std::make_shared<NullResolver>()));
+                            std::make_shared<NullLegacyResolver>()));
   cantFail(ClientEP.callB<remote::utils::TerminateSession>());
   ServerThread.join();
 }
@@ -180,7 +181,8 @@ TEST(RemoteObjectLayer, AddObjectFailure) {
     };
 
   RPCEndpoint ClientEP(*Channels.first, true);
-  RemoteObjectClientLayer<RPCEndpoint> Client(ClientEP, ReportError);
+  RemoteObjectClientLayer<RPCEndpoint> Client(AcknowledgeORCv1Deprecation,
+                                              ClientEP, ReportError);
 
   RPCEndpoint ServerEP(*Channels.second, true);
   MockObjectLayer BaseLayer(
@@ -190,9 +192,8 @@ TEST(RemoteObjectLayer, AddObjectFailure) {
       return make_error<StringError>("AddObjectFailure - Test Message",
                                      inconvertibleErrorCode());
     });
-  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(BaseLayer,
-                                                               ServerEP,
-                                                               ReportError);
+  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(
+      AcknowledgeORCv1Deprecation, BaseLayer, ServerEP, ReportError);
 
   bool Finished = false;
   ServerEP.addHandler<remote::utils::TerminateSession>(
@@ -205,8 +206,8 @@ TEST(RemoteObjectLayer, AddObjectFailure) {
         cantFail(ServerEP.handleOne());
     });
 
-  auto HandleOrErr =
-    Client.addObject(std::move(TestObject), std::make_shared<NullResolver>());
+  auto HandleOrErr = Client.addObject(std::move(TestObject),
+                                      std::make_shared<NullLegacyResolver>());
 
   EXPECT_FALSE(HandleOrErr) << "Expected error from addObject";
 
@@ -227,13 +228,13 @@ TEST(RemoteObjectLayer, RemoveObject) {
 
   auto Channels = createPairedQueueChannels();
 
-  auto ReportError =
-    [](Error Err) {
-      logAllUnhandledErrors(std::move(Err), llvm::errs(), "");
-    };
+  auto ReportError = [](Error Err) {
+    logAllUnhandledErrors(std::move(Err), llvm::errs());
+  };
 
   RPCEndpoint ClientEP(*Channels.first, true);
-  RemoteObjectClientLayer<RPCEndpoint> Client(ClientEP, ReportError);
+  RemoteObjectClientLayer<RPCEndpoint> Client(AcknowledgeORCv1Deprecation,
+                                              ClientEP, ReportError);
 
   RPCEndpoint ServerEP(*Channels.second, true);
 
@@ -243,9 +244,8 @@ TEST(RemoteObjectLayer, RemoveObject) {
       SymTab[1] = MockObjectLayer::LookupFn();
       return 1;
     });
-  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(BaseLayer,
-                                                               ServerEP,
-                                                               ReportError);
+  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(
+      AcknowledgeORCv1Deprecation, BaseLayer, ServerEP, ReportError);
 
   bool Finished = false;
   ServerEP.addHandler<remote::utils::TerminateSession>(
@@ -258,8 +258,8 @@ TEST(RemoteObjectLayer, RemoveObject) {
         cantFail(ServerEP.handleOne());
     });
 
-  auto H  = cantFail(Client.addObject(std::move(TestObject),
-                                      std::make_shared<NullResolver>()));
+  auto H = cantFail(Client.addObject(std::move(TestObject),
+                                     std::make_shared<NullLegacyResolver>()));
 
   cantFail(Client.removeObject(H));
 
@@ -283,7 +283,8 @@ TEST(RemoteObjectLayer, RemoveObjectFailure) {
     };
 
   RPCEndpoint ClientEP(*Channels.first, true);
-  RemoteObjectClientLayer<RPCEndpoint> Client(ClientEP, ReportError);
+  RemoteObjectClientLayer<RPCEndpoint> Client(AcknowledgeORCv1Deprecation,
+                                              ClientEP, ReportError);
 
   RPCEndpoint ServerEP(*Channels.second, true);
 
@@ -294,9 +295,8 @@ TEST(RemoteObjectLayer, RemoveObjectFailure) {
        MockObjectLayer::SymbolLookupTable &SymTab) {
       return 42;
     });
-  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(BaseLayer,
-                                                               ServerEP,
-                                                               ReportError);
+  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(
+      AcknowledgeORCv1Deprecation, BaseLayer, ServerEP, ReportError);
 
   bool Finished = false;
   ServerEP.addHandler<remote::utils::TerminateSession>(
@@ -309,8 +309,8 @@ TEST(RemoteObjectLayer, RemoveObjectFailure) {
         cantFail(ServerEP.handleOne());
     });
 
-  auto H  = cantFail(Client.addObject(std::move(TestObject),
-                                      std::make_shared<NullResolver>()));
+  auto H = cantFail(Client.addObject(std::move(TestObject),
+                                     std::make_shared<NullLegacyResolver>()));
 
   auto Err = Client.removeObject(H);
   EXPECT_TRUE(!!Err) << "Expected error from removeObject";
@@ -339,7 +339,8 @@ TEST(RemoteObjectLayer, FindSymbol) {
     };
 
   RPCEndpoint ClientEP(*Channels.first, true);
-  RemoteObjectClientLayer<RPCEndpoint> Client(ClientEP, ReportError);
+  RemoteObjectClientLayer<RPCEndpoint> Client(AcknowledgeORCv1Deprecation,
+                                              ClientEP, ReportError);
 
   RPCEndpoint ServerEP(*Channels.second, true);
 
@@ -358,9 +359,8 @@ TEST(RemoteObjectLayer, FindSymbol) {
         };
       return 42;
     });
-  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(BaseLayer,
-                                                               ServerEP,
-                                                               ReportError);
+  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(
+      AcknowledgeORCv1Deprecation, BaseLayer, ServerEP, ReportError);
 
   bool Finished = false;
   ServerEP.addHandler<remote::utils::TerminateSession>(
@@ -374,7 +374,7 @@ TEST(RemoteObjectLayer, FindSymbol) {
     });
 
   cantFail(Client.addObject(std::move(TestObject),
-                            std::make_shared<NullResolver>()));
+                            std::make_shared<NullLegacyResolver>()));
 
   // Check that we can find and materialize a valid symbol.
   auto Sym1 = Client.findSymbol("foobar", true);
@@ -421,7 +421,8 @@ TEST(RemoteObjectLayer, FindSymbolIn) {
     };
 
   RPCEndpoint ClientEP(*Channels.first, true);
-  RemoteObjectClientLayer<RPCEndpoint> Client(ClientEP, ReportError);
+  RemoteObjectClientLayer<RPCEndpoint> Client(AcknowledgeORCv1Deprecation,
+                                              ClientEP, ReportError);
 
   RPCEndpoint ServerEP(*Channels.second, true);
 
@@ -447,9 +448,8 @@ TEST(RemoteObjectLayer, FindSymbolIn) {
 
       return 42;
     });
-  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(BaseLayer,
-                                                               ServerEP,
-                                                               ReportError);
+  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(
+      AcknowledgeORCv1Deprecation, BaseLayer, ServerEP, ReportError);
 
   bool Finished = false;
   ServerEP.addHandler<remote::utils::TerminateSession>(
@@ -463,7 +463,7 @@ TEST(RemoteObjectLayer, FindSymbolIn) {
     });
 
   auto H = cantFail(Client.addObject(std::move(TestObject),
-                                     std::make_shared<NullResolver>()));
+                                     std::make_shared<NullLegacyResolver>()));
 
   auto Sym1 = Client.findSymbolIn(H, "foobar", true);
 
@@ -491,13 +491,13 @@ TEST(RemoteObjectLayer, EmitAndFinalize) {
 
   auto Channels = createPairedQueueChannels();
 
-  auto ReportError =
-    [](Error Err) {
-      logAllUnhandledErrors(std::move(Err), llvm::errs(), "");
-    };
+  auto ReportError = [](Error Err) {
+    logAllUnhandledErrors(std::move(Err), llvm::errs());
+  };
 
   RPCEndpoint ClientEP(*Channels.first, true);
-  RemoteObjectClientLayer<RPCEndpoint> Client(ClientEP, ReportError);
+  RemoteObjectClientLayer<RPCEndpoint> Client(AcknowledgeORCv1Deprecation,
+                                              ClientEP, ReportError);
 
   RPCEndpoint ServerEP(*Channels.second, true);
 
@@ -507,9 +507,8 @@ TEST(RemoteObjectLayer, EmitAndFinalize) {
       SymTab[1] = MockObjectLayer::LookupFn();
       return 1;
     });
-  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(BaseLayer,
-                                                               ServerEP,
-                                                               ReportError);
+  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(
+      AcknowledgeORCv1Deprecation, BaseLayer, ServerEP, ReportError);
 
   bool Finished = false;
   ServerEP.addHandler<remote::utils::TerminateSession>(
@@ -523,7 +522,7 @@ TEST(RemoteObjectLayer, EmitAndFinalize) {
     });
 
   auto H = cantFail(Client.addObject(std::move(TestObject),
-                                     std::make_shared<NullResolver>()));
+                                     std::make_shared<NullLegacyResolver>()));
 
   auto Err = Client.emitAndFinalize(H);
   EXPECT_FALSE(!!Err) << "emitAndFinalize should work";
@@ -548,7 +547,8 @@ TEST(RemoteObjectLayer, EmitAndFinalizeFailure) {
     };
 
   RPCEndpoint ClientEP(*Channels.first, true);
-  RemoteObjectClientLayer<RPCEndpoint> Client(ClientEP, ReportError);
+  RemoteObjectClientLayer<RPCEndpoint> Client(AcknowledgeORCv1Deprecation,
+                                              ClientEP, ReportError);
 
   RPCEndpoint ServerEP(*Channels.second, true);
 
@@ -557,9 +557,8 @@ TEST(RemoteObjectLayer, EmitAndFinalizeFailure) {
        MockObjectLayer::SymbolLookupTable &SymTab) {
       return 1;
     });
-  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(BaseLayer,
-                                                               ServerEP,
-                                                               ReportError);
+  RemoteObjectServerLayer<MockObjectLayer, RPCEndpoint> Server(
+      AcknowledgeORCv1Deprecation, BaseLayer, ServerEP, ReportError);
 
   bool Finished = false;
   ServerEP.addHandler<remote::utils::TerminateSession>(
@@ -573,7 +572,7 @@ TEST(RemoteObjectLayer, EmitAndFinalizeFailure) {
     });
 
   auto H = cantFail(Client.addObject(std::move(TestObject),
-                                     std::make_shared<NullResolver>()));
+                                     std::make_shared<NullLegacyResolver>()));
 
   auto Err = Client.emitAndFinalize(H);
   EXPECT_TRUE(!!Err) << "emitAndFinalize should work";

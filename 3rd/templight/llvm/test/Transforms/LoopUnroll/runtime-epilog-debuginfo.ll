@@ -66,7 +66,7 @@ lee1.exit:                                        ; preds = %lee1.exit.loopexit,
 ; Function Attrs: nounwind readnone
 declare void @llvm.dbg.value(metadata, i64, metadata, metadata) #1
 
-attributes #0 = { nounwind readnone "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="arm7tdmi" "target-features"="+neon,+strict-align,+vfp3,-crypto,-d16,-fp-armv8,-fp-only-sp,-fp16,-vfp4" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { nounwind readnone "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="arm7tdmi" "target-features"="+neon,+strict-align,+vfp3,-crypto,-fp-armv8,-fp16,-vfp4" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone }
 
 !llvm.dbg.cu = !{!0}
@@ -81,7 +81,7 @@ attributes #1 = { nounwind readnone }
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 1, !"min_enum_size", i32 4}
 !7 = !{!"Snapdragon LLVM ARM Compiler 4.0.5 (based on llvm.org 4.0+)"}
-!8 = distinct !DISubprogram(name: "goo", scope: !1, file: !1, line: 23, type: !9, isLocal: false, isDefinition: true, scopeLine: 23, flags: DIFlagPrototyped, isOptimized: true, unit: !0, variables: !12)
+!8 = distinct !DISubprogram(name: "goo", scope: !1, file: !1, line: 23, type: !9, isLocal: false, isDefinition: true, scopeLine: 23, flags: DIFlagPrototyped, isOptimized: true, unit: !0, retainedNodes: !12)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11, !11, !11}
 !11 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
@@ -92,7 +92,7 @@ attributes #1 = { nounwind readnone }
 !16 = !DILocation(line: 23, column: 14, scope: !8)
 !17 = !DILocation(line: 23, column: 21, scope: !8)
 !18 = !DILocalVariable(name: "a", arg: 1, scope: !19, file: !1, line: 3, type: !11)
-!19 = distinct !DISubprogram(name: "lee1", scope: !1, file: !1, line: 3, type: !9, isLocal: true, isDefinition: true, scopeLine: 3, flags: DIFlagPrototyped, isOptimized: true, unit: !0, variables: !20)
+!19 = distinct !DISubprogram(name: "lee1", scope: !1, file: !1, line: 3, type: !9, isLocal: true, isDefinition: true, scopeLine: 3, flags: DIFlagPrototyped, isOptimized: true, unit: !0, retainedNodes: !20)
 !20 = !{!18, !21, !22, !23}
 !21 = !DILocalVariable(name: "b", arg: 2, scope: !19, file: !1, line: 3, type: !11)
 !22 = !DILocalVariable(name: "t", scope: !19, file: !1, line: 4, type: !11)
@@ -112,10 +112,10 @@ attributes #1 = { nounwind readnone }
 !36 = !DILocation(line: 6, column: 7, scope: !32, inlinedAt: !27)
 !37 = !DILocation(line: 5, column: 28, scope: !32, inlinedAt: !27)
 !38 = distinct !{!38, !39, !40}
-!39 = !DILocation(line: 5, column: 3, scope: !24)
-!40 = !DILocation(line: 6, column: 14, scope: !24)
+!39 = !DILocation(line: 5, column: 3, scope: !24, inlinedAt: !27)
+!40 = !DILocation(line: 6, column: 14, scope: !24, inlinedAt: !27)
 !41 = !DILocation(line: 11, column: 12, scope: !42, inlinedAt: !46)
-!42 = distinct !DISubprogram(name: "lee2", scope: !1, file: !1, line: 10, type: !9, isLocal: true, isDefinition: true, scopeLine: 10, flags: DIFlagPrototyped, isOptimized: true, unit: !0, variables: !43)
+!42 = distinct !DISubprogram(name: "lee2", scope: !1, file: !1, line: 10, type: !9, isLocal: true, isDefinition: true, scopeLine: 10, flags: DIFlagPrototyped, isOptimized: true, unit: !0, retainedNodes: !43)
 !43 = !{!44, !45}
 !44 = !DILocalVariable(name: "a", arg: 1, scope: !42, file: !1, line: 10, type: !11)
 !45 = !DILocalVariable(name: "b", arg: 2, scope: !42, file: !1, line: 10, type: !11)

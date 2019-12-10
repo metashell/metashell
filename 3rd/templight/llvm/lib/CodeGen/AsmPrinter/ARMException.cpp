@@ -1,9 +1,8 @@
 //===-- CodeGen/AsmPrinter/ARMException.cpp - ARM EHABI Exception Impl ----===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -91,7 +90,8 @@ void ARMException::endFunction(const MachineFunction *MF) {
     ATS.emitFnEnd();
 }
 
-void ARMException::emitTypeInfos(unsigned TTypeEncoding) {
+void ARMException::emitTypeInfos(unsigned TTypeEncoding,
+                                 MCSymbol *TTBaseLabel) {
   const MachineFunction *MF = Asm->MF;
   const std::vector<const GlobalValue *> &TypeInfos = MF->getTypeInfos();
   const std::vector<unsigned> &FilterIds = MF->getFilterIds();
@@ -111,6 +111,8 @@ void ARMException::emitTypeInfos(unsigned TTypeEncoding) {
       Asm->OutStreamer->AddComment("TypeInfo " + Twine(Entry--));
     Asm->EmitTTypeReference(GV, TTypeEncoding);
   }
+
+  Asm->OutStreamer->EmitLabel(TTBaseLabel);
 
   // Emit the Exception Specifications.
   if (VerboseAsm && !FilterIds.empty()) {

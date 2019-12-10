@@ -1,9 +1,8 @@
 //===--- PrecompiledPreamble.h - Build precompiled preambles ----*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -26,19 +25,18 @@
 
 namespace llvm {
 class MemoryBuffer;
-}
-
-namespace clang {
 namespace vfs {
 class FileSystem;
 }
+} // namespace llvm
 
+namespace clang {
 class CompilerInstance;
 class CompilerInvocation;
 class DeclGroupRef;
 class PCHContainerOperations;
 
-/// \brief Runs lexer to compute suggested preamble bounds.
+/// Runs lexer to compute suggested preamble bounds.
 PreambleBounds ComputePreambleBounds(const LangOptions &LangOpts,
                                      llvm::MemoryBuffer *Buffer,
                                      unsigned MaxLines);
@@ -53,7 +51,7 @@ class PrecompiledPreamble {
   struct PreambleFileHash;
 
 public:
-  /// \brief Try to build PrecompiledPreamble for \p Invocation. See
+  /// Try to build PrecompiledPreamble for \p Invocation. See
   /// BuildPreambleError for possible error codes.
   ///
   /// \param Invocation Original CompilerInvocation with options to compile the
@@ -80,7 +78,8 @@ public:
   static llvm::ErrorOr<PrecompiledPreamble>
   Build(const CompilerInvocation &Invocation,
         const llvm::MemoryBuffer *MainFileBuffer, PreambleBounds Bounds,
-        DiagnosticsEngine &Diagnostics, IntrusiveRefCntPtr<vfs::FileSystem> VFS,
+        DiagnosticsEngine &Diagnostics,
+        IntrusiveRefCntPtr<llvm::vfs::FileSystem> VFS,
         std::shared_ptr<PCHContainerOperations> PCHContainerOps,
         bool StoreInMemory, PreambleCallbacks &Callbacks);
 
@@ -99,18 +98,26 @@ public:
   /// MainFileBuffer) of the main file.
   bool CanReuse(const CompilerInvocation &Invocation,
                 const llvm::MemoryBuffer *MainFileBuffer, PreambleBounds Bounds,
-                vfs::FileSystem *VFS) const;
+                llvm::vfs::FileSystem *VFS) const;
 
   /// Changes options inside \p CI to use PCH from this preamble. Also remaps
   /// main file to \p MainFileBuffer and updates \p VFS to ensure the preamble
   /// is accessible.
-  /// For in-memory preambles, PrecompiledPreamble instance continues to own
-  /// the MemoryBuffer with the Preamble after this method returns. The caller
-  /// is reponsible for making sure the PrecompiledPreamble instance outlives
-  /// the compiler run and the AST that will be using the PCH.
+  /// Requires that CanReuse() is true.
+  /// For in-memory preambles, PrecompiledPreamble instance continues to own the
+  /// MemoryBuffer with the Preamble after this method returns. The caller is
+  /// responsible for making sure the PrecompiledPreamble instance outlives the
+  /// compiler run and the AST that will be using the PCH.
   void AddImplicitPreamble(CompilerInvocation &CI,
-                           IntrusiveRefCntPtr<vfs::FileSystem> &VFS,
+                           IntrusiveRefCntPtr<llvm::vfs::FileSystem> &VFS,
                            llvm::MemoryBuffer *MainFileBuffer) const;
+
+  /// Configure \p CI to use this preamble.
+  /// Like AddImplicitPreamble, but doesn't assume CanReuse() is true.
+  /// If this preamble does not match the file, it may parse differently.
+  void OverridePreamble(CompilerInvocation &CI,
+                        IntrusiveRefCntPtr<llvm::vfs::FileSystem> &VFS,
+                        llvm::MemoryBuffer *MainFileBuffer) const;
 
 private:
   PrecompiledPreamble(PCHStorage Storage, std::vector<char> PreambleBytes,
@@ -222,12 +229,19 @@ private:
     }
   };
 
+  /// Helper function to set up PCH for the preamble into \p CI and \p VFS to
+  /// with the specified \p Bounds.
+  void configurePreamble(PreambleBounds Bounds, CompilerInvocation &CI,
+                         IntrusiveRefCntPtr<llvm::vfs::FileSystem> &VFS,
+                         llvm::MemoryBuffer *MainFileBuffer) const;
+
   /// Sets up the PreprocessorOptions and changes VFS, so that PCH stored in \p
   /// Storage is accessible to clang. This method is an implementation detail of
   /// AddImplicitPreamble.
-  static void setupPreambleStorage(const PCHStorage &Storage,
-                                   PreprocessorOptions &PreprocessorOpts,
-                                   IntrusiveRefCntPtr<vfs::FileSystem> &VFS);
+  static void
+  setupPreambleStorage(const PCHStorage &Storage,
+                       PreprocessorOptions &PreprocessorOpts,
+                       IntrusiveRefCntPtr<llvm::vfs::FileSystem> &VFS);
 
   /// Manages the memory buffer or temporary file that stores the PCH.
   PCHStorage Storage;
@@ -269,15 +283,16 @@ public:
   /// Creates wrapper class for PPCallbacks so we can also process information
   /// about includes that are inside of a preamble
   virtual std::unique_ptr<PPCallbacks> createPPCallbacks();
+  /// The returned CommentHandler will be added to the preprocessor if not null.
+  virtual CommentHandler *getCommentHandler();
 };
 
 enum class BuildPreambleError {
-  PreambleIsEmpty = 1,
-  CouldntCreateTempFile,
+  CouldntCreateTempFile = 1,
   CouldntCreateTargetInfo,
-  CouldntCreateVFSOverlay,
   BeginSourceFileFailed,
-  CouldntEmitPCH
+  CouldntEmitPCH,
+  BadInputs
 };
 
 class BuildPreambleErrorCategory final : public std::error_category {

@@ -29,9 +29,9 @@ define void @f2(i32 %p, ...) "no-frame-pointer-elim"="true" {
 ; ALL-NEXT:    movq %rsp, %rbp
 ; ALL-NEXT:    .seh_setframe 5, 0
 ; ALL-NEXT:    .seh_endprologue
-; ALL-NEXT:    movq %r9, 48(%rbp)
-; ALL-NEXT:    movq %r8, 40(%rbp)
 ; ALL-NEXT:    movq %rdx, 32(%rbp)
+; ALL-NEXT:    movq %r8, 40(%rbp)
+; ALL-NEXT:    movq %r9, 48(%rbp)
 ; ALL-NEXT:    leaq 32(%rbp), %rax
 ; ALL-NEXT:    movq %rax, (%rbp)
 ; ALL-NEXT:    addq $8, %rsp
@@ -177,9 +177,8 @@ define i32 @f8(i32 %a, i32 %b, i32 %c, i32 %d, i32 %e) "no-frame-pointer-elim"="
 ; ALL-NEXT:    movq %rsp, %rbx
 ; ALL-NEXT:    movl 288(%rbp), %esi
 ; ALL-NEXT:    movl %ecx, %eax
-; ALL-NEXT:    leaq 15(,%rax,4), %rcx
-; ALL-NEXT:    movabsq $34359738352, %rax # imm = 0x7FFFFFFF0
-; ALL-NEXT:    andq %rcx, %rax
+; ALL-NEXT:    leaq 15(,%rax,4), %rax
+; ALL-NEXT:    andq $-16, %rax
 ; ALL-NEXT:    callq __chkstk
 ; ALL-NEXT:    subq %rax, %rsp
 ; ALL-NEXT:    subq $32, %rsp
@@ -235,7 +234,7 @@ define i64 @f10(i64* %foo, i64 %bar, i64 %baz) {
 ; ALL-NEXT:    .seh_stackalloc 40
 ; ALL-NEXT:    .seh_endprologue
 ; ALL-NEXT:    movq %rdx, %rsi
-; ALL-NEXT:    movq %rsi, %rax
+; ALL-NEXT:    movq %rdx, %rax
 ; ALL-NEXT:    lock cmpxchgq %r8, (%rcx)
 ; ALL-NEXT:    sete %bl
 ; ALL-NEXT:    callq dummy

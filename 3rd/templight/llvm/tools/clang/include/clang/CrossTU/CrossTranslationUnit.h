@@ -1,9 +1,8 @@
 //===--- CrossTranslationUnit.h - -------------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -15,6 +14,7 @@
 #ifndef LLVM_CLANG_CROSSTU_CROSSTRANSLATIONUNIT_H
 #define LLVM_CLANG_CROSSTU_CROSSTRANSLATIONUNIT_H
 
+#include "clang/AST/ASTImporterSharedState.h"
 #include "clang/Basic/LLVM.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallPtrSet.h"
@@ -28,6 +28,7 @@ class ASTImporter;
 class ASTUnit;
 class DeclContext;
 class FunctionDecl;
+class VarDecl;
 class NamedDecl;
 class TranslationUnitDecl;
 
@@ -41,7 +42,11 @@ enum class index_error_code {
   missing_definition,
   failed_import,
   failed_to_get_external_ast,
-  failed_to_generate_usr
+  failed_to_generate_usr,
+  triple_mismatch,
+  lang_mismatch,
+  lang_dialect_mismatch,
+  load_threshold_reached
 };
 
 class IndexError : public llvm::ErrorInfo<IndexError> {
@@ -50,19 +55,28 @@ public:
   IndexError(index_error_code C) : Code(C), LineNo(0) {}
   IndexError(index_error_code C, std::string FileName, int LineNo = 0)
       : Code(C), FileName(std::move(FileName)), LineNo(LineNo) {}
+  IndexError(index_error_code C, std::string FileName, std::string TripleToName,
+             std::string TripleFromName)
+      : Code(C), FileName(std::move(FileName)),
+        TripleToName(std::move(TripleToName)),
+        TripleFromName(std::move(TripleFromName)) {}
   void log(raw_ostream &OS) const override;
   std::error_code convertToErrorCode() const override;
   index_error_code getCode() const { return Code; }
   int getLineNum() const { return LineNo; }
   std::string getFileName() const { return FileName; }
+  std::string getTripleToName() const { return TripleToName; }
+  std::string getTripleFromName() const { return TripleFromName; }
 
 private:
   index_error_code Code;
   std::string FileName;
   int LineNo;
+  std::string TripleToName;
+  std::string TripleFromName;
 };
 
-/// \brief This function parses an index file that determines which
+/// This function parses an index file that determines which
 ///        translation unit contains which definition.
 ///
 /// The index file format is the following:
@@ -75,14 +89,17 @@ parseCrossTUIndex(StringRef IndexPath, StringRef CrossTUDir);
 
 std::string createCrossTUIndexString(const llvm::StringMap<std::string> &Index);
 
-/// \brief This class is used for tools that requires cross translation
+// Returns true if the variable or any field of a record variable is const.
+bool containsConst(const VarDecl *VD, const ASTContext &ACtx);
+
+/// This class is used for tools that requires cross translation
 ///        unit capability.
 ///
-/// This class can load function definitions from external AST files.
+/// This class can load definitions from external AST files.
 /// The loaded definition will be merged back to the original AST using the
 /// AST Importer.
 /// In order to use this class, an index file is required that describes
-/// the locations of the AST files for each function definition.
+/// the locations of the AST files for each definition.
 ///
 /// Note that this class also implements caching.
 class CrossTranslationUnitContext {
@@ -90,16 +107,16 @@ public:
   CrossTranslationUnitContext(CompilerInstance &CI);
   ~CrossTranslationUnitContext();
 
-  /// \brief This function loads a function definition from an external AST
-  ///        file and merge it into the original AST.
+  /// This function loads a function or variable definition from an
+  ///        external AST file and merges it into the original AST.
   ///
-  /// This method should only be used on functions that have no definitions in
+  /// This method should only be used on functions that have no definitions or
+  /// variables that have no initializer in
   /// the current translation unit. A function definition with the same
   /// declaration will be looked up in the index file which should be in the
   /// \p CrossTUDir directory, called \p IndexName. In case the declaration is
   /// found in the index the corresponding AST file will be loaded and the
-  /// definition of the function will be merged into the original AST using
-  /// the AST Importer.
+  /// definition will be merged into the original AST using the AST Importer.
   ///
   /// \return The declaration with the definition will be returned.
   /// If no suitable definition is found in the index file or multiple
@@ -108,49 +125,69 @@ public:
   /// Note that the AST files should also be in the \p CrossTUDir.
   llvm::Expected<const FunctionDecl *>
   getCrossTUDefinition(const FunctionDecl *FD, StringRef CrossTUDir,
-                       StringRef IndexName);
+                       StringRef IndexName, bool DisplayCTUProgress = false);
+  llvm::Expected<const VarDecl *>
+  getCrossTUDefinition(const VarDecl *VD, StringRef CrossTUDir,
+                       StringRef IndexName, bool DisplayCTUProgress = false);
 
-  /// \brief This function loads a function definition from an external AST
-  ///        file.
+  /// This function loads a definition from an external AST file.
   ///
-  /// A function definition with the same declaration will be looked up in the
+  /// A definition with the same declaration will be looked up in the
   /// index file which should be in the \p CrossTUDir directory, called
   /// \p IndexName. In case the declaration is found in the index the
-  /// corresponding AST file will be loaded.
+  /// corresponding AST file will be loaded. If the number of TUs imported
+  /// reaches \p CTULoadTreshold, no loading is performed.
   ///
-  /// \return Returns an ASTUnit that contains the definition of the looked up
-  /// function.
+  /// \return Returns a pointer to the ASTUnit that contains the definition of
+  /// the looked up name or an Error.
+  /// The returned pointer is never a nullptr.
   ///
   /// Note that the AST files should also be in the \p CrossTUDir.
   llvm::Expected<ASTUnit *> loadExternalAST(StringRef LookupName,
                                             StringRef CrossTUDir,
-                                            StringRef IndexName);
+                                            StringRef IndexName,
+                                            bool DisplayCTUProgress = false);
 
-  /// \brief This function merges a definition from a separate AST Unit into
+  /// This function merges a definition from a separate AST Unit into
   ///        the current one which was created by the compiler instance that
   ///        was passed to the constructor.
   ///
   /// \return Returns the resulting definition or an error.
   llvm::Expected<const FunctionDecl *> importDefinition(const FunctionDecl *FD);
+  llvm::Expected<const VarDecl *> importDefinition(const VarDecl *VD);
 
-  /// \brief Get a name to identify a function.
+  /// Get a name to identify a named decl.
   static std::string getLookupName(const NamedDecl *ND);
 
-  /// \brief Emit diagnostics for the user for potential configuration errors.
+  /// Emit diagnostics for the user for potential configuration errors.
   void emitCrossTUDiagnostics(const IndexError &IE);
 
 private:
+  void lazyInitImporterSharedSt(TranslationUnitDecl *ToTU);
   ASTImporter &getOrCreateASTImporter(ASTContext &From);
-  const FunctionDecl *findFunctionInDeclContext(const DeclContext *DC,
-                                                StringRef LookupFnName);
+  template <typename T>
+  llvm::Expected<const T *> getCrossTUDefinitionImpl(const T *D,
+                                                     StringRef CrossTUDir,
+                                                     StringRef IndexName,
+                                                     bool DisplayCTUProgress);
+  template <typename T>
+  const T *findDefInDeclContext(const DeclContext *DC,
+                                StringRef LookupName);
+  template <typename T>
+  llvm::Expected<const T *> importDefinitionImpl(const T *D);
 
   llvm::StringMap<std::unique_ptr<clang::ASTUnit>> FileASTUnitMap;
-  llvm::StringMap<clang::ASTUnit *> FunctionASTUnitMap;
-  llvm::StringMap<std::string> FunctionFileMap;
+  llvm::StringMap<clang::ASTUnit *> NameASTUnitMap;
+  llvm::StringMap<std::string> NameFileMap;
   llvm::DenseMap<TranslationUnitDecl *, std::unique_ptr<ASTImporter>>
       ASTUnitImporterMap;
   CompilerInstance &CI;
   ASTContext &Context;
+  std::shared_ptr<ASTImporterSharedState> ImporterSharedSt;
+  /// \p CTULoadTreshold should serve as an upper limit to the number of TUs
+  /// imported in order to reduce the memory footprint of CTU analysis.
+  const unsigned CTULoadThreshold;
+  unsigned NumASTLoaded{0u};
 };
 
 } // namespace cross_tu

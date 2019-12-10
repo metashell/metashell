@@ -1,9 +1,8 @@
 //===-- tsan_mman_test.cc -------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -153,28 +152,11 @@ TEST(Mman, Valloc) {
   EXPECT_NE(p, (void*)0);
   EXPECT_EQ(page_size, __sanitizer_get_allocated_size(p));
   user_free(thr, 0, p);
-
-  EXPECT_DEATH(p = user_pvalloc(thr, 0, (uptr)-(page_size - 1)),
-               "allocator is terminating the process instead of returning 0");
-  EXPECT_DEATH(p = user_pvalloc(thr, 0, (uptr)-1),
-               "allocator is terminating the process instead of returning 0");
 }
 
 #if !SANITIZER_DEBUG
 // EXPECT_DEATH clones a thread with 4K stack,
 // which is overflown by tsan memory accesses functions in debug mode.
-
-TEST(Mman, CallocOverflow) {
-  ThreadState *thr = cur_thread();
-  uptr pc = 0;
-  size_t kArraySize = 4096;
-  volatile size_t kMaxSizeT = std::numeric_limits<size_t>::max();
-  volatile size_t kArraySize2 = kMaxSizeT / kArraySize + 10;
-  volatile void *p = NULL;
-  EXPECT_DEATH(p = user_calloc(thr, pc, kArraySize, kArraySize2),
-               "allocator is terminating the process instead of returning 0");
-  EXPECT_EQ(0L, p);
-}
 
 TEST(Mman, Memalign) {
   ThreadState *thr = cur_thread();
@@ -183,11 +165,15 @@ TEST(Mman, Memalign) {
   EXPECT_NE(p, (void*)0);
   user_free(thr, 0, p);
 
+  // TODO(alekseyshl): Remove this death test when memalign is verified by
+  // tests in sanitizer_common.
   p = NULL;
   EXPECT_DEATH(p = user_memalign(thr, 0, 7, 100),
-               "allocator is terminating the process instead of returning 0");
+               "invalid-allocation-alignment");
   EXPECT_EQ(0L, p);
 }
+
+#endif
 
 TEST(Mman, PosixMemalign) {
   ThreadState *thr = cur_thread();
@@ -197,16 +183,6 @@ TEST(Mman, PosixMemalign) {
   EXPECT_NE(p, (void*)0);
   EXPECT_EQ(res, 0);
   user_free(thr, 0, p);
-
-  p = NULL;
-  // Alignment is not a power of two, although is a multiple of sizeof(void*).
-  EXPECT_DEATH(res = user_posix_memalign(thr, 0, &p, 3 * sizeof(p), 100),
-               "allocator is terminating the process instead of returning 0");
-  EXPECT_EQ(0L, p);
-  // Alignment is not a multiple of sizeof(void*), although is a power of 2.
-  EXPECT_DEATH(res = user_posix_memalign(thr, 0, &p, 2, 100),
-               "allocator is terminating the process instead of returning 0");
-  EXPECT_EQ(0L, p);
 }
 
 TEST(Mman, AlignedAlloc) {
@@ -215,18 +191,6 @@ TEST(Mman, AlignedAlloc) {
   void *p = user_aligned_alloc(thr, 0, 8, 64);
   EXPECT_NE(p, (void*)0);
   user_free(thr, 0, p);
-
-  p = NULL;
-  // Alignement is not a power of 2.
-  EXPECT_DEATH(p = user_aligned_alloc(thr, 0, 7, 100),
-               "allocator is terminating the process instead of returning 0");
-  EXPECT_EQ(0L, p);
-  // Size is not a multiple of alignment.
-  EXPECT_DEATH(p = user_aligned_alloc(thr, 0, 8, 100),
-               "allocator is terminating the process instead of returning 0");
-  EXPECT_EQ(0L, p);
 }
-
-#endif
 
 }  // namespace __tsan

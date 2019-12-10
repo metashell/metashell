@@ -1,9 +1,8 @@
 //===- HexagonShuffler.cpp - Instruction bundle shuffling -----------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -15,7 +14,6 @@
 #define DEBUG_TYPE "hexagon-shuffle"
 
 #include "MCTargetDesc/HexagonShuffler.h"
-#include "Hexagon.h"
 #include "MCTargetDesc/HexagonBaseInfo.h"
 #include "MCTargetDesc/HexagonMCInstrInfo.h"
 #include "MCTargetDesc/HexagonMCTargetDesc.h"
@@ -23,6 +21,7 @@
 #include "llvm/ADT/Twine.h"
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCInst.h"
+#include "llvm/MC/MCInstrDesc.h"
 #include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/Debug.h"
@@ -138,6 +137,8 @@ void HexagonCVIResource::SetupTUL(TypeUnitsAndLanes *TUL, StringRef CPU) {
       UnitsAndLanes(CVI_XLANE | CVI_MPY0, 2);
   (*TUL)[HexagonII::TypeCVI_SCATTER_NEW_ST] =
       UnitsAndLanes(CVI_XLANE | CVI_SHIFT | CVI_MPY0 | CVI_MPY1, 1);
+  (*TUL)[HexagonII::TypeCVI_4SLOT_MPY] = UnitsAndLanes(CVI_XLANE, 4);
+  (*TUL)[HexagonII::TypeCVI_ZW] = UnitsAndLanes(CVI_ZW, 1);
 }
 
 HexagonCVIResource::HexagonCVIResource(TypeUnitsAndLanes *TUL,
@@ -300,6 +301,7 @@ bool HexagonShuffler::check() {
   // Number of memory operations, loads, solo loads, stores, solo stores, single
   // stores.
   unsigned memory = 0, loads = 0, load0 = 0, stores = 0, store0 = 0, store1 = 0;
+  unsigned NonZCVIloads = 0, AllCVIloads = 0, CVIstores = 0;
   // Number of duplex insns
   unsigned duplex = 0;
   unsigned pSlot3Cnt = 0;
@@ -331,6 +333,11 @@ bool HexagonShuffler::check() {
     case HexagonII::TypeCVI_VM_TMP_LD:
     case HexagonII::TypeCVI_GATHER:
     case HexagonII::TypeCVI_GATHER_RST:
+      ++NonZCVIloads;
+      LLVM_FALLTHROUGH;
+    case HexagonII::TypeCVI_ZW:
+      ++AllCVIloads;
+      LLVM_FALLTHROUGH;
     case HexagonII::TypeLD:
       ++loads;
       ++memory;
@@ -348,6 +355,8 @@ bool HexagonShuffler::check() {
     case HexagonII::TypeCVI_SCATTER_RST:
     case HexagonII::TypeCVI_SCATTER_NEW_RST:
     case HexagonII::TypeCVI_SCATTER_NEW_ST:
+      ++CVIstores;
+      LLVM_FALLTHROUGH;
     case HexagonII::TypeST:
       ++stores;
       ++memory;
@@ -405,7 +414,11 @@ bool HexagonShuffler::check() {
   applySlotRestrictions();
 
   // Check if the packet is legal.
-  if ((load0 > 1 || store0 > 1) || (duplex > 1 || (duplex && memory))) {
+  const unsigned ZCVIloads = AllCVIloads - NonZCVIloads;
+  const bool ValidHVXMem =
+      NonZCVIloads <= 1 && ZCVIloads <= 1 && CVIstores <= 1;
+  if ((load0 > 1 || store0 > 1 || !ValidHVXMem) ||
+      (duplex > 1 || (duplex && memory))) {
     reportError(llvm::Twine("invalid instruction packet"));
     return false;
   }
@@ -641,14 +654,14 @@ bool HexagonShuffler::shuffle() {
     }
 
   for (iterator ISJ = begin(); ISJ != end(); ++ISJ)
-    DEBUG(dbgs().write_hex(ISJ->Core.getUnits()); if (ISJ->CVI.isValid()) {
+    LLVM_DEBUG(dbgs().write_hex(ISJ->Core.getUnits()); if (ISJ->CVI.isValid()) {
       dbgs() << '/';
       dbgs().write_hex(ISJ->CVI.getUnits()) << '|';
       dbgs() << ISJ->CVI.getLanes();
     } dbgs() << ':'
              << HexagonMCInstrInfo::getDesc(MCII, ISJ->getDesc()).getOpcode();
-          dbgs() << '\n');
-  DEBUG(dbgs() << '\n');
+               dbgs() << '\n');
+  LLVM_DEBUG(dbgs() << '\n');
 
   return Ok;
 }

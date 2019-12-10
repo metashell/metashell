@@ -1,9 +1,8 @@
 //===-- sanitizer_quarantine.h ----------------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -90,6 +89,9 @@ class Quarantine {
     atomic_store_relaxed(&max_size_, size);
     atomic_store_relaxed(&min_size_, size / 10 * 9);  // 90% of max size.
     atomic_store_relaxed(&max_cache_size_, cache_size);
+
+    cache_mutex_.Init();
+    recycle_mutex_.Init();
   }
 
   uptr GetSize() const { return atomic_load_relaxed(&max_size_); }
@@ -142,8 +144,8 @@ class Quarantine {
   atomic_uintptr_t min_size_;
   atomic_uintptr_t max_cache_size_;
   char pad1_[kCacheLineSize];
-  SpinMutex cache_mutex_;
-  SpinMutex recycle_mutex_;
+  StaticSpinMutex cache_mutex_;
+  StaticSpinMutex recycle_mutex_;
   Cache cache_;
   char pad2_[kCacheLineSize];
 

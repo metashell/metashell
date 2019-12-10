@@ -4,44 +4,41 @@
 ; RUN: llc -mtriple=armv6m %s -o - | FileCheck %s --check-prefix=THUMB1
 ; RUN: llc -mtriple=thumbv8m.main %s -o - | FileCheck %s --check-prefix=THUMB2
 
-define arm_aapcscc zeroext i1 @cmp_xor8_short_short(i16* nocapture readonly %a,
-                                                    i16* nocapture readonly %b) {
+define arm_aapcscc zeroext i1 @cmp_xor8_short_short(i16* nocapture readonly %a, i16* nocapture readonly %b) {
 ; ARM-LABEL: cmp_xor8_short_short:
-; ARM:         ldrb r2, [r0]
-; ARM-NEXT:    mov r0, #0
+; ARM:       @ %bb.0: @ %entry
+; ARM-NEXT:    ldrb r0, [r0]
 ; ARM-NEXT:    ldrb r1, [r1]
-; ARM-NEXT:    teq r1, r2
-; ARM-NEXT:    movweq r0, #1
+; ARM-NEXT:    eor r0, r1, r0
+; ARM-NEXT:    clz r0, r0
+; ARM-NEXT:    lsr r0, r0, #5
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: cmp_xor8_short_short:
-; ARMEB:        ldrb r2, [r0, #1]
-; ARMEB-NEXT:    mov r0, #0
+; ARMEB:       @ %bb.0: @ %entry
+; ARMEB-NEXT:    ldrb r0, [r0, #1]
 ; ARMEB-NEXT:    ldrb r1, [r1, #1]
-; ARMEB-NEXT:    teq r1, r2
-; ARMEB-NEXT:    movweq r0, #1
+; ARMEB-NEXT:    eor r0, r1, r0
+; ARMEB-NEXT:    clz r0, r0
+; ARMEB-NEXT:    lsr r0, r0, #5
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: cmp_xor8_short_short:
-; THUMB1:         ldrb r0, [r0]
-; THUMB1-NEXT:    ldrb r2, [r1]
-; THUMB1-NEXT:    eors r2, r0
-; THUMB1-NEXT:    movs r0, #1
-; THUMB1-NEXT:    movs r1, #0
-; THUMB1-NEXT:    cmp r2, #0
-; THUMB1-NEXT:    beq .LBB0_2
-; THUMB1-NEXT:  @ %bb.1: @ %entry
-; THUMB1-NEXT:    mov r0, r1
-; THUMB1-NEXT:  .LBB0_2: @ %entry
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    ldrb r0, [r0]
+; THUMB1-NEXT:    ldrb r1, [r1]
+; THUMB1-NEXT:    eors r1, r0
+; THUMB1-NEXT:    rsbs r0, r1, #0
+; THUMB1-NEXT:    adcs r0, r1
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: cmp_xor8_short_short:
-; THUMB2:         ldrb r2, [r0]
-; THUMB2-NEXT:    movs r0, #0
+; THUMB2:       @ %bb.0: @ %entry
+; THUMB2-NEXT:    ldrb r0, [r0]
 ; THUMB2-NEXT:    ldrb r1, [r1]
-; THUMB2-NEXT:    teq.w r1, r2
-; THUMB2-NEXT:    it eq
-; THUMB2-NEXT:    moveq r0, #1
+; THUMB2-NEXT:    eors r0, r1
+; THUMB2-NEXT:    clz r0, r0
+; THUMB2-NEXT:    lsrs r0, r0, #5
 ; THUMB2-NEXT:    bx lr
 entry:
   %0 = load i16, i16* %a, align 2
@@ -52,44 +49,41 @@ entry:
   ret i1 %cmp
 }
 
-define arm_aapcscc zeroext i1 @cmp_xor8_short_int(i16* nocapture readonly %a,
-                                                  i32* nocapture readonly %b) {
+define arm_aapcscc zeroext i1 @cmp_xor8_short_int(i16* nocapture readonly %a, i32* nocapture readonly %b) {
 ; ARM-LABEL: cmp_xor8_short_int:
-; ARM:         ldrb r2, [r0]
-; ARM-NEXT:    mov r0, #0
+; ARM:       @ %bb.0: @ %entry
+; ARM-NEXT:    ldrb r0, [r0]
 ; ARM-NEXT:    ldrb r1, [r1]
-; ARM-NEXT:    teq r1, r2
-; ARM-NEXT:    movweq r0, #1
+; ARM-NEXT:    eor r0, r1, r0
+; ARM-NEXT:    clz r0, r0
+; ARM-NEXT:    lsr r0, r0, #5
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: cmp_xor8_short_int:
-; ARMEB:         ldrb r2, [r0, #1]
-; ARMEB-NEXT:    mov r0, #0
+; ARMEB:       @ %bb.0: @ %entry
+; ARMEB-NEXT:    ldrb r0, [r0, #1]
 ; ARMEB-NEXT:    ldrb r1, [r1, #3]
-; ARMEB-NEXT:    teq r1, r2
-; ARMEB-NEXT:    movweq r0, #1
+; ARMEB-NEXT:    eor r0, r1, r0
+; ARMEB-NEXT:    clz r0, r0
+; ARMEB-NEXT:    lsr r0, r0, #5
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: cmp_xor8_short_int:
-; THUMB1:         ldrb r0, [r0]
-; THUMB1-NEXT:    ldrb r2, [r1]
-; THUMB1-NEXT:    eors r2, r0
-; THUMB1-NEXT:    movs r0, #1
-; THUMB1-NEXT:    movs r1, #0
-; THUMB1-NEXT:    cmp r2, #0
-; THUMB1-NEXT:    beq .LBB1_2
-; THUMB1-NEXT:  @ %bb.1: @ %entry
-; THUMB1-NEXT:    mov r0, r1
-; THUMB1-NEXT:  .LBB1_2: @ %entry
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    ldrb r0, [r0]
+; THUMB1-NEXT:    ldrb r1, [r1]
+; THUMB1-NEXT:    eors r1, r0
+; THUMB1-NEXT:    rsbs r0, r1, #0
+; THUMB1-NEXT:    adcs r0, r1
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: cmp_xor8_short_int:
-; THUMB2:         ldrb r2, [r0]
-; THUMB2-NEXT:    movs r0, #0
+; THUMB2:       @ %bb.0: @ %entry
+; THUMB2-NEXT:    ldrb r0, [r0]
 ; THUMB2-NEXT:    ldrb r1, [r1]
-; THUMB2-NEXT:    teq.w r1, r2
-; THUMB2-NEXT:    it eq
-; THUMB2-NEXT:    moveq r0, #1
+; THUMB2-NEXT:    eors r0, r1
+; THUMB2-NEXT:    clz r0, r0
+; THUMB2-NEXT:    lsrs r0, r0, #5
 ; THUMB2-NEXT:    bx lr
 entry:
   %0 = load i16, i16* %a, align 2
@@ -101,44 +95,41 @@ entry:
   ret i1 %cmp
 }
 
-define arm_aapcscc zeroext i1 @cmp_xor8_int_int(i32* nocapture readonly %a,
-                                                i32* nocapture readonly %b) {
+define arm_aapcscc zeroext i1 @cmp_xor8_int_int(i32* nocapture readonly %a, i32* nocapture readonly %b) {
 ; ARM-LABEL: cmp_xor8_int_int:
-; ARM:         ldrb r2, [r0]
-; ARM-NEXT:    mov r0, #0
+; ARM:       @ %bb.0: @ %entry
+; ARM-NEXT:    ldrb r0, [r0]
 ; ARM-NEXT:    ldrb r1, [r1]
-; ARM-NEXT:    teq r1, r2
-; ARM-NEXT:    movweq r0, #1
+; ARM-NEXT:    eor r0, r1, r0
+; ARM-NEXT:    clz r0, r0
+; ARM-NEXT:    lsr r0, r0, #5
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: cmp_xor8_int_int:
-; ARMEB:         ldrb r2, [r0, #3]
-; ARMEB-NEXT:    mov r0, #0
+; ARMEB:       @ %bb.0: @ %entry
+; ARMEB-NEXT:    ldrb r0, [r0, #3]
 ; ARMEB-NEXT:    ldrb r1, [r1, #3]
-; ARMEB-NEXT:    teq r1, r2
-; ARMEB-NEXT:    movweq r0, #1
+; ARMEB-NEXT:    eor r0, r1, r0
+; ARMEB-NEXT:    clz r0, r0
+; ARMEB-NEXT:    lsr r0, r0, #5
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: cmp_xor8_int_int:
-; THUMB1:         ldrb r0, [r0]
-; THUMB1-NEXT:    ldrb r2, [r1]
-; THUMB1-NEXT:    eors r2, r0
-; THUMB1-NEXT:    movs r0, #1
-; THUMB1-NEXT:    movs r1, #0
-; THUMB1-NEXT:    cmp r2, #0
-; THUMB1-NEXT:    beq .LBB2_2
-; THUMB1-NEXT:  @ %bb.1: @ %entry
-; THUMB1-NEXT:    mov r0, r1
-; THUMB1-NEXT:  .LBB2_2: @ %entry
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    ldrb r0, [r0]
+; THUMB1-NEXT:    ldrb r1, [r1]
+; THUMB1-NEXT:    eors r1, r0
+; THUMB1-NEXT:    rsbs r0, r1, #0
+; THUMB1-NEXT:    adcs r0, r1
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: cmp_xor8_int_int:
-; THUMB2:         ldrb r2, [r0]
-; THUMB2-NEXT:    movs r0, #0
+; THUMB2:       @ %bb.0: @ %entry
+; THUMB2-NEXT:    ldrb r0, [r0]
 ; THUMB2-NEXT:    ldrb r1, [r1]
-; THUMB2-NEXT:    teq.w r1, r2
-; THUMB2-NEXT:    it eq
-; THUMB2-NEXT:    moveq r0, #1
+; THUMB2-NEXT:    eors r0, r1
+; THUMB2-NEXT:    clz r0, r0
+; THUMB2-NEXT:    lsrs r0, r0, #5
 ; THUMB2-NEXT:    bx lr
 entry:
   %0 = load i32, i32* %a, align 4
@@ -149,44 +140,41 @@ entry:
   ret i1 %cmp
 }
 
-define arm_aapcscc zeroext i1 @cmp_xor16(i32* nocapture readonly %a,
-                                         i32* nocapture readonly %b) {
+define arm_aapcscc zeroext i1 @cmp_xor16(i32* nocapture readonly %a, i32* nocapture readonly %b) {
 ; ARM-LABEL: cmp_xor16:
-; ARM:         ldrh r2, [r0]
-; ARM-NEXT:    mov r0, #0
+; ARM:       @ %bb.0: @ %entry
+; ARM-NEXT:    ldrh r0, [r0]
 ; ARM-NEXT:    ldrh r1, [r1]
-; ARM-NEXT:    teq r1, r2
-; ARM-NEXT:    movweq r0, #1
+; ARM-NEXT:    eor r0, r1, r0
+; ARM-NEXT:    clz r0, r0
+; ARM-NEXT:    lsr r0, r0, #5
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: cmp_xor16:
-; ARMEB:         ldrh r2, [r0, #2]
-; ARMEB-NEXT:    mov r0, #0
+; ARMEB:       @ %bb.0: @ %entry
+; ARMEB-NEXT:    ldrh r0, [r0, #2]
 ; ARMEB-NEXT:    ldrh r1, [r1, #2]
-; ARMEB-NEXT:    teq r1, r2
-; ARMEB-NEXT:    movweq r0, #1
+; ARMEB-NEXT:    eor r0, r1, r0
+; ARMEB-NEXT:    clz r0, r0
+; ARMEB-NEXT:    lsr r0, r0, #5
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: cmp_xor16:
-; THUMB1:         ldrh r0, [r0]
-; THUMB1-NEXT:    ldrh r2, [r1]
-; THUMB1-NEXT:    eors r2, r0
-; THUMB1-NEXT:    movs r0, #1
-; THUMB1-NEXT:    movs r1, #0
-; THUMB1-NEXT:    cmp r2, #0
-; THUMB1-NEXT:    beq .LBB3_2
-; THUMB1-NEXT:  @ %bb.1: @ %entry
-; THUMB1-NEXT:    mov r0, r1
-; THUMB1-NEXT:  .LBB3_2: @ %entry
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    ldrh r0, [r0]
+; THUMB1-NEXT:    ldrh r1, [r1]
+; THUMB1-NEXT:    eors r1, r0
+; THUMB1-NEXT:    rsbs r0, r1, #0
+; THUMB1-NEXT:    adcs r0, r1
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: cmp_xor16:
-; THUMB2:         ldrh r2, [r0]
-; THUMB2-NEXT:    movs r0, #0
+; THUMB2:       @ %bb.0: @ %entry
+; THUMB2-NEXT:    ldrh r0, [r0]
 ; THUMB2-NEXT:    ldrh r1, [r1]
-; THUMB2-NEXT:    teq.w r1, r2
-; THUMB2-NEXT:    it eq
-; THUMB2-NEXT:    moveq r0, #1
+; THUMB2-NEXT:    eors r0, r1
+; THUMB2-NEXT:    clz r0, r0
+; THUMB2-NEXT:    lsrs r0, r0, #5
 ; THUMB2-NEXT:    bx lr
 entry:
   %0 = load i32, i32* %a, align 4
@@ -197,44 +185,41 @@ entry:
   ret i1 %cmp
 }
 
-define arm_aapcscc zeroext i1 @cmp_or8_short_short(i16* nocapture readonly %a,
-                                                   i16* nocapture readonly %b) {
+define arm_aapcscc zeroext i1 @cmp_or8_short_short(i16* nocapture readonly %a, i16* nocapture readonly %b) {
 ; ARM-LABEL: cmp_or8_short_short:
-; ARM:         ldrb r0, [r0]
+; ARM:       @ %bb.0: @ %entry
+; ARM-NEXT:    ldrb r0, [r0]
 ; ARM-NEXT:    ldrb r1, [r1]
-; ARM-NEXT:    orrs r0, r1, r0
-; ARM-NEXT:    mov r0, #0
-; ARM-NEXT:    movweq r0, #1
+; ARM-NEXT:    orr r0, r1, r0
+; ARM-NEXT:    clz r0, r0
+; ARM-NEXT:    lsr r0, r0, #5
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: cmp_or8_short_short:
-; ARMEB:         ldrb r0, [r0, #1]
+; ARMEB:       @ %bb.0: @ %entry
+; ARMEB-NEXT:    ldrb r0, [r0, #1]
 ; ARMEB-NEXT:    ldrb r1, [r1, #1]
-; ARMEB-NEXT:    orrs r0, r1, r0
-; ARMEB-NEXT:    mov r0, #0
-; ARMEB-NEXT:    movweq r0, #1
+; ARMEB-NEXT:    orr r0, r1, r0
+; ARMEB-NEXT:    clz r0, r0
+; ARMEB-NEXT:    lsr r0, r0, #5
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: cmp_or8_short_short:
-; THUMB1:         ldrb r0, [r0]
-; THUMB1-NEXT:    ldrb r2, [r1]
-; THUMB1-NEXT:    orrs r2, r0
-; THUMB1-NEXT:    movs r0, #1
-; THUMB1-NEXT:    movs r1, #0
-; THUMB1-NEXT:    cmp r2, #0
-; THUMB1-NEXT:    beq .LBB4_2
-; THUMB1-NEXT:  @ %bb.1: @ %entry
-; THUMB1-NEXT:    mov r0, r1
-; THUMB1-NEXT:  .LBB4_2: @ %entry
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    ldrb r0, [r0]
+; THUMB1-NEXT:    ldrb r1, [r1]
+; THUMB1-NEXT:    orrs r1, r0
+; THUMB1-NEXT:    rsbs r0, r1, #0
+; THUMB1-NEXT:    adcs r0, r1
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: cmp_or8_short_short:
-; THUMB2:         ldrb r0, [r0]
+; THUMB2:       @ %bb.0: @ %entry
+; THUMB2-NEXT:    ldrb r0, [r0]
 ; THUMB2-NEXT:    ldrb r1, [r1]
 ; THUMB2-NEXT:    orrs r0, r1
-; THUMB2-NEXT:    mov.w r0, #0
-; THUMB2-NEXT:    it eq
-; THUMB2-NEXT:    moveq r0, #1
+; THUMB2-NEXT:    clz r0, r0
+; THUMB2-NEXT:    lsrs r0, r0, #5
 ; THUMB2-NEXT:    bx lr
 entry:
   %0 = load i16, i16* %a, align 2
@@ -245,44 +230,41 @@ entry:
   ret i1 %cmp
 }
 
-define arm_aapcscc zeroext i1 @cmp_or8_short_int(i16* nocapture readonly %a,
-                                                 i32* nocapture readonly %b) {
+define arm_aapcscc zeroext i1 @cmp_or8_short_int(i16* nocapture readonly %a, i32* nocapture readonly %b) {
 ; ARM-LABEL: cmp_or8_short_int:
-; ARM:         ldrb r0, [r0]
+; ARM:       @ %bb.0: @ %entry
+; ARM-NEXT:    ldrb r0, [r0]
 ; ARM-NEXT:    ldrb r1, [r1]
-; ARM-NEXT:    orrs r0, r1, r0
-; ARM-NEXT:    mov r0, #0
-; ARM-NEXT:    movweq r0, #1
+; ARM-NEXT:    orr r0, r1, r0
+; ARM-NEXT:    clz r0, r0
+; ARM-NEXT:    lsr r0, r0, #5
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: cmp_or8_short_int:
-; ARMEB:         ldrb r0, [r0, #1]
+; ARMEB:       @ %bb.0: @ %entry
+; ARMEB-NEXT:    ldrb r0, [r0, #1]
 ; ARMEB-NEXT:    ldrb r1, [r1, #3]
-; ARMEB-NEXT:    orrs r0, r1, r0
-; ARMEB-NEXT:    mov r0, #0
-; ARMEB-NEXT:    movweq r0, #1
+; ARMEB-NEXT:    orr r0, r1, r0
+; ARMEB-NEXT:    clz r0, r0
+; ARMEB-NEXT:    lsr r0, r0, #5
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: cmp_or8_short_int:
-; THUMB1:         ldrb r0, [r0]
-; THUMB1-NEXT:    ldrb r2, [r1]
-; THUMB1-NEXT:    orrs r2, r0
-; THUMB1-NEXT:    movs r0, #1
-; THUMB1-NEXT:    movs r1, #0
-; THUMB1-NEXT:    cmp r2, #0
-; THUMB1-NEXT:    beq .LBB5_2
-; THUMB1-NEXT:  @ %bb.1: @ %entry
-; THUMB1-NEXT:    mov r0, r1
-; THUMB1-NEXT:  .LBB5_2: @ %entry
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    ldrb r0, [r0]
+; THUMB1-NEXT:    ldrb r1, [r1]
+; THUMB1-NEXT:    orrs r1, r0
+; THUMB1-NEXT:    rsbs r0, r1, #0
+; THUMB1-NEXT:    adcs r0, r1
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: cmp_or8_short_int:
-; THUMB2:         ldrb r0, [r0]
+; THUMB2:       @ %bb.0: @ %entry
+; THUMB2-NEXT:    ldrb r0, [r0]
 ; THUMB2-NEXT:    ldrb r1, [r1]
 ; THUMB2-NEXT:    orrs r0, r1
-; THUMB2-NEXT:    mov.w r0, #0
-; THUMB2-NEXT:    it eq
-; THUMB2-NEXT:    moveq r0, #1
+; THUMB2-NEXT:    clz r0, r0
+; THUMB2-NEXT:    lsrs r0, r0, #5
 ; THUMB2-NEXT:    bx lr
 entry:
   %0 = load i16, i16* %a, align 2
@@ -294,44 +276,41 @@ entry:
   ret i1 %cmp
 }
 
-define arm_aapcscc zeroext i1 @cmp_or8_int_int(i32* nocapture readonly %a,
-                                               i32* nocapture readonly %b) {
+define arm_aapcscc zeroext i1 @cmp_or8_int_int(i32* nocapture readonly %a, i32* nocapture readonly %b) {
 ; ARM-LABEL: cmp_or8_int_int:
-; ARM:         ldrb r0, [r0]
+; ARM:       @ %bb.0: @ %entry
+; ARM-NEXT:    ldrb r0, [r0]
 ; ARM-NEXT:    ldrb r1, [r1]
-; ARM-NEXT:    orrs r0, r1, r0
-; ARM-NEXT:    mov r0, #0
-; ARM-NEXT:    movweq r0, #1
+; ARM-NEXT:    orr r0, r1, r0
+; ARM-NEXT:    clz r0, r0
+; ARM-NEXT:    lsr r0, r0, #5
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: cmp_or8_int_int:
-; ARMEB:         ldrb r0, [r0, #3]
+; ARMEB:       @ %bb.0: @ %entry
+; ARMEB-NEXT:    ldrb r0, [r0, #3]
 ; ARMEB-NEXT:    ldrb r1, [r1, #3]
-; ARMEB-NEXT:    orrs r0, r1, r0
-; ARMEB-NEXT:    mov r0, #0
-; ARMEB-NEXT:    movweq r0, #1
+; ARMEB-NEXT:    orr r0, r1, r0
+; ARMEB-NEXT:    clz r0, r0
+; ARMEB-NEXT:    lsr r0, r0, #5
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: cmp_or8_int_int:
-; THUMB1:         ldrb r0, [r0]
-; THUMB1-NEXT:    ldrb r2, [r1]
-; THUMB1-NEXT:    orrs r2, r0
-; THUMB1-NEXT:    movs r0, #1
-; THUMB1-NEXT:    movs r1, #0
-; THUMB1-NEXT:    cmp r2, #0
-; THUMB1-NEXT:    beq .LBB6_2
-; THUMB1-NEXT:  @ %bb.1: @ %entry
-; THUMB1-NEXT:    mov r0, r1
-; THUMB1-NEXT:  .LBB6_2: @ %entry
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    ldrb r0, [r0]
+; THUMB1-NEXT:    ldrb r1, [r1]
+; THUMB1-NEXT:    orrs r1, r0
+; THUMB1-NEXT:    rsbs r0, r1, #0
+; THUMB1-NEXT:    adcs r0, r1
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: cmp_or8_int_int:
-; THUMB2:         ldrb r0, [r0]
+; THUMB2:       @ %bb.0: @ %entry
+; THUMB2-NEXT:    ldrb r0, [r0]
 ; THUMB2-NEXT:    ldrb r1, [r1]
 ; THUMB2-NEXT:    orrs r0, r1
-; THUMB2-NEXT:    mov.w r0, #0
-; THUMB2-NEXT:    it eq
-; THUMB2-NEXT:    moveq r0, #1
+; THUMB2-NEXT:    clz r0, r0
+; THUMB2-NEXT:    lsrs r0, r0, #5
 ; THUMB2-NEXT:    bx lr
 entry:
   %0 = load i32, i32* %a, align 4
@@ -342,44 +321,41 @@ entry:
   ret i1 %cmp
 }
 
-define arm_aapcscc zeroext i1 @cmp_or16(i32* nocapture readonly %a,
-                                        i32* nocapture readonly %b) {
+define arm_aapcscc zeroext i1 @cmp_or16(i32* nocapture readonly %a, i32* nocapture readonly %b) {
 ; ARM-LABEL: cmp_or16:
-; ARM:         ldrh r0, [r0]
+; ARM:       @ %bb.0: @ %entry
+; ARM-NEXT:    ldrh r0, [r0]
 ; ARM-NEXT:    ldrh r1, [r1]
-; ARM-NEXT:    orrs r0, r1, r0
-; ARM-NEXT:    mov r0, #0
-; ARM-NEXT:    movweq r0, #1
+; ARM-NEXT:    orr r0, r1, r0
+; ARM-NEXT:    clz r0, r0
+; ARM-NEXT:    lsr r0, r0, #5
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: cmp_or16:
-; ARMEB:         ldrh r0, [r0, #2]
+; ARMEB:       @ %bb.0: @ %entry
+; ARMEB-NEXT:    ldrh r0, [r0, #2]
 ; ARMEB-NEXT:    ldrh r1, [r1, #2]
-; ARMEB-NEXT:    orrs r0, r1, r0
-; ARMEB-NEXT:    mov r0, #0
-; ARMEB-NEXT:    movweq r0, #1
+; ARMEB-NEXT:    orr r0, r1, r0
+; ARMEB-NEXT:    clz r0, r0
+; ARMEB-NEXT:    lsr r0, r0, #5
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: cmp_or16:
-; THUMB1:         ldrh r0, [r0]
-; THUMB1-NEXT:    ldrh r2, [r1]
-; THUMB1-NEXT:    orrs r2, r0
-; THUMB1-NEXT:    movs r0, #1
-; THUMB1-NEXT:    movs r1, #0
-; THUMB1-NEXT:    cmp r2, #0
-; THUMB1-NEXT:    beq .LBB7_2
-; THUMB1-NEXT:  @ %bb.1: @ %entry
-; THUMB1-NEXT:    mov r0, r1
-; THUMB1-NEXT:  .LBB7_2: @ %entry
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    ldrh r0, [r0]
+; THUMB1-NEXT:    ldrh r1, [r1]
+; THUMB1-NEXT:    orrs r1, r0
+; THUMB1-NEXT:    rsbs r0, r1, #0
+; THUMB1-NEXT:    adcs r0, r1
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: cmp_or16:
-; THUMB2:         ldrh r0, [r0]
+; THUMB2:       @ %bb.0: @ %entry
+; THUMB2-NEXT:    ldrh r0, [r0]
 ; THUMB2-NEXT:    ldrh r1, [r1]
 ; THUMB2-NEXT:    orrs r0, r1
-; THUMB2-NEXT:    mov.w r0, #0
-; THUMB2-NEXT:    it eq
-; THUMB2-NEXT:    moveq r0, #1
+; THUMB2-NEXT:    clz r0, r0
+; THUMB2-NEXT:    lsrs r0, r0, #5
 ; THUMB2-NEXT:    bx lr
 entry:
   %0 = load i32, i32* %a, align 4
@@ -390,43 +366,41 @@ entry:
   ret i1 %cmp
 }
 
-define arm_aapcscc zeroext i1 @cmp_and8_short_short(i16* nocapture readonly %a,
-                                                    i16* nocapture readonly %b) {
+define arm_aapcscc zeroext i1 @cmp_and8_short_short(i16* nocapture readonly %a, i16* nocapture readonly %b) {
 ; ARM-LABEL: cmp_and8_short_short:
-; ARM:         ldrb r2, [r0]
-; ARM-NEXT:    mov r0, #0
+; ARM:       @ %bb.0: @ %entry
 ; ARM-NEXT:    ldrb r1, [r1]
-; ARM-NEXT:    tst r2, r1
-; ARM-NEXT:    movweq r0, #1
+; ARM-NEXT:    ldrb r0, [r0]
+; ARM-NEXT:    and r0, r0, r1
+; ARM-NEXT:    clz r0, r0
+; ARM-NEXT:    lsr r0, r0, #5
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: cmp_and8_short_short:
-; ARMEB:         ldrb r2, [r0, #1]
-; ARMEB-NEXT:    mov r0, #0
+; ARMEB:       @ %bb.0: @ %entry
 ; ARMEB-NEXT:    ldrb r1, [r1, #1]
-; ARMEB-NEXT:    tst r2, r1
-; ARMEB-NEXT:    movweq r0, #1
+; ARMEB-NEXT:    ldrb r0, [r0, #1]
+; ARMEB-NEXT:    and r0, r0, r1
+; ARMEB-NEXT:    clz r0, r0
+; ARMEB-NEXT:    lsr r0, r0, #5
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: cmp_and8_short_short:
-; THUMB1:         ldrb r2, [r1]
-; THUMB1-NEXT:    ldrb r3, [r0]
-; THUMB1-NEXT:    movs r0, #1
-; THUMB1-NEXT:    movs r1, #0
-; THUMB1-NEXT:    tst r3, r2
-; THUMB1-NEXT:    beq .LBB8_2
-; THUMB1-NEXT:  @ %bb.1: @ %entry
-; THUMB1-NEXT:    mov r0, r1
-; THUMB1-NEXT:  .LBB8_2: @ %entry
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    ldrb r1, [r1]
+; THUMB1-NEXT:    ldrb r2, [r0]
+; THUMB1-NEXT:    ands r2, r1
+; THUMB1-NEXT:    rsbs r0, r2, #0
+; THUMB1-NEXT:    adcs r0, r2
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: cmp_and8_short_short:
-; THUMB2:         ldrb r2, [r0]
-; THUMB2-NEXT:    movs r0, #0
+; THUMB2:       @ %bb.0: @ %entry
 ; THUMB2-NEXT:    ldrb r1, [r1]
-; THUMB2-NEXT:    tst r2, r1
-; THUMB2-NEXT:    it eq
-; THUMB2-NEXT:    moveq r0, #1
+; THUMB2-NEXT:    ldrb r0, [r0]
+; THUMB2-NEXT:    ands r0, r1
+; THUMB2-NEXT:    clz r0, r0
+; THUMB2-NEXT:    lsrs r0, r0, #5
 ; THUMB2-NEXT:    bx lr
 entry:
   %0 = load i16, i16* %a, align 2
@@ -437,43 +411,41 @@ entry:
   ret i1 %cmp
 }
 
-define arm_aapcscc zeroext i1 @cmp_and8_short_int(i16* nocapture readonly %a,
-                                                  i32* nocapture readonly %b) {
+define arm_aapcscc zeroext i1 @cmp_and8_short_int(i16* nocapture readonly %a, i32* nocapture readonly %b) {
 ; ARM-LABEL: cmp_and8_short_int:
-; ARM:         ldrb r2, [r0]
-; ARM-NEXT:    mov r0, #0
+; ARM:       @ %bb.0: @ %entry
 ; ARM-NEXT:    ldrb r1, [r1]
-; ARM-NEXT:    tst r1, r2
-; ARM-NEXT:    movweq r0, #1
+; ARM-NEXT:    ldrb r0, [r0]
+; ARM-NEXT:    and r0, r0, r1
+; ARM-NEXT:    clz r0, r0
+; ARM-NEXT:    lsr r0, r0, #5
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: cmp_and8_short_int:
-; ARMEB:         ldrb r2, [r0, #1]
-; ARMEB-NEXT:    mov r0, #0
+; ARMEB:       @ %bb.0: @ %entry
 ; ARMEB-NEXT:    ldrb r1, [r1, #3]
-; ARMEB-NEXT:    tst r1, r2
-; ARMEB-NEXT:    movweq r0, #1
+; ARMEB-NEXT:    ldrb r0, [r0, #1]
+; ARMEB-NEXT:    and r0, r0, r1
+; ARMEB-NEXT:    clz r0, r0
+; ARMEB-NEXT:    lsr r0, r0, #5
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: cmp_and8_short_int:
-; THUMB1:         ldrb r2, [r0]
-; THUMB1-NEXT:    ldrb r3, [r1]
-; THUMB1-NEXT:    movs r0, #1
-; THUMB1-NEXT:    movs r1, #0
-; THUMB1-NEXT:    tst r3, r2
-; THUMB1-NEXT:    beq .LBB9_2
-; THUMB1-NEXT:  @ %bb.1: @ %entry
-; THUMB1-NEXT:    mov r0, r1
-; THUMB1-NEXT:  .LBB9_2: @ %entry
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    ldrb r1, [r1]
+; THUMB1-NEXT:    ldrb r2, [r0]
+; THUMB1-NEXT:    ands r2, r1
+; THUMB1-NEXT:    rsbs r0, r2, #0
+; THUMB1-NEXT:    adcs r0, r2
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: cmp_and8_short_int:
-; THUMB2:         ldrb r2, [r0]
-; THUMB2-NEXT:    movs r0, #0
+; THUMB2:       @ %bb.0: @ %entry
 ; THUMB2-NEXT:    ldrb r1, [r1]
-; THUMB2-NEXT:    tst r1, r2
-; THUMB2-NEXT:    it eq
-; THUMB2-NEXT:    moveq r0, #1
+; THUMB2-NEXT:    ldrb r0, [r0]
+; THUMB2-NEXT:    ands r0, r1
+; THUMB2-NEXT:    clz r0, r0
+; THUMB2-NEXT:    lsrs r0, r0, #5
 ; THUMB2-NEXT:    bx lr
 entry:
   %0 = load i16, i16* %a, align 2
@@ -485,43 +457,41 @@ entry:
   ret i1 %cmp
 }
 
-define arm_aapcscc zeroext i1 @cmp_and8_int_int(i32* nocapture readonly %a,
-                                                i32* nocapture readonly %b) {
+define arm_aapcscc zeroext i1 @cmp_and8_int_int(i32* nocapture readonly %a, i32* nocapture readonly %b) {
 ; ARM-LABEL: cmp_and8_int_int:
-; ARM:         ldrb r2, [r0]
-; ARM-NEXT:    mov r0, #0
+; ARM:       @ %bb.0: @ %entry
 ; ARM-NEXT:    ldrb r1, [r1]
-; ARM-NEXT:    tst r2, r1
-; ARM-NEXT:    movweq r0, #1
+; ARM-NEXT:    ldrb r0, [r0]
+; ARM-NEXT:    and r0, r0, r1
+; ARM-NEXT:    clz r0, r0
+; ARM-NEXT:    lsr r0, r0, #5
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: cmp_and8_int_int:
-; ARMEB:         ldrb r2, [r0, #3]
-; ARMEB-NEXT:    mov r0, #0
+; ARMEB:       @ %bb.0: @ %entry
 ; ARMEB-NEXT:    ldrb r1, [r1, #3]
-; ARMEB-NEXT:    tst r2, r1
-; ARMEB-NEXT:    movweq r0, #1
+; ARMEB-NEXT:    ldrb r0, [r0, #3]
+; ARMEB-NEXT:    and r0, r0, r1
+; ARMEB-NEXT:    clz r0, r0
+; ARMEB-NEXT:    lsr r0, r0, #5
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: cmp_and8_int_int:
-; THUMB1:         ldrb r2, [r1]
-; THUMB1-NEXT:    ldrb r3, [r0]
-; THUMB1-NEXT:    movs r0, #1
-; THUMB1-NEXT:    movs r1, #0
-; THUMB1-NEXT:    tst r3, r2
-; THUMB1-NEXT:    beq .LBB10_2
-; THUMB1-NEXT:  @ %bb.1: @ %entry
-; THUMB1-NEXT:    mov r0, r1
-; THUMB1-NEXT:  .LBB10_2: @ %entry
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    ldrb r1, [r1]
+; THUMB1-NEXT:    ldrb r2, [r0]
+; THUMB1-NEXT:    ands r2, r1
+; THUMB1-NEXT:    rsbs r0, r2, #0
+; THUMB1-NEXT:    adcs r0, r2
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: cmp_and8_int_int:
-; THUMB2:         ldrb r2, [r0]
-; THUMB2-NEXT:    movs r0, #0
+; THUMB2:       @ %bb.0: @ %entry
 ; THUMB2-NEXT:    ldrb r1, [r1]
-; THUMB2-NEXT:    tst r2, r1
-; THUMB2-NEXT:    it eq
-; THUMB2-NEXT:    moveq r0, #1
+; THUMB2-NEXT:    ldrb r0, [r0]
+; THUMB2-NEXT:    ands r0, r1
+; THUMB2-NEXT:    clz r0, r0
+; THUMB2-NEXT:    lsrs r0, r0, #5
 ; THUMB2-NEXT:    bx lr
 entry:
   %0 = load i32, i32* %a, align 4
@@ -532,43 +502,41 @@ entry:
   ret i1 %cmp
 }
 
-define arm_aapcscc zeroext i1 @cmp_and16(i32* nocapture readonly %a,
-                                         i32* nocapture readonly %b) {
+define arm_aapcscc zeroext i1 @cmp_and16(i32* nocapture readonly %a, i32* nocapture readonly %b) {
 ; ARM-LABEL: cmp_and16:
-; ARM:         ldrh r2, [r0]
-; ARM-NEXT:    mov r0, #0
+; ARM:       @ %bb.0: @ %entry
 ; ARM-NEXT:    ldrh r1, [r1]
-; ARM-NEXT:    tst r2, r1
-; ARM-NEXT:    movweq r0, #1
+; ARM-NEXT:    ldrh r0, [r0]
+; ARM-NEXT:    and r0, r0, r1
+; ARM-NEXT:    clz r0, r0
+; ARM-NEXT:    lsr r0, r0, #5
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: cmp_and16:
-; ARMEB:         ldrh r2, [r0, #2]
-; ARMEB-NEXT:    mov r0, #0
+; ARMEB:       @ %bb.0: @ %entry
 ; ARMEB-NEXT:    ldrh r1, [r1, #2]
-; ARMEB-NEXT:    tst r2, r1
-; ARMEB-NEXT:    movweq r0, #1
+; ARMEB-NEXT:    ldrh r0, [r0, #2]
+; ARMEB-NEXT:    and r0, r0, r1
+; ARMEB-NEXT:    clz r0, r0
+; ARMEB-NEXT:    lsr r0, r0, #5
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: cmp_and16:
-; THUMB1:         ldrh r2, [r1]
-; THUMB1-NEXT:    ldrh r3, [r0]
-; THUMB1-NEXT:    movs r0, #1
-; THUMB1-NEXT:    movs r1, #0
-; THUMB1-NEXT:    tst r3, r2
-; THUMB1-NEXT:    beq .LBB11_2
-; THUMB1-NEXT:  @ %bb.1: @ %entry
-; THUMB1-NEXT:    mov r0, r1
-; THUMB1-NEXT:  .LBB11_2: @ %entry
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    ldrh r1, [r1]
+; THUMB1-NEXT:    ldrh r2, [r0]
+; THUMB1-NEXT:    ands r2, r1
+; THUMB1-NEXT:    rsbs r0, r2, #0
+; THUMB1-NEXT:    adcs r0, r2
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: cmp_and16:
-; THUMB2:         ldrh r2, [r0]
-; THUMB2-NEXT:    movs r0, #0
+; THUMB2:       @ %bb.0: @ %entry
 ; THUMB2-NEXT:    ldrh r1, [r1]
-; THUMB2-NEXT:    tst r2, r1
-; THUMB2-NEXT:    it eq
-; THUMB2-NEXT:    moveq r0, #1
+; THUMB2-NEXT:    ldrh r0, [r0]
+; THUMB2-NEXT:    ands r0, r1
+; THUMB2-NEXT:    clz r0, r0
+; THUMB2-NEXT:    lsrs r0, r0, #5
 ; THUMB2-NEXT:    bx lr
 entry:
   %0 = load i32, i32* %a, align 4
@@ -581,28 +549,32 @@ entry:
 
 define arm_aapcscc i32 @add_and16(i32* nocapture readonly %a, i32 %y, i32 %z) {
 ; ARM-LABEL: add_and16:
-; ARM:         add r1, r1, r2
+; ARM:       @ %bb.0: @ %entry
+; ARM-NEXT:    add r1, r1, r2
 ; ARM-NEXT:    ldrh r0, [r0]
 ; ARM-NEXT:    uxth r1, r1
 ; ARM-NEXT:    orr r0, r0, r1
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: add_and16:
-; ARMEB:         add r1, r1, r2
+; ARMEB:       @ %bb.0: @ %entry
+; ARMEB-NEXT:    add r1, r1, r2
 ; ARMEB-NEXT:    ldrh r0, [r0, #2]
 ; ARMEB-NEXT:    uxth r1, r1
 ; ARMEB-NEXT:    orr r0, r0, r1
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: add_and16:
-; THUMB1:         adds r1, r1, r2
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    adds r1, r1, r2
 ; THUMB1-NEXT:    uxth r1, r1
 ; THUMB1-NEXT:    ldrh r0, [r0]
 ; THUMB1-NEXT:    orrs r0, r1
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: add_and16:
-; THUMB2:         add r1, r2
+; THUMB2:       @ %bb.0: @ %entry
+; THUMB2-NEXT:    add r1, r2
 ; THUMB2-NEXT:    ldrh r0, [r0]
 ; THUMB2-NEXT:    uxth r1, r1
 ; THUMB2-NEXT:    orrs r0, r1
@@ -617,7 +589,8 @@ entry:
 
 define arm_aapcscc i32 @test1(i32* %a, i32* %b, i32 %x, i32 %y) {
 ; ARM-LABEL: test1:
-; ARM:         mul r2, r2, r3
+; ARM:       @ %bb.0: @ %entry
+; ARM-NEXT:    mul r2, r2, r3
 ; ARM-NEXT:    ldrh r1, [r1]
 ; ARM-NEXT:    ldrh r0, [r0]
 ; ARM-NEXT:    eor r0, r0, r1
@@ -626,7 +599,8 @@ define arm_aapcscc i32 @test1(i32* %a, i32* %b, i32 %x, i32 %y) {
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: test1:
-; ARMEB:         mul r2, r2, r3
+; ARMEB:       @ %bb.0: @ %entry
+; ARMEB-NEXT:    mul r2, r2, r3
 ; ARMEB-NEXT:    ldrh r1, [r1, #2]
 ; ARMEB-NEXT:    ldrh r0, [r0, #2]
 ; ARMEB-NEXT:    eor r0, r0, r1
@@ -635,16 +609,19 @@ define arm_aapcscc i32 @test1(i32* %a, i32* %b, i32 %x, i32 %y) {
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: test1:
-; THUMB1:         ldrh r1, [r1]
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    push {r4, lr}
+; THUMB1-NEXT:    ldrh r1, [r1]
 ; THUMB1-NEXT:    ldrh r4, [r0]
 ; THUMB1-NEXT:    eors r4, r1
 ; THUMB1-NEXT:    muls r2, r3, r2
 ; THUMB1-NEXT:    uxth r0, r2
 ; THUMB1-NEXT:    orrs r0, r4
-; THUMB1-NEXT:    pop
+; THUMB1-NEXT:    pop {r4, pc}
 ;
 ; THUMB2-LABEL: test1:
-; THUMB2:         ldrh r1, [r1]
+; THUMB2:       @ %bb.0: @ %entry
+; THUMB2-NEXT:    ldrh r1, [r1]
 ; THUMB2-NEXT:    ldrh r0, [r0]
 ; THUMB2-NEXT:    eors r0, r1
 ; THUMB2-NEXT:    mul r1, r2, r3
@@ -663,7 +640,8 @@ entry:
 
 define arm_aapcscc i32 @test2(i32* %a, i32* %b, i32 %x, i32 %y) {
 ; ARM-LABEL: test2:
-; ARM:         ldr r1, [r1]
+; ARM:       @ %bb.0: @ %entry
+; ARM-NEXT:    ldr r1, [r1]
 ; ARM-NEXT:    ldr r0, [r0]
 ; ARM-NEXT:    mul r1, r2, r1
 ; ARM-NEXT:    eor r0, r0, r3
@@ -672,7 +650,8 @@ define arm_aapcscc i32 @test2(i32* %a, i32* %b, i32 %x, i32 %y) {
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: test2:
-; ARMEB:         ldr r1, [r1]
+; ARMEB:       @ %bb.0: @ %entry
+; ARMEB-NEXT:    ldr r1, [r1]
 ; ARMEB-NEXT:    ldr r0, [r0]
 ; ARMEB-NEXT:    mul r1, r2, r1
 ; ARMEB-NEXT:    eor r0, r0, r3
@@ -681,7 +660,8 @@ define arm_aapcscc i32 @test2(i32* %a, i32* %b, i32 %x, i32 %y) {
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: test2:
-; THUMB1:         ldr r1, [r1]
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    ldr r1, [r1]
 ; THUMB1-NEXT:    muls r1, r2, r1
 ; THUMB1-NEXT:    ldr r0, [r0]
 ; THUMB1-NEXT:    eors r0, r3
@@ -690,7 +670,8 @@ define arm_aapcscc i32 @test2(i32* %a, i32* %b, i32 %x, i32 %y) {
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: test2:
-; THUMB2:         ldr r1, [r1]
+; THUMB2:       @ %bb.0: @ %entry
+; THUMB2-NEXT:    ldr r1, [r1]
 ; THUMB2-NEXT:    ldr r0, [r0]
 ; THUMB2-NEXT:    muls r1, r2, r1
 ; THUMB2-NEXT:    eors r0, r3
@@ -709,7 +690,8 @@ entry:
 
 define arm_aapcscc i32 @test3(i32* %a, i32* %b, i32 %x, i16* %y) {
 ; ARM-LABEL: test3:
-; ARM:         ldr r0, [r0]
+; ARM:       @ %bb.0: @ %entry
+; ARM-NEXT:    ldr r0, [r0]
 ; ARM-NEXT:    mul r1, r2, r0
 ; ARM-NEXT:    ldrh r2, [r3]
 ; ARM-NEXT:    eor r0, r0, r2
@@ -718,7 +700,8 @@ define arm_aapcscc i32 @test3(i32* %a, i32* %b, i32 %x, i16* %y) {
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: test3:
-; ARMEB:         ldr r0, [r0]
+; ARMEB:       @ %bb.0: @ %entry
+; ARMEB-NEXT:    ldr r0, [r0]
 ; ARMEB-NEXT:    mul r1, r2, r0
 ; ARMEB-NEXT:    ldrh r2, [r3]
 ; ARMEB-NEXT:    eor r0, r0, r2
@@ -727,7 +710,8 @@ define arm_aapcscc i32 @test3(i32* %a, i32* %b, i32 %x, i16* %y) {
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: test3:
-; THUMB1:         ldr r0, [r0]
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    ldr r0, [r0]
 ; THUMB1-NEXT:    muls r2, r0, r2
 ; THUMB1-NEXT:    ldrh r1, [r3]
 ; THUMB1-NEXT:    eors r1, r0
@@ -736,7 +720,8 @@ define arm_aapcscc i32 @test3(i32* %a, i32* %b, i32 %x, i16* %y) {
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: test3:
-; THUMB2:         ldr r0, [r0]
+; THUMB2:       @ %bb.0: @ %entry
+; THUMB2-NEXT:    ldr r0, [r0]
 ; THUMB2-NEXT:    mul r1, r2, r0
 ; THUMB2-NEXT:    ldrh r2, [r3]
 ; THUMB2-NEXT:    eors r0, r2
@@ -756,7 +741,8 @@ entry:
 
 define arm_aapcscc i32 @test4(i32* %a, i32* %b, i32 %x, i32 %y) {
 ; ARM-LABEL: test4:
-; ARM:         mul r2, r2, r3
+; ARM:       @ %bb.0: @ %entry
+; ARM-NEXT:    mul r2, r2, r3
 ; ARM-NEXT:    ldrh r1, [r1]
 ; ARM-NEXT:    ldrh r0, [r0]
 ; ARM-NEXT:    eor r0, r0, r1
@@ -765,7 +751,8 @@ define arm_aapcscc i32 @test4(i32* %a, i32* %b, i32 %x, i32 %y) {
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: test4:
-; ARMEB:         mul r2, r2, r3
+; ARMEB:       @ %bb.0: @ %entry
+; ARMEB-NEXT:    mul r2, r2, r3
 ; ARMEB-NEXT:    ldrh r1, [r1, #2]
 ; ARMEB-NEXT:    ldrh r0, [r0, #2]
 ; ARMEB-NEXT:    eor r0, r0, r1
@@ -774,16 +761,19 @@ define arm_aapcscc i32 @test4(i32* %a, i32* %b, i32 %x, i32 %y) {
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: test4:
-; THUMB1:         ldrh r1, [r1]
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    push {r4, lr}
+; THUMB1-NEXT:    ldrh r1, [r1]
 ; THUMB1-NEXT:    ldrh r4, [r0]
 ; THUMB1-NEXT:    eors r4, r1
 ; THUMB1-NEXT:    muls r2, r3, r2
 ; THUMB1-NEXT:    uxth r0, r2
 ; THUMB1-NEXT:    orrs r0, r4
-; THUMB1-NEXT:    pop
+; THUMB1-NEXT:    pop {r4, pc}
 ;
 ; THUMB2-LABEL: test4:
-; THUMB2:         ldrh r1, [r1]
+; THUMB2:       @ %bb.0: @ %entry
+; THUMB2-NEXT:    ldrh r1, [r1]
 ; THUMB2-NEXT:    ldrh r0, [r0]
 ; THUMB2-NEXT:    eors r0, r1
 ; THUMB2-NEXT:    mul r1, r2, r3
@@ -802,7 +792,8 @@ entry:
 
 define arm_aapcscc i32 @test5(i32* %a, i32* %b, i32 %x, i16 zeroext %y) {
 ; ARM-LABEL: test5:
-; ARM:         ldr r1, [r1]
+; ARM:       @ %bb.0: @ %entry
+; ARM-NEXT:    ldr r1, [r1]
 ; ARM-NEXT:    ldrh r0, [r0]
 ; ARM-NEXT:    mul r1, r2, r1
 ; ARM-NEXT:    eor r0, r0, r3
@@ -811,7 +802,8 @@ define arm_aapcscc i32 @test5(i32* %a, i32* %b, i32 %x, i16 zeroext %y) {
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: test5:
-; ARMEB:         ldr r1, [r1]
+; ARMEB:       @ %bb.0: @ %entry
+; ARMEB-NEXT:    ldr r1, [r1]
 ; ARMEB-NEXT:    ldrh r0, [r0, #2]
 ; ARMEB-NEXT:    mul r1, r2, r1
 ; ARMEB-NEXT:    eor r0, r0, r3
@@ -820,16 +812,19 @@ define arm_aapcscc i32 @test5(i32* %a, i32* %b, i32 %x, i16 zeroext %y) {
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: test5:
-; THUMB1:         ldrh r4, [r0]
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    push {r4, lr}
+; THUMB1-NEXT:    ldrh r4, [r0]
 ; THUMB1-NEXT:    eors r4, r3
 ; THUMB1-NEXT:    ldr r0, [r1]
 ; THUMB1-NEXT:    muls r0, r2, r0
 ; THUMB1-NEXT:    uxth r0, r0
 ; THUMB1-NEXT:    orrs r0, r4
-; THUMB1-NEXT:    pop
+; THUMB1-NEXT:    pop {r4, pc}
 ;
 ; THUMB2-LABEL: test5:
-; THUMB2:         ldr r1, [r1]
+; THUMB2:       @ %bb.0: @ %entry
+; THUMB2-NEXT:    ldr r1, [r1]
 ; THUMB2-NEXT:    ldrh r0, [r0]
 ; THUMB2-NEXT:    muls r1, r2, r1
 ; THUMB2-NEXT:    eors r0, r3
@@ -851,46 +846,41 @@ define arm_aapcscc i1 @test6(i8* %x, i8 %y, i8 %z) {
 ; ARM-LABEL: test6:
 ; ARM:       @ %bb.0: @ %entry
 ; ARM-NEXT:    ldrb r0, [r0]
-; ARM-NEXT:    uxtb r2, r2
-; ARM-NEXT:    and r1, r0, r1
-; ARM-NEXT:    mov r0, #0
-; ARM-NEXT:    cmp r1, r2
-; ARM-NEXT:    movweq r0, #1
+; ARM-NEXT:    and r0, r1, r0
+; ARM-NEXT:    uxtb r1, r2
+; ARM-NEXT:    sub r0, r0, r1
+; ARM-NEXT:    clz r0, r0
+; ARM-NEXT:    lsr r0, r0, #5
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: test6:
 ; ARMEB:       @ %bb.0: @ %entry
 ; ARMEB-NEXT:    ldrb r0, [r0]
-; ARMEB-NEXT:    uxtb r2, r2
-; ARMEB-NEXT:    and r1, r0, r1
-; ARMEB-NEXT:    mov r0, #0
-; ARMEB-NEXT:    cmp r1, r2
-; ARMEB-NEXT:    movweq r0, #1
+; ARMEB-NEXT:    and r0, r1, r0
+; ARMEB-NEXT:    uxtb r1, r2
+; ARMEB-NEXT:    sub r0, r0, r1
+; ARMEB-NEXT:    clz r0, r0
+; ARMEB-NEXT:    lsr r0, r0, #5
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: test6:
 ; THUMB1:       @ %bb.0: @ %entry
-; THUMB1-NEXT:    ldrb r3, [r0]
-; THUMB1-NEXT:    ands r3, r1
-; THUMB1-NEXT:    uxtb r2, r2
-; THUMB1-NEXT:    movs r0, #1
-; THUMB1-NEXT:    movs r1, #0
-; THUMB1-NEXT:    cmp r3, r2
-; THUMB1-NEXT:    beq .LBB18_2
-; THUMB1-NEXT:  @ %bb.1: @ %entry
-; THUMB1-NEXT:    mov r0, r1
-; THUMB1-NEXT:  .LBB18_2: @ %entry
+; THUMB1-NEXT:    ldrb r0, [r0]
+; THUMB1-NEXT:    ands r0, r1
+; THUMB1-NEXT:    uxtb r1, r2
+; THUMB1-NEXT:    subs r1, r0, r1
+; THUMB1-NEXT:    rsbs r0, r1, #0
+; THUMB1-NEXT:    adcs r0, r1
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: test6:
 ; THUMB2:       @ %bb.0: @ %entry
 ; THUMB2-NEXT:    ldrb r0, [r0]
-; THUMB2-NEXT:    uxtb r2, r2
-; THUMB2-NEXT:    ands r1, r0
-; THUMB2-NEXT:    movs r0, #0
-; THUMB2-NEXT:    cmp r1, r2
-; THUMB2-NEXT:    it eq
-; THUMB2-NEXT:    moveq r0, #1
+; THUMB2-NEXT:    ands r0, r1
+; THUMB2-NEXT:    uxtb r1, r2
+; THUMB2-NEXT:    subs r0, r0, r1
+; THUMB2-NEXT:    clz r0, r0
+; THUMB2-NEXT:    lsrs r0, r0, #5
 ; THUMB2-NEXT:    bx lr
 entry:
   %0 = load i8, i8* %x, align 4
@@ -903,46 +893,41 @@ define arm_aapcscc i1 @test7(i16* %x, i16 %y, i8 %z) {
 ; ARM-LABEL: test7:
 ; ARM:       @ %bb.0: @ %entry
 ; ARM-NEXT:    ldrb r0, [r0]
-; ARM-NEXT:    uxtb r2, r2
-; ARM-NEXT:    and r1, r0, r1
-; ARM-NEXT:    mov r0, #0
-; ARM-NEXT:    cmp r1, r2
-; ARM-NEXT:    movweq r0, #1
+; ARM-NEXT:    and r0, r1, r0
+; ARM-NEXT:    uxtb r1, r2
+; ARM-NEXT:    sub r0, r0, r1
+; ARM-NEXT:    clz r0, r0
+; ARM-NEXT:    lsr r0, r0, #5
 ; ARM-NEXT:    bx lr
 ;
 ; ARMEB-LABEL: test7:
 ; ARMEB:       @ %bb.0: @ %entry
 ; ARMEB-NEXT:    ldrb r0, [r0, #1]
-; ARMEB-NEXT:    uxtb r2, r2
-; ARMEB-NEXT:    and r1, r0, r1
-; ARMEB-NEXT:    mov r0, #0
-; ARMEB-NEXT:    cmp r1, r2
-; ARMEB-NEXT:    movweq r0, #1
+; ARMEB-NEXT:    and r0, r1, r0
+; ARMEB-NEXT:    uxtb r1, r2
+; ARMEB-NEXT:    sub r0, r0, r1
+; ARMEB-NEXT:    clz r0, r0
+; ARMEB-NEXT:    lsr r0, r0, #5
 ; ARMEB-NEXT:    bx lr
 ;
 ; THUMB1-LABEL: test7:
 ; THUMB1:       @ %bb.0: @ %entry
-; THUMB1-NEXT:    ldrb r3, [r0]
-; THUMB1-NEXT:    ands r3, r1
-; THUMB1-NEXT:    uxtb r2, r2
-; THUMB1-NEXT:    movs r0, #1
-; THUMB1-NEXT:    movs r1, #0
-; THUMB1-NEXT:    cmp r3, r2
-; THUMB1-NEXT:    beq .LBB19_2
-; THUMB1-NEXT:  @ %bb.1: @ %entry
-; THUMB1-NEXT:    mov r0, r1
-; THUMB1-NEXT:  .LBB19_2: @ %entry
+; THUMB1-NEXT:    ldrb r0, [r0]
+; THUMB1-NEXT:    ands r0, r1
+; THUMB1-NEXT:    uxtb r1, r2
+; THUMB1-NEXT:    subs r1, r0, r1
+; THUMB1-NEXT:    rsbs r0, r1, #0
+; THUMB1-NEXT:    adcs r0, r1
 ; THUMB1-NEXT:    bx lr
 ;
 ; THUMB2-LABEL: test7:
 ; THUMB2:       @ %bb.0: @ %entry
 ; THUMB2-NEXT:    ldrb r0, [r0]
-; THUMB2-NEXT:    uxtb r2, r2
-; THUMB2-NEXT:    ands r1, r0
-; THUMB2-NEXT:    movs r0, #0
-; THUMB2-NEXT:    cmp r1, r2
-; THUMB2-NEXT:    it eq
-; THUMB2-NEXT:    moveq r0, #1
+; THUMB2-NEXT:    ands r0, r1
+; THUMB2-NEXT:    uxtb r1, r2
+; THUMB2-NEXT:    subs r0, r0, r1
+; THUMB2-NEXT:    clz r0, r0
+; THUMB2-NEXT:    lsrs r0, r0, #5
 ; THUMB2-NEXT:    bx lr
 entry:
   %0 = load i16, i16* %x, align 4
@@ -1026,6 +1011,7 @@ entry:
   ret void
 }
 
+define arm_aapcscc void @test10(i32* nocapture %p) {
 ; ARM-LABEL: test10:
 ; ARM:       @ %bb.0: @ %entry
 ; ARM-NEXT:    ldrb r1, [r0]
@@ -1054,7 +1040,6 @@ entry:
 ; THUMB2-NEXT:    eor r1, r1, #255
 ; THUMB2-NEXT:    str r1, [r0]
 ; THUMB2-NEXT:    bx lr
-define arm_aapcscc void @test10(i32* nocapture %p) {
 entry:
   %0 = load i32, i32* %p, align 4
   %neg = and i32 %0, 255
@@ -1063,3 +1048,540 @@ entry:
   ret void
 }
 
+define arm_aapcscc i32 @test11(i32* nocapture %p) {
+; ARM-LABEL: test11:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrb r0, [r0, #1]
+; ARM-NEXT:    lsl r0, r0, #8
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test11:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrb r0, [r0, #2]
+; ARMEB-NEXT:    lsl r0, r0, #8
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test11:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldrb r0, [r0, #1]
+; THUMB1-NEXT:    lsls r0, r0, #8
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test11:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrb r0, [r0, #1]
+; THUMB2-NEXT:    lsls r0, r0, #8
+; THUMB2-NEXT:    bx lr
+  %1 = load i32, i32* %p, align 4
+  %and = and i32 %1, 65280
+  ret i32 %and
+}
+
+define arm_aapcscc i32 @test12(i32* nocapture %p) {
+; ARM-LABEL: test12:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrb r0, [r0, #2]
+; ARM-NEXT:    lsl r0, r0, #16
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test12:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrb r0, [r0, #1]
+; ARMEB-NEXT:    lsl r0, r0, #16
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test12:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldrb r0, [r0, #2]
+; THUMB1-NEXT:    lsls r0, r0, #16
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test12:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrb r0, [r0, #2]
+; THUMB2-NEXT:    lsls r0, r0, #16
+; THUMB2-NEXT:    bx lr
+  %1 = load i32, i32* %p, align 4
+  %and = and i32 %1, 16711680
+  ret i32 %and
+}
+
+define arm_aapcscc i32 @test13(i32* nocapture %p) {
+; ARM-LABEL: test13:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrb r0, [r0, #3]
+; ARM-NEXT:    lsl r0, r0, #24
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test13:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrb r0, [r0]
+; ARMEB-NEXT:    lsl r0, r0, #24
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test13:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldrb r0, [r0, #3]
+; THUMB1-NEXT:    lsls r0, r0, #24
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test13:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrb r0, [r0, #3]
+; THUMB2-NEXT:    lsls r0, r0, #24
+; THUMB2-NEXT:    bx lr
+  %1 = load i32, i32* %p, align 4
+  %and = and i32 %1, 4278190080
+  ret i32 %and
+}
+
+define arm_aapcscc i32 @test14(i32* nocapture %p) {
+; ARM-LABEL: test14:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrh r0, [r0, #1]
+; ARM-NEXT:    lsl r0, r0, #8
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test14:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrh r0, [r0, #1]
+; ARMEB-NEXT:    lsl r0, r0, #8
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test14:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldr r1, [r0]
+; THUMB1-NEXT:    ldr r0, .LCPI26_0
+; THUMB1-NEXT:    ands r0, r1
+; THUMB1-NEXT:    bx lr
+; THUMB1-NEXT:    .p2align 2
+; THUMB1-NEXT:  @ %bb.1:
+; THUMB1-NEXT:  .LCPI26_0:
+; THUMB1-NEXT:    .long 16776960 @ 0xffff00
+;
+; THUMB2-LABEL: test14:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrh.w r0, [r0, #1]
+; THUMB2-NEXT:    lsls r0, r0, #8
+; THUMB2-NEXT:    bx lr
+  %1 = load i32, i32* %p, align 4
+  %and = and i32 %1, 16776960
+  ret i32 %and
+}
+
+define arm_aapcscc i32 @test15(i32* nocapture %p) {
+; ARM-LABEL: test15:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrh r0, [r0, #2]
+; ARM-NEXT:    lsl r0, r0, #16
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test15:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrh r0, [r0]
+; ARMEB-NEXT:    lsl r0, r0, #16
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test15:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldrh r0, [r0, #2]
+; THUMB1-NEXT:    lsls r0, r0, #16
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test15:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrh r0, [r0, #2]
+; THUMB2-NEXT:    lsls r0, r0, #16
+; THUMB2-NEXT:    bx lr
+  %1 = load i32, i32* %p, align 4
+  %and = and i32 %1, 4294901760
+  ret i32 %and
+}
+
+define arm_aapcscc i32 @test16(i64* nocapture %p) {
+; ARM-LABEL: test16:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrb r0, [r0, #1]
+; ARM-NEXT:    lsl r0, r0, #8
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test16:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrb r0, [r0, #6]
+; ARMEB-NEXT:    lsl r0, r0, #8
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test16:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldrb r0, [r0, #1]
+; THUMB1-NEXT:    lsls r0, r0, #8
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test16:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrb r0, [r0, #1]
+; THUMB2-NEXT:    lsls r0, r0, #8
+; THUMB2-NEXT:    bx lr
+  %1 = load i64, i64* %p, align 8
+  %and = and i64 %1, 65280
+  %trunc = trunc i64 %and to i32
+  ret i32 %trunc
+}
+
+define arm_aapcscc i32 @test17(i64* nocapture %p) {
+; ARM-LABEL: test17:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrb r0, [r0, #2]
+; ARM-NEXT:    lsl r0, r0, #16
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test17:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrb r0, [r0, #5]
+; ARMEB-NEXT:    lsl r0, r0, #16
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test17:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldrb r0, [r0, #2]
+; THUMB1-NEXT:    lsls r0, r0, #16
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test17:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrb r0, [r0, #2]
+; THUMB2-NEXT:    lsls r0, r0, #16
+; THUMB2-NEXT:    bx lr
+  %1 = load i64, i64* %p, align 8
+  %and = and i64 %1, 16711680
+  %trunc = trunc i64 %and to i32
+  ret i32 %trunc
+}
+
+define arm_aapcscc i32 @test18(i64* nocapture %p) {
+; ARM-LABEL: test18:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrb r0, [r0, #3]
+; ARM-NEXT:    lsl r0, r0, #24
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test18:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrb r0, [r0, #4]
+; ARMEB-NEXT:    lsl r0, r0, #24
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test18:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldrb r0, [r0, #3]
+; THUMB1-NEXT:    lsls r0, r0, #24
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test18:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrb r0, [r0, #3]
+; THUMB2-NEXT:    lsls r0, r0, #24
+; THUMB2-NEXT:    bx lr
+  %1 = load i64, i64* %p, align 8
+  %and = and i64 %1, 4278190080
+  %trunc = trunc i64 %and to i32
+  ret i32 %trunc
+}
+
+define arm_aapcscc i64 @test19(i64* nocapture %p) {
+; ARM-LABEL: test19:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrb r1, [r0, #4]
+; ARM-NEXT:    mov r0, #0
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test19:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrb r0, [r0, #3]
+; ARMEB-NEXT:    mov r1, #0
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test19:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldrb r1, [r0, #4]
+; THUMB1-NEXT:    movs r0, #0
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test19:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrb r1, [r0, #4]
+; THUMB2-NEXT:    movs r0, #0
+; THUMB2-NEXT:    bx lr
+  %1 = load i64, i64* %p, align 8
+  %and = and i64 %1, 1095216660480
+  ret i64 %and
+}
+
+define arm_aapcscc i64 @test20(i64* nocapture %p) {
+; ARM-LABEL: test20:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrb r0, [r0, #5]
+; ARM-NEXT:    lsl r1, r0, #8
+; ARM-NEXT:    mov r0, #0
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test20:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrb r0, [r0, #2]
+; ARMEB-NEXT:    mov r1, #0
+; ARMEB-NEXT:    lsl r0, r0, #8
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test20:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldrb r0, [r0, #5]
+; THUMB1-NEXT:    lsls r1, r0, #8
+; THUMB1-NEXT:    movs r0, #0
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test20:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrb r0, [r0, #5]
+; THUMB2-NEXT:    lsls r1, r0, #8
+; THUMB2-NEXT:    movs r0, #0
+; THUMB2-NEXT:    bx lr
+  %1 = load i64, i64* %p, align 8
+  %and = and i64 %1, 280375465082880
+  ret i64 %and
+}
+
+define arm_aapcscc i64 @test21(i64* nocapture %p) {
+; ARM-LABEL: test21:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrb r0, [r0, #6]
+; ARM-NEXT:    lsl r1, r0, #16
+; ARM-NEXT:    mov r0, #0
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test21:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrb r0, [r0, #1]
+; ARMEB-NEXT:    mov r1, #0
+; ARMEB-NEXT:    lsl r0, r0, #16
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test21:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldrb r0, [r0, #6]
+; THUMB1-NEXT:    lsls r1, r0, #16
+; THUMB1-NEXT:    movs r0, #0
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test21:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrb r0, [r0, #6]
+; THUMB2-NEXT:    lsls r1, r0, #16
+; THUMB2-NEXT:    movs r0, #0
+; THUMB2-NEXT:    bx lr
+  %1 = load i64, i64* %p, align 8
+  %and = and i64 %1, 71776119061217280
+  ret i64 %and
+}
+
+define arm_aapcscc i64 @test22(i64* nocapture %p) {
+; ARM-LABEL: test22:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrb r0, [r0, #7]
+; ARM-NEXT:    lsl r1, r0, #24
+; ARM-NEXT:    mov r0, #0
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test22:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrb r0, [r0]
+; ARMEB-NEXT:    mov r1, #0
+; ARMEB-NEXT:    lsl r0, r0, #24
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test22:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldrb r0, [r0, #7]
+; THUMB1-NEXT:    lsls r1, r0, #24
+; THUMB1-NEXT:    movs r0, #0
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test22:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrb r0, [r0, #7]
+; THUMB2-NEXT:    lsls r1, r0, #24
+; THUMB2-NEXT:    movs r0, #0
+; THUMB2-NEXT:    bx lr
+  %1 = load i64, i64* %p, align 8
+  %and = and i64 %1, -72057594037927936
+  ret i64 %and
+}
+
+define arm_aapcscc i64 @test23(i64* nocapture %p) {
+; ARM-LABEL: test23:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrh r1, [r0, #3]
+; ARM-NEXT:    lsl r0, r1, #24
+; ARM-NEXT:    lsr r1, r1, #8
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test23:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrh r1, [r0, #3]
+; ARMEB-NEXT:    lsr r0, r1, #8
+; ARMEB-NEXT:    lsl r1, r1, #24
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test23:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldrb r1, [r0, #3]
+; THUMB1-NEXT:    ldrb r0, [r0, #4]
+; THUMB1-NEXT:    lsls r0, r0, #8
+; THUMB1-NEXT:    adds r1, r0, r1
+; THUMB1-NEXT:    lsls r0, r1, #24
+; THUMB1-NEXT:    lsrs r1, r1, #8
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test23:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrh.w r1, [r0, #3]
+; THUMB2-NEXT:    lsls r0, r1, #24
+; THUMB2-NEXT:    lsrs r1, r1, #8
+; THUMB2-NEXT:    bx lr
+  %1 = load i64, i64* %p, align 8
+  %and = and i64 %1, 1099494850560
+  ret i64 %and
+}
+
+define arm_aapcscc i64 @test24(i64* nocapture %p) {
+; ARM-LABEL: test24:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrh r1, [r0, #4]
+; ARM-NEXT:    mov r0, #0
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test24:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrh r0, [r0, #2]
+; ARMEB-NEXT:    mov r1, #0
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test24:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldrh r1, [r0, #4]
+; THUMB1-NEXT:    movs r0, #0
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test24:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrh r1, [r0, #4]
+; THUMB2-NEXT:    movs r0, #0
+; THUMB2-NEXT:    bx lr
+  %1 = load i64, i64* %p, align 8
+  %and = and i64 %1, 281470681743360
+  ret i64 %and
+}
+
+define arm_aapcscc i64 @test25(i64* nocapture %p) {
+; ARM-LABEL: test25:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrh r0, [r0, #5]
+; ARM-NEXT:    lsl r1, r0, #8
+; ARM-NEXT:    mov r0, #0
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test25:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrh r0, [r0, #1]
+; ARMEB-NEXT:    mov r1, #0
+; ARMEB-NEXT:    lsl r0, r0, #8
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test25:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldrb r1, [r0, #5]
+; THUMB1-NEXT:    ldrb r0, [r0, #6]
+; THUMB1-NEXT:    lsls r0, r0, #8
+; THUMB1-NEXT:    adds r0, r0, r1
+; THUMB1-NEXT:    lsls r1, r0, #8
+; THUMB1-NEXT:    movs r0, #0
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test25:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrh.w r0, [r0, #5]
+; THUMB2-NEXT:    lsls r1, r0, #8
+; THUMB2-NEXT:    movs r0, #0
+; THUMB2-NEXT:    bx lr
+  %1 = load i64, i64* %p, align 8
+  %and = and i64 %1, 72056494526300160
+  ret i64 %and
+}
+
+define arm_aapcscc i64 @test26(i64* nocapture %p) {
+; ARM-LABEL: test26:
+; ARM:       @ %bb.0:
+; ARM-NEXT:    ldrh r0, [r0, #6]
+; ARM-NEXT:    lsl r1, r0, #16
+; ARM-NEXT:    mov r0, #0
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test26:
+; ARMEB:       @ %bb.0:
+; ARMEB-NEXT:    ldrh r0, [r0]
+; ARMEB-NEXT:    mov r1, #0
+; ARMEB-NEXT:    lsl r0, r0, #16
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test26:
+; THUMB1:       @ %bb.0:
+; THUMB1-NEXT:    ldrh r0, [r0, #6]
+; THUMB1-NEXT:    lsls r1, r0, #16
+; THUMB1-NEXT:    movs r0, #0
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test26:
+; THUMB2:       @ %bb.0:
+; THUMB2-NEXT:    ldrh r0, [r0, #6]
+; THUMB2-NEXT:    lsls r1, r0, #16
+; THUMB2-NEXT:    movs r0, #0
+; THUMB2-NEXT:    bx lr
+  %1 = load i64, i64* %p, align 8
+  %and = and i64 %1, -281474976710656
+  ret i64 %and
+}
+
+define void @test27(i32* nocapture %ptr) {
+; ARM-LABEL: test27:
+; ARM:       @ %bb.0: @ %entry
+; ARM-NEXT:    ldrb r1, [r0, #1]
+; ARM-NEXT:    lsl r1, r1, #16
+; ARM-NEXT:    str r1, [r0]
+; ARM-NEXT:    bx lr
+;
+; ARMEB-LABEL: test27:
+; ARMEB:       @ %bb.0: @ %entry
+; ARMEB-NEXT:    ldrb r1, [r0, #2]
+; ARMEB-NEXT:    lsl r1, r1, #16
+; ARMEB-NEXT:    str r1, [r0]
+; ARMEB-NEXT:    bx lr
+;
+; THUMB1-LABEL: test27:
+; THUMB1:       @ %bb.0: @ %entry
+; THUMB1-NEXT:    ldrb r1, [r0, #1]
+; THUMB1-NEXT:    lsls r1, r1, #16
+; THUMB1-NEXT:    str r1, [r0]
+; THUMB1-NEXT:    bx lr
+;
+; THUMB2-LABEL: test27:
+; THUMB2:       @ %bb.0: @ %entry
+; THUMB2-NEXT:    ldrb r1, [r0, #1]
+; THUMB2-NEXT:    lsls r1, r1, #16
+; THUMB2-NEXT:    str r1, [r0]
+; THUMB2-NEXT:    bx lr
+entry:
+  %0 = load i32, i32* %ptr, align 4
+  %and = and i32 %0, 65280
+  %shl = shl i32 %and, 8
+  store i32 %shl, i32* %ptr, align 4
+  ret void
+}

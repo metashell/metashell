@@ -1,9 +1,8 @@
 //===-- asan_interceptors_memintrinsics.cc --------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===---------------------------------------------------------------------===//
 //
@@ -31,14 +30,14 @@ void *__asan_memmove(void *to, const void *from, uptr size) {
   ASAN_MEMMOVE_IMPL(nullptr, to, from, size);
 }
 
-#if SANITIZER_FUCHSIA
+#if SANITIZER_FUCHSIA || SANITIZER_RTEMS
 
-// Fuchsia doesn't use sanitizer_common_interceptors.inc, but the only
-// things there it wants are these three.  Just define them as aliases
-// here rather than repeating the contents.
+// Fuchsia and RTEMS don't use sanitizer_common_interceptors.inc, but
+// the only things there it wants are these three.  Just define them
+// as aliases here rather than repeating the contents.
 
-decltype(memcpy) memcpy[[gnu::alias("__asan_memcpy")]];
-decltype(memmove) memmove[[gnu::alias("__asan_memmove")]];
-decltype(memset) memset[[gnu::alias("__asan_memset")]];
+extern "C" decltype(__asan_memcpy) memcpy[[gnu::alias("__asan_memcpy")]];
+extern "C" decltype(__asan_memmove) memmove[[gnu::alias("__asan_memmove")]];
+extern "C" decltype(__asan_memset) memset[[gnu::alias("__asan_memset")]];
 
-#endif  // SANITIZER_FUCHSIA
+#endif  // SANITIZER_FUCHSIA || SANITIZER_RTEMS

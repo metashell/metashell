@@ -5,43 +5,42 @@
 
 ; base + offset (imm9)
 ; CHECK: @t1
-; CHECK: ldr xzr, [x{{[0-9]+}}, #8]
+; CHECK: ldr xzr, [x0, #8]
 ; CHECK: ret
-define void @t1() {
-  %incdec.ptr = getelementptr inbounds i64, i64* @object, i64 1
+define void @t1(i64* %object) {
+  %incdec.ptr = getelementptr inbounds i64, i64* %object, i64 1
   %tmp = load volatile i64, i64* %incdec.ptr, align 8
   ret void
 }
 
 ; base + offset (> imm9)
 ; CHECK: @t2
-; CHECK: sub [[ADDREG:x[0-9]+]], x{{[0-9]+}}, #264
+; CHECK: sub [[ADDREG:x[0-9]+]], x0, #264
 ; CHECK: ldr xzr, [
-; CHECK: [[ADDREG]]]
 ; CHECK: ret
-define void @t2() {
-  %incdec.ptr = getelementptr inbounds i64, i64* @object, i64 -33
+define void @t2(i64* %object) {
+  %incdec.ptr = getelementptr inbounds i64, i64* %object, i64 -33
   %tmp = load volatile i64, i64* %incdec.ptr, align 8
   ret void
 }
 
 ; base + unsigned offset (> imm9 and <= imm12 * size of type in bytes)
 ; CHECK: @t3
-; CHECK: ldr xzr, [x{{[0-9]+}}, #32760]
+; CHECK: ldr xzr, [x0, #32760]
 ; CHECK: ret
-define void @t3() {
-  %incdec.ptr = getelementptr inbounds i64, i64* @object, i64 4095
+define void @t3(i64* %object) {
+  %incdec.ptr = getelementptr inbounds i64, i64* %object, i64 4095
   %tmp = load volatile i64, i64* %incdec.ptr, align 8
   ret void
 }
 
 ; base + unsigned offset (> imm12 * size of type in bytes)
 ; CHECK: @t4
-; CHECK: orr w[[NUM:[0-9]+]], wzr, #0x8000
-; CHECK: ldr xzr, [x{{[0-9]+}}, x[[NUM]]]
+; CHECK: mov w[[NUM:[0-9]+]], #32768
+; CHECK: ldr xzr, [x0, x[[NUM]]]
 ; CHECK: ret
-define void @t4() {
-  %incdec.ptr = getelementptr inbounds i64, i64* @object, i64 4096
+define void @t4(i64* %object) {
+  %incdec.ptr = getelementptr inbounds i64, i64* %object, i64 4096
   %tmp = load volatile i64, i64* %incdec.ptr, align 8
   ret void
 }
@@ -58,12 +57,12 @@ define void @t5(i64 %a) {
 
 ; base + reg + imm
 ; CHECK: @t6
-; CHECK: add [[ADDREG:x[0-9]+]], x{{[0-9]+}}, x{{[0-9]+}}, lsl #3
-; CHECK-NEXT: orr w[[NUM:[0-9]+]], wzr, #0x8000
+; CHECK: add [[ADDREG:x[0-9]+]], x1, x0, lsl #3
+; CHECK-NEXT: mov w[[NUM:[0-9]+]], #32768
 ; CHECK: ldr xzr, [x{{[0-9]+}}, x[[NUM]]]
 ; CHECK: ret
-define void @t6(i64 %a) {
-  %tmp1 = getelementptr inbounds i64, i64* @object, i64 %a
+define void @t6(i64 %a, i64* %object) {
+  %tmp1 = getelementptr inbounds i64, i64* %object, i64 %a
   %incdec.ptr = getelementptr inbounds i64, i64* %tmp1, i64 4096
   %tmp = load volatile i64, i64* %incdec.ptr, align 8
   ret void
@@ -72,7 +71,7 @@ define void @t6(i64 %a) {
 ; Test base + wide immediate
 define void @t7(i64 %a) {
 ; CHECK-LABEL: t7:
-; CHECK: orr w[[NUM:[0-9]+]], wzr, #0xffff
+; CHECK: mov w[[NUM:[0-9]+]], #65535
 ; CHECK-NEXT: ldr xzr, [x0, x[[NUM]]]
   %1 = add i64 %a, 65535   ;0xffff
   %2 = inttoptr i64 %1 to i64*

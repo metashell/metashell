@@ -1,9 +1,8 @@
 //=- AArch64InstrAtomics.td - AArch64 Atomic codegen support -*- tablegen -*-=//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -409,13 +408,18 @@ let Predicates = [HasLSE] in {
   defm : LDOPregister_patterns<"LDADD", "atomic_load_add">;
   defm : LDOPregister_patterns<"LDSET", "atomic_load_or">;
   defm : LDOPregister_patterns<"LDEOR", "atomic_load_xor">;
+  defm : LDOPregister_patterns<"LDCLR", "atomic_load_clr">;
   defm : LDOPregister_patterns<"LDSMAX", "atomic_load_max">;
   defm : LDOPregister_patterns<"LDSMIN", "atomic_load_min">;
   defm : LDOPregister_patterns<"LDUMAX", "atomic_load_umax">;
   defm : LDOPregister_patterns<"LDUMIN", "atomic_load_umin">;
   defm : LDOPregister_patterns<"SWP", "atomic_swap">;
+  defm : CASregister_patterns<"CAS", "atomic_cmp_swap">;
+
+  // These two patterns are only needed for global isel, selection dag isel
+  // converts atomic load-sub into a sub and atomic load-add, and likewise for
+  // and -> clr.
   defm : LDOPregister_patterns_mod<"LDADD", "atomic_load_sub", "SUB">;
   defm : LDOPregister_patterns_mod<"LDCLR", "atomic_load_and", "ORN">;
-  defm : CASregister_patterns<"CAS", "atomic_cmp_swap">;
 }
 

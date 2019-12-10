@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
 from __future__ import print_function
 
@@ -23,6 +23,8 @@ try:
     from sys import intern
 except:
     pass
+
+import re
 
 import optpmap
 
@@ -262,19 +264,29 @@ class Missed(Remark):
     def color(self):
         return "red"
 
+class Failure(Missed):
+    yaml_tag = '!Failure'
 
-def get_remarks(input_file):
+def get_remarks(input_file, filter_=None):
     max_hotness = 0
     all_remarks = dict()
     file_remarks = defaultdict(functools.partial(defaultdict, list))
 
     with open(input_file) as f:
         docs = yaml.load_all(f, Loader=Loader)
+
+        filter_e = None
+        if filter_:
+            filter_e = re.compile(filter_)
         for remark in docs:
             remark.canonicalize()
             # Avoid remarks withoug debug location or if they are duplicated
             if not hasattr(remark, 'DebugLoc') or remark.key in all_remarks:
                 continue
+
+            if filter_e and not filter_e.search(remark.Pass):
+                continue
+
             all_remarks[remark.key] = remark
 
             file_remarks[remark.File][remark.Line].append(remark)
@@ -289,13 +301,13 @@ def get_remarks(input_file):
     return max_hotness, all_remarks, file_remarks
 
 
-def gather_results(filenames, num_jobs, should_print_progress):
+def gather_results(filenames, num_jobs, should_print_progress, filter_=None):
     if should_print_progress:
         print('Reading YAML files...')
     if not Remark.demangler_proc:
         Remark.set_demangler(Remark.default_demangler)
     remarks = optpmap.pmap(
-        get_remarks, filenames, num_jobs, should_print_progress)
+        get_remarks, filenames, num_jobs, should_print_progress, filter_)
     max_hotness = max(entry[0] for entry in remarks)
 
     def merge_file_remarks(file_remarks_job, all_remarks, merged):
@@ -328,6 +340,6 @@ def find_opt_files(*dirs_or_files):
                 subdirs[:] = [d for d in subdirs
                               if not os.path.ismount(os.path.join(dir, d))]
                 for file in files:
-                    if fnmatch.fnmatch(file, "*.opt.yaml"):
+                    if fnmatch.fnmatch(file, "*.opt.yaml*"):
                         all.append(os.path.join(dir, file))
     return all

@@ -1,9 +1,8 @@
 //===--------- AVRMCELFStreamer.cpp - AVR subclass of MCELFStreamer -------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -17,6 +16,7 @@
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCSymbol.h"
+#include "llvm/MC/MCObjectWriter.h"
 
 using namespace llvm;
 
@@ -43,9 +43,10 @@ void AVRMCELFStreamer::EmitValueForModiferKind(
 namespace llvm {
 MCStreamer *createAVRELFStreamer(Triple const &TT, MCContext &Context,
                                  std::unique_ptr<MCAsmBackend> MAB,
-                                 raw_pwrite_stream &OS,
+                                 std::unique_ptr<MCObjectWriter> OW,
                                  std::unique_ptr<MCCodeEmitter> CE) {
-  return new AVRMCELFStreamer(Context, std::move(MAB), OS, std::move(CE));
+  return new AVRMCELFStreamer(Context, std::move(MAB), std::move(OW),
+                              std::move(CE));
 }
 
 } // end namespace llvm

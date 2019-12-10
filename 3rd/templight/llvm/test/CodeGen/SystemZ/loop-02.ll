@@ -1,7 +1,7 @@
 ; Test BRCTH.
 
 ; RUN: llc < %s -verify-machineinstrs -mtriple=s390x-linux-gnu -mcpu=z196 \
-; RUN:   -no-integrated-as | FileCheck %s
+; RUN:   -no-integrated-as -disable-block-placement | FileCheck %s
 
 ; Test a loop that should be converted into dbr form and then use BRCTH.
 define void @f2(i32 *%src, i32 *%dest) {
@@ -19,7 +19,7 @@ entry:
 loop:
   %count = phi i32 [ 0, %entry ], [ %next, %loop.next ]
   %next = add i32 %count, 1
-  %val = load volatile i32 , i32 *%src
+  %val = load volatile i32, i32 *%src
   %cmp = icmp eq i32 %val, 0
   br i1 %cmp, label %loop.next, label %loop.store
 

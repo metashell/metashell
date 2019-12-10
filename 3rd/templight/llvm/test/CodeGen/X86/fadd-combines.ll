@@ -17,6 +17,14 @@ define <4 x float> @fadd_zero_4f32(<4 x float> %x) #0 {
   ret <4 x float> %y
 }
 
+define <4 x float> @fadd_zero_4f32_undef(<4 x float> %x) {
+; CHECK-LABEL: fadd_zero_4f32_undef:
+; CHECK:       # %bb.0:
+; CHECK-NEXT:    retq
+  %y = fadd nsz <4 x float> %x, <float 0.0, float undef, float 0.0, float undef>
+  ret <4 x float> %y
+}
+
 ; CHECK: float 3
 define float @fadd_2const_f32(float %x) #0 {
 ; CHECK-LABEL: fadd_2const_f32:
@@ -219,6 +227,24 @@ define <4 x float> @fadd_fadd_x_x_fadd_x_x_4f32(<4 x float> %x) #0 {
   %y = fadd <4 x float> %x, %x
   %z = fadd <4 x float> %y, %y
   ret <4 x float> %z
+}
+
+; ((x + 42.0) + 17.0) + (x + 42.0) --> (x + 59.0) + (x + 17.0)
+; It's still 3 adds, but the first 2 are independent.
+; More reassocation could get this to 2 adds or 1 FMA (that's done in IR, but not in the DAG).
+
+define float @fadd_const_multiuse_attr(float %x) #0 {
+; CHECK-LABEL: fadd_const_multiuse_attr:
+; CHECK:       # %bb.0:
+; CHECK-NEXT:    movss {{.*#+}} xmm1 = mem[0],zero,zero,zero
+; CHECK-NEXT:    addss %xmm0, %xmm1
+; CHECK-NEXT:    addss {{.*}}(%rip), %xmm0
+; CHECK-NEXT:    addss %xmm1, %xmm0
+; CHECK-NEXT:    retq
+  %a1 = fadd float %x, 42.0
+  %a2 = fadd float %a1, 17.0
+  %a3 = fadd float %a1, %a2
+  ret float %a3
 }
 
 attributes #0 = { "less-precise-fpmad"="true" "no-infs-fp-math"="true" "no-nans-fp-math"="true" "unsafe-fp-math"="true" "no-signed-zeros-fp-math"="true" }

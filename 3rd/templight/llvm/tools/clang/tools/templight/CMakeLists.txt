@@ -17,20 +17,23 @@ set( LLVM_LINK_COMPONENTS
   Vectorize
   )
 
+include_directories(BEFORE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  )
+add_subdirectory(lib)
+
 add_clang_executable(templight
   templight_driver.cpp
-  TemplightAction.cpp
-  TemplightDebugger.cpp
-  TemplightEntryPrinter.cpp
-  TemplightProtobufWriter.cpp
-  TemplightTracer.cpp
   )
 
 target_link_libraries(templight
   PRIVATE
   clangBasic
+  clangDriver
   clangFrontend
   clangFrontendTool
+  clangSerialization
+  clangTemplight
   )
 
 set_target_properties(templight PROPERTIES VERSION ${CLANG_EXECUTABLE_VERSION})
@@ -110,3 +113,11 @@ if(WITH_POLLY AND LINK_POLLY_INTO_TOOLS)
     endforeach(lib)
   endif(POLLY_LINK_LIBS)
 endif(WITH_POLLY AND LINK_POLLY_INTO_TOOLS)
+
+set(TEMPLIGHT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(TEMPLIGHT_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+
+if(CLANG_INCLUDE_TESTS)
+add_subdirectory(test)
+add_subdirectory(unittests)
+endif()

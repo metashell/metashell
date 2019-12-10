@@ -1,9 +1,8 @@
 //===- LowerMemIntrinsics.cpp ----------------------------------*- C++ -*--===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -73,7 +72,7 @@ void llvm::createMemCpyLoopKnownSize(Instruction *InsertBefore, Value *SrcAddr,
     // Loop Body
     Value *SrcGEP =
         LoopBuilder.CreateInBoundsGEP(LoopOpType, SrcAddr, LoopIndex);
-    Value *Load = LoopBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
+    Value *Load = LoopBuilder.CreateLoad(LoopOpType, SrcGEP, SrcIsVolatile);
     Value *DstGEP =
         LoopBuilder.CreateInBoundsGEP(LoopOpType, DstAddr, LoopIndex);
     LoopBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
@@ -115,7 +114,7 @@ void llvm::createMemCpyLoopKnownSize(Instruction *InsertBefore, Value *SrcAddr,
                              : RBuilder.CreateBitCast(SrcAddr, SrcPtrType);
       Value *SrcGEP = RBuilder.CreateInBoundsGEP(
           OpTy, CastedSrc, ConstantInt::get(TypeOfCopyLen, GepIndex));
-      Value *Load = RBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
+      Value *Load = RBuilder.CreateLoad(OpTy, SrcGEP, SrcIsVolatile);
 
       // Cast destination to operand type and store.
       PointerType *DstPtrType = PointerType::get(OpTy, DstAS);
@@ -182,7 +181,7 @@ void llvm::createMemCpyLoopUnknownSize(Instruction *InsertBefore,
   LoopIndex->addIncoming(ConstantInt::get(CopyLenType, 0U), PreLoopBB);
 
   Value *SrcGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, SrcAddr, LoopIndex);
-  Value *Load = LoopBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
+  Value *Load = LoopBuilder.CreateLoad(LoopOpType, SrcGEP, SrcIsVolatile);
   Value *DstGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, DstAddr, LoopIndex);
   LoopBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
 
@@ -235,7 +234,7 @@ void llvm::createMemCpyLoopUnknownSize(Instruction *InsertBefore,
     Value *FullOffset = ResBuilder.CreateAdd(RuntimeBytesCopied, ResidualIndex);
     Value *SrcGEP =
         ResBuilder.CreateInBoundsGEP(Int8Type, SrcAsInt8, FullOffset);
-    Value *Load = ResBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
+    Value *Load = ResBuilder.CreateLoad(Int8Type, SrcGEP, SrcIsVolatile);
     Value *DstGEP =
         ResBuilder.CreateInBoundsGEP(Int8Type, DstAsInt8, FullOffset);
     ResBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
@@ -293,6 +292,8 @@ static void createMemMoveLoop(Instruction *InsertBefore,
   BasicBlock *OrigBB = InsertBefore->getParent();
   Function *F = OrigBB->getParent();
 
+  Type *EltTy = cast<PointerType>(SrcAddr->getType())->getElementType();
+
   // Create the a comparison of src and dst, based on which we jump to either
   // the forward-copy part of the function (if src >= dst) or the backwards-copy
   // part (if src < dst).
@@ -301,7 +302,7 @@ static void createMemMoveLoop(Instruction *InsertBefore,
   // the appropriate conditional branches when the loop is built.
   ICmpInst *PtrCompare = new ICmpInst(InsertBefore, ICmpInst::ICMP_ULT,
                                       SrcAddr, DstAddr, "compare_src_dst");
-  TerminatorInst *ThenTerm, *ElseTerm;
+  Instruction *ThenTerm, *ElseTerm;
   SplitBlockAndInsertIfThenElse(PtrCompare, InsertBefore, &ThenTerm,
                                 &ElseTerm);
 
@@ -331,9 +332,10 @@ static void createMemMoveLoop(Instruction *InsertBefore,
   Value *IndexPtr = LoopBuilder.CreateSub(
       LoopPhi, ConstantInt::get(TypeOfCopyLen, 1), "index_ptr");
   Value *Element = LoopBuilder.CreateLoad(
-      LoopBuilder.CreateInBoundsGEP(SrcAddr, IndexPtr), "element");
-  LoopBuilder.CreateStore(Element,
-                          LoopBuilder.CreateInBoundsGEP(DstAddr, IndexPtr));
+      EltTy, LoopBuilder.CreateInBoundsGEP(EltTy, SrcAddr, IndexPtr),
+      "element");
+  LoopBuilder.CreateStore(
+      Element, LoopBuilder.CreateInBoundsGEP(EltTy, DstAddr, IndexPtr));
   LoopBuilder.CreateCondBr(
       LoopBuilder.CreateICmpEQ(IndexPtr, ConstantInt::get(TypeOfCopyLen, 0)),
       ExitBB, LoopBB);
@@ -348,9 +350,10 @@ static void createMemMoveLoop(Instruction *InsertBefore,
   IRBuilder<> FwdLoopBuilder(FwdLoopBB);
   PHINode *FwdCopyPhi = FwdLoopBuilder.CreatePHI(TypeOfCopyLen, 0, "index_ptr");
   Value *FwdElement = FwdLoopBuilder.CreateLoad(
-      FwdLoopBuilder.CreateInBoundsGEP(SrcAddr, FwdCopyPhi), "element");
+      EltTy, FwdLoopBuilder.CreateInBoundsGEP(EltTy, SrcAddr, FwdCopyPhi),
+      "element");
   FwdLoopBuilder.CreateStore(
-      FwdElement, FwdLoopBuilder.CreateInBoundsGEP(DstAddr, FwdCopyPhi));
+      FwdElement, FwdLoopBuilder.CreateInBoundsGEP(EltTy, DstAddr, FwdCopyPhi));
   Value *FwdIndexPtr = FwdLoopBuilder.CreateAdd(
       FwdCopyPhi, ConstantInt::get(TypeOfCopyLen, 1), "index_increment");
   FwdLoopBuilder.CreateCondBr(FwdLoopBuilder.CreateICmpEQ(FwdIndexPtr, CopyLen),
@@ -409,8 +412,8 @@ void llvm::expandMemCpyAsLoop(MemCpyInst *Memcpy,
                               /* SrcAddr */ Memcpy->getRawSource(),
                               /* DstAddr */ Memcpy->getRawDest(),
                               /* CopyLen */ CI,
-                              /* SrcAlign */ Memcpy->getAlignment(),
-                              /* DestAlign */ Memcpy->getAlignment(),
+                              /* SrcAlign */ Memcpy->getSourceAlignment(),
+                              /* DestAlign */ Memcpy->getDestAlignment(),
                               /* SrcIsVolatile */ Memcpy->isVolatile(),
                               /* DstIsVolatile */ Memcpy->isVolatile(),
                               /* TargetTransformInfo */ TTI);
@@ -419,8 +422,8 @@ void llvm::expandMemCpyAsLoop(MemCpyInst *Memcpy,
                                 /* SrcAddr */ Memcpy->getRawSource(),
                                 /* DstAddr */ Memcpy->getRawDest(),
                                 /* CopyLen */ Memcpy->getLength(),
-                                /* SrcAlign */ Memcpy->getAlignment(),
-                                /* DestAlign */ Memcpy->getAlignment(),
+                                /* SrcAlign */ Memcpy->getSourceAlignment(),
+                                /* DestAlign */ Memcpy->getDestAlignment(),
                                 /* SrcIsVolatile */ Memcpy->isVolatile(),
                                 /* DstIsVolatile */ Memcpy->isVolatile(),
                                 /* TargetTransfomrInfo */ TTI);
@@ -432,8 +435,8 @@ void llvm::expandMemMoveAsLoop(MemMoveInst *Memmove) {
                     /* SrcAddr */ Memmove->getRawSource(),
                     /* DstAddr */ Memmove->getRawDest(),
                     /* CopyLen */ Memmove->getLength(),
-                    /* SrcAlign */ Memmove->getAlignment(),
-                    /* DestAlign */ Memmove->getAlignment(),
+                    /* SrcAlign */ Memmove->getSourceAlignment(),
+                    /* DestAlign */ Memmove->getDestAlignment(),
                     /* SrcIsVolatile */ Memmove->isVolatile(),
                     /* DstIsVolatile */ Memmove->isVolatile());
 }
@@ -443,6 +446,6 @@ void llvm::expandMemSetAsLoop(MemSetInst *Memset) {
                    /* DstAddr */ Memset->getRawDest(),
                    /* CopyLen */ Memset->getLength(),
                    /* SetValue */ Memset->getValue(),
-                   /* Alignment */ Memset->getAlignment(),
+                   /* Alignment */ Memset->getDestAlignment(),
                    Memset->isVolatile());
 }

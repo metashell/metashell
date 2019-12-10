@@ -29,6 +29,16 @@
 # ifndef LITTLE_ENDIAN
 #  define LITTLE_ENDIAN _LITTLE_ENDIAN
 # endif
+#elif defined(__sun__) && defined(__svr4__)
+// Solaris provides _BIG_ENDIAN/_LITTLE_ENDIAN selector in sys/types.h.
+# include <sys/types.h>
+# define BIG_ENDIAN 4321
+# define LITTLE_ENDIAN 1234
+# if defined(_BIG_ENDIAN)
+#  define BYTE_ORDER BIG_ENDIAN
+# else
+#  define BYTE_ORDER LITTLE_ENDIAN
+# endif
 #elif defined(_WIN32)
 # define BYTE_ORDER 0
 # define BIG_ENDIAN 1
@@ -127,7 +137,7 @@ int main(int argc, char **argv) {
 
     // Integer -> floating point overflow.
   case '6': {
-    // CHECK-6: cast-overflow.cpp:[[@LINE+2]]:{{34: runtime error: 0xffffff00000000000000000000000001 is outside the range of representable values of type 'float'| __int128 not supported}}
+    // CHECK-6: cast-overflow.cpp:[[@LINE+2]]:{{27: runtime error: 3.40282e\+38 is outside the range of representable values of type 'int'| __int128 not supported}}
 #if defined(__SIZEOF_INT128__) && !defined(_WIN32)
     static int test_int = (float)(FloatMaxAsUInt128 + 1);
     return 0;

@@ -1,9 +1,8 @@
 //===- llvm/Analysis/LoopInfoImpl.h - Natural Loop Calculator ---*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -79,6 +78,61 @@ BlockT *LoopBase<BlockT, LoopT>::getExitBlock() const {
   getExitBlocks(ExitBlocks);
   if (ExitBlocks.size() == 1)
     return ExitBlocks[0];
+  return nullptr;
+}
+
+template <class BlockT, class LoopT>
+bool LoopBase<BlockT, LoopT>::hasDedicatedExits() const {
+  // Each predecessor of each exit block of a normal loop is contained
+  // within the loop.
+  SmallVector<BlockT *, 4> ExitBlocks;
+  getExitBlocks(ExitBlocks);
+  for (BlockT *EB : ExitBlocks)
+    for (BlockT *Predecessor : children<Inverse<BlockT *>>(EB))
+      if (!contains(Predecessor))
+        return false;
+  // All the requirements are met.
+  return true;
+}
+
+// Helper function to get unique loop exits. Pred is a predicate pointing to
+// BasicBlocks in a loop which should be considered to find loop exits.
+template <class BlockT, class LoopT, typename PredicateT>
+void getUniqueExitBlocksHelper(const LoopT *L,
+                               SmallVectorImpl<BlockT *> &ExitBlocks,
+                               PredicateT Pred) {
+  assert(!L->isInvalid() && "Loop not in a valid state!");
+  SmallPtrSet<BlockT *, 32> Visited;
+  auto Filtered = make_filter_range(L->blocks(), Pred);
+  for (BlockT *BB : Filtered)
+    for (BlockT *Successor : children<BlockT *>(BB))
+      if (!L->contains(Successor))
+        if (Visited.insert(Successor).second)
+          ExitBlocks.push_back(Successor);
+}
+
+template <class BlockT, class LoopT>
+void LoopBase<BlockT, LoopT>::getUniqueExitBlocks(
+    SmallVectorImpl<BlockT *> &ExitBlocks) const {
+  getUniqueExitBlocksHelper(this, ExitBlocks,
+                            [](const BlockT *BB) { return true; });
+}
+
+template <class BlockT, class LoopT>
+void LoopBase<BlockT, LoopT>::getUniqueNonLatchExitBlocks(
+    SmallVectorImpl<BlockT *> &ExitBlocks) const {
+  const BlockT *Latch = getLoopLatch();
+  assert(Latch && "Latch block must exists");
+  getUniqueExitBlocksHelper(this, ExitBlocks,
+                            [Latch](const BlockT *BB) { return BB != Latch; });
+}
+
+template <class BlockT, class LoopT>
+BlockT *LoopBase<BlockT, LoopT>::getUniqueExitBlock() const {
+  SmallVector<BlockT *, 8> UniqueExitBlocks;
+  getUniqueExitBlocks(UniqueExitBlocks);
+  if (UniqueExitBlocks.size() == 1)
+    return UniqueExitBlocks[0];
   return nullptr;
 }
 
@@ -324,7 +378,10 @@ void LoopBase<BlockT, LoopT>::verifyLoopNest(
 template <class BlockT, class LoopT>
 void LoopBase<BlockT, LoopT>::print(raw_ostream &OS, unsigned Depth,
                                     bool Verbose) const {
-  OS.indent(Depth * 2) << "Loop at depth " << getLoopDepth() << " containing: ";
+  OS.indent(Depth * 2);
+  if (static_cast<const LoopT *>(this)->isAnnotatedParallel())
+    OS << "Parallel ";
+  OS << "Loop at depth " << getLoopDepth() << " containing: ";
 
   BlockT *H = getHeader();
   for (unsigned i = 0; i < getBlocks().size(); ++i) {
@@ -517,16 +574,9 @@ SmallVector<LoopT *, 4> LoopInfoBase<BlockT, LoopT>::getLoopsInPreorder() {
   // FIXME: If we change the order of LoopInfo we will want to remove the
   // reverse here.
   for (LoopT *RootL : reverse(*this)) {
-    assert(PreOrderWorklist.empty() &&
-           "Must start with an empty preorder walk worklist.");
-    PreOrderWorklist.push_back(RootL);
-    do {
-      LoopT *L = PreOrderWorklist.pop_back_val();
-      // Sub-loops are stored in forward program order, but will process the
-      // worklist backwards so append them in reverse order.
-      PreOrderWorklist.append(L->rbegin(), L->rend());
-      PreOrderLoops.push_back(L);
-    } while (!PreOrderWorklist.empty());
+    auto PreOrderLoopsInRootL = RootL->getLoopsInPreorder();
+    PreOrderLoops.append(PreOrderLoopsInRootL.begin(),
+                         PreOrderLoopsInRootL.end());
   }
 
   return PreOrderLoops;
@@ -572,8 +622,8 @@ void LoopInfoBase<BlockT, LoopT>::print(raw_ostream &OS) const {
 
 template <typename T>
 bool compareVectors(std::vector<T> &BB1, std::vector<T> &BB2) {
-  std::sort(BB1.begin(), BB1.end());
-  std::sort(BB2.begin(), BB2.end());
+  llvm::sort(BB1);
+  llvm::sort(BB2);
   return BB1 == BB2;
 }
 
@@ -617,6 +667,15 @@ static void compareLoops(const LoopT *L, const LoopT *OtherL,
   std::vector<BlockT *> OtherBBs = OtherL->getBlocks();
   assert(compareVectors(BBs, OtherBBs) &&
          "Mismatched basic blocks in the loops!");
+
+  const SmallPtrSetImpl<const BlockT *> &BlocksSet = L->getBlocksSet();
+  const SmallPtrSetImpl<const BlockT *> &OtherBlocksSet = L->getBlocksSet();
+  assert(BlocksSet.size() == OtherBlocksSet.size() &&
+         std::all_of(BlocksSet.begin(), BlocksSet.end(),
+                     [&OtherBlocksSet](const BlockT *BB) {
+                       return OtherBlocksSet.count(BB);
+                     }) &&
+         "Mismatched basic blocks in BlocksSets!");
 }
 #endif
 
@@ -636,6 +695,9 @@ void LoopInfoBase<BlockT, LoopT>::verify(
     LoopT *L = Entry.second;
     assert(Loops.count(L) && "orphaned loop");
     assert(L->contains(BB) && "orphaned block");
+    for (LoopT *ChildLoop : *L)
+      assert(!ChildLoop->contains(BB) &&
+             "BBMap should point to the innermost loop containing BB");
   }
 
   // Recompute LoopInfo to verify loops structure.

@@ -11,8 +11,8 @@
 
 define i32 @test1(i32 %X) nounwind {
 ; CHECK-LABEL: test1:
-; CHECK-NOT: mov
-; CHECK: leal 1(%rdi)
+; CHECK: movl %edi, %eax
+; CHECK: leal 1(%rax)
         %Z = add i32 %X, 1
         store volatile i32 %Z, i32* @G
         ret i32 %X
@@ -69,7 +69,7 @@ bb2:
 
 bb3:
 ; CHECK: subl %e[[REG0:[a-z0-9]+]],
-; CHECK: leaq 4({{%[a-z0-9]+}}), %r[[REG0]]
+; CHECK: addq $4, %r[[REG0]]
   %tmp14 = phi i64 [ %tmp15, %bb5 ], [ 0, %bb1 ]
   %tmp15 = add nuw i64 %tmp14, 4
   %tmp16 = trunc i64 %tmp14 to i32

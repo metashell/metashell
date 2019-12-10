@@ -1,11 +1,17 @@
-// RUN: %clang_cc1 -fsyntax-only -fopenmp -x c++ -std=c++11 -fexceptions -fcxx-exceptions -verify %s
-
-// RUN: %clang_cc1 -fsyntax-only -fopenmp-simd -x c++ -std=c++11 -fexceptions -fcxx-exceptions -verify %s
+// RUN: %clang_cc1 -fsyntax-only -fopenmp -x c++ -std=c++11 -fexceptions -fcxx-exceptions -verify %s -Wuninitialized
+// RUN: %clang_cc1 -fsyntax-only -fopenmp-simd -x c++ -std=c++11 -fexceptions -fcxx-exceptions -verify %s -Wuninitialized
+// RUN: %clang_cc1 -fsyntax-only -fopenmp -x c++ -std=c++11 -fexceptions -fcxx-exceptions -verify %s -fopenmp-version=50 -DOMP50 -Wuninitialized
+// RUN: %clang_cc1 -fsyntax-only -fopenmp-simd -x c++ -std=c++11 -fexceptions -fcxx-exceptions -verify %s -fopenmp-version=50 -DOMP50 -Wuninitialized
 
 static int sii;
 // expected-note@+1 {{defined as threadprivate or thread local}}
 #pragma omp threadprivate(sii)
 static int globalii;
+
+struct S {
+  // expected-note@+1 {{static data member is predetermined as shared}}
+  static int ssi;
+};
 
 int test_iteration_spaces() {
   const int N = 100;
@@ -13,6 +19,16 @@ int test_iteration_spaces() {
   int ii, jj, kk;
   float fii;
   double dii;
+#pragma omp simd linear(S::ssi)
+  for (S::ssi = 0; S::ssi < 10; ++S::ssi)
+    ;
+// expected-error@+1 {{shared variable cannot be private}}
+#pragma omp simd private(S::ssi)
+  for (S::ssi = 0; S::ssi < 10; ++S::ssi)
+    ;
+#pragma omp simd // no messages expected
+  for (S::ssi = 0; S::ssi < 10; ++S::ssi)
+    ;
   #pragma omp simd
   for (int i = 0; i < 10; i+=1) {
     c[i] = a[i] + b[i];
@@ -99,7 +115,7 @@ int test_iteration_spaces() {
   for (int i = 0; !!i; i++)
     c[i] = a[i];
 
-  // expected-error@+2 {{condition of OpenMP for loop must be a relational comparison ('<', '<=', '>', or '>=') of loop variable 'i'}}
+  // Ok
   #pragma omp simd
   for (int i = 0; i != 1; i++)
     c[i] = a[i];
@@ -230,15 +246,23 @@ int test_iteration_spaces() {
   for (ii = 0; (ii < 10); (ii-=0))
     c[ii] = a[ii];
 
-  // expected-note@+2  {{defined as private}}
-  // expected-error@+2 {{loop iteration variable in the associated loop of 'omp simd' directive may not be private, predetermined as linear}}
+#ifndef OMP50
+  // expected-note@+3  {{defined as private}}
+  // expected-error@+3 {{loop iteration variable in the associated loop of 'omp simd' directive may not be private, predetermined as linear}}
+#endif // OMP50
   #pragma omp simd private(ii)
   for (ii = 0; ii < 10; ii++)
     c[ii] = a[ii];
 
-  // expected-error@+3 {{unexpected OpenMP clause 'shared' in directive '#pragma omp simd'}}
-  // expected-note@+2  {{defined as shared}}
-  // expected-error@+2 {{loop iteration variable in the associated loop of 'omp simd' directive may not be shared, predetermined as linear}}
+#ifndef OMP50
+  // expected-note@+3  {{defined as lastprivate}}
+  // expected-error@+3 {{loop iteration variable in the associated loop of 'omp simd' directive may not be lastprivate, predetermined as linear}}
+#endif // OMP50
+  #pragma omp simd lastprivate(ii)
+  for (ii = 0; ii < 10; ii++)
+    c[ii] = a[ii];
+
+  // expected-error@+1 {{unexpected OpenMP clause 'shared' in directive '#pragma omp simd'}}
   #pragma omp simd shared(ii)
   for (ii = 0; ii < 10; ii++)
     c[ii] = a[ii];

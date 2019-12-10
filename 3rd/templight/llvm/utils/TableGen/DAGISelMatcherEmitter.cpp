@@ -1,9 +1,8 @@
 //===- DAGISelMatcherEmitter.cpp - Matcher Emitter ------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -50,6 +49,7 @@ class MatcherTableEmitter {
 
   DenseMap<TreePattern *, unsigned> NodePredicateMap;
   std::vector<TreePredicateFn> NodePredicates;
+  std::vector<TreePredicateFn> NodePredicatesWithOperands;
 
   // We de-duplicate the predicates by code string, and use this map to track
   // all the patterns with "identical" predicates.
@@ -92,6 +92,9 @@ public:
   void EmitPatternMatchTable(raw_ostream &OS);
 
 private:
+  void EmitNodePredicatesFunction(const std::vector<TreePredicateFn> &Preds,
+                                  StringRef Decl, raw_ostream &OS);
+
   unsigned EmitMatcher(const Matcher *N, unsigned Indent, unsigned CurrentIdx,
                        raw_ostream &OS);
 
@@ -103,12 +106,20 @@ private:
           NodePredicatesByCodeToRun[Pred.getCodeToRunOnSDNode()];
       if (SameCodePreds.empty()) {
         // We've never seen a predicate with the same code: allocate an entry.
-        NodePredicates.push_back(Pred);
-        Entry = NodePredicates.size();
+        if (Pred.usesOperands()) {
+          NodePredicatesWithOperands.push_back(Pred);
+          Entry = NodePredicatesWithOperands.size();
+        } else {
+          NodePredicates.push_back(Pred);
+          Entry = NodePredicates.size();
+        }
       } else {
         // We did see an identical predicate: re-use it.
         Entry = NodePredicateMap[SameCodePreds.front()];
         assert(Entry != 0);
+        assert(TreePredicateFn(SameCodePreds.front()).usesOperands() ==
+               Pred.usesOperands() &&
+               "PatFrags with some code must have same usesOperands setting");
       }
       // In both cases, we've never seen this particular predicate before, so
       // mark it in the list of predicates sharing the same code.
@@ -247,7 +258,7 @@ void MatcherTableEmitter::EmitPatternMatchTable(raw_ostream &OS) {
 
   OS << "\n};";
   OS << "\nreturn StringRef(PATTERN_MATCH_TABLE[Index]);";
-  OS << "\n}";
+  OS << "\n}\n";
   EndEmitFunction(OS);
 
   BeginEmitFunction(OS, "StringRef", "getIncludePathForIndex(unsigned Index)",
@@ -261,7 +272,7 @@ void MatcherTableEmitter::EmitPatternMatchTable(raw_ostream &OS) {
 
   OS << "\n};";
   OS << "\nreturn StringRef(INCLUDE_PATH_TABLE[Index]);";
-  OS << "\n}";
+  OS << "\n}\n";
   EndEmitFunction(OS);
 }
 
@@ -396,11 +407,23 @@ EmitMatcher(const Matcher *N, unsigned Indent, unsigned CurrentIdx,
   }
   case Matcher::CheckPredicate: {
     TreePredicateFn Pred = cast<CheckPredicateMatcher>(N)->getPredicate();
-    OS << "OPC_CheckPredicate, " << getNodePredicate(Pred) << ',';
+    unsigned OperandBytes = 0;
+
+    if (Pred.usesOperands()) {
+      unsigned NumOps = cast<CheckPredicateMatcher>(N)->getNumOperands();
+      OS << "OPC_CheckPredicateWithOperands, " << NumOps << "/*#Ops*/, ";
+      for (unsigned i = 0; i < NumOps; ++i)
+        OS << cast<CheckPredicateMatcher>(N)->getOperandNo(i) << ", ";
+      OperandBytes = 1 + NumOps;
+    } else {
+      OS << "OPC_CheckPredicate, ";
+    }
+
+    OS << getNodePredicate(Pred) << ',';
     if (!OmitComments)
       OS << " // " << Pred.getFnName();
     OS << '\n';
-    return 2;
+    return 2 + OperandBytes;
   }
 
   case Matcher::CheckOpcode:
@@ -531,6 +554,11 @@ EmitMatcher(const Matcher *N, unsigned Indent, unsigned CurrentIdx,
        << cast<CheckCondCodeMatcher>(N)->getCondCodeName() << ",\n";
     return 2;
 
+  case Matcher::CheckChild2CondCode:
+    OS << "OPC_CheckChild2CondCode, ISD::"
+       << cast<CheckChild2CondCodeMatcher>(N)->getCondCodeName() << ",\n";
+    return 2;
+
   case Matcher::CheckValueType:
     OS << "OPC_CheckValueType, MVT::"
        << cast<CheckValueTypeMatcher>(N)->getTypeName() << ",\n";
@@ -571,6 +599,14 @@ EmitMatcher(const Matcher *N, unsigned Indent, unsigned CurrentIdx,
 
   case Matcher::CheckFoldableChainNode:
     OS << "OPC_CheckFoldableChainNode,\n";
+    return 1;
+
+  case Matcher::CheckImmAllOnesV:
+    OS << "OPC_CheckImmAllOnesV,\n";
+    return 1;
+
+  case Matcher::CheckImmAllZerosV:
+    OS << "OPC_CheckImmAllZerosV,\n";
     return 1;
 
   case Matcher::EmitInteger: {
@@ -783,6 +819,33 @@ EmitMatcherList(const Matcher *N, unsigned Indent, unsigned CurrentIdx,
   return Size;
 }
 
+void MatcherTableEmitter::EmitNodePredicatesFunction(
+    const std::vector<TreePredicateFn> &Preds, StringRef Decl,
+    raw_ostream &OS) {
+  if (Preds.empty())
+    return;
+
+  BeginEmitFunction(OS, "bool", Decl, true/*AddOverride*/);
+  OS << "{\n";
+  OS << "  switch (PredNo) {\n";
+  OS << "  default: llvm_unreachable(\"Invalid predicate in table?\");\n";
+  for (unsigned i = 0, e = Preds.size(); i != e; ++i) {
+    // Emit the predicate code corresponding to this pattern.
+    TreePredicateFn PredFn = Preds[i];
+
+    assert(!PredFn.isAlwaysTrue() && "No code in this predicate");
+    OS << "  case " << i << ": { \n";
+    for (auto *SimilarPred :
+          NodePredicatesByCodeToRun[PredFn.getCodeToRunOnSDNode()])
+      OS << "    // " << TreePredicateFn(SimilarPred).getFnName() <<'\n';
+
+    OS << PredFn.getCodeToRunOnSDNode() << "\n  }\n";
+  }
+  OS << "  }\n";
+  OS << "}\n";
+  EndEmitFunction(OS);
+}
+
 void MatcherTableEmitter::EmitPredicateFunctions(raw_ostream &OS) {
   // Emit pattern predicates.
   if (!PatternPredicates.empty()) {
@@ -799,29 +862,14 @@ void MatcherTableEmitter::EmitPredicateFunctions(raw_ostream &OS) {
   }
 
   // Emit Node predicates.
-  if (!NodePredicates.empty()) {
-    BeginEmitFunction(OS, "bool",
-          "CheckNodePredicate(SDNode *Node, unsigned PredNo) const",
-          true/*AddOverride*/);
-    OS << "{\n";
-    OS << "  switch (PredNo) {\n";
-    OS << "  default: llvm_unreachable(\"Invalid predicate in table?\");\n";
-    for (unsigned i = 0, e = NodePredicates.size(); i != e; ++i) {
-      // Emit the predicate code corresponding to this pattern.
-      TreePredicateFn PredFn = NodePredicates[i];
-
-      assert(!PredFn.isAlwaysTrue() && "No code in this predicate");
-      OS << "  case " << i << ": { \n";
-      for (auto *SimilarPred :
-           NodePredicatesByCodeToRun[PredFn.getCodeToRunOnSDNode()])
-        OS << "    // " << TreePredicateFn(SimilarPred).getFnName() <<'\n';
-
-      OS << PredFn.getCodeToRunOnSDNode() << "\n  }\n";
-    }
-    OS << "  }\n";
-    OS << "}\n";
-    EndEmitFunction(OS);
-  }
+  EmitNodePredicatesFunction(
+      NodePredicates, "CheckNodePredicate(SDNode *Node, unsigned PredNo) const",
+      OS);
+  EmitNodePredicatesFunction(
+      NodePredicatesWithOperands,
+      "CheckNodePredicateWithOperands(SDNode *Node, unsigned PredNo, "
+      "const SmallVectorImpl<SDValue> &Operands) const",
+      OS);
 
   // Emit CompletePattern matchers.
   // FIXME: This should be const.
@@ -960,12 +1008,15 @@ static StringRef getOpcodeString(Matcher::KindTy Kind) {
   case Matcher::CheckInteger: return "OPC_CheckInteger"; break;
   case Matcher::CheckChildInteger: return "OPC_CheckChildInteger"; break;
   case Matcher::CheckCondCode: return "OPC_CheckCondCode"; break;
+  case Matcher::CheckChild2CondCode: return "OPC_CheckChild2CondCode"; break;
   case Matcher::CheckValueType: return "OPC_CheckValueType"; break;
   case Matcher::CheckComplexPat: return "OPC_CheckComplexPat"; break;
   case Matcher::CheckAndImm: return "OPC_CheckAndImm"; break;
   case Matcher::CheckOrImm: return "OPC_CheckOrImm"; break;
   case Matcher::CheckFoldableChainNode:
     return "OPC_CheckFoldableChainNode"; break;
+  case Matcher::CheckImmAllOnesV: return "OPC_CheckImmAllOnesV"; break;
+  case Matcher::CheckImmAllZerosV: return "OPC_CheckImmAllZerosV"; break;
   case Matcher::EmitInteger: return "OPC_EmitInteger"; break;
   case Matcher::EmitStringInteger: return "OPC_EmitStringInteger"; break;
   case Matcher::EmitRegister: return "OPC_EmitRegister"; break;

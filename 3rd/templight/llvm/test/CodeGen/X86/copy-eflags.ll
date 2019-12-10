@@ -43,27 +43,25 @@ define i32 @test1() nounwind {
 ;
 ; X64-LABEL: test1:
 ; X64:       # %bb.0: # %entry
-; X64-NEXT:    movb {{.*}}(%rip), %dil
-; X64-NEXT:    movl %edi, %eax
-; X64-NEXT:    incb %al
+; X64-NEXT:    pushq %rax
+; X64-NEXT:    movb {{.*}}(%rip), %cl
+; X64-NEXT:    leal 1(%rcx), %eax
 ; X64-NEXT:    movb %al, {{.*}}(%rip)
 ; X64-NEXT:    incl {{.*}}(%rip)
-; X64-NEXT:    sete %sil
-; X64-NEXT:    movb {{.*}}(%rip), %cl
-; X64-NEXT:    movl %ecx, %edx
-; X64-NEXT:    incb %dl
-; X64-NEXT:    cmpb %dil, %cl
+; X64-NEXT:    sete %dl
+; X64-NEXT:    movb {{.*}}(%rip), %sil
+; X64-NEXT:    leal 1(%rsi), %edi
+; X64-NEXT:    cmpb %cl, %sil
 ; X64-NEXT:    sete {{.*}}(%rip)
-; X64-NEXT:    movb %dl, {{.*}}(%rip)
-; X64-NEXT:    testb %sil, %sil
+; X64-NEXT:    movb %dil, {{.*}}(%rip)
+; X64-NEXT:    testb %dl, %dl
 ; X64-NEXT:    jne .LBB0_2
 ; X64-NEXT:  # %bb.1: # %if.then
-; X64-NEXT:    pushq %rax
 ; X64-NEXT:    movsbl %al, %edi
 ; X64-NEXT:    callq external
-; X64-NEXT:    addq $8, %rsp
 ; X64-NEXT:  .LBB0_2: # %if.end
 ; X64-NEXT:    xorl %eax, %eax
+; X64-NEXT:    popq %rcx
 ; X64-NEXT:    retq
 entry:
   %bval = load i8, i8* @b
@@ -102,13 +100,13 @@ define i32 @test2(i32* %ptr) nounwind {
 ; X32-NEXT:    calll external
 ; X32-NEXT:    addl $4, %esp
 ; X32-NEXT:    testb %bl, %bl
-; X32-NEXT:    je .LBB1_1
-; X32-NEXT:  # %bb.2: # %else
-; X32-NEXT:    xorl %eax, %eax
+; X32-NEXT:    jne .LBB1_2
+; X32-NEXT:  # %bb.1: # %then
+; X32-NEXT:    movl $64, %eax
 ; X32-NEXT:    popl %ebx
 ; X32-NEXT:    retl
-; X32-NEXT:  .LBB1_1: # %then
-; X32-NEXT:    movl $64, %eax
+; X32-NEXT:  .LBB1_2: # %else
+; X32-NEXT:    xorl %eax, %eax
 ; X32-NEXT:    popl %ebx
 ; X32-NEXT:    retl
 ;
@@ -120,13 +118,13 @@ define i32 @test2(i32* %ptr) nounwind {
 ; X64-NEXT:    movl $42, %edi
 ; X64-NEXT:    callq external
 ; X64-NEXT:    testb %bl, %bl
-; X64-NEXT:    je .LBB1_1
-; X64-NEXT:  # %bb.2: # %else
-; X64-NEXT:    xorl %eax, %eax
+; X64-NEXT:    jne .LBB1_2
+; X64-NEXT:  # %bb.1: # %then
+; X64-NEXT:    movl $64, %eax
 ; X64-NEXT:    popq %rbx
 ; X64-NEXT:    retq
-; X64-NEXT:  .LBB1_1: # %then
-; X64-NEXT:    movl $64, %eax
+; X64-NEXT:  .LBB1_2: # %else
+; X64-NEXT:    xorl %eax, %eax
 ; X64-NEXT:    popq %rbx
 ; X64-NEXT:    retq
 entry:
@@ -200,45 +198,37 @@ else:
 ; Test a function that gets special select lowering into CFG with copied EFLAGS
 ; threaded across the CFG. This requires our EFLAGS copy rewriting to handle
 ; cross-block rewrites in at least some narrow cases.
-define void @PR37100(i8 %arg1, i16 %arg2, i64 %arg3, i8 %arg4, i8* %ptr1, i32* %ptr2) {
+define void @PR37100(i8 %arg1, i16 %arg2, i64 %arg3, i8 %arg4, i8* %ptr1, i32* %ptr2, i32 %x) nounwind {
 ; X32-LABEL: PR37100:
 ; X32:       # %bb.0: # %bb
 ; X32-NEXT:    pushl %ebp
-; X32-NEXT:    .cfi_def_cfa_offset 8
 ; X32-NEXT:    pushl %ebx
-; X32-NEXT:    .cfi_def_cfa_offset 12
 ; X32-NEXT:    pushl %edi
-; X32-NEXT:    .cfi_def_cfa_offset 16
 ; X32-NEXT:    pushl %esi
-; X32-NEXT:    .cfi_def_cfa_offset 20
-; X32-NEXT:    .cfi_offset %esi, -20
-; X32-NEXT:    .cfi_offset %edi, -16
-; X32-NEXT:    .cfi_offset %ebx, -12
-; X32-NEXT:    .cfi_offset %ebp, -8
 ; X32-NEXT:    movl {{[0-9]+}}(%esp), %esi
-; X32-NEXT:    movl {{[0-9]+}}(%esp), %edi
 ; X32-NEXT:    movl {{[0-9]+}}(%esp), %ebx
+; X32-NEXT:    movl {{[0-9]+}}(%esp), %ebp
 ; X32-NEXT:    movb {{[0-9]+}}(%esp), %ch
 ; X32-NEXT:    movb {{[0-9]+}}(%esp), %cl
 ; X32-NEXT:    jmp .LBB3_1
 ; X32-NEXT:    .p2align 4, 0x90
 ; X32-NEXT:  .LBB3_5: # %bb1
 ; X32-NEXT:    # in Loop: Header=BB3_1 Depth=1
-; X32-NEXT:    xorl %eax, %eax
-; X32-NEXT:    xorl %edx, %edx
-; X32-NEXT:    idivl %ebp
+; X32-NEXT:    movl %esi, %eax
+; X32-NEXT:    cltd
+; X32-NEXT:    idivl %edi
 ; X32-NEXT:  .LBB3_1: # %bb1
 ; X32-NEXT:    # =>This Inner Loop Header: Depth=1
 ; X32-NEXT:    movsbl %cl, %eax
 ; X32-NEXT:    movl %eax, %edx
 ; X32-NEXT:    sarl $31, %edx
-; X32-NEXT:    cmpl %eax, %esi
+; X32-NEXT:    cmpl %eax, {{[0-9]+}}(%esp)
 ; X32-NEXT:    movl {{[0-9]+}}(%esp), %eax
 ; X32-NEXT:    sbbl %edx, %eax
 ; X32-NEXT:    setl %al
 ; X32-NEXT:    setl %dl
-; X32-NEXT:    movzbl %dl, %ebp
-; X32-NEXT:    negl %ebp
+; X32-NEXT:    movzbl %dl, %edi
+; X32-NEXT:    negl %edi
 ; X32-NEXT:    testb %al, %al
 ; X32-NEXT:    jne .LBB3_3
 ; X32-NEXT:  # %bb.2: # %bb1
@@ -246,45 +236,37 @@ define void @PR37100(i8 %arg1, i16 %arg2, i64 %arg3, i8 %arg4, i8* %ptr1, i32* %
 ; X32-NEXT:    movb %ch, %cl
 ; X32-NEXT:  .LBB3_3: # %bb1
 ; X32-NEXT:    # in Loop: Header=BB3_1 Depth=1
-; X32-NEXT:    movb %cl, (%ebx)
-; X32-NEXT:    movl (%edi), %edx
+; X32-NEXT:    movb %cl, (%ebp)
+; X32-NEXT:    movl (%ebx), %edx
 ; X32-NEXT:    testb %al, %al
 ; X32-NEXT:    jne .LBB3_5
 ; X32-NEXT:  # %bb.4: # %bb1
 ; X32-NEXT:    # in Loop: Header=BB3_1 Depth=1
-; X32-NEXT:    movl %edx, %ebp
+; X32-NEXT:    movl %edx, %edi
 ; X32-NEXT:    jmp .LBB3_5
 ;
 ; X64-LABEL: PR37100:
 ; X64:       # %bb.0: # %bb
-; X64-NEXT:    movq %rdx, %r10
-; X64-NEXT:    jmp .LBB3_1
+; X64-NEXT:    movq %rdx, %rsi
+; X64-NEXT:    movl {{[0-9]+}}(%rsp), %r10d
+; X64-NEXT:    movzbl %cl, %r11d
 ; X64-NEXT:    .p2align 4, 0x90
-; X64-NEXT:  .LBB3_5: # %bb1
-; X64-NEXT:    # in Loop: Header=BB3_1 Depth=1
-; X64-NEXT:    xorl %eax, %eax
-; X64-NEXT:    xorl %edx, %edx
-; X64-NEXT:    idivl %esi
 ; X64-NEXT:  .LBB3_1: # %bb1
 ; X64-NEXT:    # =>This Inner Loop Header: Depth=1
 ; X64-NEXT:    movsbq %dil, %rax
-; X64-NEXT:    xorl %esi, %esi
-; X64-NEXT:    cmpq %rax, %r10
-; X64-NEXT:    setl %sil
-; X64-NEXT:    negl %esi
-; X64-NEXT:    cmpq %rax, %r10
-; X64-NEXT:    jl .LBB3_3
-; X64-NEXT:  # %bb.2: # %bb1
-; X64-NEXT:    # in Loop: Header=BB3_1 Depth=1
-; X64-NEXT:    movl %ecx, %edi
-; X64-NEXT:  .LBB3_3: # %bb1
-; X64-NEXT:    # in Loop: Header=BB3_1 Depth=1
+; X64-NEXT:    xorl %ecx, %ecx
+; X64-NEXT:    cmpq %rax, %rsi
+; X64-NEXT:    setl %cl
+; X64-NEXT:    negl %ecx
+; X64-NEXT:    cmpq %rax, %rsi
+; X64-NEXT:    movzbl %al, %edi
+; X64-NEXT:    cmovgel %r11d, %edi
 ; X64-NEXT:    movb %dil, (%r8)
-; X64-NEXT:    jl .LBB3_5
-; X64-NEXT:  # %bb.4: # %bb1
-; X64-NEXT:    # in Loop: Header=BB3_1 Depth=1
-; X64-NEXT:    movl (%r9), %esi
-; X64-NEXT:    jmp .LBB3_5
+; X64-NEXT:    cmovgel (%r9), %ecx
+; X64-NEXT:    movl %r10d, %eax
+; X64-NEXT:    cltd
+; X64-NEXT:    idivl %ecx
+; X64-NEXT:    jmp .LBB3_1
 bb:
   br label %bb1
 
@@ -300,7 +282,7 @@ bb1:
   store volatile i8 %tmp8, i8* %ptr1
   %tmp9 = load volatile i32, i32* %ptr2
   %tmp10 = select i1 %tmp6, i32 %tmp7, i32 %tmp9
-  %tmp11 = srem i32 0, %tmp10
+  %tmp11 = srem i32 %x, %tmp10
   %tmp12 = trunc i32 %tmp11 to i16
   br label %bb1
 }
@@ -308,56 +290,57 @@ bb1:
 ; Use a particular instruction pattern in order to lower to the post-RA pseudo
 ; used to lower SETB into an SBB pattern in order to make sure that kind of
 ; usage of a copied EFLAGS continues to work.
-define void @PR37431(i32* %arg1, i8* %arg2, i8* %arg3) {
+define void @PR37431(i32* %arg1, i8* %arg2, i8* %arg3, i32 %arg4, i64 %arg5) nounwind {
 ; X32-LABEL: PR37431:
 ; X32:       # %bb.0: # %entry
+; X32-NEXT:    pushl %edi
 ; X32-NEXT:    pushl %esi
-; X32-NEXT:    .cfi_def_cfa_offset 8
-; X32-NEXT:    .cfi_offset %esi, -8
 ; X32-NEXT:    movl {{[0-9]+}}(%esp), %eax
-; X32-NEXT:    movl (%eax), %eax
-; X32-NEXT:    movl %eax, %ecx
-; X32-NEXT:    sarl $31, %ecx
-; X32-NEXT:    cmpl %eax, %eax
-; X32-NEXT:    sbbl %ecx, %eax
-; X32-NEXT:    setb %al
-; X32-NEXT:    sbbb %cl, %cl
+; X32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+; X32-NEXT:    movl (%ecx), %ecx
+; X32-NEXT:    movl %ecx, %edx
+; X32-NEXT:    sarl $31, %edx
+; X32-NEXT:    cmpl %ecx, {{[0-9]+}}(%esp)
+; X32-NEXT:    sbbl %edx, %eax
+; X32-NEXT:    setb %cl
+; X32-NEXT:    sbbb %dl, %dl
 ; X32-NEXT:    movl {{[0-9]+}}(%esp), %esi
-; X32-NEXT:    movl {{[0-9]+}}(%esp), %edx
-; X32-NEXT:    movb %cl, (%edx)
-; X32-NEXT:    movzbl %al, %eax
-; X32-NEXT:    xorl %ecx, %ecx
-; X32-NEXT:    subl %eax, %ecx
-; X32-NEXT:    xorl %eax, %eax
-; X32-NEXT:    xorl %edx, %edx
-; X32-NEXT:    idivl %ecx
+; X32-NEXT:    movl {{[0-9]+}}(%esp), %eax
+; X32-NEXT:    movl {{[0-9]+}}(%esp), %edi
+; X32-NEXT:    movb %dl, (%edi)
+; X32-NEXT:    movzbl %cl, %ecx
+; X32-NEXT:    xorl %edi, %edi
+; X32-NEXT:    subl %ecx, %edi
+; X32-NEXT:    cltd
+; X32-NEXT:    idivl %edi
 ; X32-NEXT:    movb %dl, (%esi)
 ; X32-NEXT:    popl %esi
+; X32-NEXT:    popl %edi
 ; X32-NEXT:    retl
 ;
 ; X64-LABEL: PR37431:
 ; X64:       # %bb.0: # %entry
-; X64-NEXT:    movq %rdx, %rcx
-; X64-NEXT:    movslq (%rdi), %rax
-; X64-NEXT:    cmpq %rax, %rax
-; X64-NEXT:    sbbb %dl, %dl
-; X64-NEXT:    cmpq %rax, %rax
-; X64-NEXT:    movb %dl, (%rsi)
-; X64-NEXT:    sbbl %esi, %esi
-; X64-NEXT:    xorl %eax, %eax
-; X64-NEXT:    xorl %edx, %edx
-; X64-NEXT:    idivl %esi
-; X64-NEXT:    movb %dl, (%rcx)
+; X64-NEXT:    movl %ecx, %eax
+; X64-NEXT:    movq %rdx, %r9
+; X64-NEXT:    movslq (%rdi), %rdx
+; X64-NEXT:    cmpq %rdx, %r8
+; X64-NEXT:    sbbb %cl, %cl
+; X64-NEXT:    cmpq %rdx, %r8
+; X64-NEXT:    movb %cl, (%rsi)
+; X64-NEXT:    sbbl %ecx, %ecx
+; X64-NEXT:    cltd
+; X64-NEXT:    idivl %ecx
+; X64-NEXT:    movb %dl, (%r9)
 ; X64-NEXT:    retq
 entry:
   %tmp = load i32, i32* %arg1
   %tmp1 = sext i32 %tmp to i64
-  %tmp2 = icmp ugt i64 %tmp1, undef
+  %tmp2 = icmp ugt i64 %tmp1, %arg5
   %tmp3 = zext i1 %tmp2 to i8
   %tmp4 = sub i8 0, %tmp3
   store i8 %tmp4, i8* %arg2
   %tmp5 = sext i8 %tmp4 to i32
-  %tmp6 = srem i32 0, %tmp5
+  %tmp6 = srem i32 %arg4, %tmp5
   %tmp7 = trunc i32 %tmp6 to i8
   store i8 %tmp7, i8* %arg3
   ret void

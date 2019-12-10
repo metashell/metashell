@@ -1,9 +1,8 @@
 //===- InstrDocsEmitter.cpp - Opcode Documentation Generator --------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -100,6 +99,7 @@ void EmitInstrDocs(RecordKeeper &RK, raw_ostream &OS) {
 #define str(s) #s
 #define FLAG(f) if (II->f) { FlagStrings.push_back(str(f)); }
     FLAG(isReturn)
+    FLAG(isEHScopeReturn)
     FLAG(isBranch)
     FLAG(isIndirectBranch)
     FLAG(isCompare)
@@ -109,6 +109,7 @@ void EmitInstrDocs(RecordKeeper &RK, raw_ostream &OS) {
     FLAG(isBarrier)
     FLAG(isCall)
     FLAG(isAdd)
+    FLAG(isTrap)
     FLAG(canFoldAsLoad)
     FLAG(mayLoad)
     //FLAG(mayLoad_Unset) // Deliberately omitted.
@@ -136,6 +137,7 @@ void EmitInstrDocs(RecordKeeper &RK, raw_ostream &OS) {
     FLAG(isInsertSubreg)
     FLAG(isConvergent)
     FLAG(hasNoSchedulingInfo)
+    FLAG(variadicOpsAreDefs)
     if (!FlagStrings.empty()) {
       OS << "Flags: ";
       bool IsFirst = true;

@@ -1,9 +1,8 @@
 //===- BreakCriticalEdges.cpp - Critical Edge Elimination Pass ------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -23,12 +22,14 @@
 #include "llvm/Analysis/BranchProbabilityInfo.h"
 #include "llvm/Analysis/CFG.h"
 #include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Analysis/MemorySSAUpdater.h"
+#include "llvm/Analysis/PostDominators.h"
 #include "llvm/IR/CFG.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Type.h"
 #include "llvm/Support/ErrorHandling.h"
-#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Utils.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 #include "llvm/Transforms/Utils/ValueMapper.h"
@@ -48,10 +49,14 @@ namespace {
     bool runOnFunction(Function &F) override {
       auto *DTWP = getAnalysisIfAvailable<DominatorTreeWrapperPass>();
       auto *DT = DTWP ? &DTWP->getDomTree() : nullptr;
+
+      auto *PDTWP = getAnalysisIfAvailable<PostDominatorTreeWrapperPass>();
+      auto *PDT = PDTWP ? &PDTWP->getPostDomTree() : nullptr;
+
       auto *LIWP = getAnalysisIfAvailable<LoopInfoWrapperPass>();
       auto *LI = LIWP ? &LIWP->getLoopInfo() : nullptr;
       unsigned N =
-          SplitAllCriticalEdges(F, CriticalEdgeSplittingOptions(DT, LI));
+          SplitAllCriticalEdges(F, CriticalEdgeSplittingOptions(DT, LI, nullptr, PDT));
       NumBroken += N;
       return N > 0;
     }
@@ -129,7 +134,7 @@ static void createPHIsForSplitLoopExit(ArrayRef<BasicBlock *> Preds,
 }
 
 BasicBlock *
-llvm::SplitCriticalEdge(TerminatorInst *TI, unsigned SuccNum,
+llvm::SplitCriticalEdge(Instruction *TI, unsigned SuccNum,
                         const CriticalEdgeSplittingOptions &Options) {
   if (!isCriticalEdge(TI, SuccNum, Options.MergeIdenticalEdges))
     return nullptr;
@@ -143,6 +148,14 @@ llvm::SplitCriticalEdge(TerminatorInst *TI, unsigned SuccNum,
   // Splitting the critical edge to a pad block is non-trivial. Don't do
   // it in this generic function.
   if (DestBB->isEHPad()) return nullptr;
+
+  // Don't split the non-fallthrough edge from a callbr.
+  if (isa<CallBrInst>(TI) && SuccNum > 0)
+    return nullptr;
+
+  if (Options.IgnoreUnreachableDests &&
+      isa<UnreachableInst>(DestBB->getFirstNonPHIOrDbgOrLifetime()))
+    return nullptr;
 
   // Create a new basic block, linking it into the CFG.
   BasicBlock *NewBB = BasicBlock::Create(TI->getContext(),
@@ -188,7 +201,7 @@ llvm::SplitCriticalEdge(TerminatorInst *TI, unsigned SuccNum,
       if (TI->getSuccessor(i) != DestBB) continue;
 
       // Remove an entry for TIBB from DestBB phi nodes.
-      DestBB->removePredecessor(TIBB, Options.DontDeleteUselessPHIs);
+      DestBB->removePredecessor(TIBB, Options.KeepOneInputPHIs);
 
       // We found another edge to DestBB, go to NewBB instead.
       TI->setSuccessor(i, NewBB);
@@ -197,11 +210,17 @@ llvm::SplitCriticalEdge(TerminatorInst *TI, unsigned SuccNum,
 
   // If we have nothing to update, just return.
   auto *DT = Options.DT;
+  auto *PDT = Options.PDT;
   auto *LI = Options.LI;
-  if (!DT && !LI)
+  auto *MSSAU = Options.MSSAU;
+  if (MSSAU)
+    MSSAU->wireOldPredecessorsToNewImmediatePredecessor(
+        DestBB, NewBB, {TIBB}, Options.MergeIdenticalEdges);
+
+  if (!DT && !PDT && !LI)
     return NewBB;
 
-  if (DT) {
+  if (DT || PDT) {
     // Update the DominatorTree.
     //       ---> NewBB -----\
     //      /                 V
@@ -217,7 +236,10 @@ llvm::SplitCriticalEdge(TerminatorInst *TI, unsigned SuccNum,
     if (llvm::find(successors(TIBB), DestBB) == succ_end(TIBB))
       Updates.push_back({DominatorTree::Delete, TIBB, DestBB});
 
-    DT->applyUpdates(Updates);
+    if (DT)
+      DT->applyUpdates(Updates);
+    if (PDT)
+      PDT->applyUpdates(Updates);
   }
 
   // Update LoopInfo if it is around.
@@ -283,7 +305,7 @@ llvm::SplitCriticalEdge(TerminatorInst *TI, unsigned SuccNum,
         if (!LoopPreds.empty()) {
           assert(!DestBB->isEHPad() && "We don't split edges to EH pads!");
           BasicBlock *NewExitBB = SplitBlockPredecessors(
-              DestBB, LoopPreds, "split", DT, LI, Options.PreserveLCSSA);
+              DestBB, LoopPreds, "split", DT, LI, MSSAU, Options.PreserveLCSSA);
           if (Options.PreserveLCSSA)
             createPHIsForSplitLoopExit(LoopPreds, NewExitBB, DestBB);
         }
@@ -312,7 +334,7 @@ findIBRPredecessor(BasicBlock *BB, SmallVectorImpl<BasicBlock *> &OtherPreds) {
   BasicBlock *IBB = nullptr;
   for (unsigned Pred = 0, E = PN->getNumIncomingValues(); Pred != E; ++Pred) {
     BasicBlock *PredBB = PN->getIncomingBlock(Pred);
-    TerminatorInst *PredTerm = PredBB->getTerminator();
+    Instruction *PredTerm = PredBB->getTerminator();
     switch (PredTerm->getOpcode()) {
     case Instruction::IndirectBr:
       if (IBB)

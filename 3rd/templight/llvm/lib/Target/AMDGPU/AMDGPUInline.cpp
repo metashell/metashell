@@ -1,14 +1,13 @@
 //===- AMDGPUInline.cpp - Code to perform simple function inlining --------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
 /// \file
-/// \brief This is AMDGPU specific replacement of the standard inliner.
+/// This is AMDGPU specific replacement of the standard inliner.
 /// The main purpose is to account for the fact that calls not only expensive
 /// on the AMDGPU, but much more expensive if a private memory pointer is
 /// passed to a function as an argument. In this situation, we are unable to
@@ -40,15 +39,21 @@ using namespace llvm;
 #define DEBUG_TYPE "inline"
 
 static cl::opt<int>
-ArgAllocaCost("amdgpu-inline-arg-alloca-cost", cl::Hidden, cl::init(2200),
+ArgAllocaCost("amdgpu-inline-arg-alloca-cost", cl::Hidden, cl::init(1500),
               cl::desc("Cost of alloca argument"));
 
 // If the amount of scratch memory to eliminate exceeds our ability to allocate
-// it into registers we gain nothing by agressively inlining functions for that
+// it into registers we gain nothing by aggressively inlining functions for that
 // heuristic.
 static cl::opt<unsigned>
 ArgAllocaCutoff("amdgpu-inline-arg-alloca-cutoff", cl::Hidden, cl::init(256),
                 cl::desc("Maximum alloca size to use for inline cost"));
+
+// Inliner constraint to achieve reasonable compilation time
+static cl::opt<size_t>
+MaxBB("amdgpu-inline-max-bb", cl::Hidden, cl::init(300),
+      cl::desc("Maximum BB number allowed in a function after inlining"
+               " (compile time constraint)"));
 
 namespace {
 
@@ -112,13 +117,12 @@ unsigned AMDGPUInliner::getInlineThreshold(CallSite CS) const {
     Callee->hasFnAttribute(Attribute::InlineHint);
   if (InlineHint && Params.HintThreshold && Params.HintThreshold > Thres
       && !Caller->hasFnAttribute(Attribute::MinSize))
-    Thres = Params.HintThreshold.getValue();
+    Thres = Params.HintThreshold.getValue() *
+            TTIWP->getTTI(*Callee).getInliningThresholdMultiplier();
 
   const DataLayout &DL = Caller->getParent()->getDataLayout();
   if (!Callee)
     return (unsigned)Thres;
-
-  const AMDGPUAS AS = AMDGPU::getAMDGPUAS(*Caller->getParent());
 
   // If we have a pointer to private array passed into a function
   // it will not be optimized out, leaving scratch usage.
@@ -126,10 +130,11 @@ unsigned AMDGPUInliner::getInlineThreshold(CallSite CS) const {
   uint64_t AllocaSize = 0;
   SmallPtrSet<const AllocaInst *, 8> AIVisited;
   for (Value *PtrArg : CS.args()) {
-    Type *Ty = PtrArg->getType();
-    if (!Ty->isPointerTy() ||
-        Ty->getPointerAddressSpace() != AS.PRIVATE_ADDRESS)
+    PointerType *Ty = dyn_cast<PointerType>(PtrArg->getType());
+    if (!Ty || (Ty->getAddressSpace() != AMDGPUAS::PRIVATE_ADDRESS &&
+                Ty->getAddressSpace() != AMDGPUAS::FLAT_ADDRESS))
       continue;
+
     PtrArg = GetUnderlyingObject(PtrArg, DL);
     if (const AllocaInst *AI = dyn_cast<AllocaInst>(PtrArg)) {
       if (!AI->isStaticAlloca() || !AIVisited.insert(AI).second)
@@ -161,8 +166,8 @@ static bool isWrapperOnlyCall(CallSite CS) {
       return false;
     }
     if (isa<ReturnInst>(*std::next(I->getIterator()))) {
-      DEBUG(dbgs() << "    Wrapper only call detected: "
-                   << Callee->getName() << '\n');
+      LLVM_DEBUG(dbgs() << "    Wrapper only call detected: "
+                        << Callee->getName() << '\n');
       return true;
     }
   }
@@ -172,20 +177,26 @@ static bool isWrapperOnlyCall(CallSite CS) {
 InlineCost AMDGPUInliner::getInlineCost(CallSite CS) {
   Function *Callee = CS.getCalledFunction();
   Function *Caller = CS.getCaller();
-  TargetTransformInfo &TTI = TTIWP->getTTI(*Callee);
 
-  if (!Callee || Callee->isDeclaration() || CS.isNoInline() ||
-      !TTI.areInlineCompatible(Caller, Callee))
-    return llvm::InlineCost::getNever();
+  if (!Callee || Callee->isDeclaration())
+    return llvm::InlineCost::getNever("undefined callee");
+
+  if (CS.isNoInline())
+    return llvm::InlineCost::getNever("noinline");
+
+  TargetTransformInfo &TTI = TTIWP->getTTI(*Callee);
+  if (!TTI.areInlineCompatible(Caller, Callee))
+    return llvm::InlineCost::getNever("incompatible");
 
   if (CS.hasFnAttr(Attribute::AlwaysInline)) {
-    if (isInlineViable(*Callee))
-      return llvm::InlineCost::getAlways();
-    return llvm::InlineCost::getNever();
+    auto IsViable = isInlineViable(*Callee);
+    if (IsViable)
+      return llvm::InlineCost::getAlways("alwaysinline viable");
+    return llvm::InlineCost::getNever(IsViable.message);
   }
 
   if (isWrapperOnlyCall(CS))
-    return llvm::InlineCost::getAlways();
+    return llvm::InlineCost::getAlways("wrapper-only call");
 
   InlineParams LocalParams = Params;
   LocalParams.DefaultThreshold = (int)getInlineThreshold(CS);
@@ -203,6 +214,15 @@ InlineCost AMDGPUInliner::getInlineCost(CallSite CS) {
     return ACT->getAssumptionCache(F);
   };
 
-  return llvm::getInlineCost(CS, Callee, LocalParams, TTI, GetAssumptionCache,
-                             None, PSI, RemarksEnabled ? &ORE : nullptr);
+  auto IC = llvm::getInlineCost(cast<CallBase>(*CS.getInstruction()), Callee,
+                             LocalParams, TTI, GetAssumptionCache, None, PSI,
+                             RemarksEnabled ? &ORE : nullptr);
+
+  if (IC && !IC.isAlways() && !Callee->hasFnAttribute(Attribute::InlineHint)) {
+    // Single BB does not increase total BB amount, thus subtract 1
+    size_t Size = Caller->size() + Callee->size() - 1;
+    if (MaxBB && Size > MaxBB)
+      return llvm::InlineCost::getNever("max number of bb exceeded");
+  }
+  return IC;
 }

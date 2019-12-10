@@ -156,21 +156,22 @@ define <4 x half> @sitofp_i8(<4 x i8> %a) #0 {
 ; CHECK-COMMON-LABEL: sitofp_i8:
 ; CHECK-COMMON-NEXT:  shl [[OP1:v[0-9]+\.4h]], v0.4h, #8
 ; CHECK-COMMON-NEXT:  sshr [[OP2:v[0-9]+\.4h]], [[OP1]], #8
-; CHECK-COMMON-NEXT:  sshll [[OP3:v[0-9]+\.4s]], [[OP2]], #0
-; CHECK-COMMON-NEXT:  scvtf [[OP4:v[0-9]+\.4s]], [[OP3]]
-; CHECK-COMMON-NEXT:  fcvtn v0.4h, [[OP4]]
+; CHECK-FP16-NEXT:    scvtf v0.4h, [[OP2]]
+; CHECK-CVT-NEXT:     sshll [[OP3:v[0-9]+\.4s]], [[OP2]], #0
+; CHECK-CVT-NEXT:     scvtf [[OP4:v[0-9]+\.4s]], [[OP3]]
+; CHECK-CVT-NEXT:     fcvtn v0.4h, [[OP4]]
 ; CHECK-COMMON-NEXT:  ret
   %1 = sitofp <4 x i8> %a to <4 x half>
   ret <4 x half> %1
 }
 
-
 define <4 x half> @sitofp_i16(<4 x i16> %a) #0 {
 ; CHECK-COMMON-LABEL: sitofp_i16:
-; CHECK-COMMON-NEXT:  sshll [[OP1:v[0-9]+\.4s]], v0.4h, #0
-; CHECK-COMMON-NEXT:  scvtf [[OP2:v[0-9]+\.4s]], [[OP1]]
-; CHECK-COMMON-NEXT:  fcvtn v0.4h, [[OP2]]
-; CHECK-COMMON-NEXT:  ret
+; CHECK-FP16-NEXT:   scvtf v0.4h, v0.4h
+; CHECK-CVT-NEXT:    sshll [[OP1:v[0-9]+\.4s]], v0.4h, #0
+; CHECK-CVT-NEXT:    scvtf [[OP2:v[0-9]+\.4s]], [[OP1]]
+; CHECK-CVT-NEXT:    fcvtn v0.4h, [[OP2]]
+; CHECK-COMMON-NEXT: ret
   %1 = sitofp <4 x i16> %a to <4 x half>
   ret <4 x half> %1
 }
@@ -201,9 +202,10 @@ define <4 x half> @sitofp_i64(<4 x i64> %a) #0 {
 define <4 x half> @uitofp_i8(<4 x i8> %a) #0 {
 ; CHECK-COMMON-LABEL: uitofp_i8:
 ; CHECK-COMMON-NEXT:  bic v0.4h, #255, lsl #8
-; CHECK-COMMON-NEXT:  ushll [[OP1:v[0-9]+\.4s]], v0.4h, #0
-; CHECK-COMMON-NEXT:  ucvtf [[OP2:v[0-9]+\.4s]], [[OP1]]
-; CHECK-COMMON-NEXT:  fcvtn v0.4h, [[OP2]]
+; CHECK-FP16-NEXT:    ucvtf v0.4h, v0.4h
+; CHECK-CVT-NEXT:     ushll [[OP1:v[0-9]+\.4s]], v0.4h, #0
+; CHECK-CVT-NEXT:     ucvtf [[OP2:v[0-9]+\.4s]], [[OP1]]
+; CHECK-CVT-NEXT:     fcvtn v0.4h, [[OP2]]
 ; CHECK-COMMON-NEXT:  ret
   %1 = uitofp <4 x i8> %a to <4 x half>
   ret <4 x half> %1
@@ -212,9 +214,10 @@ define <4 x half> @uitofp_i8(<4 x i8> %a) #0 {
 
 define <4 x half> @uitofp_i16(<4 x i16> %a) #0 {
 ; CHECK-COMMON-LABEL: uitofp_i16:
-; CHECK-COMMON-NEXT:  ushll [[OP1:v[0-9]+\.4s]], v0.4h, #0
-; CHECK-COMMON-NEXT:  ucvtf [[OP2:v[0-9]+\.4s]], [[OP1]]
-; CHECK-COMMON-NEXT:  fcvtn v0.4h, [[OP2]]
+; CHECK-FP16-NEXT:  ucvtf v0.4h, v0.4h
+; CHECK-CVT-NEXT:   ushll [[OP1:v[0-9]+\.4s]], v0.4h, #0
+; CHECK-CVT-NEXT:   ucvtf [[OP2:v[0-9]+\.4s]], [[OP1]]
+; CHECK-CVT-NEXT:   fcvtn v0.4h, [[OP2]]
 ; CHECK-COMMON-NEXT:  ret
   %1 = uitofp <4 x i16> %a to <4 x half>
   ret <4 x half> %1
@@ -254,40 +257,44 @@ define void @test_insert_at_zero(half %a, <4 x half>* %b) #0 {
 
 define <4 x i8> @fptosi_i8(<4 x half> %a) #0 {
 ; CHECK-COMMON-LABEL: fptosi_i8:
-; CHECK-COMMON-NEXT:  fcvtl  [[REG1:v[0-9]+\.4s]], v0.4h
-; CHECK-COMMON-NEXT:  fcvtzs [[REG2:v[0-9]+\.4s]], [[REG1]]
-; CHECK-COMMON-NEXT:  xtn    v0.4h, [[REG2]]
-; CHECK-COMMON-NEXT:  ret
+; CHECK-FP16:        fcvtzs  v0.4h, v0.4h
+; CHECK-CVT-NEXT:    fcvtl  [[REG1:v[0-9]+\.4s]], v0.4h
+; CHECK-CVT-NEXT:    fcvtzs [[REG2:v[0-9]+\.4s]], [[REG1]]
+; CHECK-CVT-NEXT:    xtn    v0.4h, [[REG2]]
+; CHECK-COMMON-NEXT: ret
   %1 = fptosi<4 x half> %a to <4 x i8>
   ret <4 x i8> %1
 }
 
 define <4 x i16> @fptosi_i16(<4 x half> %a) #0 {
 ; CHECK-COMMON-LABEL: fptosi_i16:
-; CHECK-COMMON-NEXT:  fcvtl  [[REG1:v[0-9]+\.4s]], v0.4h
-; CHECK-COMMON-NEXT:  fcvtzs [[REG2:v[0-9]+\.4s]], [[REG1]]
-; CHECK-COMMON-NEXT:  xtn    v0.4h, [[REG2]]
-; CHECK-COMMON-NEXT:  ret
+; CHECK-FP16:        fcvtzs v0.4h, v0.4h
+; CHECK-CVT-NEXT:    fcvtl  [[REG1:v[0-9]+\.4s]], v0.4h
+; CHECK-CVT-NEXT:    fcvtzs [[REG2:v[0-9]+\.4s]], [[REG1]]
+; CHECK-CVT-NEXT:    xtn    v0.4h, [[REG2]]
+; CHECK-COMMON-NEXT: ret
   %1 = fptosi<4 x half> %a to <4 x i16>
   ret <4 x i16> %1
 }
 
 define <4 x i8> @fptoui_i8(<4 x half> %a) #0 {
 ; CHECK-COMMON-LABEL: fptoui_i8:
-; CHECK-COMMON-NEXT:  fcvtl  [[REG1:v[0-9]+\.4s]], v0.4h
+; CHECK-FP16:        fcvtzs  v0.4h, v0.4h
+; CHECK-CVT-NEXT:    fcvtl  [[REG1:v[0-9]+\.4s]], v0.4h
 ; NOTE: fcvtzs selected here because the xtn shaves the sign bit
-; CHECK-COMMON-NEXT:  fcvtzs [[REG2:v[0-9]+\.4s]], [[REG1]]
-; CHECK-COMMON-NEXT:  xtn    v0.4h, [[REG2]]
-; CHECK-COMMON-NEXT:  ret
+; CHECK-CVT-NEXT:    fcvtzs [[REG2:v[0-9]+\.4s]], [[REG1]]
+; CHECK-CVT-NEXT:    xtn    v0.4h, [[REG2]]
+; CHECK-COMMON-NEXT: ret
   %1 = fptoui<4 x half> %a to <4 x i8>
   ret <4 x i8> %1
 }
 
 define <4 x i16> @fptoui_i16(<4 x half> %a) #0 {
 ; CHECK-COMMON-LABEL: fptoui_i16:
-; CHECK-COMMON-NEXT:  fcvtl  [[REG1:v[0-9]+\.4s]], v0.4h
-; CHECK-COMMON-NEXT:  fcvtzu [[REG2:v[0-9]+\.4s]], [[REG1]]
-; CHECK-COMMON-NEXT:  xtn    v0.4h, [[REG2]]
+; CHECK-FP16:      fcvtzu v0.4h, v0.4h
+; CHECK-CVT-NEXT:  fcvtl  [[REG1:v[0-9]+\.4s]], v0.4h
+; CHECK-CVT-NEXT:  fcvtzu [[REG2:v[0-9]+\.4s]], [[REG1]]
+; CHECK-CVT-NEXT:  xtn    v0.4h, [[REG2]]
 ; CHECK-COMMON-NEXT:  ret
   %1 = fptoui<4 x half> %a to <4 x i16>
   ret <4 x i16> %1
@@ -295,428 +302,229 @@ define <4 x i16> @fptoui_i16(<4 x half> %a) #0 {
 
 define <4 x i1> @test_fcmp_une(<4 x half> %a, <4 x half> %b) #0 {
 ; CHECK-CVT-LABEL: test_fcmp_une:
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: csetm {{.*}}, ne
-; CHECK-CVT-DAG: csetm {{.*}}, ne
-; CHECK-CVT-DAG: csetm {{.*}}, ne
-; CHECK-CVT-DAG: csetm {{.*}}, ne
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcmeq
+; CHECK-CVT: mvn
+; CHECK-CVT: xtn
+; CHECK-CVT: ret
 
 ; CHECK-FP16-LABEL: test_fcmp_une:
 ; CHECK-FP16-NOT:   fcvt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, ne
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, ne
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, ne
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, ne
-; CHECK-FP16:       ret
+; CHECK-FP16:       fcmeq v{{[0-9]}}.4h, v{{[0-9]}}.4h
   %1 = fcmp une <4 x half> %a, %b
   ret <4 x i1> %1
 }
 
 define <4 x i1> @test_fcmp_ueq(<4 x half> %a, <4 x half> %b) #0 {
 ; CHECK-CVT-LABEL: test_fcmp_ueq:
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: csetm [[REG1:w[0-9]+]], eq
-; CHECK-CVT-DAG: csetm [[REG2:w[0-9]+]], eq
-; CHECK-CVT-DAG: csetm [[REG3:w[0-9]+]], eq
-; CHECK-CVT-DAG: csetm [[REG4:w[0-9]+]], eq
-; CHECK-CVT-DAG: csinv {{.*}}, [[REG1]], wzr, vc
-; CHECK-CVT-DAG: csinv {{.*}}, [[REG2]], wzr, vc
-; CHECK-CVT-DAG: csinv {{.*}}, [[REG3]], wzr, vc
-; CHECK-CVT-DAG: csinv {{.*}}, [[REG4]], wzr, vc
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcmgt
+; CHECK-CVT: fcmgt
+; CHECK-CVT: orr
+; CHECK-CVT: xtn
+; CHECK-CVT: mvn
+; CHECK-CVT: ret
 
 ; CHECK-FP16-LABEL: test_fcmp_ueq:
 ; CHECK-FP16-NOT:   fcvt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, eq
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, eq
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, eq
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, eq
-; CHECK-FP16:       ret
+; CHECK-FP16:       fcmgt v{{[0-9]}}.4h, v{{[0-9]}}.4h
+; CHECK-FP16:       fcmgt v{{[0-9]}}.4h, v{{[0-9]}}.4h
   %1 = fcmp ueq <4 x half> %a, %b
   ret <4 x i1> %1
 }
 
 define <4 x i1> @test_fcmp_ugt(<4 x half> %a, <4 x half> %b) #0 {
 ; CHECK-CVT-LABEL: test_fcmp_ugt:
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: csetm {{.*}}, hi
-; CHECK-CVT-DAG: csetm {{.*}}, hi
-; CHECK-CVT-DAG: csetm {{.*}}, hi
-; CHECK-CVT-DAG: csetm {{.*}}, hi
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcmge
+; CHECK-CVT: xtn
+; CHECK-CVT: mvn
+; CHECK-CVT: ret
 
 ; CHECK-FP16-LABEL: test_fcmp_ugt:
 ; CHECK-FP16-NOT:   fcvt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, hi
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, hi
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, hi
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, hi
-; CHECK-FP16:       ret
+; CHECK-FP16:       fcmge v{{[0-9]}}.4h, v{{[0-9]}}.4h
   %1 = fcmp ugt <4 x half> %a, %b
   ret <4 x i1> %1
 }
 
 define <4 x i1> @test_fcmp_uge(<4 x half> %a, <4 x half> %b) #0 {
 ; CHECK-CVT-LABEL: test_fcmp_uge:
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: csetm {{.*}}, pl
-; CHECK-CVT-DAG: csetm {{.*}}, pl
-; CHECK-CVT-DAG: csetm {{.*}}, pl
-; CHECK-CVT-DAG: csetm {{.*}}, pl
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcmgt
+; CHECK-CVT: xtn
+; CHECK-CVT: mvn
+; CHECK-CVT: ret
 
 ; CHECK-FP16-LABEL: test_fcmp_uge:
 ; CHECK-FP16-NOT:   fcvt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, pl
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, pl
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, pl
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, pl
-; CHECK-FP16:       ret
+; CHECK-FP16:       fcmgt v{{[0-9]}}.4h, v{{[0-9]}}.4h
   %1 = fcmp uge <4 x half> %a, %b
   ret <4 x i1> %1
 }
 
 define <4 x i1> @test_fcmp_ult(<4 x half> %a, <4 x half> %b) #0 {
 ; CHECK-CVT-LABEL: test_fcmp_ult:
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: csetm {{.*}}, lt
-; CHECK-CVT-DAG: csetm {{.*}}, lt
-; CHECK-CVT-DAG: csetm {{.*}}, lt
-; CHECK-CVT-DAG: csetm {{.*}}, lt
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcmge
+; CHECK-CVT: xtn
+; CHECK-CVT: mvn
+; CHECK-CVT: ret
 
 ; CHECK-FP16-LABEL: test_fcmp_ult:
 ; CHECK-FP16-NOT:   fcvt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, lt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, lt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, lt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, lt
-; CHECK-FP16:       ret
+; CHECK-FP16:       fcmge v{{[0-9]}}.4h, v{{[0-9]}}.4h
   %1 = fcmp ult <4 x half> %a, %b
   ret <4 x i1> %1
 }
 
 define <4 x i1> @test_fcmp_ule(<4 x half> %a, <4 x half> %b) #0 {
 ; CHECK-CVT-LABEL: test_fcmp_ule:
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: csetm {{.*}}, le
-; CHECK-CVT-DAG: csetm {{.*}}, le
-; CHECK-CVT-DAG: csetm {{.*}}, le
-; CHECK-CVT-DAG: csetm {{.*}}, le
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcmgt
+; CHECK-CVT: xtn
+; CHECK-CVT: mvn
+; CHECK-CVT: ret
 
 ; CHECK-FP16-LABEL: test_fcmp_ule:
 ; CHECK-FP16-NOT:   fcvt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, le
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, le
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, le
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, le
-; CHECK-FP16:       ret
+; CHECK-FP16:       fcmgt v{{[0-9]}}.4h, v{{[0-9]}}.4h
   %1 = fcmp ule <4 x half> %a, %b
   ret <4 x i1> %1
 }
 
 define <4 x i1> @test_fcmp_uno(<4 x half> %a, <4 x half> %b) #0 {
 ; CHECK-CVT-LABEL: test_fcmp_uno:
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: csetm {{.*}}, vs
-; CHECK-CVT-DAG: csetm {{.*}}, vs
-; CHECK-CVT-DAG: csetm {{.*}}, vs
-; CHECK-CVT-DAG: csetm {{.*}}, vs
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcmge
+; CHECK-CVT: fcmgt
+; CHECK-CVT: orr
+; CHECK-CVT: xtn
+; CHECK-CVT: mvn
+; CHECK-CVT: ret
 
 ; CHECK-FP16-LABEL: test_fcmp_uno:
 ; CHECK-FP16-NOT:   fcvt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, vs
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, vs
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, vs
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, vs
-; CHECK-FP16:       ret
+; CHECK-FP16:       fcmge v{{[0-9]}}.4h, v{{[0-9]}}.4h
+; CHECK-FP16:       fcmgt v{{[0-9]}}.4h, v{{[0-9]}}.4h
   %1 = fcmp uno <4 x half> %a, %b
   ret <4 x i1> %1
 }
 
 define <4 x i1> @test_fcmp_one(<4 x half> %a, <4 x half> %b) #0 {
 ; CHECK-CVT-LABEL: test_fcmp_one:
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: csetm [[REG1:w[0-9]+]], mi
-; CHECK-CVT-DAG: csetm [[REG2:w[0-9]+]], mi
-; CHECK-CVT-DAG: csetm [[REG3:w[0-9]+]], mi
-; CHECK-CVT-DAG: csetm [[REG4:w[0-9]+]], mi
-; CHECK-CVT-DAG: csinv {{.*}}, [[REG1]], wzr, le
-; CHECK-CVT-DAG: csinv {{.*}}, [[REG2]], wzr, le
-; CHECK-CVT-DAG: csinv {{.*}}, [[REG3]], wzr, le
-; CHECK-CVT-DAG: csinv {{.*}}, [[REG4]], wzr, le
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcmgt
+; CHECK-CVT: fcmgt
+; CHECK-CVT: orr
+; CHECK-CVT: xtn
+; CHECK-CVT: ret
 
 ; CHECK-FP16-LABEL: test_fcmp_one:
 ; CHECK-FP16-NOT:   fcvt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, mi
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, mi
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, mi
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, mi
-; CHECK-FP16:       ret
+; CHECK-FP16:       fcmgt v{{[0-9]}}.4h, v{{[0-9]}}.4h
+; CHECK-FP16:       fcmgt v{{[0-9]}}.4h, v{{[0-9]}}.4h
   %1 = fcmp one <4 x half> %a, %b
   ret <4 x i1> %1
 }
 
 define <4 x i1> @test_fcmp_oeq(<4 x half> %a, <4 x half> %b) #0 {
 ; CHECK-CVT-LABEL: test_fcmp_oeq:
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: csetm {{.*}}, eq
-; CHECK-CVT-DAG: csetm {{.*}}, eq
-; CHECK-CVT-DAG: csetm {{.*}}, eq
-; CHECK-CVT-DAG: csetm {{.*}}, eq
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcmeq
+; CHECK-CVT: xtn
+; CHECK-CVT: ret
 
 ; CHECK-FP16-LABEL: test_fcmp_oeq:
 ; CHECK-FP16-NOT:   fcvt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, eq
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, eq
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, eq
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, eq
-; CHECK-FP16:       ret
+; CHECK-FP16:       fcmeq v{{[0-9]}}.4h, v{{[0-9]}}.4h
   %1 = fcmp oeq <4 x half> %a, %b
   ret <4 x i1> %1
 }
 
 define <4 x i1> @test_fcmp_ogt(<4 x half> %a, <4 x half> %b) #0 {
 ; CHECK-CVT-LABEL: test_fcmp_ogt:
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: csetm {{.*}}, gt
-; CHECK-CVT-DAG: csetm {{.*}}, gt
-; CHECK-CVT-DAG: csetm {{.*}}, gt
-; CHECK-CVT-DAG: csetm {{.*}}, gt
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcmgt
+; CHECK-CVT: xtn
+; CHECK-CVT: ret
 
 ; CHECK-FP16-LABEL: test_fcmp_ogt:
 ; CHECK-FP16-NOT:   fcvt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, gt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, gt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, gt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, gt
-; CHECK-FP16:       ret
+; CHECK-FP16:       fcmgt v{{[0-9]}}.4h, v{{[0-9]}}.4h
   %1 = fcmp ogt <4 x half> %a, %b
   ret <4 x i1> %1
 }
 
 define <4 x i1> @test_fcmp_oge(<4 x half> %a, <4 x half> %b) #0 {
 ; CHECK-CVT-LABEL: test_fcmp_oge:
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: csetm {{.*}}, ge
-; CHECK-CVT-DAG: csetm {{.*}}, ge
-; CHECK-CVT-DAG: csetm {{.*}}, ge
-; CHECK-CVT-DAG: csetm {{.*}}, ge
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcmge
+; CHECK-CVT: xtn
+; CHECK-CVT: ret
 
 ; CHECK-FP16-LABEL: test_fcmp_oge:
 ; CHECK-FP16-NOT:   fcvt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, ge
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, ge
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, ge
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, ge
-; CHECK-FP16:       ret
+; CHECK-FP16:       fcmge v{{[0-9]}}.4h, v{{[0-9]}}.4h
   %1 = fcmp oge <4 x half> %a, %b
   ret <4 x i1> %1
 }
 
 define <4 x i1> @test_fcmp_olt(<4 x half> %a, <4 x half> %b) #0 {
 ; CHECK-CVT-LABEL: test_fcmp_olt:
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: csetm {{.*}}, mi
-; CHECK-CVT-DAG: csetm {{.*}}, mi
-; CHECK-CVT-DAG: csetm {{.*}}, mi
-; CHECK-CVT-DAG: csetm {{.*}}, mi
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcmgt
+; CHECK-CVT: xtn
+; CHECK-CVT: ret
 
 ; CHECK-FP16-LABEL: test_fcmp_olt:
 ; CHECK-FP16-NOT:   fcvt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, mi
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, mi
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, mi
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, mi
-; CHECK-FP16:       ret
+; CHECK-FP16:       fcmgt v{{[0-9]}}.4h, v{{[0-9]}}.4h
   %1 = fcmp olt <4 x half> %a, %b
   ret <4 x i1> %1
 }
 
 define <4 x i1> @test_fcmp_ole(<4 x half> %a, <4 x half> %b) #0 {
 ; CHECK-CVT-LABEL: test_fcmp_ole:
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: csetm {{.*}}, ls
-; CHECK-CVT-DAG: csetm {{.*}}, ls
-; CHECK-CVT-DAG: csetm {{.*}}, ls
-; CHECK-CVT-DAG: csetm {{.*}}, ls
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcmge
+; CHECK-CVT: xtn
+; CHECK-CVT: ret
 
 ; CHECK-FP16-LABEL: test_fcmp_ole:
 ; CHECK-FP16-NOT:   fcvt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, ls
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, ls
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, ls
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, ls
-; CHECK-FP16:       ret
+; CHECK-FP16:       fcmge v{{[0-9]}}.4h, v{{[0-9]}}.4h
   %1 = fcmp ole <4 x half> %a, %b
   ret <4 x i1> %1
 }
 
 define <4 x i1> @test_fcmp_ord(<4 x half> %a, <4 x half> %b) #0 {
 ; CHECK-CVT-LABEL: test_fcmp_ord:
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: fcvt
-; CHECK-CVT-DAG: csetm {{.*}}, vc
-; CHECK-CVT-DAG: csetm {{.*}}, vc
-; CHECK-CVT-DAG: csetm {{.*}}, vc
-; CHECK-CVT-DAG: csetm {{.*}}, vc
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcvtl
+; CHECK-CVT: fcmge
+; CHECK-CVT: fcmgt
+; CHECK-CVT: orr
+; CHECK-CVT: xtn
+; CHECK-CVT: ret
 
 ; CHECK-FP16-LABEL: test_fcmp_ord:
 ; CHECK-FP16-NOT:   fcvt
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, vc
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, vc
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, vc
-; CHECK-FP16:       fcmp  h{{.}}, h{{.}}
-; CHECK-FP16:       csetm {{.*}}, vc
-; CHECK-FP16:       ret
+; CHECK-FP16:       fcmge v{{[0-9]}}.4h, v{{[0-9]}}.4h
+; CHECK-FP16:       fcmgt v{{[0-9]}}.4h, v{{[0-9]}}.4h
   %1 = fcmp ord <4 x half> %a, %b
   ret <4 x i1> %1
 }

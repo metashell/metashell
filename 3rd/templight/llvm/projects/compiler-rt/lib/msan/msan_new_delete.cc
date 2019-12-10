@@ -1,9 +1,8 @@
 //===-- msan_new_delete.cc ------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -15,6 +14,7 @@
 #include "msan.h"
 #include "interception/interception.h"
 #include "sanitizer_common/sanitizer_allocator.h"
+#include "sanitizer_common/sanitizer_allocator_report.h"
 
 #if MSAN_REPLACE_OPERATORS_NEW_AND_DELETE
 
@@ -33,12 +33,12 @@ namespace std {
 #define OPERATOR_NEW_BODY(nothrow) \
   GET_MALLOC_STACK_TRACE; \
   void *res = msan_malloc(size, &stack);\
-  if (!nothrow && UNLIKELY(!res)) DieOnFailure::OnOOM();\
+  if (!nothrow && UNLIKELY(!res)) ReportOutOfMemory(size, &stack);\
   return res
 #define OPERATOR_NEW_BODY_ALIGN(nothrow) \
   GET_MALLOC_STACK_TRACE;\
   void *res = msan_memalign((uptr)align, size, &stack);\
-  if (!nothrow && UNLIKELY(!res)) DieOnFailure::OnOOM();\
+  if (!nothrow && UNLIKELY(!res)) ReportOutOfMemory(size, &stack);\
   return res;
 
 INTERCEPTOR_ATTRIBUTE

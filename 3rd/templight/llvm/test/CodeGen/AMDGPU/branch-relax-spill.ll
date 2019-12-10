@@ -3,7 +3,7 @@
 ; FIXME: This should be able to compile, but requires inserting an
 ; extra block to restore the scavenged register.
 
-; FAIL: LLVM ERROR: Error while trying to spill VCC from class SReg_64: Cannot scavenge register without an emergency spill slot!
+; FAIL: LLVM ERROR: Error while trying to spill SGPR0_SGPR1 from class SReg_64: Cannot scavenge register without an emergency spill slot!
 
 define amdgpu_kernel void @spill(i32 addrspace(1)* %arg, i32 %cnd) #0 {
 entry:
@@ -111,8 +111,8 @@ entry:
   %sgpr101 = tail call i32 asm sideeffect "s_mov_b32 s101, 0", "={s101}"() #0
   %sgpr102 = tail call i32 asm sideeffect "s_mov_b32 s102, 0", "={s102}"() #0
   %sgpr103 = tail call i32 asm sideeffect "s_mov_b32 s103, 0", "={s103}"() #0
-  %vcc_lo = tail call i32 asm sideeffect "s_mov_b32 $0, 0", "={VCC_LO}"() #0
-  %vcc_hi = tail call i32 asm sideeffect "s_mov_b32 $0, 0", "={VCC_HI}"() #0
+  %vcc_lo = tail call i32 asm sideeffect "s_mov_b32 $0, 0", "={vcc_lo}"() #0
+  %vcc_hi = tail call i32 asm sideeffect "s_mov_b32 $0, 0", "={vcc_hi}"() #0
   %cmp = icmp eq i32 %cnd, 0
   br i1 %cmp, label %bb3, label %bb2 ; +8 dword branch
 

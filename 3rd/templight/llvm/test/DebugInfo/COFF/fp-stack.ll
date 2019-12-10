@@ -1,5 +1,5 @@
 ; RUN: llc -mtriple=i686-windows-msvc < %s | FileCheck %s --check-prefix=ASM
-; RUN: llc -mtriple=i686-windows-msvc < %s -filetype=obj | llvm-readobj -codeview - | FileCheck %s --check-prefix=OBJ
+; RUN: llc -mtriple=i686-windows-msvc < %s -filetype=obj | llvm-readobj --codeview - | FileCheck %s --check-prefix=OBJ
 target datalayout = "e-m:x-p:32:32-i64:64-f80:32-n8:16:32-a:0:32-S32"
 target triple = "i686-pc-windows-msvc18.0.0"
 
@@ -10,14 +10,14 @@ entry:
   ret double %sub
 }
 
-; ASM:         .cv_def_range    Lfunc_begin0 Lfunc_end0, "A\021\200\000\000\000"
+; ASM:         .cv_def_range    Ltmp1 Lfunc_end0, "A\021\200\000\000\000"
 ; OBJ:    DefRangeRegisterSym {
 ; OBJ:      Register: ST0 (0x80)
 ; OBJ:      MayHaveNoName: 0
 ; OBJ:      LocalVariableAddrRange {
-; OBJ:        OffsetStart: .text+0x0
+; OBJ:        OffsetStart: .text+0x6
 ; OBJ:        ISectStart: 0x0
-; OBJ:        Range: 0x7
+; OBJ:        Range: 0x1
 ; OBJ:      }
 ; OBJ:    }
 
@@ -31,7 +31,7 @@ declare void @llvm.dbg.value(metadata, metadata, metadata)
 !0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 3.9.0 (trunk 261537) (llvm/trunk 261463)", isOptimized: true, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
 !1 = !DIFile(filename: "<stdin>", directory: "/")
 !2 = !{}
-!4 = distinct !DISubprogram(name: "f", linkageName: "f", scope: !5, file: !5, line: 2, type: !6, isLocal: false, isDefinition: true, scopeLine: 2, flags: DIFlagPrototyped, isOptimized: true, unit: !0, variables: !9)
+!4 = distinct !DISubprogram(name: "f", linkageName: "f", scope: !5, file: !5, line: 2, type: !6, isLocal: false, isDefinition: true, scopeLine: 2, flags: DIFlagPrototyped, isOptimized: true, unit: !0, retainedNodes: !9)
 !5 = !DIFile(filename: "t.ii", directory: "/")
 !6 = !DISubroutineType(types: !7)
 !7 = !{null, !8}

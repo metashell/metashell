@@ -5,43 +5,62 @@
 ; OPT: main_body:
 ; OPT: LOOP.outer:
 ; OPT: LOOP:
-; OPT:     [[if:%[0-9]+]] = call { i1, i64 } @llvm.amdgcn.if(
+; OPT:     [[if:%[0-9]+]] = call { i1, i64 } @llvm.amdgcn.if.i64(
 ; OPT:     [[if_exec:%[0-9]+]] = extractvalue { i1, i64 } [[if]], 1
 ;
 ; OPT: Flow:
 ;
-; Ensure two else.break calls, for both the inner and outer loops
+; Ensure two if.break calls, for both the inner and outer loops
 
-; OPT:        call i64 @llvm.amdgcn.else.break(i64 [[if_exec]],
-; OPT-NEXT:   call i64 @llvm.amdgcn.else.break(i64 [[if_exec]],
-; OPT-NEXT:   call void @llvm.amdgcn.end.cf
+; OPT:        call void @llvm.amdgcn.end.cf
+; OPT-NEXT:   call i64 @llvm.amdgcn.if.break.i64.i64(i1
+; OPT-NEXT:   call i1 @llvm.amdgcn.loop.i64(i64
+; OPT-NEXT:   call i64 @llvm.amdgcn.if.break.i64.i64(i1
 ;
 ; OPT: Flow1:
 
 ; GCN-LABEL: {{^}}multi_else_break:
 
+; GCN: ; %main_body
+; GCN:      s_mov_b64           [[LEFT_OUTER:s\[[0-9]+:[0-9]+\]]], 0{{$}}
+
+; GCN: [[FLOW2:BB[0-9]+_[0-9]+]]: ; %Flow2
+; GCN:      s_or_b64            exec, exec, [[TMP0:s\[[0-9]+:[0-9]+\]]]
+; GCN:      s_and_b64           [[TMP1:s\[[0-9]+:[0-9]+\]]], exec, [[BREAK_OUTER:s\[[0-9]+:[0-9]+\]]]
+; GCN:      s_or_b64            [[TMP1]], [[TMP1]], [[LEFT_OUTER]]
+; GCN:      s_mov_b64           [[LEFT_OUTER]], [[TMP1]]
+; GCN:      s_andn2_b64         exec, exec, [[TMP1]]
+; GCN:      s_cbranch_execz    [[IF_BLOCK:BB[0-9]+_[0-9]+]]
+
 ; GCN: [[OUTER_LOOP:BB[0-9]+_[0-9]+]]: ; %LOOP.outer{{$}}
+; GCN:      s_mov_b64           [[LEFT_INNER:s\[[0-9]+:[0-9]+\]]], 0{{$}}
+
+; GCN: ; %Flow
+; GCN:      s_or_b64            exec, exec, [[SAVE_EXEC:s\[[0-9]+:[0-9]+\]]]
+; GCN:      s_and_b64           [[TMP0]], exec, [[BREAK_INNER:s\[[0-9]+:[0-9]+\]]]
+; GCN:      s_or_b64            [[TMP0]], [[TMP0]], [[LEFT_INNER]]
+; GCN:      s_mov_b64           [[LEFT_INNER]], [[TMP0]]
+; GCN:      s_andn2_b64         exec, exec, [[TMP0]]
+; GCN:      s_cbranch_execz    [[FLOW2]]
 
 ; GCN: [[INNER_LOOP:BB[0-9]+_[0-9]+]]: ; %LOOP{{$}}
-; GCN: s_and_saveexec_b64 [[SAVE_BREAK:s\[[0-9]+:[0-9]+\]]], vcc
+; GCN:      s_or_b64            [[BREAK_OUTER]], [[BREAK_OUTER]], exec
+; GCN:      s_or_b64            [[BREAK_INNER]], [[BREAK_INNER]], exec
+; GCN:      s_and_saveexec_b64  [[SAVE_EXEC]], vcc
 
-; GCN: BB{{[0-9]+}}_{{[0-9]+}}: ; %Flow{{$}}
-; GCN-NEXT: ; in Loop: Header=[[INNER_LOOP]] Depth=2
+; FIXME: duplicate comparison
+; GCN: ; %ENDIF
+; GCN-DAG:  v_cmp_eq_u32_e32    vcc,
+; GCN-DAG:  v_cmp_ne_u32_e64    [[TMP51NEG:s\[[0-9]+:[0-9]+\]]],
+; GCN-DAG:  s_andn2_b64         [[BREAK_OUTER]], [[BREAK_OUTER]], exec
+; GCN-DAG:  s_andn2_b64         [[BREAK_INNER]], [[BREAK_INNER]], exec
+; GCN-DAG:  s_and_b64           [[TMP_EQ:s\[[0-9]+:[0-9]+\]]], vcc, exec
+; GCN-DAG:  s_and_b64           [[TMP_NE:s\[[0-9]+:[0-9]+\]]], [[TMP51NEG]], exec
+; GCN-DAG:  s_or_b64            [[BREAK_OUTER]], [[BREAK_OUTER]], [[TMP_EQ]]
+; GCN-DAG:  s_or_b64            [[BREAK_INNER]], [[BREAK_INNER]], [[TMP_NE]]
 
-; Ensure extra or eliminated
-; GCN-NEXT: s_or_b64 exec, exec, [[SAVE_BREAK]]
-; GCN-NEXT: s_or_b64 [[OR_BREAK:s\[[0-9]+:[0-9]+\]]], [[SAVE_BREAK]], s{{\[[0-9]+:[0-9]+\]}}
-; GCN-NEXT: s_andn2_b64 exec, exec, [[OR_BREAK]]
-; GCN-NEXT: s_cbranch_execnz [[INNER_LOOP]]
-
-; GCN: ; %bb.{{[0-9]+}}: ; %Flow1{{$}}
-; GCN-NEXT: ; in Loop: Header=[[OUTER_LOOP]] Depth=1
-
-; Ensure copy is eliminated
-; GCN-NEXT: s_or_b64 exec, exec, [[OR_BREAK]]
-; GCN-NEXT: s_or_b64 [[OUTER_OR_BREAK:s\[[0-9]+:[0-9]+\]]], [[SAVE_BREAK]], s{{\[[0-9]+:[0-9]+\]}}
-; GCN-NEXT: s_andn2_b64 exec, exec, [[OUTER_OR_BREAK]]
-; GCN-NEXT: s_cbranch_execnz [[OUTER_LOOP]]
+; GCN: [[IF_BLOCK]]: ; %IF
+; GCN-NEXT: s_endpgm
 define amdgpu_vs void @multi_else_break(<4 x float> %vec, i32 %ub, i32 %cont) {
 main_body:
   br label %LOOP.outer
@@ -65,20 +84,46 @@ ENDIF:                                            ; preds = %LOOP
 }
 
 ; OPT-LABEL: define amdgpu_kernel void @multi_if_break_loop(
-; OPT: llvm.amdgcn.break
-; OPT: llvm.amdgcn.loop
 ; OPT: llvm.amdgcn.if.break
+; OPT: llvm.amdgcn.loop
 ; OPT: llvm.amdgcn.if.break
 ; OPT: llvm.amdgcn.end.cf
 
 ; GCN-LABEL: {{^}}multi_if_break_loop:
-; GCN: s_mov_b64 [[BREAK_REG:s\[[0-9]+:[0-9]+\]]], 0{{$}}
+; GCN:      s_mov_b64          [[LEFT:s\[[0-9]+:[0-9]+\]]], 0{{$}}
+
+; GCN: ; %Flow4
+; GCN:      s_and_b64          [[BREAK:s\[[0-9]+:[0-9]+\]]], exec, [[BREAK]]
+; GCN:      s_or_b64           [[LEFT]], [[BREAK]], [[OLD_LEFT:s\[[0-9]+:[0-9]+\]]]
+; GCN:      s_andn2_b64        exec, exec, [[LEFT]]
+; GCN-NEXT: s_cbranch_execz
 
 ; GCN: [[LOOP:BB[0-9]+_[0-9]+]]: ; %bb1{{$}}
+; GCN:      s_mov_b64          [[OLD_LEFT]], [[LEFT]]
 
-; Uses a copy intsead of an or
-; GCN: s_mov_b64 [[COPY:s\[[0-9]+:[0-9]+\]]], [[BREAK_REG]]
-; GCN: s_or_b64 [[BREAK_REG]], exec, [[COPY]]
+; GCN: ; %LeafBlock1
+; GCN:      s_mov_b64
+; GCN:      s_mov_b64          [[BREAK]], -1{{$}}
+
+; GCN: ; %case1
+; GCN:      buffer_load_dword  [[LOAD2:v[0-9]+]],
+; GCN:      v_cmp_ge_i32_e32   vcc, {{v[0-9]+}}, [[LOAD2]]
+; GCN:      s_orn2_b64         [[BREAK]], vcc, exec
+
+; GCN: ; %Flow3
+; GCN:      s_branch           [[FLOW:BB[0-9]+_[0-9]+]]
+
+; GCN:      s_mov_b64          [[BREAK]], -1{{$}}
+
+; GCN: [[FLOW]]: ; %Flow
+
+; GCN: ; %case0
+; GCN:      buffer_load_dword  [[LOAD1:v[0-9]+]],
+; GCN-DAG:  s_andn2_b64        [[BREAK]], [[BREAK]], exec
+; GCN-DAG:  v_cmp_ge_i32_e32   vcc, {{v[0-9]+}}, [[LOAD1]]
+; GCN-DAG:  s_and_b64          [[TMP:s\[[0-9]+:[0-9]+\]]], vcc, exec
+; GCN:      s_or_b64           [[BREAK]], [[BREAK]], [[TMP]]
+
 define amdgpu_kernel void @multi_if_break_loop(i32 %arg) #0 {
 bb:
   %id = call i32 @llvm.amdgcn.workitem.id.x()

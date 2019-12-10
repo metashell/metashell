@@ -1,6 +1,8 @@
 llvm-cov - emit coverage information
 ====================================
 
+.. program:: llvm-cov
+
 SYNOPSIS
 --------
 
@@ -150,12 +152,16 @@ OPTIONS
 
  Display the version of llvm-cov.
 
+.. option:: -x, --hash-filenames
+
+ Use md5 hash of file name when naming the coverage output files. The source
+ file name will be suffixed by ``##`` followed by MD5 hash calculated for it.
+
 EXIT STATUS
 ^^^^^^^^^^^
 
 :program:`llvm-cov gcov` returns 1 if it cannot read input files.  Otherwise,
 it exits with zero.
-
 
 .. program:: llvm-cov show
 
@@ -175,6 +181,9 @@ DESCRIPTION
 The :program:`llvm-cov show` command shows line by line coverage of the
 binaries *BIN*,...  using the profile data *PROFILE*. It can optionally be
 filtered to only show the coverage for the files listed in *SOURCES*.
+
+*BIN* may be an executable, object file, dynamic library, or archive (thin or
+otherwise).
 
 To use :program:`llvm-cov show`, you need a program that is compiled with
 instrumentation to emit profile and coverage data. To build such a program with
@@ -245,6 +254,10 @@ OPTIONS
 .. option:: -name-regex=<PATTERN>
 
  Show code coverage only for functions that match the given regular expression.
+
+.. option:: -ignore-filename-regex=<PATTERN>
+
+ Skip source code files with file paths that match the given regular expression.
 
 .. option:: -format=<FORMAT>
 
@@ -322,9 +335,12 @@ The :program:`llvm-cov report` command displays a summary of the coverage of
 the binaries *BIN*,... using the profile data *PROFILE*. It can optionally be
 filtered to only show the coverage for the files listed in *SOURCES*.
 
+*BIN* may be an executable, object file, dynamic library, or archive (thin or
+otherwise).
+
 If no source files are provided, a summary line is printed for each file in the
-coverage data. If any files are provided, summaries are shown for each function
-in the listed files instead.
+coverage data. If any files are provided, summaries can be shown for each
+function in the listed files if the ``-show-functions`` option is enabled.
 
 For information on compiling programs for coverage and generating profile data,
 see :ref:`llvm-cov-show`.
@@ -351,6 +367,10 @@ OPTIONS
 
  Show statistics for all function instantiations. Defaults to false.
 
+.. option:: -ignore-filename-regex=<PATTERN>
+
+ Skip source code files with file paths that match the given regular expression.
+
 .. program:: llvm-cov export
 
 .. _llvm-cov-export:
@@ -361,14 +381,21 @@ EXPORT COMMAND
 SYNOPSIS
 ^^^^^^^^
 
-:program:`llvm-cov export` [*options*] -instr-profile *PROFILE* *BIN* [*-object BIN,...*] [[*-object BIN*]]
+:program:`llvm-cov export` [*options*] -instr-profile *PROFILE* *BIN* [*-object BIN,...*] [[*-object BIN*]] [*SOURCES*]
 
 DESCRIPTION
 ^^^^^^^^^^^
 
-The :program:`llvm-cov export` command exports regions, functions, expansions,
-and summaries of the coverage of the binaries *BIN*,... using the profile data
-*PROFILE* as JSON.
+The :program:`llvm-cov export` command exports coverage data of the binaries
+*BIN*,... using the profile data *PROFILE* in either JSON or lcov trace file
+format.
+
+When exporting JSON, the regions, functions, expansions, and summaries of the
+coverage data will be exported. When exporting an lcov trace file, the
+line-based coverage and summaries will be exported.
+
+The exported data can optionally be filtered to only export the coverage
+for the files listed in *SOURCES*.
 
 For information on compiling programs for coverage and generating profile data,
 see :ref:`llvm-cov-show`.
@@ -383,9 +410,32 @@ OPTIONS
  universal binary or to use an architecture that does not match a
  non-universal binary.
 
+.. option:: -format=<FORMAT>
+
+ Use the specified output format. The supported formats are: "text" (JSON),
+ "lcov".
+
 .. option:: -summary-only
 
  Export only summary information for each file in the coverage data. This mode
  will not export coverage information for smaller units such as individual
- functions or regions. The result will be the same as produced by :program:
- `llvm-cov report` command, but presented in JSON format rather than text.
+ functions or regions. The result will contain the same information as produced
+ by the :program:`llvm-cov report` command, but presented in JSON or lcov
+ format rather than text.
+
+.. option:: -ignore-filename-regex=<PATTERN>
+
+ Skip source code files with file paths that match the given regular expression.
+
+ .. option:: -skip-expansions
+
+ Skip exporting macro expansion coverage data.
+
+ .. option:: -skip-functions
+
+ Skip exporting per-function coverage data.
+
+ .. option:: -num-threads=N, -j=N
+
+ Use N threads to export coverage data. When N=0, llvm-cov auto-detects an
+ appropriate number of threads to use. This is the default.

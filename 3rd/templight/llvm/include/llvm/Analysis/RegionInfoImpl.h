@@ -1,9 +1,8 @@
 //===- RegionInfoImpl.h - SESE region detection analysis --------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 // Detects single entry single exit regions in the control flow graph.
@@ -22,6 +21,7 @@
 #include "llvm/Analysis/PostDominators.h"
 #include "llvm/Analysis/RegionInfo.h"
 #include "llvm/Analysis/RegionIterator.h"
+#include "llvm/Config/llvm-config.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
@@ -674,7 +674,7 @@ typename Tr::RegionT *RegionInfoBase<Tr>::createRegion(BlockT *entry,
 #ifdef EXPENSIVE_CHECKS
   region->verifyRegion();
 #else
-  DEBUG(region->verifyRegion());
+  LLVM_DEBUG(region->verifyRegion());
 #endif
 
   updateStatistics(region);

@@ -1,9 +1,8 @@
 //===- GlobalsModRef.cpp - Simple Mod/Ref Analysis for Globals ------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -65,7 +64,7 @@ class GlobalsAAResult::FunctionInfo {
   /// Build a wrapper struct that has 8-byte alignment. All heap allocations
   /// should provide this much alignment at least, but this makes it clear we
   /// specifically rely on this amount of alignment.
-  struct LLVM_ALIGNAS(8) AlignedMap {
+  struct alignas(8) AlignedMap {
     AlignedMap() {}
     AlignedMap(const AlignedMap &Arg) : Map(Arg.Map) {}
     GlobalInfoMapType Map;
@@ -255,11 +254,11 @@ FunctionModRefBehavior GlobalsAAResult::getModRefBehavior(const Function *F) {
 }
 
 FunctionModRefBehavior
-GlobalsAAResult::getModRefBehavior(ImmutableCallSite CS) {
+GlobalsAAResult::getModRefBehavior(const CallBase *Call) {
   FunctionModRefBehavior Min = FMRB_UnknownModRefBehavior;
 
-  if (!CS.hasOperandBundles())
-    if (const Function *F = CS.getCalledFunction())
+  if (!Call->hasOperandBundles())
+    if (const Function *F = Call->getCalledFunction())
       if (FunctionInfo *FI = getFunctionInfo(F)) {
         if (!isModOrRefSet(FI->getModRefInfo()))
           Min = FMRB_DoesNotAccessMemory;
@@ -267,7 +266,7 @@ GlobalsAAResult::getModRefBehavior(ImmutableCallSite CS) {
           Min = FMRB_OnlyReadsMemory;
       }
 
-  return FunctionModRefBehavior(AAResultBase::getModRefBehavior(CS) & Min);
+  return FunctionModRefBehavior(AAResultBase::getModRefBehavior(Call) & Min);
 }
 
 /// Returns the function info for the function, or null if we don't have
@@ -366,14 +365,14 @@ bool GlobalsAAResult::AnalyzeUsesOfPointer(Value *V,
     } else if (Operator::getOpcode(I) == Instruction::BitCast) {
       if (AnalyzeUsesOfPointer(I, Readers, Writers, OkayStoreDest))
         return true;
-    } else if (auto CS = CallSite(I)) {
+    } else if (auto *Call = dyn_cast<CallBase>(I)) {
       // Make sure that this is just the function being called, not that it is
       // passing into the function.
-      if (CS.isDataOperand(&U)) {
+      if (Call->isDataOperand(&U)) {
         // Detect calls to free.
-        if (CS.isArgOperand(&U) && isFreeCall(I, &TLI)) {
+        if (Call->isArgOperand(&U) && isFreeCall(I, &TLI)) {
           if (Writers)
-            Writers->insert(CS->getParent()->getParent());
+            Writers->insert(Call->getParent()->getParent());
         } else {
           return true; // Argument of an unknown call.
         }
@@ -409,7 +408,7 @@ bool GlobalsAAResult::AnalyzeIndirectGlobalMemory(GlobalVariable *GV) {
   if (Constant *C = GV->getInitializer())
     if (!C->isNullValue())
       return false;
-    
+
   // Walk the user list of the global.  If we find anything other than a direct
   // load or store, bail out.
   for (User *U : GV->users()) {
@@ -464,7 +463,7 @@ bool GlobalsAAResult::AnalyzeIndirectGlobalMemory(GlobalVariable *GV) {
   return true;
 }
 
-void GlobalsAAResult::CollectSCCMembership(CallGraph &CG) {  
+void GlobalsAAResult::CollectSCCMembership(CallGraph &CG) {
   // We do a bottom-up SCC traversal of the call graph.  In other words, we
   // visit all callees before callers (leaf-first).
   unsigned SCCID = 0;
@@ -514,7 +513,7 @@ void GlobalsAAResult::AnalyzeCallGraph(CallGraph &CG, Module &M) {
         break;
       }
 
-      if (F->isDeclaration() || F->hasFnAttribute(Attribute::OptimizeNone)) {
+      if (F->isDeclaration() || F->hasOptNone()) {
         // Try to get mod/ref behaviour from function attributes.
         if (F->doesNotAccessMemory()) {
           // Can't do better than that!
@@ -567,7 +566,7 @@ void GlobalsAAResult::AnalyzeCallGraph(CallGraph &CG, Module &M) {
       // Don't prove any properties based on the implementation of an optnone
       // function. Function attributes were already used as a best approximation
       // above.
-      if (Node->getFunction()->hasFnAttribute(Attribute::OptimizeNone))
+      if (Node->getFunction()->hasOptNone())
         continue;
 
       for (Instruction &I : instructions(Node->getFunction())) {
@@ -576,14 +575,18 @@ void GlobalsAAResult::AnalyzeCallGraph(CallGraph &CG, Module &M) {
 
         // We handle calls specially because the graph-relevant aspects are
         // handled above.
-        if (auto CS = CallSite(&I)) {
-          if (isAllocationFn(&I, &TLI) || isFreeCall(&I, &TLI)) {
+        if (auto *Call = dyn_cast<CallBase>(&I)) {
+          if (isAllocationFn(Call, &TLI) || isFreeCall(Call, &TLI)) {
             // FIXME: It is completely unclear why this is necessary and not
             // handled by the above graph code.
             FI.addModRefInfo(ModRefInfo::ModRef);
-          } else if (Function *Callee = CS.getCalledFunction()) {
+          } else if (Function *Callee = Call->getCalledFunction()) {
             // The callgraph doesn't include intrinsic calls.
             if (Callee->isIntrinsic()) {
+              if (isa<DbgInfoIntrinsic>(Call))
+                // Don't let dbg intrinsics affect alias info.
+                continue;
+
               FunctionModRefBehavior Behaviour =
                   AAResultBase::getModRefBehavior(Callee);
               FI.addModRefInfo(createModRefInfo(Behaviour));
@@ -593,7 +596,7 @@ void GlobalsAAResult::AnalyzeCallGraph(CallGraph &CG, Module &M) {
         }
 
         // All non-call instructions we use the primary predicates for whether
-        // thay read or write memory.
+        // they read or write memory.
         if (I.mayReadFromMemory())
           FI.addModRefInfo(ModRefInfo::Ref);
         if (I.mayWriteToMemory())
@@ -629,7 +632,7 @@ static bool isNonEscapingGlobalNoAliasWithLoad(const GlobalValue *GV,
   Inputs.push_back(V);
   do {
     const Value *Input = Inputs.pop_back_val();
-    
+
     if (isa<GlobalValue>(Input) || isa<Argument>(Input) || isa<CallInst>(Input) ||
         isa<InvokeInst>(Input))
       // Arguments to functions or returns from functions are inherently
@@ -650,7 +653,7 @@ static bool isNonEscapingGlobalNoAliasWithLoad(const GlobalValue *GV,
     if (auto *LI = dyn_cast<LoadInst>(Input)) {
       Inputs.push_back(GetUnderlyingObject(LI->getPointerOperand(), DL));
       continue;
-    }  
+    }
     if (auto *SI = dyn_cast<SelectInst>(Input)) {
       const Value *LHS = GetUnderlyingObject(SI->getTrueValue(), DL);
       const Value *RHS = GetUnderlyingObject(SI->getFalseValue(), DL);
@@ -668,7 +671,7 @@ static bool isNonEscapingGlobalNoAliasWithLoad(const GlobalValue *GV,
       }
       continue;
     }
-    
+
     return false;
   } while (!Inputs.empty());
 
@@ -750,7 +753,7 @@ bool GlobalsAAResult::isNonEscapingGlobalNoAlias(const GlobalValue *GV,
       // non-addr-taken globals.
       continue;
     }
-    
+
     // Recurse through a limited number of selects, loads and PHIs. This is an
     // arbitrary depth of 4, lower numbers could be used to fix compile time
     // issues if needed, but this is generally expected to be only be important
@@ -787,10 +790,10 @@ bool GlobalsAAResult::isNonEscapingGlobalNoAlias(const GlobalValue *GV,
     }
 
     // FIXME: It would be good to handle other obvious no-alias cases here, but
-    // it isn't clear how to do so reasonbly without building a small version
+    // it isn't clear how to do so reasonably without building a small version
     // of BasicAA into this code. We could recurse into AAResultBase::alias
     // here but that seems likely to go poorly as we're inside the
-    // implementation of such a query. Until then, just conservatievly retun
+    // implementation of such a query. Until then, just conservatively return
     // false.
     return false;
   } while (!Inputs.empty());
@@ -803,7 +806,8 @@ bool GlobalsAAResult::isNonEscapingGlobalNoAlias(const GlobalValue *GV,
 /// other is some random pointer, we know there cannot be an alias, because the
 /// address of the global isn't taken.
 AliasResult GlobalsAAResult::alias(const MemoryLocation &LocA,
-                                   const MemoryLocation &LocB) {
+                                   const MemoryLocation &LocB,
+                                   AAQueryInfo &AAQI) {
   // Get the base object these pointers point to.
   const Value *UV1 = GetUnderlyingObject(LocA.Ptr, DL);
   const Value *UV2 = GetUnderlyingObject(LocB.Ptr, DL);
@@ -878,27 +882,29 @@ AliasResult GlobalsAAResult::alias(const MemoryLocation &LocA,
     if ((GV1 || GV2) && GV1 != GV2)
       return NoAlias;
 
-  return AAResultBase::alias(LocA, LocB);
+  return AAResultBase::alias(LocA, LocB, AAQI);
 }
 
-ModRefInfo GlobalsAAResult::getModRefInfoForArgument(ImmutableCallSite CS,
-                                                     const GlobalValue *GV) {
-  if (CS.doesNotAccessMemory())
+ModRefInfo GlobalsAAResult::getModRefInfoForArgument(const CallBase *Call,
+                                                     const GlobalValue *GV,
+                                                     AAQueryInfo &AAQI) {
+  if (Call->doesNotAccessMemory())
     return ModRefInfo::NoModRef;
   ModRefInfo ConservativeResult =
-      CS.onlyReadsMemory() ? ModRefInfo::Ref : ModRefInfo::ModRef;
+      Call->onlyReadsMemory() ? ModRefInfo::Ref : ModRefInfo::ModRef;
 
   // Iterate through all the arguments to the called function. If any argument
   // is based on GV, return the conservative result.
-  for (auto &A : CS.args()) {
-    SmallVector<Value*, 4> Objects;
+  for (auto &A : Call->args()) {
+    SmallVector<const Value*, 4> Objects;
     GetUnderlyingObjects(A, Objects, DL);
 
     // All objects must be identified.
     if (!all_of(Objects, isIdentifiedObject) &&
         // Try ::alias to see if all objects are known not to alias GV.
-        !all_of(Objects, [&](Value *V) {
-          return this->alias(MemoryLocation(V), MemoryLocation(GV)) == NoAlias;
+        !all_of(Objects, [&](const Value *V) {
+          return this->alias(MemoryLocation(V), MemoryLocation(GV), AAQI) ==
+                 NoAlias;
         }))
       return ConservativeResult;
 
@@ -910,8 +916,9 @@ ModRefInfo GlobalsAAResult::getModRefInfoForArgument(ImmutableCallSite CS,
   return ModRefInfo::NoModRef;
 }
 
-ModRefInfo GlobalsAAResult::getModRefInfo(ImmutableCallSite CS,
-                                          const MemoryLocation &Loc) {
+ModRefInfo GlobalsAAResult::getModRefInfo(const CallBase *Call,
+                                          const MemoryLocation &Loc,
+                                          AAQueryInfo &AAQI) {
   ModRefInfo Known = ModRefInfo::ModRef;
 
   // If we are asking for mod/ref info of a direct call with a pointer to a
@@ -919,15 +926,15 @@ ModRefInfo GlobalsAAResult::getModRefInfo(ImmutableCallSite CS,
   if (const GlobalValue *GV =
           dyn_cast<GlobalValue>(GetUnderlyingObject(Loc.Ptr, DL)))
     if (GV->hasLocalLinkage())
-      if (const Function *F = CS.getCalledFunction())
+      if (const Function *F = Call->getCalledFunction())
         if (NonAddressTakenGlobals.count(GV))
           if (const FunctionInfo *FI = getFunctionInfo(F))
             Known = unionModRef(FI->getModRefInfoForGlobal(*GV),
-                                getModRefInfoForArgument(CS, GV));
+                                getModRefInfoForArgument(Call, GV, AAQI));
 
   if (!isModOrRefSet(Known))
     return ModRefInfo::NoModRef; // No need to query other mod/ref analyses
-  return intersectModRef(Known, AAResultBase::getModRefInfo(CS, Loc));
+  return intersectModRef(Known, AAResultBase::getModRefInfo(Call, Loc, AAQI));
 }
 
 GlobalsAAResult::GlobalsAAResult(const DataLayout &DL,

@@ -153,13 +153,14 @@ void dangle() {
 }
 
 struct haslist1 {
-  std::initializer_list<int> il = {1, 2, 3}; // expected-warning{{at the end of the constructor}}
-  std::initializer_list<int> jl{1, 2, 3}; // expected-warning{{at the end of the constructor}}
+  std::initializer_list<int> il // expected-note {{declared here}}
+    = {1, 2, 3}; // ok, unused
+  std::initializer_list<int> jl{1, 2, 3}; // expected-note {{default member init}}
   haslist1();
 };
 
-haslist1::haslist1()
-: il{1, 2, 3} // expected-warning{{at the end of the constructor}}
+haslist1::haslist1() // expected-error {{backing array for 'std::initializer_list' member 'jl' is a temporary object}}
+: il{1, 2, 3} // expected-error {{backing array for 'std::initializer_list' member 'il' is a temporary object}}
 {}
 
 namespace PR12119 {
@@ -326,7 +327,7 @@ namespace update_rbrace_loc_crash {
   struct A {};
   template <typename T, typename F, int... I>
   std::initializer_list<T> ExplodeImpl(F p1, A<int, I...>) {
-    // expected-error@+1 {{reference to type 'const update_rbrace_loc_crash::Incomplete' could not bind to an rvalue of type 'void'}}
+    // expected-error@+1 {{reference to incomplete type 'const update_rbrace_loc_crash::Incomplete' could not bind to an rvalue of type 'void'}}
     return {p1(I)...};
   }
   template <typename T, int N, typename F>

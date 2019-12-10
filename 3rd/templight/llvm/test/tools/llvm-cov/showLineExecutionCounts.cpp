@@ -35,10 +35,6 @@ int main() {                              // TEXT: [[@LINE]]|   161|int main(
 // RUN: FileCheck -check-prefixes=TEXT,WHOLE-FILE -input-file %t.dir/coverage/tmp/showLineExecutionCounts.cpp.txt %s
 // RUN: FileCheck -check-prefixes=TEXT,FILTER -input-file %t.filtered.dir/coverage/tmp/showLineExecutionCounts.cpp.txt %s
 //
-// RUN: llvm-cov export %S/Inputs/lineExecutionCounts.covmapping -instr-profile %t.profdata -name=main 2>/dev/null > %t.export.json
-// RUN: FileCheck -input-file %t.export.json %S/Inputs/lineExecutionCounts.json
-// RUN: cat %t.export.json | %python -c "import json, sys; json.loads(sys.stdin.read())"
-//
 // RUN: llvm-cov export %S/Inputs/lineExecutionCounts.covmapping -instr-profile %t.profdata 2>/dev/null -summary-only > %t.export-summary.json
 // RUN: not grep '"name":"main"' %t.export-summary.json
 //
@@ -62,10 +58,10 @@ int main() {                              // TEXT: [[@LINE]]|   161|int main(
 //
 // RUN: FileCheck -check-prefix HTML-INDEX -input-file %t.html.dir/index.html %s
 // HTML-INDEX-LABEL: <table>
-// HTML-INDEX: <td class='column-entry-left'>Filename</td>
-// HTML-INDEX: <td class='column-entry'>Function Coverage</td>
-// HTML-INDEX: <td class='column-entry'>Line Coverage</td>
-// HTML-INDEX: <td class='column-entry'>Region Coverage</td>
+// HTML-INDEX: <td class='column-entry-bold'>Filename</td>
+// HTML-INDEX: <td class='column-entry-bold'>Function Coverage</td>
+// HTML-INDEX: <td class='column-entry-bold'>Line Coverage</td>
+// HTML-INDEX: <td class='column-entry-bold'>Region Coverage</td>
 // HTML-INDEX: <a href='coverage{{.*}}showLineExecutionCounts.cpp.html'{{.*}}showLineExecutionCounts.cpp</a>
 // HTML-INDEX: <td class='column-entry-green'>
 // HTML-INDEX: 100.00% (1/1)
@@ -73,4 +69,5 @@ int main() {                              // TEXT: [[@LINE]]|   161|int main(
 // HTML-INDEX: 90.00% (18/20)
 // HTML-INDEX: <td class='column-entry-red'>
 // HTML-INDEX: 72.73% (8/11)
-// HTML-INDEX: TOTALS
+// HTML-INDEX: <tr class='light-row-bold'>
+// HTML-INDEX: Totals

@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 #===- lib/fuzzer/scripts/unbalanced_allocs.py ------------------------------===#
 #
-#                     The LLVM Compiler Infrastructure
-#
-# This file is distributed under the University of Illinois Open Source
-# License. See LICENSE.TXT for details.
+# Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+# See https://llvm.org/LICENSE.txt for license information.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 #
 #===------------------------------------------------------------------------===#
 #
@@ -24,9 +23,9 @@ def PrintStack(line, stack):
   global _skip
   if _skip > 0:
     return
-  print 'Unbalanced ' + line.rstrip();
+  print('Unbalanced ' + line.rstrip());
   for l in stack:
-    print l.rstrip()
+    print(l.rstrip())
 
 def ProcessStack(line, f):
   stack = []
@@ -63,15 +62,15 @@ def ProcessRun(line, f):
     return ProcessMalloc(line, f, {})
 
   allocs = {}
-  print line.rstrip()
+  print(line.rstrip())
   line = f.readline()
   while line:
     if line.startswith('MallocFreeTracer: STOP'):
       global _skip
       _skip = _skip - 1
-      for _, (l, s) in allocs.iteritems():
+      for _, (l, s) in allocs.items():
         PrintStack(l, s)
-      print line.rstrip()
+      print(line.rstrip())
       return f.readline()
     line = ProcessMalloc(line, f, allocs)
   return line

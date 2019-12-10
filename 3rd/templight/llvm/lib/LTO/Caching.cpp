@@ -1,9 +1,8 @@
 //===-Caching.cpp - LLVM Link Time Optimizer Cache Handling ---------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -19,6 +18,12 @@
 #include "llvm/Support/Process.h"
 #include "llvm/Support/raw_ostream.h"
 
+#if !defined(_MSC_VER) && !defined(__MINGW32__)
+#include <unistd.h>
+#else
+#include <io.h>
+#endif
+
 using namespace llvm;
 using namespace llvm::lto;
 
@@ -33,16 +38,34 @@ Expected<NativeObjectCache> lto::localCache(StringRef CacheDirectoryPath,
     SmallString<64> EntryPath;
     sys::path::append(EntryPath, CacheDirectoryPath, "llvmcache-" + Key);
     // First, see if we have a cache hit.
-    ErrorOr<std::unique_ptr<MemoryBuffer>> MBOrErr =
-        MemoryBuffer::getFile(EntryPath);
-    if (MBOrErr) {
-      AddBuffer(Task, std::move(*MBOrErr), EntryPath);
-      return AddStreamFn();
+    SmallString<64> ResultPath;
+    Expected<sys::fs::file_t> FDOrErr = sys::fs::openNativeFileForRead(
+        Twine(EntryPath), sys::fs::OF_UpdateAtime, &ResultPath);
+    std::error_code EC;
+    if (FDOrErr) {
+      ErrorOr<std::unique_ptr<MemoryBuffer>> MBOrErr =
+          MemoryBuffer::getOpenFile(*FDOrErr, EntryPath,
+                                    /*FileSize=*/-1,
+                                    /*RequiresNullTerminator=*/false);
+      sys::fs::closeFile(*FDOrErr);
+      if (MBOrErr) {
+        AddBuffer(Task, std::move(*MBOrErr));
+        return AddStreamFn();
+      }
+      EC = MBOrErr.getError();
+    } else {
+      EC = errorToErrorCode(FDOrErr.takeError());
     }
 
-    if (MBOrErr.getError() != errc::no_such_file_or_directory)
+    // On Windows we can fail to open a cache file with a permission denied
+    // error. This generally means that another process has requested to delete
+    // the file while it is still open, but it could also mean that another
+    // process has opened the file without the sharing permissions we need.
+    // Since the file is probably being deleted we handle it in the same way as
+    // if the file did not exist at all.
+    if (EC != errc::no_such_file_or_directory && EC != errc::permission_denied)
       report_fatal_error(Twine("Failed to open cache file ") + EntryPath +
-                         ": " + MBOrErr.getError().message() + "\n");
+                         ": " + EC.message() + "\n");
 
     // This native object stream is responsible for commiting the resulting
     // file to the cache and calling AddBuffer to add it to the link.
@@ -65,9 +88,9 @@ Expected<NativeObjectCache> lto::localCache(StringRef CacheDirectoryPath,
 
         // Open the file first to avoid racing with a cache pruner.
         ErrorOr<std::unique_ptr<MemoryBuffer>> MBOrErr =
-            MemoryBuffer::getOpenFile(TempFile.FD, TempFile.TmpName,
-                                      /*FileSize*/ -1,
-                                      /*RequiresNullTerminator*/ false);
+            MemoryBuffer::getOpenFile(
+                sys::fs::convertFDToNativeFile(TempFile.FD), TempFile.TmpName,
+                /*FileSize=*/-1, /*RequiresNullTerminator=*/false);
         if (!MBOrErr)
           report_fatal_error(Twine("Failed to open new cache file ") +
                              TempFile.TmpName + ": " +
@@ -103,7 +126,7 @@ Expected<NativeObjectCache> lto::localCache(StringRef CacheDirectoryPath,
                              TempFile.TmpName + " to " + EntryPath + ": " +
                              toString(std::move(E)) + "\n");
 
-        AddBuffer(Task, std::move(*MBOrErr), EntryPath);
+        AddBuffer(Task, std::move(*MBOrErr));
       }
     };
 

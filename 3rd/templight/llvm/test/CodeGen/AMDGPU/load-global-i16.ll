@@ -1,8 +1,8 @@
-; RUN:  llc -amdgpu-scalarize-global-loads=false  -march=amdgcn -verify-machineinstrs < %s | FileCheck -check-prefixes=GCN,GCN-NOHSA,GCN-NOHSA-SI,FUNC %s
-; RUN:  llc -amdgpu-scalarize-global-loads=false  -mtriple=amdgcn--amdhsa -mcpu=kaveri -verify-machineinstrs < %s | FileCheck -check-prefixes=GCN,GCN-HSA,FUNC %s
-; RUN:  llc -amdgpu-scalarize-global-loads=false  -march=amdgcn -mcpu=tonga -mattr=-flat-for-global -verify-machineinstrs < %s | FileCheck -check-prefixes=GCN,GCN-NOHSA,GCN-NOHSA-VI,FUNC %s
-; RUN:  llc -amdgpu-scalarize-global-loads=false  -march=r600 -mcpu=redwood -verify-machineinstrs < %s | FileCheck -check-prefix=EG -check-prefix=EGCM -check-prefix=FUNC %s
-; RUN:  llc -amdgpu-scalarize-global-loads=false  -march=r600 -mcpu=cayman -verify-machineinstrs < %s | FileCheck -check-prefix=CM -check-prefix=EGCM -check-prefix=FUNC %s
+; RUN:  llc -amdgpu-scalarize-global-loads=false  -march=amdgcn -verify-machineinstrs < %s | FileCheck -allow-deprecated-dag-overlap -check-prefixes=GCN,GCN-NOHSA,GCN-NOHSA-SI,FUNC %s
+; RUN:  llc -amdgpu-scalarize-global-loads=false  -mtriple=amdgcn--amdhsa -mcpu=kaveri -verify-machineinstrs < %s | FileCheck -allow-deprecated-dag-overlap -check-prefixes=GCN,GCN-HSA,FUNC %s
+; RUN:  llc -amdgpu-scalarize-global-loads=false  -march=amdgcn -mcpu=tonga -mattr=-flat-for-global -verify-machineinstrs < %s | FileCheck -allow-deprecated-dag-overlap -check-prefixes=GCN,GCN-NOHSA,GCN-NOHSA-VI,FUNC %s
+; RUN:  llc -amdgpu-scalarize-global-loads=false  -march=r600 -mcpu=redwood -verify-machineinstrs < %s | FileCheck -allow-deprecated-dag-overlap -check-prefix=EG -check-prefix=EGCM -check-prefix=FUNC %s
+; RUN:  llc -amdgpu-scalarize-global-loads=false  -march=r600 -mcpu=cayman -verify-machineinstrs < %s | FileCheck -allow-deprecated-dag-overlap -check-prefix=CM -check-prefix=EGCM -check-prefix=FUNC %s
 
 ; FIXME: r600 is broken because the bigger testcases spill and it's not implemented
 
@@ -34,7 +34,8 @@ entry:
 ; GCN-NOHSA: buffer_load_dwordx2 v
 ; GCN-HSA: flat_load_dwordx2 v
 
-; EGCM-DAG: VTX_READ_32 T{{[0-9]+}}.X, T{{[0-9]+}}.X, 0, #1
+; EGCM-DAG: VTX_READ_16 T{{[0-9]+}}.X, T{{[0-9]+}}.X, 0, #1
+; EGCM-DAG: VTX_READ_16 T{{[0-9]+}}.X, T{{[0-9]+}}.X, 2, #1
 ; EGCM-DAG: VTX_READ_16 T{{[0-9]+}}.X, T{{[0-9]+}}.X, 4, #1
 define amdgpu_kernel void @global_load_v3i16(<3 x i16> addrspace(1)* %out, <3 x i16> addrspace(1)* %in) {
 entry:
@@ -80,6 +81,18 @@ define amdgpu_kernel void @global_load_v16i16(<16 x i16> addrspace(1)* %out, <16
 entry:
   %ld = load <16 x i16>, <16 x i16> addrspace(1)* %in
   store <16 x i16> %ld, <16 x i16> addrspace(1)* %out
+  ret void
+}
+
+; GCN-LABEL: {{^}}global_load_v16i16_align2:
+; GCN-HSA: flat_load_dwordx4
+; GCN-HSA: flat_load_dwordx4
+; GCN-HSA: flat_store_dwordx4
+; GCN-HSA: flat_store_dwordx4
+define amdgpu_kernel void @global_load_v16i16_align2(<16 x i16> addrspace(1)* %in, <16 x i16> addrspace(1)* %out) #0 {
+entry:
+  %ld =  load <16 x i16>, <16 x i16> addrspace(1)* %in, align 2
+  store <16 x i16> %ld, <16 x i16> addrspace(1)* %out, align 32
   ret void
 }
 
@@ -183,10 +196,9 @@ define amdgpu_kernel void @global_sextload_v2i16_to_v2i32(<2 x i32> addrspace(1)
 ; CM: MEM_RAT_CACHELESS STORE_DWORD [[ST_HI:T[0-9]]].X, {{T[0-9]\.[XYZW]}}
 ; EG: MEM_RAT_CACHELESS STORE_RAW [[ST_HI:T[0-9]]].X, {{T[0-9]\.[XYZW]}},
 ; EG: MEM_RAT_CACHELESS STORE_RAW [[ST_LO:T[0-9]]].XY, {{T[0-9]\.[XYZW]}},
-; EGCM-DAG: VTX_READ_32 [[DST_LO:T[0-9]\.[XYZW]]], {{T[0-9]\.[XYZW]}}, 0, #1
-; EGCM-DAG: VTX_READ_16 [[DST_HI:T[0-9]\.[XYZW]]], {{T[0-9]\.[XYZW]}}, 4, #1
-; TODO: This should use DST, but for some there are redundant MOVs
-; EGCM: LSHR {{[* ]*}}[[ST_LO]].Y, {{T[0-9]\.[XYZW]}}, literal
+; EGCM-DAG: VTX_READ_16 [[ST_LO]].X, [[SRC:T[0-9]\.[XYZW]]], 0, #1
+; EGCM-DAG: VTX_READ_16 {{T[0-9]\.[XYZW]}}, [[SRC]], 2, #1
+; EGCM-DAG: VTX_READ_16 [[ST_HI]].X, [[SRC]], 4, #1
 ; EGCM: 16
 define amdgpu_kernel void @global_zextload_v3i16_to_v3i32(<3 x i32> addrspace(1)* %out, <3 x i16> addrspace(1)* %in) {
 entry:
@@ -204,11 +216,11 @@ entry:
 ; CM: MEM_RAT_CACHELESS STORE_DWORD [[ST_HI:T[0-9]]].X, {{T[0-9]\.[XYZW]}}
 ; EG: MEM_RAT_CACHELESS STORE_RAW [[ST_HI:T[0-9]]].X, {{T[0-9]\.[XYZW]}},
 ; EG: MEM_RAT_CACHELESS STORE_RAW [[ST_LO:T[0-9]]].XY, {{T[0-9]\.[XYZW]}},
-; EGCM-DAG: VTX_READ_32 [[DST_LO:T[0-9]\.[XYZW]]], {{T[0-9].[XYZW]}}, 0, #1
-; EGCM-DAG: VTX_READ_16 [[DST_HI:T[0-9]\.[XYZW]]], {{T[0-9].[XYZW]}}, 4, #1
-; TODO: This should use DST, but for some there are redundant MOVs
-; EGCM-DAG: ASHR {{[* ]*}}[[ST_LO]].Y, {{T[0-9]\.[XYZW]}}, literal
-; EGCM-DAG: BFE_INT {{[* ]*}}[[ST_LO]].X, {{T[0-9]\.[XYZW]}}, 0.0, literal
+; EGCM-DAG: VTX_READ_16 [[DST_LO:T[0-9]\.[XYZW]]], [[SRC:T[0-9].[XYZW]]], 0, #1
+; EGCM-DAG: VTX_READ_16 [[DST_MID:T[0-9]\.[XYZW]]], [[SRC]], 2, #1
+; EGCM-DAG: VTX_READ_16 [[DST_HI:T[0-9]\.[XYZW]]], [[SRC]], 4, #1
+; EGCM-DAG: BFE_INT {{[* ]*}}[[ST_LO]].X, [[DST_LO]], 0.0, literal
+; EGCM-DAG: BFE_INT {{[* ]*}}[[ST_LO]].Y, [[DST_MID]], 0.0, literal
 ; EGCM-DAG: BFE_INT {{[* ]*}}[[ST_HI]].X, [[DST_HI]], 0.0, literal
 ; EGCM-DAG: 16
 ; EGCM-DAG: 16

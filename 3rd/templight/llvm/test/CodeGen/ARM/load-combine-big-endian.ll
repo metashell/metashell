@@ -51,7 +51,7 @@ define i32 @load_i32_by_i8_bswap(i32* %arg) {
 ; CHECK-ARMv6-NEXT: bx lr
   %tmp = bitcast i32* %arg to i8*
   %tmp1 = getelementptr inbounds i8, i8* %tmp, i32 0
-  %tmp2 = load i8, i8* %tmp, align 4
+  %tmp2 = load i8, i8* %tmp1, align 4
   %tmp3 = zext i8 %tmp2 to i32
   %tmp4 = getelementptr inbounds i8, i8* %tmp, i32 1
   %tmp5 = load i8, i8* %tmp4, align 1
@@ -528,7 +528,7 @@ define i32 @load_i32_by_i8_base_offset_index(i8* %arg, i32 %i) {
 ; (i32) p[i + 1] | ((i32) p[i + 2] << 8) | ((i32) p[i + 3] << 16) | ((i32) p[i + 4] << 24)
 define i32 @load_i32_by_i8_base_offset_index_2(i8* %arg, i32 %i) {
 ; CHECK-LABEL: load_i32_by_i8_base_offset_index_2:
-; CHECK: add r0, r0, r1
+; CHECK: add r0, r1, r0
 ; CHECK-NEXT: mov r1, #65280
 ; CHECK-NEXT: mov r2, #16711680
 ; CHECK-NEXT: ldr r0, [r0, #13]
@@ -540,7 +540,7 @@ define i32 @load_i32_by_i8_base_offset_index_2(i8* %arg, i32 %i) {
 ; CHECK-NEXT: mov pc, lr
 ;
 ; CHECK-ARMv6-LABEL: load_i32_by_i8_base_offset_index_2:
-; CHECK-ARMv6: add r0, r0, r1
+; CHECK-ARMv6: add r0, r1, r0
 ; CHECK-ARMv6-NEXT: ldr r0, [r0, #13]
 ; CHECK-ARMv6-NEXT: rev r0, r0
 ; CHECK-ARMv6-NEXT: bx  lr

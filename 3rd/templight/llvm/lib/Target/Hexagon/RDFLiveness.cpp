@@ -1,9 +1,8 @@
 //===- RDFLiveness.cpp ----------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -58,7 +57,6 @@ static cl::opt<unsigned> MaxRecNest("rdf-liveness-max-rec", cl::init(25),
 namespace llvm {
 namespace rdf {
 
-  template<>
   raw_ostream &operator<< (raw_ostream &OS, const Print<Liveness::RefMap> &P) {
     OS << '{';
     for (auto &I : P.Obj) {
@@ -207,7 +205,7 @@ NodeList Liveness::getAllReachingDefs(RegisterRef RefRR,
   };
 
   std::vector<NodeId> Tmp(Owners.begin(), Owners.end());
-  std::sort(Tmp.begin(), Tmp.end(), Less);
+  llvm::sort(Tmp, Less);
 
   // The vector is a list of instructions, so that defs coming from
   // the same instruction don't need to be artificially ordered.
@@ -628,7 +626,7 @@ void Liveness::computePhiInfo() {
 
         // Collect the set PropUp of uses that are reached by the current
         // phi PA, and are not covered by any intervening def between the
-        // currently visited use UA and the the upward phi P.
+        // currently visited use UA and the upward phi P.
 
         if (MidDefs.hasCoverOf(UR))
           continue;
@@ -813,7 +811,7 @@ void Liveness::computeLiveIns() {
       std::vector<RegisterRef> LV;
       for (auto I = B.livein_begin(), E = B.livein_end(); I != E; ++I)
         LV.push_back(RegisterRef(I->PhysReg, I->LaneMask));
-      std::sort(LV.begin(), LV.end());
+      llvm::sort(LV);
       dbgs() << printMBBReference(B) << "\t rec = {";
       for (auto I : LV)
         dbgs() << ' ' << Print<RegisterRef>(I, DFG);
@@ -824,7 +822,7 @@ void Liveness::computeLiveIns() {
       const RegisterAggr &LG = LiveMap[&B];
       for (auto I = LG.rr_begin(), E = LG.rr_end(); I != E; ++I)
         LV.push_back(*I);
-      std::sort(LV.begin(), LV.end());
+      llvm::sort(LV);
       dbgs() << "\tcomp = {";
       for (auto I : LV)
         dbgs() << ' ' << Print<RegisterRef>(I, DFG);
@@ -880,7 +878,7 @@ void Liveness::resetKills(MachineBasicBlock *B) {
 
   for (auto I = B->rbegin(), E = B->rend(); I != E; ++I) {
     MachineInstr *MI = &*I;
-    if (MI->isDebugValue())
+    if (MI->isDebugInstr())
       continue;
 
     MI->clearKillInfo();

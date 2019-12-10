@@ -9,31 +9,31 @@ define void @update(<3 x i32>* %dst, <3 x i32>* %src, i32 %n) nounwind {
 ; CHECK-NEXT:    movq %rdi, -{{[0-9]+}}(%rsp)
 ; CHECK-NEXT:    movq %rsi, -{{[0-9]+}}(%rsp)
 ; CHECK-NEXT:    movl %edx, -{{[0-9]+}}(%rsp)
-; CHECK-NEXT:    movq {{.*}}(%rip), %rax
+; CHECK-NEXT:    movabsq $4294967297, %rax # imm = 0x100000001
 ; CHECK-NEXT:    movq %rax, -{{[0-9]+}}(%rsp)
 ; CHECK-NEXT:    movl $1, -{{[0-9]+}}(%rsp)
 ; CHECK-NEXT:    movl $0, -{{[0-9]+}}(%rsp)
 ; CHECK-NEXT:    movdqa {{.*#+}} xmm0 = <3,3,3,u>
-; CHECK-NEXT:    jmp .LBB0_1
 ; CHECK-NEXT:    .p2align 4, 0x90
-; CHECK-NEXT:  .LBB0_2: # %forbody
-; CHECK-NEXT:    # in Loop: Header=BB0_1 Depth=1
-; CHECK-NEXT:    movq -{{[0-9]+}}(%rsp), %rax
-; CHECK-NEXT:    movslq -{{[0-9]+}}(%rsp), %rcx
-; CHECK-NEXT:    shlq $4, %rcx
-; CHECK-NEXT:    movq -{{[0-9]+}}(%rsp), %rdx
-; CHECK-NEXT:    movdqa (%rdx,%rcx), %xmm1
-; CHECK-NEXT:    pslld $2, %xmm1
-; CHECK-NEXT:    psubd %xmm0, %xmm1
-; CHECK-NEXT:    pextrd $2, %xmm1, 8(%rax,%rcx)
-; CHECK-NEXT:    movq %xmm1, (%rax,%rcx)
-; CHECK-NEXT:    incl -{{[0-9]+}}(%rsp)
 ; CHECK-NEXT:  .LBB0_1: # %forcond
 ; CHECK-NEXT:    # =>This Inner Loop Header: Depth=1
 ; CHECK-NEXT:    movl -{{[0-9]+}}(%rsp), %eax
 ; CHECK-NEXT:    cmpl -{{[0-9]+}}(%rsp), %eax
-; CHECK-NEXT:    jl .LBB0_2
-; CHECK-NEXT:  # %bb.3: # %afterfor
+; CHECK-NEXT:    jge .LBB0_3
+; CHECK-NEXT:  # %bb.2: # %forbody
+; CHECK-NEXT:    # in Loop: Header=BB0_1 Depth=1
+; CHECK-NEXT:    movslq -{{[0-9]+}}(%rsp), %rax
+; CHECK-NEXT:    movq -{{[0-9]+}}(%rsp), %rcx
+; CHECK-NEXT:    shlq $4, %rax
+; CHECK-NEXT:    movq -{{[0-9]+}}(%rsp), %rdx
+; CHECK-NEXT:    movdqa (%rdx,%rax), %xmm1
+; CHECK-NEXT:    pslld $2, %xmm1
+; CHECK-NEXT:    psubd %xmm0, %xmm1
+; CHECK-NEXT:    pextrd $2, %xmm1, 8(%rcx,%rax)
+; CHECK-NEXT:    movq %xmm1, (%rcx,%rax)
+; CHECK-NEXT:    incl -{{[0-9]+}}(%rsp)
+; CHECK-NEXT:    jmp .LBB0_1
+; CHECK-NEXT:  .LBB0_3: # %afterfor
 ; CHECK-NEXT:    retq
 entry:
 	%dst.addr = alloca <3 x i32>*

@@ -1,9 +1,8 @@
 //===--- ARMEHABIPrinter.h - ARM EHABI Unwind Information Printer ----------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -323,10 +322,10 @@ inline void OpcodeDecoder::Decode(const uint8_t *Opcodes, off_t Offset,
 
 template <typename ET>
 class PrinterContext {
-  typedef typename object::ELFFile<ET>::Elf_Sym Elf_Sym;
-  typedef typename object::ELFFile<ET>::Elf_Shdr Elf_Shdr;
-  typedef typename object::ELFFile<ET>::Elf_Rel Elf_Rel;
-  typedef typename object::ELFFile<ET>::Elf_Word Elf_Word;
+  typedef typename ET::Sym Elf_Sym;
+  typedef typename ET::Shdr Elf_Shdr;
+  typedef typename ET::Rel Elf_Rel;
+  typedef typename ET::Word Elf_Word;
 
   ScopedPrinter &SW;
   const object::ELFFile<ET> *ELF;
@@ -366,6 +365,8 @@ template <typename ET>
 ErrorOr<StringRef>
 PrinterContext<ET>::FunctionAtAddress(unsigned Section,
                                       uint64_t Address) const {
+  if (!Symtab)
+    return readobj_error::unknown_symbol;
   auto StrTableOrErr = ELF->getStringTableForSymtab(*Symtab);
   if (!StrTableOrErr)
     error(StrTableOrErr.takeError());
@@ -386,7 +387,7 @@ PrinterContext<ET>::FunctionAtAddress(unsigned Section,
 }
 
 template <typename ET>
-const typename object::ELFFile<ET>::Elf_Shdr *
+const typename ET::Shdr *
 PrinterContext<ET>::FindExceptionTable(unsigned IndexSectionIndex,
                                        off_t IndexTableOffset) const {
   /// Iterate through the sections, searching for the relocation section
@@ -410,7 +411,7 @@ PrinterContext<ET>::FindExceptionTable(unsigned IndexSectionIndex,
       if (R.r_offset != static_cast<unsigned>(IndexTableOffset))
         continue;
 
-      typename object::ELFFile<ET>::Elf_Rela RelA;
+      typename ET::Rela RelA;
       RelA.r_offset = R.r_offset;
       RelA.r_info = R.r_info;
       RelA.r_addend = 0;
@@ -551,13 +552,15 @@ void PrinterContext<ET>::PrintIndexTable(unsigned SectionIndex,
       const Elf_Shdr *EHT =
         FindExceptionTable(SectionIndex, Entry * IndexTableEntrySize + 4);
 
-      if (auto Name = ELF->getSectionName(EHT))
-        SW.printString("ExceptionHandlingTable", *Name);
+      if (EHT)
+        if (auto Name = ELF->getSectionName(EHT))
+          SW.printString("ExceptionHandlingTable", *Name);
 
       uint64_t TableEntryOffset = PREL31(Word1, IT->sh_addr);
       SW.printHex("TableEntryOffset", TableEntryOffset);
 
-      PrintExceptionTable(IT, EHT, TableEntryOffset);
+      if (EHT)
+        PrintExceptionTable(IT, EHT, TableEntryOffset);
     }
   }
 }
@@ -586,4 +589,3 @@ void PrinterContext<ET>::PrintUnwindInformation() const {
 }
 
 #endif
-

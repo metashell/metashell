@@ -1,14 +1,13 @@
 //===-- HexagonELFObjectWriter.cpp - Hexagon Target Descriptions ----------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
-#include "Hexagon.h"
 #include "MCTargetDesc/HexagonFixupKinds.h"
+#include "MCTargetDesc/HexagonMCTargetDesc.h"
 #include "llvm/MC/MCAssembler.h"
 #include "llvm/MC/MCELFObjectWriter.h"
 #include "llvm/MC/MCObjectWriter.h"
@@ -298,9 +297,7 @@ unsigned HexagonELFObjectWriter::getRelocType(MCContext &Ctx,
   }
 }
 
-std::unique_ptr<MCObjectWriter>
-llvm::createHexagonELFObjectWriter(raw_pwrite_stream &OS, uint8_t OSABI,
-                                   StringRef CPU) {
-  auto MOTW = llvm::make_unique<HexagonELFObjectWriter>(OSABI, CPU);
-  return createELFObjectWriter(std::move(MOTW), OS, /*IsLittleEndian*/ true);
+std::unique_ptr<MCObjectTargetWriter>
+llvm::createHexagonELFObjectWriter(uint8_t OSABI, StringRef CPU) {
+  return llvm::make_unique<HexagonELFObjectWriter>(OSABI, CPU);
 }

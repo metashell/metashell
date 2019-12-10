@@ -1,5 +1,5 @@
 // Verify the .fix data section conveys the right offsets and the right relocations
-// RUN: llvm-mc -filetype=obj -triple x86_64-pc-win32 %s -o - | llvm-readobj -relocations -expand-relocs -sections -section-data | FileCheck %s --check-prefix=READOBJ
+// RUN: llvm-mc -filetype=obj -triple x86_64-pc-win32 %s -o - | llvm-readobj -r --expand-relocs -S --section-data | FileCheck %s --check-prefix=READOBJ
 
         .text
 	.section	.rdata,"dr"
@@ -87,21 +87,25 @@ t6:
 // READOBJ-NEXT:      Offset: 0x0
 // READOBJ-NEXT:      Type: IMAGE_REL_AMD64_REL32 (4)
 // READOBJ-NEXT:      Symbol: g3
+// READOBJ-NEXT:      SymbolIndex: 12
 // READOBJ-NEXT:    }
 // READOBJ-NEXT:    Relocation {
 // READOBJ-NEXT:      Offset: 0x4
 // READOBJ-NEXT:      Type: IMAGE_REL_AMD64_ADDR32NB (3)
 // READOBJ-NEXT:      Symbol: g3
+// READOBJ-NEXT:      SymbolIndex: 12
 // READOBJ-NEXT:    }
 // READOBJ-NEXT:    Relocation {
 // READOBJ-NEXT:      Offset: 0x20
 // READOBJ-NEXT:      Type: IMAGE_REL_AMD64_REL32 (4)
 // READOBJ-NEXT:      Symbol: g3
+// READOBJ-NEXT:      SymbolIndex: 12
 // READOBJ-NEXT:    }
 // READOBJ-NEXT:    Relocation {
 // READOBJ-NEXT:      Offset: 0x28
 // READOBJ-NEXT:      Type: IMAGE_REL_AMD64_REL32 (4)
 // READOBJ-NEXT:      Symbol: foobar
+// READOBJ-NEXT:      SymbolIndex: 20
 // READOBJ-NEXT:    }
 // READOBJ-NEXT:  }
 // READOBJ-NEXT:]

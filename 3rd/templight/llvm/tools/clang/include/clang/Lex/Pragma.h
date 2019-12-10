@@ -1,9 +1,8 @@
 //===- Pragma.h - Pragma registration and handling --------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -15,6 +14,7 @@
 #define LLVM_CLANG_LEX_PRAGMA_H
 
 #include "clang/Basic/LLVM.h"
+#include "clang/Basic/SourceLocation.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 #include <string>
@@ -26,27 +26,33 @@ class Preprocessor;
 class Token;
 
   /**
-   * \brief Describes how the pragma was introduced, e.g., with \#pragma,
+   * Describes how the pragma was introduced, e.g., with \#pragma,
    * _Pragma, or __pragma.
    */
   enum PragmaIntroducerKind {
     /**
-     * \brief The pragma was introduced via \#pragma.
+     * The pragma was introduced via \#pragma.
      */
     PIK_HashPragma,
-    
+
     /**
-     * \brief The pragma was introduced via the C99 _Pragma(string-literal).
+     * The pragma was introduced via the C99 _Pragma(string-literal).
      */
     PIK__Pragma,
-    
+
     /**
-     * \brief The pragma was introduced via the Microsoft 
+     * The pragma was introduced via the Microsoft
      * __pragma(token-string).
      */
     PIK___pragma
   };
-  
+
+  /// Describes how and where the pragma was introduced.
+  struct PragmaIntroducer {
+    PragmaIntroducerKind Kind;
+    SourceLocation Loc;
+  };
+
 /// PragmaHandler - Instances of this interface defined to handle the various
 /// pragmas that the language front-end uses.  Each handler optionally has a
 /// name (e.g. "pack") and the HandlePragma method is invoked when a pragma with
@@ -65,7 +71,7 @@ public:
   virtual ~PragmaHandler();
 
   StringRef getName() const { return Name; }
-  virtual void HandlePragma(Preprocessor &PP, PragmaIntroducerKind Introducer,
+  virtual void HandlePragma(Preprocessor &PP, PragmaIntroducer Introducer,
                             Token &FirstToken) = 0;
 
   /// getIfNamespace - If this is a namespace, return it.  This is equivalent to
@@ -79,7 +85,7 @@ class EmptyPragmaHandler : public PragmaHandler {
 public:
   explicit EmptyPragmaHandler(StringRef Name = StringRef());
 
-  void HandlePragma(Preprocessor &PP, PragmaIntroducerKind Introducer,
+  void HandlePragma(Preprocessor &PP, PragmaIntroducer Introducer,
                     Token &FirstToken) override;
 };
 
@@ -112,8 +118,8 @@ public:
 
   bool IsEmpty() const { return Handlers.empty(); }
 
-  void HandlePragma(Preprocessor &PP, PragmaIntroducerKind Introducer,
-                    Token &FirstToken) override;
+  void HandlePragma(Preprocessor &PP, PragmaIntroducer Introducer,
+                    Token &Tok) override;
 
   PragmaNamespace *getIfNamespace() override { return this; }
 };

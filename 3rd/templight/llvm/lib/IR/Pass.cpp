@@ -1,9 +1,8 @@
 //===- Pass.cpp - LLVM Pass Infrastructure Implementation -----------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -14,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/Pass.h"
+#include "llvm/Config/llvm-config.h"
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Function.h"
@@ -55,8 +55,13 @@ PassManagerType ModulePass::getPotentialPassManagerType() const {
   return PMT_ModulePassManager;
 }
 
+static std::string getDescription(const Module &M) {
+  return "module (" + M.getName().str() + ")";
+}
+
 bool ModulePass::skipModule(Module &M) const {
-  return !M.getContext().getOptBisect().shouldRunPass(this, M);
+  OptPassGate &Gate = M.getContext().getOptPassGate();
+  return Gate.isEnabled() && !Gate.shouldRunPass(this, getDescription(M));
 }
 
 bool Pass::mustPreserveAnalysisID(char &AID) const {
@@ -154,13 +159,18 @@ PassManagerType FunctionPass::getPotentialPassManagerType() const {
   return PMT_FunctionPassManager;
 }
 
+static std::string getDescription(const Function &F) {
+  return "function (" + F.getName().str() + ")";
+}
+
 bool FunctionPass::skipFunction(const Function &F) const {
-  if (!F.getContext().getOptBisect().shouldRunPass(this, F))
+  OptPassGate &Gate = F.getContext().getOptPassGate();
+  if (Gate.isEnabled() && !Gate.shouldRunPass(this, getDescription(F)))
     return true;
 
-  if (F.hasFnAttribute(Attribute::OptimizeNone)) {
-    DEBUG(dbgs() << "Skipping pass '" << getPassName() << "' on function "
-                 << F.getName() << "\n");
+  if (F.hasOptNone()) {
+    LLVM_DEBUG(dbgs() << "Skipping pass '" << getPassName() << "' on function "
+                      << F.getName() << "\n");
     return true;
   }
   return false;
@@ -185,17 +195,23 @@ bool BasicBlockPass::doFinalization(Function &) {
   return false;
 }
 
+static std::string getDescription(const BasicBlock &BB) {
+  return "basic block (" + BB.getName().str() + ") in function (" +
+         BB.getParent()->getName().str() + ")";
+}
+
 bool BasicBlockPass::skipBasicBlock(const BasicBlock &BB) const {
   const Function *F = BB.getParent();
   if (!F)
     return false;
-  if (!F->getContext().getOptBisect().shouldRunPass(this, BB))
+  OptPassGate &Gate = F->getContext().getOptPassGate();
+  if (Gate.isEnabled() && !Gate.shouldRunPass(this, getDescription(BB)))
     return true;
-  if (F->hasFnAttribute(Attribute::OptimizeNone)) {
+  if (F->hasOptNone()) {
     // Report this only once per function.
     if (&BB == &F->getEntryBlock())
-      DEBUG(dbgs() << "Skipping pass '" << getPassName()
-            << "' on function " << F->getName() << "\n");
+      LLVM_DEBUG(dbgs() << "Skipping pass '" << getPassName()
+                        << "' on function " << F->getName() << "\n");
     return true;
   }
   return false;

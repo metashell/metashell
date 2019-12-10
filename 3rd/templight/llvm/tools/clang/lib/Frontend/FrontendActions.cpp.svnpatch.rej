@@ -1,0 +1,10 @@
+--- lib/Frontend/FrontendActions.cpp
++++ lib/Frontend/FrontendActions.cpp
+@@ -26,6 +26,7 @@
+ #include "llvm/Support/Path.h"
+ #include "llvm/Support/raw_ostream.h"
+ #include "llvm/Support/YAMLTraits.h"
++#include <chrono>
+ #include <memory>
+ #include <system_error>
+ 

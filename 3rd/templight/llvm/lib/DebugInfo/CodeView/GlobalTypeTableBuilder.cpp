@@ -1,9 +1,8 @@
 //===- GlobalTypeTableBuilder.cpp -----------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -53,11 +52,7 @@ Optional<TypeIndex> GlobalTypeTableBuilder::getNext(TypeIndex Prev) {
 }
 
 CVType GlobalTypeTableBuilder::getType(TypeIndex Index) {
-  CVType Type;
-  Type.RecordData = SeenRecords[Index.toArrayIndex()];
-  const RecordPrefix *P =
-      reinterpret_cast<const RecordPrefix *>(Type.RecordData.data());
-  Type.Type = static_cast<TypeLeafKind>(uint16_t(P->RecordKind));
+  CVType Type(SeenRecords[Index.toArrayIndex()]);
   return Type;
 }
 
@@ -89,31 +84,15 @@ void GlobalTypeTableBuilder::reset() {
   SeenRecords.clear();
 }
 
-static inline ArrayRef<uint8_t> stabilize(BumpPtrAllocator &Alloc,
-                                          ArrayRef<uint8_t> Data) {
-  uint8_t *Stable = Alloc.Allocate<uint8_t>(Data.size());
-  memcpy(Stable, Data.data(), Data.size());
-  return makeArrayRef(Stable, Data.size());
-}
-
-TypeIndex GlobalTypeTableBuilder::insertRecordAs(GloballyHashedType Hash,
-                                                 CreateRecord Create) {
-  auto Result = HashedRecords.try_emplace(Hash, nextTypeIndex());
-
-  if (Result.second) {
-    ArrayRef<uint8_t> RecordData = stabilize(RecordStorage, Create());
-    SeenRecords.push_back(RecordData);
-    SeenHashes.push_back(Hash);
-  }
-
-  // Update the caller's copy of Record to point a stable copy.
-  return Result.first->second;
-}
-
 TypeIndex GlobalTypeTableBuilder::insertRecordBytes(ArrayRef<uint8_t> Record) {
   GloballyHashedType GHT =
       GloballyHashedType::hashType(Record, SeenHashes, SeenHashes);
-  return insertRecordAs(GHT, [Record]() { return Record; });
+  return insertRecordAs(GHT, Record.size(),
+                        [Record](MutableArrayRef<uint8_t> Data) {
+                          assert(Data.size() == Record.size());
+                          ::memcpy(Data.data(), Record.data(), Record.size());
+                          return Data;
+                        });
 }
 
 TypeIndex

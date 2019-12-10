@@ -1,9 +1,8 @@
 //===-- ExpandPostRAPseudos.cpp - Pseudo instruction expansion pass -------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -93,11 +92,13 @@ bool ExpandPostRA::LowerSubregToReg(MachineInstr *MI) {
   assert(TargetRegisterInfo::isPhysicalRegister(InsReg) &&
          "Inserted value must be in a physical register");
 
-  DEBUG(dbgs() << "subreg: CONVERTING: " << *MI);
+  LLVM_DEBUG(dbgs() << "subreg: CONVERTING: " << *MI);
 
   if (MI->allDefsAreDead()) {
     MI->setDesc(TII->get(TargetOpcode::KILL));
-    DEBUG(dbgs() << "subreg: replaced by: " << *MI);
+    MI->RemoveOperand(3); // SubIdx
+    MI->RemoveOperand(1); // Imm
+    LLVM_DEBUG(dbgs() << "subreg: replaced by: " << *MI);
     return true;
   }
 
@@ -110,10 +111,10 @@ bool ExpandPostRA::LowerSubregToReg(MachineInstr *MI) {
       MI->setDesc(TII->get(TargetOpcode::KILL));
       MI->RemoveOperand(3);     // SubIdx
       MI->RemoveOperand(1);     // Imm
-      DEBUG(dbgs() << "subreg: replace by: " << *MI);
+      LLVM_DEBUG(dbgs() << "subreg: replace by: " << *MI);
       return true;
     }
-    DEBUG(dbgs() << "subreg: eliminated!");
+    LLVM_DEBUG(dbgs() << "subreg: eliminated!");
   } else {
     TII->copyPhysReg(*MBB, MI, MI->getDebugLoc(), DstSubReg, InsReg,
                      MI->getOperand(2).isKill());
@@ -122,10 +123,10 @@ bool ExpandPostRA::LowerSubregToReg(MachineInstr *MI) {
     MachineBasicBlock::iterator CopyMI = MI;
     --CopyMI;
     CopyMI->addRegisterDefined(DstReg);
-    DEBUG(dbgs() << "subreg: " << *CopyMI);
+    LLVM_DEBUG(dbgs() << "subreg: " << *CopyMI);
   }
 
-  DEBUG(dbgs() << '\n');
+  LLVM_DEBUG(dbgs() << '\n');
   MBB->erase(MI);
   return true;
 }
@@ -133,9 +134,9 @@ bool ExpandPostRA::LowerSubregToReg(MachineInstr *MI) {
 bool ExpandPostRA::LowerCopy(MachineInstr *MI) {
 
   if (MI->allDefsAreDead()) {
-    DEBUG(dbgs() << "dead copy: " << *MI);
+    LLVM_DEBUG(dbgs() << "dead copy: " << *MI);
     MI->setDesc(TII->get(TargetOpcode::KILL));
-    DEBUG(dbgs() << "replaced by: " << *MI);
+    LLVM_DEBUG(dbgs() << "replaced by: " << *MI);
     return true;
   }
 
@@ -144,14 +145,15 @@ bool ExpandPostRA::LowerCopy(MachineInstr *MI) {
 
   bool IdentityCopy = (SrcMO.getReg() == DstMO.getReg());
   if (IdentityCopy || SrcMO.isUndef()) {
-    DEBUG(dbgs() << (IdentityCopy ? "identity copy: " : "undef copy:    ") << *MI);
+    LLVM_DEBUG(dbgs() << (IdentityCopy ? "identity copy: " : "undef copy:    ")
+                      << *MI);
     // No need to insert an identity copy instruction, but replace with a KILL
     // if liveness is changed.
     if (SrcMO.isUndef() || MI->getNumOperands() > 2) {
       // We must make sure the super-register gets killed. Replace the
       // instruction with KILL.
       MI->setDesc(TII->get(TargetOpcode::KILL));
-      DEBUG(dbgs() << "replaced by:   " << *MI);
+      LLVM_DEBUG(dbgs() << "replaced by:   " << *MI);
       return true;
     }
     // Vanilla identity copy.
@@ -159,13 +161,13 @@ bool ExpandPostRA::LowerCopy(MachineInstr *MI) {
     return true;
   }
 
-  DEBUG(dbgs() << "real copy:   " << *MI);
+  LLVM_DEBUG(dbgs() << "real copy:   " << *MI);
   TII->copyPhysReg(*MI->getParent(), MI, MI->getDebugLoc(),
                    DstMO.getReg(), SrcMO.getReg(), SrcMO.isKill());
 
   if (MI->getNumOperands() > 2)
     TransferImplicitOperands(MI);
-  DEBUG({
+  LLVM_DEBUG({
     MachineBasicBlock::iterator dMI = MI;
     dbgs() << "replaced by: " << *(--dMI);
   });
@@ -177,9 +179,9 @@ bool ExpandPostRA::LowerCopy(MachineInstr *MI) {
 /// copies.
 ///
 bool ExpandPostRA::runOnMachineFunction(MachineFunction &MF) {
-  DEBUG(dbgs() << "Machine Function\n"
-               << "********** EXPANDING POST-RA PSEUDO INSTRS **********\n"
-               << "********** Function: " << MF.getName() << '\n');
+  LLVM_DEBUG(dbgs() << "Machine Function\n"
+                    << "********** EXPANDING POST-RA PSEUDO INSTRS **********\n"
+                    << "********** Function: " << MF.getName() << '\n');
   TRI = MF.getSubtarget().getRegisterInfo();
   TII = MF.getSubtarget().getInstrInfo();
 

@@ -1,9 +1,8 @@
 //===-- sanitizer_allocator.cc --------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -20,6 +19,10 @@
 #include "sanitizer_common.h"
 
 namespace __sanitizer {
+
+// Default allocator names.
+const char *PrimaryAllocatorName = "SizeClassAllocator";
+const char *SecondaryAllocatorName = "LargeMmapAllocator";
 
 // ThreadSanitizer for Go uses libc malloc/free.
 #if SANITIZER_GO || defined(SANITIZER_USE_MALLOC)
@@ -136,12 +139,19 @@ static void RawInternalFree(void *ptr, InternalAllocatorCache *cache) {
 
 const u64 kBlockMagic = 0x6A6CB03ABCEBC041ull;
 
+static void NORETURN ReportInternalAllocatorOutOfMemory(uptr requested_size) {
+  SetAllocatorOutOfMemory();
+  Report("FATAL: %s: internal allocator is out of memory trying to allocate "
+         "0x%zx bytes\n", SanitizerToolName, requested_size);
+  Die();
+}
+
 void *InternalAlloc(uptr size, InternalAllocatorCache *cache, uptr alignment) {
   if (size + sizeof(u64) < size)
     return nullptr;
   void *p = RawInternalAlloc(size + sizeof(u64), cache, alignment);
-  if (!p)
-    return nullptr;
+  if (UNLIKELY(!p))
+    ReportInternalAllocatorOutOfMemory(size + sizeof(u64));
   ((u64*)p)[0] = kBlockMagic;
   return (char*)p + sizeof(u64);
 }
@@ -155,16 +165,33 @@ void *InternalRealloc(void *addr, uptr size, InternalAllocatorCache *cache) {
   size = size + sizeof(u64);
   CHECK_EQ(kBlockMagic, ((u64*)addr)[0]);
   void *p = RawInternalRealloc(addr, size, cache);
-  if (!p)
-    return nullptr;
+  if (UNLIKELY(!p))
+    ReportInternalAllocatorOutOfMemory(size);
   return (char*)p + sizeof(u64);
 }
 
+void *InternalReallocArray(void *addr, uptr count, uptr size,
+                           InternalAllocatorCache *cache) {
+  if (UNLIKELY(CheckForCallocOverflow(count, size))) {
+    Report(
+        "FATAL: %s: reallocarray parameters overflow: count * size (%zd * %zd) "
+        "cannot be represented in type size_t\n",
+        SanitizerToolName, count, size);
+    Die();
+  }
+  return InternalRealloc(addr, count * size, cache);
+}
+
 void *InternalCalloc(uptr count, uptr size, InternalAllocatorCache *cache) {
-  if (UNLIKELY(CheckForCallocOverflow(count, size)))
-    return InternalAllocator::FailureHandler::OnBadRequest();
+  if (UNLIKELY(CheckForCallocOverflow(count, size))) {
+    Report("FATAL: %s: calloc parameters overflow: count * size (%zd * %zd) "
+           "cannot be represented in type size_t\n", SanitizerToolName, count,
+           size);
+    Die();
+  }
   void *p = InternalAlloc(count * size, cache);
-  if (p) internal_memset(p, 0, count * size);
+  if (LIKELY(p))
+    internal_memset(p, 0, count * size);
   return p;
 }
 
@@ -210,6 +237,8 @@ void SetLowLevelAllocateCallback(LowLevelAllocateCallback callback) {
   low_level_alloc_callback = callback;
 }
 
+// Allocator's OOM and other errors handling support.
+
 static atomic_uint8_t allocator_out_of_memory = {0};
 static atomic_uint8_t allocator_may_return_null = {0};
 
@@ -217,13 +246,8 @@ bool IsAllocatorOutOfMemory() {
   return atomic_load_relaxed(&allocator_out_of_memory);
 }
 
-// Prints error message and kills the program.
-void NORETURN ReportAllocatorCannotReturnNull() {
-  Report("%s's allocator is terminating the process instead of returning 0\n",
-         SanitizerToolName);
-  Report("If you don't like this behavior set allocator_may_return_null=1\n");
-  CHECK(0);
-  Die();
+void SetAllocatorOutOfMemory() {
+  atomic_store_relaxed(&allocator_out_of_memory, 1);
 }
 
 bool AllocatorMayReturnNull() {
@@ -235,26 +259,9 @@ void SetAllocatorMayReturnNull(bool may_return_null) {
                memory_order_relaxed);
 }
 
-void *ReturnNullOrDieOnFailure::OnBadRequest() {
-  if (AllocatorMayReturnNull())
-    return nullptr;
-  ReportAllocatorCannotReturnNull();
-}
-
-void *ReturnNullOrDieOnFailure::OnOOM() {
-  atomic_store_relaxed(&allocator_out_of_memory, 1);
-  if (AllocatorMayReturnNull())
-    return nullptr;
-  ReportAllocatorCannotReturnNull();
-}
-
-void NORETURN *DieOnFailure::OnBadRequest() {
-  ReportAllocatorCannotReturnNull();
-}
-
-void NORETURN *DieOnFailure::OnOOM() {
-  atomic_store_relaxed(&allocator_out_of_memory, 1);
-  ReportAllocatorCannotReturnNull();
+void PrintHintAllocatorCannotReturnNull() {
+  Report("HINT: if you don't care about these errors you may set "
+         "allocator_may_return_null=1\n");
 }
 
 } // namespace __sanitizer

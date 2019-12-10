@@ -86,4 +86,3 @@ define i32 @test4(i32* %addr) {
 ; }
 ; Given we chose to forward across the release fence, we clearly can't forward
 ; across the acquire fence as well.
-

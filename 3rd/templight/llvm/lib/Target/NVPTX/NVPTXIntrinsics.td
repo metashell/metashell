@@ -1,9 +1,8 @@
 //===- NVPTXIntrinsics.td - PTX Intrinsics Instructions -------*- tblgen -*-==//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -27,7 +26,35 @@ def immDouble1 : PatLeaf<(fpimm), [{
     return (d==1.0);
 }]>;
 
+def AS_match {
+  code generic = [{
+   return ChkMemSDNodeAddressSpace(N, llvm::ADDRESS_SPACE_GENERIC);
+  }];
+  code shared = [{
+   return ChkMemSDNodeAddressSpace(N, llvm::ADDRESS_SPACE_SHARED);
+  }];
+  code global = [{
+   return ChkMemSDNodeAddressSpace(N, llvm::ADDRESS_SPACE_GLOBAL);
+  }];
+}
 
+// A node that will be replaced with the current PTX version.
+class PTX {
+  SDNodeXForm PTXVerXform = SDNodeXForm<imm, [{
+    return getI32Imm(Subtarget->getPTXVersion(), SDLoc(N));
+  }]>;
+  // (i32 0) will be XForm'ed to the currently used PTX version.
+  dag version = (PTXVerXform (i32 0));
+}
+def ptx : PTX;
+
+// Generates list of n sequential register names.
+// E.g. RegNames<3,"r">.ret -> ["r0", "r1", "r2" ]
+class RegSeq<int n, string prefix> {
+  list<string> ret = !if(n, !listconcat(RegSeq<!add(n,-1), prefix>.ret,
+                                        [prefix # !add(n, -1)]),
+                            []);
+}
 
 //-----------------------------------
 // Synchronization and shuffle functions
@@ -277,26 +304,22 @@ multiclass MATCH_ALLP_SYNC<NVPTXRegClass regclass, string ptxtype, Intrinsic Int
   def ii : NVPTXInst<(outs regclass:$dest, Int1Regs:$pred),
                      (ins i32imm:$mask, ImmOp:$value),
               "match.all.sync." # ptxtype # " \t$dest|$pred, $value, $mask;",
-              // If would be nice if tablegen could match multiple return values,
-              // but it does not seem to be the case. Thus we have an empty pattern and
-              // lower intrinsic to instruction manually.
-              // [(set regclass:$dest, Int1Regs:$pred, (IntOp imm:$value, imm:$mask))]>,
-              []>,
+              [(set regclass:$dest, Int1Regs:$pred, (IntOp imm:$mask, imm:$value))]>,
            Requires<[hasPTX60, hasSM70]>;
   def ir : NVPTXInst<(outs regclass:$dest, Int1Regs:$pred),
                      (ins Int32Regs:$mask, ImmOp:$value),
               "match.all.sync." # ptxtype # " \t$dest|$pred, $value, $mask;",
-              []>,
+              [(set regclass:$dest, Int1Regs:$pred, (IntOp Int32Regs:$mask, imm:$value))]>,
            Requires<[hasPTX60, hasSM70]>;
   def ri : NVPTXInst<(outs regclass:$dest, Int1Regs:$pred),
                      (ins i32imm:$mask, regclass:$value),
               "match.all.sync." # ptxtype # " \t$dest|$pred, $value, $mask;",
-              []>,
+              [(set regclass:$dest, Int1Regs:$pred, (IntOp imm:$mask, regclass:$value))]>,
            Requires<[hasPTX60, hasSM70]>;
   def rr : NVPTXInst<(outs regclass:$dest, Int1Regs:$pred),
                      (ins Int32Regs:$mask, regclass:$value),
               "match.all.sync." # ptxtype # " \t$dest|$pred, $value, $mask;",
-              []>,
+              [(set regclass:$dest, Int1Regs:$pred, (IntOp Int32Regs:$mask, regclass:$value))]>,
            Requires<[hasPTX60, hasSM70]>;
 }
 defm MATCH_ALLP_SYNC_32 : MATCH_ALLP_SYNC<Int32Regs, "b32", int_nvvm_match_all_sync_i32p,
@@ -1011,32 +1034,27 @@ def INT_FNS_iii : INT_FNS_MBO<(ins    i32imm:$mask,    i32imm:$base,    i32imm:$
 //-----------------------------------
 
 class ATOMIC_GLOBAL_CHK <dag ops, dag frag>
- : PatFrag<ops, frag, [{
-   return ChkMemSDNodeAddressSpace(N, llvm::ADDRESS_SPACE_GLOBAL);
-}]>;
+ : PatFrag<ops, frag, AS_match.global>;
 class ATOMIC_SHARED_CHK <dag ops, dag frag>
- : PatFrag<ops, frag, [{
-   return ChkMemSDNodeAddressSpace(N, llvm::ADDRESS_SPACE_SHARED);
-}]>;
+ : PatFrag<ops, frag, AS_match.shared>;
 class ATOMIC_GENERIC_CHK <dag ops, dag frag>
- : PatFrag<ops, frag, [{
-   return ChkMemSDNodeAddressSpace(N, llvm::ADDRESS_SPACE_GENERIC);
-}]>;
+ : PatFrag<ops, frag, AS_match.generic>;
 
 multiclass F_ATOMIC_2_imp<NVPTXRegClass ptrclass, NVPTXRegClass regclass,
   string SpaceStr, string TypeStr, string OpcStr, PatFrag IntOp,
-  Operand IMMType, SDNode IMM, Predicate Pred> {
+  Operand IMMType, SDNode IMM, list<Predicate> Pred> {
   def reg : NVPTXInst<(outs regclass:$dst), (ins ptrclass:$addr, regclass:$b),
     !strconcat("atom", SpaceStr, OpcStr, TypeStr, " \t$dst, [$addr], $b;"),
     [(set regclass:$dst, (IntOp ptrclass:$addr, regclass:$b))]>,
-  Requires<[Pred]>;
+  Requires<Pred>;
   def imm : NVPTXInst<(outs regclass:$dst), (ins ptrclass:$addr, IMMType:$b),
     !strconcat("atom", SpaceStr, OpcStr, TypeStr, " \t$dst, [$addr], $b;", ""),
     [(set regclass:$dst, (IntOp ptrclass:$addr, IMM:$b))]>,
-  Requires<[Pred]>;
+  Requires<Pred>;
 }
 multiclass F_ATOMIC_2<NVPTXRegClass regclass, string SpaceStr, string TypeStr,
-  string OpcStr, PatFrag IntOp, Operand IMMType, SDNode IMM, Predicate Pred> {
+  string OpcStr, PatFrag IntOp, Operand IMMType, SDNode IMM,
+  list<Predicate> Pred = []> {
   defm p32 : F_ATOMIC_2_imp<Int32Regs, regclass, SpaceStr, TypeStr, OpcStr,
     IntOp, IMMType, IMM, Pred>;
   defm p64 : F_ATOMIC_2_imp<Int64Regs, regclass, SpaceStr, TypeStr, OpcStr,
@@ -1046,7 +1064,7 @@ multiclass F_ATOMIC_2<NVPTXRegClass regclass, string SpaceStr, string TypeStr,
 // has 2 operands, neg the second one
 multiclass F_ATOMIC_2_NEG_imp<NVPTXRegClass ptrclass, NVPTXRegClass regclass,
   string SpaceStr, string TypeStr, string OpcStr, PatFrag IntOp,
-  Operand IMMType, Predicate Pred> {
+  Operand IMMType, list<Predicate> Pred> {
   def reg : NVPTXInst<(outs regclass:$dst), (ins ptrclass:$addr, regclass:$b),
     !strconcat(
       "{{ \n\t",
@@ -1055,11 +1073,11 @@ multiclass F_ATOMIC_2_NEG_imp<NVPTXRegClass ptrclass, NVPTXRegClass regclass,
       "atom", SpaceStr, OpcStr, ".u", TypeStr, " \t$dst, [$addr], temp; \n\t",
       "}}"),
     [(set regclass:$dst, (IntOp ptrclass:$addr, regclass:$b))]>,
-  Requires<[Pred]>;
+  Requires<Pred>;
 }
 multiclass F_ATOMIC_2_NEG<NVPTXRegClass regclass, string SpaceStr,
   string TypeStr, string OpcStr, PatFrag IntOp, Operand IMMType,
-  Predicate Pred> {
+  list<Predicate> Pred = []> {
  defm p32: F_ATOMIC_2_NEG_imp<Int32Regs, regclass, SpaceStr, TypeStr, OpcStr,
    IntOp, IMMType, Pred> ;
  defm p64: F_ATOMIC_2_NEG_imp<Int64Regs, regclass, SpaceStr, TypeStr, OpcStr,
@@ -1069,33 +1087,33 @@ multiclass F_ATOMIC_2_NEG<NVPTXRegClass regclass, string SpaceStr,
 // has 3 operands
 multiclass F_ATOMIC_3_imp<NVPTXRegClass ptrclass, NVPTXRegClass regclass,
   string SpaceStr, string TypeStr, string OpcStr, PatFrag IntOp,
-  Operand IMMType, Predicate Pred> {
+  Operand IMMType, list<Predicate> Pred> {
   def reg : NVPTXInst<(outs regclass:$dst),
     (ins ptrclass:$addr, regclass:$b, regclass:$c),
     !strconcat("atom", SpaceStr, OpcStr, TypeStr, " \t$dst, [$addr], $b, $c;"),
     [(set regclass:$dst, (IntOp ptrclass:$addr, regclass:$b, regclass:$c))]>,
-  Requires<[Pred]>;
+  Requires<Pred>;
 
   def imm1 : NVPTXInst<(outs regclass:$dst),
     (ins ptrclass:$addr, IMMType:$b, regclass:$c),
     !strconcat("atom", SpaceStr, OpcStr, TypeStr, " \t$dst, [$addr], $b, $c;"),
     [(set regclass:$dst, (IntOp ptrclass:$addr, imm:$b, regclass:$c))]>,
-  Requires<[Pred]>;
+  Requires<Pred>;
 
   def imm2 : NVPTXInst<(outs regclass:$dst),
     (ins ptrclass:$addr, regclass:$b, IMMType:$c),
     !strconcat("atom", SpaceStr, OpcStr, TypeStr, " \t$dst, [$addr], $b, $c;", ""),
     [(set regclass:$dst, (IntOp ptrclass:$addr, regclass:$b, imm:$c))]>,
-  Requires<[Pred]>;
+  Requires<Pred>;
 
   def imm3 : NVPTXInst<(outs regclass:$dst),
     (ins ptrclass:$addr, IMMType:$b, IMMType:$c),
     !strconcat("atom", SpaceStr, OpcStr, TypeStr, " \t$dst, [$addr], $b, $c;"),
     [(set regclass:$dst, (IntOp ptrclass:$addr, imm:$b, imm:$c))]>,
-  Requires<[Pred]>;
+  Requires<Pred>;
 }
 multiclass F_ATOMIC_3<NVPTXRegClass regclass, string SpaceStr, string TypeStr,
-  string OpcStr, PatFrag IntOp, Operand IMMType, Predicate Pred> {
+  string OpcStr, PatFrag IntOp, Operand IMMType, list<Predicate> Pred = []> {
   defm p32 : F_ATOMIC_3_imp<Int32Regs, regclass, SpaceStr, TypeStr, OpcStr,
     IntOp, IMMType, Pred>;
   defm p64 : F_ATOMIC_3_imp<Int64Regs, regclass, SpaceStr, TypeStr, OpcStr,
@@ -1116,50 +1134,44 @@ def atomic_load_add_64_s: ATOMIC_SHARED_CHK<(ops node:$a, node:$b),
   (atomic_load_add_64 node:$a, node:$b)>;
 def atomic_load_add_64_gen: ATOMIC_GENERIC_CHK<(ops node:$a, node:$b),
   (atomic_load_add_64 node:$a, node:$b)>;
-def atomic_load_add_f32_g: ATOMIC_GLOBAL_CHK<(ops node:$a, node:$b),
-  (int_nvvm_atomic_load_add_f32 node:$a, node:$b)>;
-def atomic_load_add_f32_s: ATOMIC_SHARED_CHK<(ops node:$a, node:$b),
-  (int_nvvm_atomic_load_add_f32 node:$a, node:$b)>;
-def atomic_load_add_f32_gen: ATOMIC_GENERIC_CHK<(ops node:$a, node:$b),
-  (int_nvvm_atomic_load_add_f32 node:$a, node:$b)>;
-def atomic_load_add_f64_g: ATOMIC_GLOBAL_CHK<(ops node:$a, node:$b),
-  (int_nvvm_atomic_load_add_f64 node:$a, node:$b)>;
-def atomic_load_add_f64_s: ATOMIC_SHARED_CHK<(ops node:$a, node:$b),
-  (int_nvvm_atomic_load_add_f64 node:$a, node:$b)>;
-def atomic_load_add_f64_gen: ATOMIC_GENERIC_CHK<(ops node:$a, node:$b),
-  (int_nvvm_atomic_load_add_f64 node:$a, node:$b)>;
+def atomic_load_add_g: ATOMIC_GLOBAL_CHK<(ops node:$a, node:$b),
+  (atomic_load_fadd node:$a, node:$b)>;
+def atomic_load_add_s: ATOMIC_SHARED_CHK<(ops node:$a, node:$b),
+  (atomic_load_fadd node:$a, node:$b)>;
+def atomic_load_add_gen: ATOMIC_GENERIC_CHK<(ops node:$a, node:$b),
+  (atomic_load_fadd node:$a, node:$b)>;
 
 defm INT_PTX_ATOM_ADD_G_32 : F_ATOMIC_2<Int32Regs, ".global", ".u32", ".add",
-  atomic_load_add_32_g, i32imm, imm, hasAtomRedG32>;
+  atomic_load_add_32_g, i32imm, imm>;
 defm INT_PTX_ATOM_ADD_S_32 : F_ATOMIC_2<Int32Regs, ".shared", ".u32", ".add",
-  atomic_load_add_32_s, i32imm, imm, hasAtomRedS32>;
+  atomic_load_add_32_s, i32imm, imm>;
 defm INT_PTX_ATOM_ADD_GEN_32 : F_ATOMIC_2<Int32Regs, "", ".u32", ".add",
-  atomic_load_add_32_gen, i32imm, imm, hasAtomRedGen32>;
+  atomic_load_add_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_ADD_GEN_32_USE_G : F_ATOMIC_2<Int32Regs, ".global", ".u32",
-  ".add", atomic_load_add_32_gen, i32imm, imm, useAtomRedG32forGen32>;
+  ".add", atomic_load_add_32_gen, i32imm, imm>;
 
 defm INT_PTX_ATOM_ADD_G_64 : F_ATOMIC_2<Int64Regs, ".global", ".u64", ".add",
-  atomic_load_add_64_g, i64imm, imm, hasAtomRedG64>;
+  atomic_load_add_64_g, i64imm, imm>;
 defm INT_PTX_ATOM_ADD_S_64 : F_ATOMIC_2<Int64Regs, ".shared", ".u64", ".add",
-  atomic_load_add_64_s, i64imm, imm, hasAtomRedS64>;
+  atomic_load_add_64_s, i64imm, imm>;
 defm INT_PTX_ATOM_ADD_GEN_64 : F_ATOMIC_2<Int64Regs, "", ".u64", ".add",
-  atomic_load_add_64_gen, i64imm, imm, hasAtomRedGen64>;
+  atomic_load_add_64_gen, i64imm, imm>;
 defm INT_PTX_ATOM_ADD_GEN_64_USE_G : F_ATOMIC_2<Int64Regs, ".global", ".u64",
-  ".add", atomic_load_add_64_gen, i64imm, imm, useAtomRedG64forGen64>;
+  ".add", atomic_load_add_64_gen, i64imm, imm>;
 
 defm INT_PTX_ATOM_ADD_G_F32 : F_ATOMIC_2<Float32Regs, ".global", ".f32", ".add",
-  atomic_load_add_f32_g, f32imm, fpimm, hasAtomAddF32>;
+  atomic_load_add_g, f32imm, fpimm>;
 defm INT_PTX_ATOM_ADD_S_F32 : F_ATOMIC_2<Float32Regs, ".shared", ".f32", ".add",
-  atomic_load_add_f32_s, f32imm, fpimm, hasAtomAddF32>;
+  atomic_load_add_s, f32imm, fpimm>;
 defm INT_PTX_ATOM_ADD_GEN_F32 : F_ATOMIC_2<Float32Regs, "", ".f32", ".add",
-  atomic_load_add_f32_gen, f32imm, fpimm, hasAtomAddF32>;
+  atomic_load_add_gen, f32imm, fpimm>;
 
 defm INT_PTX_ATOM_ADD_G_F64 : F_ATOMIC_2<Float64Regs, ".global", ".f64", ".add",
-  atomic_load_add_f64_g, f64imm, fpimm, hasAtomAddF64>;
+  atomic_load_add_g, f64imm, fpimm, [hasAtomAddF64]>;
 defm INT_PTX_ATOM_ADD_S_F64 : F_ATOMIC_2<Float64Regs, ".shared", ".f64", ".add",
-  atomic_load_add_f64_s, f64imm, fpimm, hasAtomAddF64>;
+  atomic_load_add_s, f64imm, fpimm, [hasAtomAddF64]>;
 defm INT_PTX_ATOM_ADD_GEN_F64 : F_ATOMIC_2<Float64Regs, "", ".f64", ".add",
-  atomic_load_add_f64_gen, f64imm, fpimm, hasAtomAddF64>;
+  atomic_load_add_gen, f64imm, fpimm, [hasAtomAddF64]>;
 
 // atom_sub
 
@@ -1177,21 +1189,21 @@ def atomic_load_sub_64_gen: ATOMIC_GENERIC_CHK<(ops node:$a, node:$b),
   (atomic_load_sub_64 node:$a, node:$b)>;
 
 defm INT_PTX_ATOM_SUB_G_32 : F_ATOMIC_2_NEG<Int32Regs, ".global", "32", ".add",
-  atomic_load_sub_32_g, i32imm, hasAtomRedG32>;
+  atomic_load_sub_32_g, i32imm>;
 defm INT_PTX_ATOM_SUB_G_64 : F_ATOMIC_2_NEG<Int64Regs, ".global", "64", ".add",
-  atomic_load_sub_64_g, i64imm, hasAtomRedG64>;
+  atomic_load_sub_64_g, i64imm>;
 defm INT_PTX_ATOM_SUB_GEN_32 : F_ATOMIC_2_NEG<Int32Regs, "", "32", ".add",
-  atomic_load_sub_32_gen, i32imm, hasAtomRedGen32>;
+  atomic_load_sub_32_gen, i32imm>;
 defm INT_PTX_ATOM_SUB_GEN_32_USE_G : F_ATOMIC_2_NEG<Int32Regs, ".global", "32",
-  ".add", atomic_load_sub_32_gen, i32imm, useAtomRedG32forGen32>;
+  ".add", atomic_load_sub_32_gen, i32imm>;
 defm INT_PTX_ATOM_SUB_S_32 : F_ATOMIC_2_NEG<Int32Regs, ".shared", "32", ".add",
-  atomic_load_sub_32_s, i32imm, hasAtomRedS32>;
+  atomic_load_sub_32_s, i32imm>;
 defm INT_PTX_ATOM_SUB_S_64 : F_ATOMIC_2_NEG<Int64Regs, ".shared", "64", ".add",
-  atomic_load_sub_64_s, i64imm, hasAtomRedS64>;
+  atomic_load_sub_64_s, i64imm>;
 defm INT_PTX_ATOM_SUB_GEN_64 : F_ATOMIC_2_NEG<Int64Regs, "", "64", ".add",
-  atomic_load_sub_64_gen, i64imm, hasAtomRedGen64>;
+  atomic_load_sub_64_gen, i64imm>;
 defm INT_PTX_ATOM_SUB_GEN_64_USE_G : F_ATOMIC_2_NEG<Int64Regs, ".global", "64",
-  ".add", atomic_load_sub_64_gen, i64imm, useAtomRedG64forGen64>;
+  ".add", atomic_load_sub_64_gen, i64imm>;
 
 // atom_swap
 
@@ -1209,21 +1221,21 @@ def atomic_swap_64_gen: ATOMIC_GENERIC_CHK<(ops node:$a, node:$b),
   (atomic_swap_64 node:$a, node:$b)>;
 
 defm INT_PTX_ATOM_SWAP_G_32 : F_ATOMIC_2<Int32Regs, ".global", ".b32", ".exch",
-  atomic_swap_32_g, i32imm, imm, hasAtomRedG32>;
+  atomic_swap_32_g, i32imm, imm>;
 defm INT_PTX_ATOM_SWAP_S_32 : F_ATOMIC_2<Int32Regs, ".shared", ".b32", ".exch",
-  atomic_swap_32_s, i32imm, imm, hasAtomRedS32>;
+  atomic_swap_32_s, i32imm, imm>;
 defm INT_PTX_ATOM_SWAP_GEN_32 : F_ATOMIC_2<Int32Regs, "", ".b32", ".exch",
-  atomic_swap_32_gen, i32imm, imm, hasAtomRedGen32>;
+  atomic_swap_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_SWAP_GEN_32_USE_G : F_ATOMIC_2<Int32Regs, ".global", ".b32",
-  ".exch", atomic_swap_32_gen, i32imm, imm, useAtomRedG32forGen32>;
+  ".exch", atomic_swap_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_SWAP_G_64 : F_ATOMIC_2<Int64Regs, ".global", ".b64", ".exch",
-  atomic_swap_64_g, i64imm, imm, hasAtomRedG64>;
+  atomic_swap_64_g, i64imm, imm>;
 defm INT_PTX_ATOM_SWAP_S_64 : F_ATOMIC_2<Int64Regs, ".shared", ".b64", ".exch",
-  atomic_swap_64_s, i64imm, imm, hasAtomRedS64>;
+  atomic_swap_64_s, i64imm, imm>;
 defm INT_PTX_ATOM_SWAP_GEN_64 : F_ATOMIC_2<Int64Regs, "", ".b64", ".exch",
-  atomic_swap_64_gen, i64imm, imm, hasAtomRedGen64>;
+  atomic_swap_64_gen, i64imm, imm>;
 defm INT_PTX_ATOM_SWAP_GEN_64_USE_G : F_ATOMIC_2<Int64Regs, ".global", ".b64",
-  ".exch", atomic_swap_64_gen, i64imm, imm, useAtomRedG64forGen64>;
+  ".exch", atomic_swap_64_gen, i64imm, imm>;
 
 // atom_max
 
@@ -1253,37 +1265,37 @@ def atomic_load_umax_64_gen: ATOMIC_GENERIC_CHK<(ops node:$a, node:$b),
   (atomic_load_umax_64 node:$a, node:$b)>;
 
 defm INT_PTX_ATOM_LOAD_MAX_G_32 : F_ATOMIC_2<Int32Regs, ".global", ".s32",
-  ".max", atomic_load_max_32_g, i32imm, imm, hasAtomRedG32>;
+  ".max", atomic_load_max_32_g, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_MAX_S_32 : F_ATOMIC_2<Int32Regs, ".shared", ".s32",
-  ".max", atomic_load_max_32_s, i32imm, imm, hasAtomRedS32>;
+  ".max", atomic_load_max_32_s, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_MAX_GEN_32 : F_ATOMIC_2<Int32Regs, "", ".s32", ".max",
-  atomic_load_max_32_gen, i32imm, imm, hasAtomRedGen32>;
+  atomic_load_max_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_MAX_GEN_32_USE_G : F_ATOMIC_2<Int32Regs, ".global",
-  ".s32", ".max", atomic_load_max_32_gen, i32imm, imm, useAtomRedG32forGen32>;
+  ".s32", ".max", atomic_load_max_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_MAX_G_64 : F_ATOMIC_2<Int64Regs, ".global", ".s64",
-  ".max", atomic_load_max_64_g, i64imm, imm, hasAtomRedG64>;
+  ".max", atomic_load_max_64_g, i64imm, imm>;
 defm INT_PTX_ATOM_LOAD_MAX_S_64 : F_ATOMIC_2<Int64Regs, ".shared", ".s64",
-  ".max", atomic_load_max_64_s, i64imm, imm, hasAtomRedS64>;
+  ".max", atomic_load_max_64_s, i64imm, imm>;
 defm INT_PTX_ATOM_LOAD_MAX_GEN_64 : F_ATOMIC_2<Int64Regs, "", ".s64", ".max",
-  atomic_load_max_64_gen, i64imm, imm, hasAtomRedGen64>;
+  atomic_load_max_64_gen, i64imm, imm>;
 defm INT_PTX_ATOM_LOAD_MAX_GEN_64_USE_G : F_ATOMIC_2<Int64Regs, ".global",
-  ".s64", ".max", atomic_load_max_64_gen, i64imm, imm, useAtomRedG64forGen64>;
+  ".s64", ".max", atomic_load_max_64_gen, i64imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMAX_G_32 : F_ATOMIC_2<Int32Regs, ".global", ".u32",
-  ".max", atomic_load_umax_32_g, i32imm, imm, hasAtomRedG32>;
+  ".max", atomic_load_umax_32_g, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMAX_S_32 : F_ATOMIC_2<Int32Regs, ".shared", ".u32",
-  ".max", atomic_load_umax_32_s, i32imm, imm, hasAtomRedS32>;
+  ".max", atomic_load_umax_32_s, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMAX_GEN_32 : F_ATOMIC_2<Int32Regs, "", ".u32", ".max",
-  atomic_load_umax_32_gen, i32imm, imm, hasAtomRedGen32>;
+  atomic_load_umax_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMAX_GEN_32_USE_G : F_ATOMIC_2<Int32Regs, ".global",
-  ".u32", ".max", atomic_load_umax_32_gen, i32imm, imm, useAtomRedG32forGen32>;
+  ".u32", ".max", atomic_load_umax_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMAX_G_64 : F_ATOMIC_2<Int64Regs, ".global", ".u64",
-  ".max", atomic_load_umax_64_g, i64imm, imm, hasAtomRedG64>;
+  ".max", atomic_load_umax_64_g, i64imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMAX_S_64 : F_ATOMIC_2<Int64Regs, ".shared", ".u64",
-  ".max", atomic_load_umax_64_s, i64imm, imm, hasAtomRedS64>;
+  ".max", atomic_load_umax_64_s, i64imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMAX_GEN_64 : F_ATOMIC_2<Int64Regs, "", ".u64", ".max",
-  atomic_load_umax_64_gen, i64imm, imm, hasAtomRedGen64>;
+  atomic_load_umax_64_gen, i64imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMAX_GEN_64_USE_G : F_ATOMIC_2<Int64Regs, ".global",
-  ".u64", ".max", atomic_load_umax_64_gen, i64imm, imm, useAtomRedG64forGen64>;
+  ".u64", ".max", atomic_load_umax_64_gen, i64imm, imm>;
 
 // atom_min
 
@@ -1313,37 +1325,37 @@ def atomic_load_umin_64_gen: ATOMIC_GENERIC_CHK<(ops node:$a, node:$b),
   (atomic_load_umin_64 node:$a, node:$b)>;
 
 defm INT_PTX_ATOM_LOAD_MIN_G_32 : F_ATOMIC_2<Int32Regs, ".global", ".s32",
-  ".min", atomic_load_min_32_g, i32imm, imm, hasAtomRedG32>;
+  ".min", atomic_load_min_32_g, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_MIN_S_32 : F_ATOMIC_2<Int32Regs, ".shared", ".s32",
-  ".min", atomic_load_min_32_s, i32imm, imm, hasAtomRedS32>;
+  ".min", atomic_load_min_32_s, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_MIN_GEN_32 : F_ATOMIC_2<Int32Regs, "", ".s32", ".min",
-  atomic_load_min_32_gen, i32imm, imm, hasAtomRedGen32>;
+  atomic_load_min_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_MIN_GEN_32_USE_G : F_ATOMIC_2<Int32Regs, ".global",
-  ".s32", ".min", atomic_load_min_32_gen, i32imm, imm, useAtomRedG32forGen32>;
+  ".s32", ".min", atomic_load_min_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_MIN_G_64 : F_ATOMIC_2<Int64Regs, ".global", ".s64",
-  ".min", atomic_load_min_64_g, i64imm, imm, hasAtomRedG64>;
+  ".min", atomic_load_min_64_g, i64imm, imm>;
 defm INT_PTX_ATOM_LOAD_MIN_S_64 : F_ATOMIC_2<Int64Regs, ".shared", ".s64",
-  ".min", atomic_load_min_64_s, i64imm, imm, hasAtomRedS64>;
+  ".min", atomic_load_min_64_s, i64imm, imm>;
 defm INT_PTX_ATOM_LOAD_MIN_GEN_64 : F_ATOMIC_2<Int64Regs, "", ".s64", ".min",
-  atomic_load_min_64_gen, i64imm, imm, hasAtomRedGen64>;
+  atomic_load_min_64_gen, i64imm, imm>;
 defm INT_PTX_ATOM_LOAD_MIN_GEN_64_USE_G : F_ATOMIC_2<Int64Regs, ".global",
-  ".s64", ".min", atomic_load_min_64_gen, i64imm, imm, useAtomRedG64forGen64>;
+  ".s64", ".min", atomic_load_min_64_gen, i64imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMIN_G_32 : F_ATOMIC_2<Int32Regs, ".global", ".u32",
-  ".min", atomic_load_umin_32_g, i32imm, imm, hasAtomRedG32>;
+  ".min", atomic_load_umin_32_g, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMIN_S_32 : F_ATOMIC_2<Int32Regs, ".shared", ".u32",
-  ".min", atomic_load_umin_32_s, i32imm, imm, hasAtomRedS32>;
+  ".min", atomic_load_umin_32_s, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMIN_GEN_32 : F_ATOMIC_2<Int32Regs, "", ".u32", ".min",
-  atomic_load_umin_32_gen, i32imm, imm, hasAtomRedGen32>;
+  atomic_load_umin_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMIN_GEN_32_USE_G : F_ATOMIC_2<Int32Regs, ".global",
-  ".u32", ".min", atomic_load_umin_32_gen, i32imm, imm, useAtomRedG32forGen32>;
+  ".u32", ".min", atomic_load_umin_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMIN_G_64 : F_ATOMIC_2<Int64Regs, ".global", ".u64",
-  ".min", atomic_load_umin_64_g, i64imm, imm, hasAtomRedG64>;
+  ".min", atomic_load_umin_64_g, i64imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMIN_S_64 : F_ATOMIC_2<Int64Regs, ".shared", ".u64",
-  ".min", atomic_load_umin_64_s, i64imm, imm, hasAtomRedS64>;
+  ".min", atomic_load_umin_64_s, i64imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMIN_GEN_64 : F_ATOMIC_2<Int64Regs, "", ".u64", ".min",
-  atomic_load_umin_64_gen, i64imm, imm, hasAtomRedGen64>;
+  atomic_load_umin_64_gen, i64imm, imm>;
 defm INT_PTX_ATOM_LOAD_UMIN_GEN_64_USE_G : F_ATOMIC_2<Int64Regs, ".global",
-  ".u64", ".min", atomic_load_umin_64_gen, i64imm, imm, useAtomRedG64forGen64>;
+  ".u64", ".min", atomic_load_umin_64_gen, i64imm, imm>;
 
 // atom_inc  atom_dec
 
@@ -1361,21 +1373,21 @@ def atomic_load_dec_32_gen: ATOMIC_GENERIC_CHK<(ops node:$a, node:$b),
   (int_nvvm_atomic_load_dec_32 node:$a, node:$b)>;
 
 defm INT_PTX_ATOM_INC_G_32 : F_ATOMIC_2<Int32Regs, ".global", ".u32", ".inc",
-  atomic_load_inc_32_g, i32imm, imm, hasAtomRedG32>;
+  atomic_load_inc_32_g, i32imm, imm>;
 defm INT_PTX_ATOM_INC_S_32 : F_ATOMIC_2<Int32Regs, ".shared", ".u32", ".inc",
-  atomic_load_inc_32_s, i32imm, imm, hasAtomRedS32>;
+  atomic_load_inc_32_s, i32imm, imm>;
 defm INT_PTX_ATOM_INC_GEN_32 : F_ATOMIC_2<Int32Regs, "", ".u32", ".inc",
-  atomic_load_inc_32_gen, i32imm, imm, hasAtomRedGen32>;
+  atomic_load_inc_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_INC_GEN_32_USE_G : F_ATOMIC_2<Int32Regs, ".global", ".u32",
-  ".inc", atomic_load_inc_32_gen, i32imm, imm, useAtomRedG32forGen32>;
+  ".inc", atomic_load_inc_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_DEC_G_32 : F_ATOMIC_2<Int32Regs, ".global", ".u32", ".dec",
-  atomic_load_dec_32_g, i32imm, imm, hasAtomRedG32>;
+  atomic_load_dec_32_g, i32imm, imm>;
 defm INT_PTX_ATOM_DEC_S_32 : F_ATOMIC_2<Int32Regs, ".shared", ".u32", ".dec",
-  atomic_load_dec_32_s, i32imm, imm, hasAtomRedS32>;
+  atomic_load_dec_32_s, i32imm, imm>;
 defm INT_PTX_ATOM_DEC_GEN_32 : F_ATOMIC_2<Int32Regs, "", ".u32", ".dec",
-  atomic_load_dec_32_gen, i32imm, imm, hasAtomRedGen32>;
+  atomic_load_dec_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_DEC_GEN_32_USE_G : F_ATOMIC_2<Int32Regs, ".global", ".u32",
-  ".dec", atomic_load_dec_32_gen, i32imm, imm, useAtomRedG32forGen32>;
+  ".dec", atomic_load_dec_32_gen, i32imm, imm>;
 
 // atom_and
 
@@ -1393,21 +1405,21 @@ def atomic_load_and_64_gen: ATOMIC_GENERIC_CHK<(ops node:$a, node:$b),
   (atomic_load_and_64 node:$a, node:$b)>;
 
 defm INT_PTX_ATOM_AND_G_32 : F_ATOMIC_2<Int32Regs, ".global", ".b32", ".and",
-  atomic_load_and_32_g, i32imm, imm, hasAtomRedG32>;
+  atomic_load_and_32_g, i32imm, imm>;
 defm INT_PTX_ATOM_AND_S_32 : F_ATOMIC_2<Int32Regs, ".shared", ".b32", ".and",
-  atomic_load_and_32_s, i32imm, imm, hasAtomRedS32>;
+  atomic_load_and_32_s, i32imm, imm>;
 defm INT_PTX_ATOM_AND_GEN_32 : F_ATOMIC_2<Int32Regs, "", ".b32", ".and",
-  atomic_load_and_32_gen, i32imm, imm, hasAtomRedGen32>;
+  atomic_load_and_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_AND_GEN_32_USE_G : F_ATOMIC_2<Int32Regs, ".global", ".b32",
-  ".and", atomic_load_and_32_gen, i32imm, imm, useAtomRedG32forGen32>;
+  ".and", atomic_load_and_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_AND_G_64 : F_ATOMIC_2<Int64Regs, ".global", ".b64", ".and",
-  atomic_load_and_64_g, i64imm, imm, hasAtomRedG64>;
+  atomic_load_and_64_g, i64imm, imm>;
 defm INT_PTX_ATOM_AND_S_64 : F_ATOMIC_2<Int64Regs, ".shared", ".b64", ".and",
-  atomic_load_and_64_s, i64imm, imm, hasAtomRedS64>;
+  atomic_load_and_64_s, i64imm, imm>;
 defm INT_PTX_ATOM_AND_GEN_64 : F_ATOMIC_2<Int64Regs, "", ".b64", ".and",
-  atomic_load_and_64_gen, i64imm, imm, hasAtomRedGen64>;
+  atomic_load_and_64_gen, i64imm, imm>;
 defm INT_PTX_ATOM_AND_GEN_64_USE_G : F_ATOMIC_2<Int64Regs, ".global", ".b64",
-  ".and", atomic_load_and_64_gen, i64imm, imm, useAtomRedG64forGen64>;
+  ".and", atomic_load_and_64_gen, i64imm, imm>;
 
 // atom_or
 
@@ -1425,21 +1437,21 @@ def atomic_load_or_64_gen: ATOMIC_GENERIC_CHK<(ops node:$a, node:$b),
   (atomic_load_or_64 node:$a, node:$b)>;
 
 defm INT_PTX_ATOM_OR_G_32 : F_ATOMIC_2<Int32Regs, ".global", ".b32", ".or",
-  atomic_load_or_32_g, i32imm, imm, hasAtomRedG32>;
+  atomic_load_or_32_g, i32imm, imm>;
 defm INT_PTX_ATOM_OR_GEN_32 : F_ATOMIC_2<Int32Regs, "", ".b32", ".or",
-  atomic_load_or_32_gen, i32imm, imm, hasAtomRedGen32>;
+  atomic_load_or_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_OR_GEN_32_USE_G : F_ATOMIC_2<Int32Regs, ".global", ".b32",
-  ".or", atomic_load_or_32_gen, i32imm, imm, useAtomRedG32forGen32>;
+  ".or", atomic_load_or_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_OR_S_32 : F_ATOMIC_2<Int32Regs, ".shared", ".b32", ".or",
-  atomic_load_or_32_s, i32imm, imm, hasAtomRedS32>;
+  atomic_load_or_32_s, i32imm, imm>;
 defm INT_PTX_ATOM_OR_G_64 : F_ATOMIC_2<Int64Regs, ".global", ".b64", ".or",
-  atomic_load_or_64_g, i64imm, imm, hasAtomRedG64>;
+  atomic_load_or_64_g, i64imm, imm>;
 defm INT_PTX_ATOM_OR_GEN_64 : F_ATOMIC_2<Int64Regs, "", ".b64", ".or",
-  atomic_load_or_64_gen, i64imm, imm, hasAtomRedGen64>;
+  atomic_load_or_64_gen, i64imm, imm>;
 defm INT_PTX_ATOM_OR_GEN_64_USE_G : F_ATOMIC_2<Int64Regs, ".global", ".b64",
-  ".or", atomic_load_or_64_gen, i64imm, imm, useAtomRedG64forGen64>;
+  ".or", atomic_load_or_64_gen, i64imm, imm>;
 defm INT_PTX_ATOM_OR_S_64 : F_ATOMIC_2<Int64Regs, ".shared", ".b64", ".or",
-  atomic_load_or_64_s, i64imm, imm, hasAtomRedS64>;
+  atomic_load_or_64_s, i64imm, imm>;
 
 // atom_xor
 
@@ -1457,21 +1469,21 @@ def atomic_load_xor_64_gen: ATOMIC_GENERIC_CHK<(ops node:$a, node:$b),
   (atomic_load_xor_64 node:$a, node:$b)>;
 
 defm INT_PTX_ATOM_XOR_G_32 : F_ATOMIC_2<Int32Regs, ".global", ".b32", ".xor",
-  atomic_load_xor_32_g, i32imm, imm, hasAtomRedG32>;
+  atomic_load_xor_32_g, i32imm, imm>;
 defm INT_PTX_ATOM_XOR_S_32 : F_ATOMIC_2<Int32Regs, ".shared", ".b32", ".xor",
-  atomic_load_xor_32_s, i32imm, imm, hasAtomRedS32>;
+  atomic_load_xor_32_s, i32imm, imm>;
 defm INT_PTX_ATOM_XOR_GEN_32 : F_ATOMIC_2<Int32Regs, "", ".b32", ".xor",
-  atomic_load_xor_32_gen, i32imm, imm, hasAtomRedGen32>;
+  atomic_load_xor_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_XOR_GEN_32_USE_G : F_ATOMIC_2<Int32Regs, ".global", ".b32",
-  ".xor", atomic_load_xor_32_gen, i32imm, imm, useAtomRedG32forGen32>;
+  ".xor", atomic_load_xor_32_gen, i32imm, imm>;
 defm INT_PTX_ATOM_XOR_G_64 : F_ATOMIC_2<Int64Regs, ".global", ".b64", ".xor",
-  atomic_load_xor_64_g, i64imm, imm, hasAtomRedG64>;
+  atomic_load_xor_64_g, i64imm, imm>;
 defm INT_PTX_ATOM_XOR_S_64 : F_ATOMIC_2<Int64Regs, ".shared", ".b64", ".xor",
-  atomic_load_xor_64_s, i64imm, imm, hasAtomRedS64>;
+  atomic_load_xor_64_s, i64imm, imm>;
 defm INT_PTX_ATOM_XOR_GEN_64 : F_ATOMIC_2<Int64Regs, "", ".b64", ".xor",
-  atomic_load_xor_64_gen, i64imm, imm, hasAtomRedGen64>;
+  atomic_load_xor_64_gen, i64imm, imm>;
 defm INT_PTX_ATOM_XOR_GEN_64_USE_G : F_ATOMIC_2<Int64Regs, ".global", ".b64",
-  ".xor", atomic_load_xor_64_gen, i64imm, imm, useAtomRedG64forGen64>;
+  ".xor", atomic_load_xor_64_gen, i64imm, imm>;
 
 // atom_cas
 
@@ -1489,21 +1501,21 @@ def atomic_cmp_swap_64_gen: ATOMIC_GENERIC_CHK<(ops node:$a, node:$b, node:$c),
   (atomic_cmp_swap_64 node:$a, node:$b, node:$c)>;
 
 defm INT_PTX_ATOM_CAS_G_32 : F_ATOMIC_3<Int32Regs, ".global", ".b32", ".cas",
-  atomic_cmp_swap_32_g, i32imm, hasAtomRedG32>;
+  atomic_cmp_swap_32_g, i32imm>;
 defm INT_PTX_ATOM_CAS_S_32 : F_ATOMIC_3<Int32Regs, ".shared", ".b32", ".cas",
-  atomic_cmp_swap_32_s, i32imm, hasAtomRedS32>;
+  atomic_cmp_swap_32_s, i32imm>;
 defm INT_PTX_ATOM_CAS_GEN_32 : F_ATOMIC_3<Int32Regs, "", ".b32", ".cas",
-  atomic_cmp_swap_32_gen, i32imm, hasAtomRedGen32>;
+  atomic_cmp_swap_32_gen, i32imm>;
 defm INT_PTX_ATOM_CAS_GEN_32_USE_G : F_ATOMIC_3<Int32Regs, ".global", ".b32",
-  ".cas", atomic_cmp_swap_32_gen, i32imm, useAtomRedG32forGen32>;
+  ".cas", atomic_cmp_swap_32_gen, i32imm>;
 defm INT_PTX_ATOM_CAS_G_64 : F_ATOMIC_3<Int64Regs, ".global", ".b64", ".cas",
-  atomic_cmp_swap_64_g, i64imm, hasAtomRedG64>;
+  atomic_cmp_swap_64_g, i64imm>;
 defm INT_PTX_ATOM_CAS_S_64 : F_ATOMIC_3<Int64Regs, ".shared", ".b64", ".cas",
-  atomic_cmp_swap_64_s, i64imm, hasAtomRedS64>;
+  atomic_cmp_swap_64_s, i64imm>;
 defm INT_PTX_ATOM_CAS_GEN_64 : F_ATOMIC_3<Int64Regs, "", ".b64", ".cas",
-  atomic_cmp_swap_64_gen, i64imm, hasAtomRedGen64>;
+  atomic_cmp_swap_64_gen, i64imm>;
 defm INT_PTX_ATOM_CAS_GEN_64_USE_G : F_ATOMIC_3<Int64Regs, ".global", ".b64",
-  ".cas", atomic_cmp_swap_64_gen, i64imm, useAtomRedG64forGen64>;
+  ".cas", atomic_cmp_swap_64_gen, i64imm>;
 
 // Support for scoped atomic operations.  Matches
 // int_nvvm_atomic_{op}_{space}_{type}_{scope}
@@ -1654,7 +1666,7 @@ multiclass ATOM2_add_impl<string OpStr> {
    defm _u32  : ATOM2S_impl<OpStr, "i", "u32", Int32Regs, i32imm, imm, i32, []>;
    defm _u64  : ATOM2S_impl<OpStr, "i", "u64", Int64Regs, i64imm, imm, i64, []>;
    defm _f32  : ATOM2S_impl<OpStr, "f", "f32", Float32Regs, f32imm, fpimm, f32,
-                            [hasAtomAddF32]>;
+                            []>;
    defm _f64  : ATOM2S_impl<OpStr, "f", "f64", Float64Regs, f64imm, fpimm, f64,
                             [hasAtomAddF64]>;
 }
@@ -1936,56 +1948,31 @@ defm INT_PTX_LDG_G_v4f32_ELE
 multiclass NG_TO_G<string Str, Intrinsic Intrin> {
    def _yes : NVPTXInst<(outs Int32Regs:$result), (ins Int32Regs:$src),
           !strconcat("cvta.", Str, ".u32 \t$result, $src;"),
-      [(set Int32Regs:$result, (Intrin Int32Regs:$src))]>,
-   Requires<[hasGenericLdSt]>;
+      [(set Int32Regs:$result, (Intrin Int32Regs:$src))]>;
    def _yes_64 : NVPTXInst<(outs Int64Regs:$result), (ins Int64Regs:$src),
           !strconcat("cvta.", Str, ".u64 \t$result, $src;"),
-      [(set Int64Regs:$result, (Intrin Int64Regs:$src))]>,
-   Requires<[hasGenericLdSt]>;
-
-// @TODO: Are these actually needed?  I believe global addresses will be copied
-// to register values anyway.
-   /*def __addr_yes : NVPTXInst<(outs Int32Regs:$result), (ins imemAny:$src),
-          !strconcat("cvta.", !strconcat(Str, ".u32 \t$result, $src;")),
-      [(set Int32Regs:$result, (Intrin (Wrapper tglobaladdr:$src)))]>,
-      Requires<[hasGenericLdSt]>;
-   def __addr_yes_64 : NVPTXInst<(outs Int64Regs:$result), (ins imemAny:$src),
-          !strconcat("cvta.", !strconcat(Str, ".u64 \t$result, $src;")),
-      [(set Int64Regs:$result, (Intrin (Wrapper tglobaladdr:$src)))]>,
-      Requires<[hasGenericLdSt]>;*/
-
-   def _no : NVPTXInst<(outs Int32Regs:$result), (ins Int32Regs:$src),
-          "mov.u32 \t$result, $src;",
-      [(set Int32Regs:$result, (Intrin Int32Regs:$src))]>;
-   def _no_64 : NVPTXInst<(outs Int64Regs:$result), (ins Int64Regs:$src),
-          "mov.u64 \t$result, $src;",
       [(set Int64Regs:$result, (Intrin Int64Regs:$src))]>;
-
-// @TODO: Are these actually needed?  I believe global addresses will be copied
-// to register values anyway.
-   /*def _addr_no : NVPTXInst<(outs Int32Regs:$result), (ins imem:$src),
-          "mov.u32 \t$result, $src;",
-      [(set Int32Regs:$result, (Intrin (Wrapper tglobaladdr:$src)))]>;
-   def _addr_no_64 : NVPTXInst<(outs Int64Regs:$result), (ins imem:$src),
-          "mov.u64 \t$result, $src;",
-      [(set Int64Regs:$result, (Intrin (Wrapper tglobaladdr:$src)))]>;*/
+   def _yes_6432 : NVPTXInst<(outs Int64Regs:$result), (ins Int32Regs:$src),
+          "{{ .reg .b64 %tmp;\n\t"
+          #"  cvt.u64.u32 \t%tmp, $src;\n\t"
+          #"  cvta." # Str # ".u64 \t$result, %tmp; }}",
+      [(set Int64Regs:$result, (Intrin Int32Regs:$src))]>,
+      Requires<[useShortPtr]>;
 }
 
 multiclass G_TO_NG<string Str, Intrinsic Intrin> {
    def _yes : NVPTXInst<(outs Int32Regs:$result), (ins Int32Regs:$src),
           !strconcat("cvta.to.", Str, ".u32 \t$result, $src;"),
-      [(set Int32Regs:$result, (Intrin Int32Regs:$src))]>,
-   Requires<[hasGenericLdSt]>;
+      [(set Int32Regs:$result, (Intrin Int32Regs:$src))]>;
    def _yes_64 : NVPTXInst<(outs Int64Regs:$result), (ins Int64Regs:$src),
           !strconcat("cvta.to.", Str, ".u64 \t$result, $src;"),
-      [(set Int64Regs:$result, (Intrin Int64Regs:$src))]>,
-   Requires<[hasGenericLdSt]>;
-   def _no : NVPTXInst<(outs Int32Regs:$result), (ins Int32Regs:$src),
-          "mov.u32 \t$result, $src;",
-      [(set Int32Regs:$result, (Intrin Int32Regs:$src))]>;
-   def _no_64 : NVPTXInst<(outs Int64Regs:$result), (ins Int64Regs:$src),
-          "mov.u64 \t$result, $src;",
       [(set Int64Regs:$result, (Intrin Int64Regs:$src))]>;
+   def _yes_3264 : NVPTXInst<(outs Int32Regs:$result), (ins Int64Regs:$src),
+          "{{ .reg .b64 %tmp;\n\t"
+          #"  cvta.to." # Str # ".u64 \t%tmp, $src;\n\t"
+          #"  cvt.u32.u64 \t$result, %tmp; }}",
+      [(set Int32Regs:$result, (Intrin Int64Regs:$src))]>,
+      Requires<[useShortPtr]>;
 }
 
 defm cvta_local  : NG_TO_G<"local", int_nvvm_ptr_local_to_gen>;
@@ -7409,207 +7396,258 @@ def INT_PTX_SREG_WARPSIZE :
     NVPTXInst<(outs Int32Regs:$dst), (ins), "mov.u32 \t$dst, WARP_SZ;",
               [(set Int32Regs:$dst, (int_nvvm_read_ptx_sreg_warpsize))]>;
 
+// Helper class that represents a 'fragment' of an NVPTX *MMA instruction.
+// In addition to target-independent fields provided by WMMA_REGS, it adds
+// the fields commonly used to implement specific PTX instruction -- register
+// types and names, constraints, parts of assembly, etc.
+class WMMA_REGINFO<WMMA_REGS r>
+      : WMMA_REGS<r.geom, r.frag, r.ptx_elt_type> {
+  // NVPTX register types used to carry fragment data.
+  NVPTXRegClass regclass = !cond(
+    !eq(ptx_elt_type, "f16") : Float16x2Regs,
+    !eq(ptx_elt_type, "f32") : Float32Regs,
+    !eq(ptx_elt_type, "s32") : Int32Regs,
+    !eq(ptx_elt_type, "s8") : Int32Regs,
+    !eq(ptx_elt_type, "u8") : Int32Regs,
+    !eq(ptx_elt_type, "s4") : Int32Regs,
+    !eq(ptx_elt_type, "u4") : Int32Regs,
+    !eq(ptx_elt_type, "b1") : Int32Regs);
+
+  // Instruction input/output arguments for the fragment.
+  list<NVPTXRegClass> ptx_regs = !foreach(tmp, regs, regclass);
+
+  // List of register names for the fragment -- ["ra0", "ra1",...]
+  list<string> reg_names = RegSeq<!size(ptx_regs), "r"#frag>.ret;
+
+  // Generates "{{$r0, $r1,.... $rN-1}}" for use in asm string construction.
+  string regstring = "{{$" # !head(reg_names)
+                           # !foldl("", !tail(reg_names), a, b,
+                                    !strconcat(a, ", $", b))
+                     # "}}";
+
+  // Predicates for particular fragment variant. Technically those are
+  // per-instruction predicates, but currently all fragments that can be used in
+  // a given instruction are subject to the same constraints, so an instruction
+  // can use predicates from any of its fragments. If/when this is no
+  // longer the case, we can concat all per-fragment predicates to enforce that
+  // all fragments of the instruction are viable.
+  list<Predicate> Predicates = !cond(
+    // fp16 -> fp16/fp32 @ m16n16k16
+    !and(!eq(geom, "m16n16k16"),
+         !or(!eq(ptx_elt_type, "f16"),
+             !eq(ptx_elt_type, "f32"))) : [hasSM70, hasPTX60],
+
+    // fp16 -> fp16/fp32 @ m8n32k16/m32n8k16
+    !and(!or(!eq(geom, "m8n32k16"),
+             !eq(geom, "m32n8k16")),
+         !or(!eq(ptx_elt_type, "f16"),
+             !eq(ptx_elt_type, "f32"))) : [hasSM70, hasPTX61],
+
+    // u8/s8 -> s32 @ m16n16k16/m8n32k16/m32n8k16
+    !and(!or(!eq(geom,"m16n16k16"),
+             !eq(geom,"m8n32k16"),
+             !eq(geom,"m32n8k16")),
+         !or(!eq(ptx_elt_type, "u8"),
+             !eq(ptx_elt_type, "s8"),
+             !eq(ptx_elt_type, "s32"))) : [hasSM72, hasPTX63],
+
+    // u4/s4/b1 -> s32 @ m8n8k32 (u4/s4), m8n8k128(b1)
+    !or(!eq(geom,"m8n8k128"),
+        !eq(geom,"m8n8k32")) : [hasSM75, hasPTX63]);
+
+  // template DAGs for instruction inputs/output.
+  dag Outs = !dag(outs, ptx_regs, reg_names);
+  dag Ins = !dag(ins, ptx_regs, reg_names);
+}
+
+// Convert dag of arguments into a dag to match given intrinsic.
+class BuildPatternI<Intrinsic Intr, dag Ins> {
+  // Build a dag pattern that matches the intrinsic call.
+  dag ret = !foreach(tmp, Ins,
+                          !subst(imem, ADDRvar,
+                          !subst(MEMri64, ADDRri64,
+                          !subst(MEMri, ADDRri,
+                          !subst(ins, Intr, tmp)))));
+}
+
+// Same as above, but uses PatFrag instead of an Intrinsic.
+class BuildPatternPF<PatFrag Intr, dag Ins> {
+  // Build a dag pattern that matches the intrinsic call.
+  dag ret = !foreach(tmp, Ins,
+                          !subst(imem, ADDRvar,
+                          !subst(MEMri64, ADDRri64,
+                          !subst(MEMri, ADDRri,
+                          !subst(ins, Intr, tmp)))));
+}
+
+// Common WMMA-related fields used for building patterns for all MMA instructions.
+class WMMA_INSTR<string _Intr, list<dag> _Args>
+  : NVPTXInst<(outs), (ins), "?", []> {
+  Intrinsic Intr = !cast<Intrinsic>(_Intr);
+  // Concatenate all arguments into a single dag.
+  dag Args = !foldl((ins), _Args, a, b, !con(a,b));
+  // Pre-build the pattern to match (intrinsic arg0, arg1, ...).
+  dag IntrinsicPattern = BuildPatternI<!cast<Intrinsic>(Intr), Args>.ret;
+}
+
 //
 // wmma.load.[a|b|c].sync.[row|col].m16n16k16[|.global|.shared].[f16|f32]
 //
-class WMMA_LOAD_ALSTOS<string Abc, string Layout, string Space,
-                           string Type, NVPTXRegClass regclass,
-                           Operand SrcOp, int WithOffset, int WithStride>
-  : NVPTXInst<!if(!eq(Abc#Type,"cf16"),
-                  (outs regclass:$r0, regclass:$r1, regclass:$r2, regclass:$r3),
-                  (outs regclass:$r0, regclass:$r1, regclass:$r2, regclass:$r3,
-                         regclass:$r4, regclass:$r5, regclass:$r6, regclass:$r7)),
-              !if(WithStride,
-                  !if(WithOffset,
-                      (ins SrcOp:$src, i32imm:$offset, Int32Regs:$ldm),
-                      (ins SrcOp:$src, Int32Regs:$ldm)),
-                  !if(WithOffset,
-                      (ins SrcOp:$src, i32imm:$offset),
-                      (ins SrcOp:$src))),
-              "wmma.load."#Abc#".sync."#Layout#".m16n16k16"#Space#"." #Type# " \t"
-                 #!if(!eq(Abc#Type,"cf16"),
-                      "{{$r0, $r1, $r2, $r3}}",
-                      "{{$r0, $r1, $r2, $r3, $r4, $r5, $r6, $r7}}")
-                 #", "
-                 #!if(WithOffset,"[$src+$offset]", "[$src]")
-                 #!if(WithStride, ", $ldm", "")
-                 #";",
-              []>,
-    Requires<[hasPTX60, hasSM70]>;
 
-multiclass WMMA_LOAD_ALSTO<string Abc, string Layout, string Space,
-                           string Type, NVPTXRegClass regclass,
-                           Operand SrcOp, int WithOffset = 0> {
-  def _stride: WMMA_LOAD_ALSTOS<Abc, Layout, Space, Type, regclass, SrcOp,
-                                WithOffset, 1>;
-  def NAME:    WMMA_LOAD_ALSTOS<Abc, Layout, Space, Type, regclass, SrcOp,
-                                WithOffset, 0>;
+class WMMA_LOAD<WMMA_REGINFO Frag, string Layout, string Space, bit WithStride,
+                DAGOperand SrcOp>
+  : WMMA_INSTR<WMMA_NAME_LDST<"load", Frag, Layout, WithStride>.record,
+                              [!con((ins SrcOp:$src),
+                                    !if(WithStride, (ins Int32Regs:$ldm), (ins)))]>,
+    Requires<Frag.Predicates> {
+  // Load/store intrinsics are overloaded on pointer's address space.
+  // To match the right intrinsic, we need to build AS-constrained PatFrag.
+  // Operands is a dag equivalent in shape to Args, but using (ops node:$name, .....).
+  dag PFOperands = !if(WithStride, (ops node:$src, node:$ldm), (ops node:$src));
+  // Build PatFrag that only matches particular address space.
+  PatFrag IntrFrag = PatFrag<PFOperands,
+                             !foreach(tmp, PFOperands, !subst(ops, Intr, tmp)),
+                             !cond(!eq(Space, ".shared"): AS_match.shared,
+                                   !eq(Space, ".global"): AS_match.global,
+                                   1: AS_match.generic)>;
+  // Build AS-constrained pattern.
+  let IntrinsicPattern = BuildPatternPF<IntrFrag, Args>.ret;
+
+  let OutOperandList = Frag.Outs;
+  let InOperandList = !con(Args, (ins MmaCode:$ptx));
+  let AsmString = "wmma.load."
+                  # Frag.frag
+                  # ".sync"
+                  # "${ptx:aligned}"
+                  # "." # Layout
+                  # "." # Frag.geom
+                  # Space
+                  # "." # Frag.ptx_elt_type # " \t"
+                  # Frag.regstring
+                  # ", [$src]"
+                  # !if(WithStride, ", $ldm", "")
+                  # ";";
 }
-
-multiclass WMMA_LOAD_ALST<string Abc, string Layout, string Space,
-                          string Type, NVPTXRegClass regclass> {
-  defm _avar:  WMMA_LOAD_ALSTO<Abc, Layout, Space, Type, regclass, imemAny, 0>;
-  defm _ari64: WMMA_LOAD_ALSTO<Abc, Layout, Space, Type, regclass, imemAny, 1>;
-}
-
-multiclass WMMA_LOAD_ALT<string Abc, string Layout,
-                        string Type, NVPTXRegClass regclass> {
-  defm _global: WMMA_LOAD_ALST<Abc, Layout, ".global", Type, regclass>;
-  defm _shared: WMMA_LOAD_ALST<Abc, Layout, ".shared", Type, regclass>;
-  defm NAME:    WMMA_LOAD_ALST<Abc, Layout,        "", Type, regclass>;
-}
-
-multiclass WMMA_LOAD_AT<string Abc, string Type, NVPTXRegClass regclass> {
-  defm _row: WMMA_LOAD_ALT<Abc, "row", Type, regclass>;
-  defm _col: WMMA_LOAD_ALT<Abc, "col", Type, regclass>;
-}
-
-defm INT_WMMA_LOAD_A: WMMA_LOAD_AT<"a", "f16", Float16x2Regs>;
-defm INT_WMMA_LOAD_B: WMMA_LOAD_AT<"b", "f16", Float16x2Regs>;
-defm INT_WMMA_LOAD_C_f16: WMMA_LOAD_AT<"c", "f16", Float16x2Regs>;
-defm INT_WMMA_LOAD_C_f32: WMMA_LOAD_AT<"c", "f32", Float32Regs>;
 
 //
 // wmma.store.d.sync.[row|col].m16n16k16[|.global|.shared].[f16|f32]
 //
-class WMMA_STORE_D_LSTOS<string Layout, string Space,
-                         string Type, NVPTXRegClass regclass,
-                         Operand DstOp, int WithOffset, int WithStride>
-  : NVPTXInst<(outs),
-              !if(!eq(Type,"f16"),
-                !if(WithStride,
-                  !if(WithOffset,
-                      (ins DstOp:$src, i32imm:$offset,
-                           regclass:$r0, regclass:$r1, regclass:$r2, regclass:$r3,
-                           Int32Regs:$ldm),
-                      (ins DstOp:$src,
-                           regclass:$r0, regclass:$r1, regclass:$r2, regclass:$r3,
-                           Int32Regs:$ldm)),
-                  !if(WithOffset,
-                      (ins DstOp:$src, i32imm:$offset,
-                           regclass:$r0, regclass:$r1, regclass:$r2, regclass:$r3),
-                      (ins DstOp:$src,
-                           regclass:$r0, regclass:$r1, regclass:$r2, regclass:$r3))),
-                !if(WithStride,
-                  !if(WithOffset,
-                      (ins DstOp:$src, i32imm:$offset,
-                           regclass:$r0, regclass:$r1, regclass:$r2, regclass:$r3,
-                           regclass:$r4, regclass:$r5, regclass:$r6, regclass:$r7,
-                           Int32Regs:$ldm),
-                      (ins DstOp:$src,
-                           regclass:$r0, regclass:$r1, regclass:$r2, regclass:$r3,
-                           regclass:$r4, regclass:$r5, regclass:$r6, regclass:$r7,
-                           Int32Regs:$ldm)),
-                  !if(WithOffset,
-                      (ins DstOp:$src, i32imm:$offset,
-                           regclass:$r0, regclass:$r1, regclass:$r2, regclass:$r3,
-                            regclass:$r4, regclass:$r5, regclass:$r6, regclass:$r7),
-                      (ins DstOp:$src,
-                           regclass:$r0, regclass:$r1, regclass:$r2, regclass:$r3,
-                           regclass:$r4, regclass:$r5, regclass:$r6, regclass:$r7)))),
-              "wmma.store.d.sync."#Layout#".m16n16k16"#Space#"." #Type# " \t"
-                 #!if(WithOffset,"[$src+$offset], ", "[$src], ")
-                 #!if(!eq(Type,"f16"),
-                      "{{$r0, $r1, $r2, $r3}}",
-                      "{{$r0, $r1, $r2, $r3, $r4, $r5, $r6, $r7}}")
-                 #!if(WithStride, ", $ldm", "")
-                 #";",
-              []>,
-    Requires<[hasPTX60, hasSM70]>;
+class WMMA_STORE_D<WMMA_REGINFO Frag, string Layout, string Space,
+                   bit WithStride, DAGOperand DstOp>
+  : WMMA_INSTR<WMMA_NAME_LDST<"store", Frag, Layout, WithStride>.record,
+               [!con((ins DstOp:$dst),
+                     Frag.Ins,
+                     !if(WithStride, (ins Int32Regs:$ldm), (ins)))]>,
+    Requires<Frag.Predicates> {
 
-multiclass WMMA_STORE_D_LSTO<string Layout, string Space,
-                             string Type, NVPTXRegClass regclass,
-                             Operand DstOp, int WithOffset = 0> {
-  def _stride: WMMA_STORE_D_LSTOS<Layout, Space, Type, regclass, DstOp,
-                                  WithOffset, 1>;
-  def NAME:    WMMA_STORE_D_LSTOS<Layout, Space, Type, regclass, DstOp,
-                                  WithOffset, 0>;
+  // Load/store intrinsics are overloaded on pointer's address space.
+  // To match the right intrinsic, we need to build AS-constrained PatFrag.
+  // Operands is a dag equivalent in shape to Args, but using (ops node:$name, .....).
+  dag PFOperands = !con((ops node:$dst),
+                        !dag(ops, !foreach(tmp, Frag.regs, node), Frag.reg_names),
+                        !if(WithStride, (ops node:$ldm), (ops)));
+  // Build PatFrag that only matches particular address space.
+  PatFrag IntrFrag = PatFrag<PFOperands,
+                             !foreach(tmp, PFOperands, !subst(ops, Intr, tmp)),
+                             !cond(!eq(Space, ".shared"): AS_match.shared,
+                                   !eq(Space, ".global"): AS_match.global,
+                                   1: AS_match.generic)>;
+  // Build AS-constrained pattern.
+  let IntrinsicPattern = BuildPatternPF<IntrFrag, Args>.ret;
+
+  let InOperandList  = !con(Args, (ins MmaCode:$ptx));
+  let OutOperandList = (outs);
+  let AsmString = "wmma.store.d.sync"
+                  # "${ptx:aligned}"
+                  # "." # Layout
+                  # "." # Frag.geom
+                  # Space
+                  # "." # Frag.ptx_elt_type
+                  # " \t[$dst],"
+                  # Frag.regstring
+                  # !if(WithStride, ", $ldm", "")
+                  # ";";
 }
 
-multiclass WMMA_STORE_D_LST<string Layout, string Space,
-                            string Type, NVPTXRegClass regclass> {
-  defm _avar:  WMMA_STORE_D_LSTO<Layout, Space, Type, regclass, imemAny, 0>;
-  defm _ari64: WMMA_STORE_D_LSTO<Layout, Space, Type, regclass, imemAny, 1>;
-}
-
-multiclass WMMA_STORE_D_LT<string Layout,
-                           string Type, NVPTXRegClass regclass> {
-  defm _global: WMMA_STORE_D_LST<Layout, ".global", Type, regclass>;
-  defm _shared: WMMA_STORE_D_LST<Layout, ".shared", Type, regclass>;
-  defm NAME:    WMMA_STORE_D_LST<Layout,        "", Type, regclass>;
-}
-
-multiclass WMMA_STORE_D_T<string Type, NVPTXRegClass regclass> {
-  defm _row: WMMA_STORE_D_LT<"row", Type, regclass>;
-  defm _col: WMMA_STORE_D_LT<"col", Type, regclass>;
-}
-
-defm INT_WMMA_STORE_D_f16: WMMA_STORE_D_T<"f16", Float16x2Regs>;
-defm INT_WMMA_STORE_D_f32: WMMA_STORE_D_T<"f32", Float32Regs>;
+// Create all load/store variants
+defset list<WMMA_INSTR> MMA_LDSTs  = {
+  foreach layout = ["row", "col"] in {
+    foreach stride = [0, 1] in {
+      foreach space = [".global", ".shared", ""] in {
+        foreach addr = [imem, Int32Regs, Int64Regs, MEMri, MEMri64] in {
+          foreach frag = NVVM_MMA_OPS.all_ld_ops in
+            foreach _ = NVVM_MMA_SUPPORTED<[frag], layout>.ret in
+              def : WMMA_LOAD<WMMA_REGINFO<frag>, layout, space, stride, addr>;
+          foreach frag = NVVM_MMA_OPS.all_st_ops in
+            foreach _ = NVVM_MMA_SUPPORTED<[frag], layout>.ret in
+              def : WMMA_STORE_D<WMMA_REGINFO<frag>, layout, space, stride, addr>;
+        } // addr
+      } // space
+    } // stride
+  } // layout
+} // defset
 
 // WMMA.MMA
-class WMMA_MMA_ABDCS<string ALayout, string BLayout,
-                     string DType, NVPTXRegClass d_reg,
-                     string CType, NVPTXRegClass c_reg,
-                     NVPTXRegClass ab_reg,
-                     string Satfinite = "">
-  : NVPTXInst<!if(!eq(DType,"f16"),
-                  (outs d_reg:$d0, d_reg:$d1, d_reg:$d2, d_reg:$d3),
-                  (outs d_reg:$d0, d_reg:$d1, d_reg:$d2, d_reg:$d3,
-                        d_reg:$d4, d_reg:$d5, d_reg:$d6, d_reg:$d7)),
-              !if(!eq(CType,"f16"),
-                  (ins ab_reg:$a0, ab_reg:$a1, ab_reg:$a2, ab_reg:$a3,
-                       ab_reg:$a4, ab_reg:$a5, ab_reg:$a6, ab_reg:$a7,
-                       ab_reg:$b0, ab_reg:$b1, ab_reg:$b2, ab_reg:$b3,
-                       ab_reg:$b4, ab_reg:$b5, ab_reg:$b6, ab_reg:$b7,
-                        c_reg:$c0,  c_reg:$c1,  c_reg:$c2,  c_reg:$c3),
-                  (ins ab_reg:$a0, ab_reg:$a1, ab_reg:$a2, ab_reg:$a3,
-                       ab_reg:$a4, ab_reg:$a5, ab_reg:$a6, ab_reg:$a7,
-                       ab_reg:$b0, ab_reg:$b1, ab_reg:$b2, ab_reg:$b3,
-                       ab_reg:$b4, ab_reg:$b5, ab_reg:$b6, ab_reg:$b7,
-                        c_reg:$c0,  c_reg:$c1,  c_reg:$c2,  c_reg:$c3,
-                        c_reg:$c4,  c_reg:$c5,  c_reg:$c6,  c_reg:$c7)),
-              "wmma.mma.sync."#ALayout#"."#BLayout#".m16n16k16."#
-                 #DType#"."#CType#Satfinite
-                 #"\n\t\t"
-                 #!if(!eq(DType,"f16"),
-                      "{{$d0, $d1, $d2, $d3}}, \n\t\t",
-                      "{{$d0, $d1, $d2, $d3, $d4, $d5, $d6, $d7}},\n\t\t")
-                 #"{{$a0, $a1, $a2, $a3, $a4, $a5, $a6, $a7}},\n\t\t"
-                 #"{{$b0, $b1, $b2, $b3, $b4, $b5, $b6, $b7}},\n\t\t"
-                 #!if(!eq(CType,"f16"),
-                      "{{$c0, $c1, $c2, $c3}};",
-                      "{{$c0, $c1, $c2, $c3, $c4, $c5, $c6, $c7}};"),
-              []>,
-    Requires<[hasPTX60, hasSM70]>;
-
-multiclass WMMA_MMA_ABDC<string ALayout, string BLayout,
-                         string DType, NVPTXRegClass d_reg,
-                         string CType, NVPTXRegClass c_reg> {
-  def _satfinite: WMMA_MMA_ABDCS<ALayout, BLayout,
-                                 DType, d_reg, CType, c_reg,
-                                 Float16x2Regs, ".satfinite">;
-  def NAME:       WMMA_MMA_ABDCS<ALayout, BLayout,
-                                 DType, d_reg, CType, c_reg,
-                                 Float16x2Regs>;
+class WMMA_MMA<WMMA_REGINFO FragA, WMMA_REGINFO FragB,
+               WMMA_REGINFO FragC, WMMA_REGINFO FragD,
+               string ALayout, string BLayout, int Satfinite>
+  : WMMA_INSTR<WMMA_NAME_MMA<ALayout, BLayout, Satfinite, FragA, FragB, FragC, FragD>.record,
+                             [FragA.Ins, FragB.Ins, FragC.Ins]>,
+    // Requires does not seem to have effect on Instruction w/o Patterns.
+    // We set it here anyways and propagate to the Pat<> we construct below.
+    Requires<FragA.Predicates> {
+  let OutOperandList = FragD.Outs;
+  let InOperandList  = !con(Args, (ins MmaCode:$ptx));
+  string TypeList = !cond(
+    !eq(FragD.ptx_elt_type, "s32") : ".s32"
+                                     # "." # FragA.ptx_elt_type
+                                     # "." # FragB.ptx_elt_type
+                                     # ".s32",
+    1: "." # FragD.ptx_elt_type # "." # FragC.ptx_elt_type,
+  );
+  let AsmString = "wmma.mma"
+                  # !if(!eq(FragA.ptx_elt_type, "b1"), ".xor.popc", "")
+                  # ".sync"
+                  # "${ptx:aligned}"
+                  # "." # ALayout
+                  # "." # BLayout
+                  # "." # FragA.geom
+                  # TypeList
+                  # !if(Satfinite, ".satfinite", "") # "\n\t\t"
+                  # FragD.regstring # ",\n\t\t"
+                  # FragA.regstring # ",\n\t\t"
+                  # FragB.regstring # ",\n\t\t"
+                  # FragC.regstring # ";";
 }
 
-multiclass WMMA_MMA_ABD<string ALayout, string BLayout,
-                        string DType, NVPTXRegClass d_reg> {
-  defm _f16: WMMA_MMA_ABDC<ALayout, BLayout, DType, d_reg, "f16", Float16x2Regs>;
-  defm _f32: WMMA_MMA_ABDC<ALayout, BLayout, DType, d_reg, "f32", Float32Regs>;
-}
+defset list<WMMA_INSTR> MMAs  = {
+  foreach layout_a = ["row", "col"] in {
+    foreach layout_b = ["row", "col"] in {
+      foreach satf = [0, 1] in {
+        foreach op = NVVM_MMA_OPS.all_mma_ops in {
+          foreach _ = NVVM_MMA_SUPPORTED<op, layout_a, layout_b, satf>.ret in {
+            def : WMMA_MMA<WMMA_REGINFO<op[0]>,
+                           WMMA_REGINFO<op[1]>,
+                           WMMA_REGINFO<op[2]>,
+                           WMMA_REGINFO<op[3]>,
+                           layout_a, layout_b, satf>;
+          }
+        } // op
+      } // satf
+    } // layout_b
+  } // layout_a
+} // defset
 
-multiclass WMMA_MMA_AB<string ALayout, string BLayout> {
-  defm _f16: WMMA_MMA_ABD<ALayout, BLayout, "f16", Float16x2Regs>;
-  defm _f32: WMMA_MMA_ABD<ALayout, BLayout, "f32", Float32Regs>;
-}
 
-multiclass WMMA_MMA_A<string ALayout> {
-  defm _col: WMMA_MMA_AB<ALayout, "col">;
-  defm _row: WMMA_MMA_AB<ALayout, "row">;
-}
+// Constructing non-flat DAGs is still a pain. I can't !subst a dag node with a
+// dag, so the ptx.version must be appended *after* foreach replaces 'ins' with
+// the instruction record.
+class WMMA_PAT<WMMA_INSTR wi>
+      : Pat<wi.IntrinsicPattern,
+            !con(!foreach(tmp, wi.Args, !subst(ins, wi, tmp)),
+                 (wi ptx.version))>,
+        Requires<wi.Predicates>;
 
-defm INT_WMMA_MMA_col: WMMA_MMA_A<"col">;
-defm INT_WMMA_MMA_row: WMMA_MMA_A<"row">;
-
+// Build intrinsic->instruction patterns for all MMA instructions.
+foreach mma = !listconcat(MMAs, MMA_LDSTs) in
+  def : WMMA_PAT<mma>;

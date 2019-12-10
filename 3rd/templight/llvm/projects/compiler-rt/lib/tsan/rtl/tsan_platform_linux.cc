@@ -1,9 +1,8 @@
 //===-- tsan_platform_linux.cc --------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -68,11 +67,24 @@ extern "C" void *__libc_stack_end;
 void *__libc_stack_end = 0;
 #endif
 
-#if SANITIZER_LINUX && defined(__aarch64__)
-void InitializeGuardPtr() __attribute__((visibility("hidden")));
+#if SANITIZER_LINUX && defined(__aarch64__) && !SANITIZER_GO
+# define INIT_LONGJMP_XOR_KEY 1
+#else
+# define INIT_LONGJMP_XOR_KEY 0
+#endif
+
+#if INIT_LONGJMP_XOR_KEY
+#include "interception/interception.h"
+// Must be declared outside of other namespaces.
+DECLARE_REAL(int, _setjmp, void *env)
 #endif
 
 namespace __tsan {
+
+#if INIT_LONGJMP_XOR_KEY
+static void InitializeLongjmpXorKey();
+static uptr longjmp_xor_key;
+#endif
 
 #ifdef TSAN_RUNTIME_VMA
 // Runtime detected VMA size.
@@ -168,11 +180,11 @@ static void MapRodata() {
   fd_t fd = openrv;
   // Fill the file with kShadowRodata.
   const uptr kMarkerSize = 512 * 1024 / sizeof(u64);
-  InternalScopedBuffer<u64> marker(kMarkerSize);
+  InternalMmapVector<u64> marker(kMarkerSize);
   // volatile to prevent insertion of memset
   for (volatile u64 *p = marker.data(); p < marker.data() + kMarkerSize; p++)
     *p = kShadowRodata;
-  internal_write(fd, marker.data(), marker.size());
+  internal_write(fd, marker.data(), marker.size() * sizeof(u64));
   // Map the file into memory.
   uptr page = internal_mmap(0, GetPageSizeCached(), PROT_READ | PROT_WRITE,
                             MAP_PRIVATE | MAP_ANONYMOUS, fd, 0);
@@ -191,8 +203,9 @@ static void MapRodata() {
       // Assume it's .rodata
       char *shadow_start = (char *)MemToShadow(segment.start);
       char *shadow_end = (char *)MemToShadow(segment.end);
-      for (char *p = shadow_start; p < shadow_end; p += marker.size()) {
-        internal_mmap(p, Min<uptr>(marker.size(), shadow_end - p),
+      for (char *p = shadow_start; p < shadow_end;
+           p += marker.size() * sizeof(u64)) {
+        internal_mmap(p, Min<uptr>(marker.size() * sizeof(u64), shadow_end - p),
                       PROT_READ, MAP_PRIVATE | MAP_FIXED, fd, 0);
       }
     }
@@ -211,17 +224,33 @@ void InitializePlatformEarly() {
   vmaSize =
     (MostSignificantSetBitIndex(GET_CURRENT_FRAME()) + 1);
 #if defined(__aarch64__)
+# if !SANITIZER_GO
   if (vmaSize != 39 && vmaSize != 42 && vmaSize != 48) {
     Printf("FATAL: ThreadSanitizer: unsupported VMA range\n");
-    Printf("FATAL: Found %d - Supported 39, 42 and 48\n", vmaSize);
+    Printf("FATAL: Found %zd - Supported 39, 42 and 48\n", vmaSize);
     Die();
   }
+#else
+  if (vmaSize != 48) {
+    Printf("FATAL: ThreadSanitizer: unsupported VMA range\n");
+    Printf("FATAL: Found %zd - Supported 48\n", vmaSize);
+    Die();
+  }
+#endif
 #elif defined(__powerpc64__)
+# if !SANITIZER_GO
   if (vmaSize != 44 && vmaSize != 46 && vmaSize != 47) {
     Printf("FATAL: ThreadSanitizer: unsupported VMA range\n");
-    Printf("FATAL: Found %d - Supported 44, 46, and 47\n", vmaSize);
+    Printf("FATAL: Found %zd - Supported 44, 46, and 47\n", vmaSize);
     Die();
   }
+# else
+  if (vmaSize != 46 && vmaSize != 47) {
+    Printf("FATAL: ThreadSanitizer: unsupported VMA range\n");
+    Printf("FATAL: Found %zd - Supported 46, and 47\n", vmaSize);
+    Die();
+  }
+# endif
 #endif
 #endif
 }
@@ -232,7 +261,8 @@ void InitializePlatform() {
   // Go maps shadow memory lazily and works fine with limited address space.
   // Unlimited stack is not a problem as well, because the executable
   // is not compiled with -pie.
-  if (!SANITIZER_GO) {
+#if !SANITIZER_GO
+  {
     bool reexec = false;
     // TSan doesn't play well with unlimited stack size (as stack
     // overlaps with shadow memory). If we detect unlimited stack size,
@@ -267,17 +297,16 @@ void InitializePlatform() {
       CHECK_NE(personality(old_personality | ADDR_NO_RANDOMIZE), -1);
       reexec = true;
     }
-    // Initialize the guard pointer used in {sig}{set,long}jump.
-    InitializeGuardPtr();
+    // Initialize the xor key used in {sig}{set,long}jump.
+    InitializeLongjmpXorKey();
 #endif
     if (reexec)
       ReExec();
   }
 
-#if !SANITIZER_GO
   CheckAndProtect();
   InitTlsSize();
-#endif
+#endif  // !SANITIZER_GO
 }
 
 #if !SANITIZER_GO
@@ -318,6 +347,83 @@ int ExtractRecvmsgFDs(void *msgp, int *fds, int nfd) {
   return res;
 }
 
+// Reverse operation of libc stack pointer mangling
+static uptr UnmangleLongJmpSp(uptr mangled_sp) {
+#if defined(__x86_64__)
+# if SANITIZER_LINUX
+  // Reverse of:
+  //   xor  %fs:0x30, %rsi
+  //   rol  $0x11, %rsi
+  uptr sp;
+  asm("ror  $0x11,     %0 \n"
+      "xor  %%fs:0x30, %0 \n"
+      : "=r" (sp)
+      : "0" (mangled_sp));
+  return sp;
+# else
+  return mangled_sp;
+# endif
+#elif defined(__aarch64__)
+# if SANITIZER_LINUX
+  return mangled_sp ^ longjmp_xor_key;
+# else
+  return mangled_sp;
+# endif
+#elif defined(__powerpc64__)
+  // Reverse of:
+  //   ld   r4, -28696(r13)
+  //   xor  r4, r3, r4
+  uptr xor_key;
+  asm("ld  %0, -28696(%%r13)" : "=r" (xor_key));
+  return mangled_sp ^ xor_key;
+#elif defined(__mips__)
+  return mangled_sp;
+#else
+  #error "Unknown platform"
+#endif
+}
+
+#ifdef __powerpc__
+# define LONG_JMP_SP_ENV_SLOT 0
+#elif SANITIZER_FREEBSD
+# define LONG_JMP_SP_ENV_SLOT 2
+#elif SANITIZER_NETBSD
+# define LONG_JMP_SP_ENV_SLOT 6
+#elif SANITIZER_LINUX
+# ifdef __aarch64__
+#  define LONG_JMP_SP_ENV_SLOT 13
+# elif defined(__mips64)
+#  define LONG_JMP_SP_ENV_SLOT 1
+# else
+#  define LONG_JMP_SP_ENV_SLOT 6
+# endif
+#endif
+
+uptr ExtractLongJmpSp(uptr *env) {
+  uptr mangled_sp = env[LONG_JMP_SP_ENV_SLOT];
+  return UnmangleLongJmpSp(mangled_sp);
+}
+
+#if INIT_LONGJMP_XOR_KEY
+// GLIBC mangles the function pointers in jmp_buf (used in {set,long}*jmp
+// functions) by XORing them with a random key.  For AArch64 it is a global
+// variable rather than a TCB one (as for x86_64/powerpc).  We obtain the key by
+// issuing a setjmp and XORing the SP pointer values to derive the key.
+static void InitializeLongjmpXorKey() {
+  // 1. Call REAL(setjmp), which stores the mangled SP in env.
+  jmp_buf env;
+  REAL(_setjmp)(env);
+
+  // 2. Retrieve vanilla/mangled SP.
+  uptr sp;
+  asm("mov  %0, sp" : "=r" (sp));
+  uptr mangled_sp = ((uptr *)&env)[LONG_JMP_SP_ENV_SLOT];
+
+  // 3. xor SPs to obtain key.
+  longjmp_xor_key = mangled_sp ^ sp;
+}
+#endif
+
 void ImitateTlsWrite(ThreadState *thr, uptr tls_addr, uptr tls_size) {
   // Check that the thr object is in tls;
   const uptr thr_beg = (uptr)thr;
@@ -345,7 +451,7 @@ int call_pthread_cancel_with_cleanup(int(*fn)(void *c, void *m,
   pthread_cleanup_pop(0);
   return res;
 }
-#endif
+#endif  // !SANITIZER_GO
 
 #if !SANITIZER_GO
 void ReplaceSystemMalloc() { }
@@ -383,6 +489,10 @@ ThreadState *cur_thread() {
     CHECK_EQ(0, internal_sigprocmask(SIG_SETMASK, &oldset, nullptr));
   }
   return thr;
+}
+
+void set_cur_thread(ThreadState *thr) {
+  *get_android_tls_ptr() = reinterpret_cast<uptr>(thr);
 }
 
 void cur_thread_finalize() {

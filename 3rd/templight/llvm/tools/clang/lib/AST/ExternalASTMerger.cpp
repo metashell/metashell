@@ -1,9 +1,8 @@
 //===- ExternalASTMerger.cpp - Merging External AST Interface ---*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -16,6 +15,7 @@
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/DeclObjC.h"
+#include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExternalASTMerger.h"
 
 using namespace clang;
@@ -56,7 +56,12 @@ LookupSameContext(Source<TranslationUnitDecl *> SourceTU, const DeclContext *DC,
   }
   auto *ND = cast<NamedDecl>(DC);
   DeclarationName Name = ND->getDeclName();
-  Source<DeclarationName> SourceName = ReverseImporter.Import(Name);
+  auto SourceNameOrErr = ReverseImporter.Import(Name);
+  if (!SourceNameOrErr) {
+    llvm::consumeError(SourceNameOrErr.takeError());
+    return nullptr;
+  }
+  Source<DeclarationName> SourceName = *SourceNameOrErr;
   DeclContext::lookup_result SearchResult =
       SourceParentDC.get()->lookup(SourceName.get());
   size_t SearchResultSize = SearchResult.size();
@@ -110,7 +115,7 @@ public:
 
   /// Whenever a DeclContext is imported, ensure that ExternalASTSource's origin
   /// map is kept up to date.  Also set the appropriate flags.
-  Decl *Imported(Decl *From, Decl *To) override {
+  void Imported(Decl *From, Decl *To) override {
     if (auto *ToDC = dyn_cast<DeclContext>(To)) {
       const bool LoggingEnabled = Parent.LoggingEnabled();
       if (LoggingEnabled)
@@ -143,17 +148,16 @@ public:
     }
     if (auto *ToTag = dyn_cast<TagDecl>(To)) {
       ToTag->setHasExternalLexicalStorage();
-      ToTag->setMustBuildLookupTable();
+      ToTag->getPrimaryContext()->setMustBuildLookupTable();
       assert(Parent.CanComplete(ToTag));
     } else if (auto *ToNamespace = dyn_cast<NamespaceDecl>(To)) {
       ToNamespace->setHasExternalVisibleStorage();
       assert(Parent.CanComplete(ToNamespace));
     } else if (auto *ToContainer = dyn_cast<ObjCContainerDecl>(To)) {
       ToContainer->setHasExternalLexicalStorage();
-      ToContainer->setMustBuildLookupTable();
+      ToContainer->getPrimaryContext()->setMustBuildLookupTable();
       assert(Parent.CanComplete(ToContainer));
     }
-    return ASTImporter::Imported(From, To);
   }
   ASTImporter &GetReverse() { return Reverse; }
 };
@@ -228,8 +232,9 @@ void ExternalASTMerger::CompleteType(TagDecl *Tag) {
       SourceTag->getASTContext().getExternalSource()->CompleteType(SourceTag);
     if (!SourceTag->getDefinition())
       return false;
-    Forward.Imported(SourceTag, Tag);
-    Forward.ImportDefinition(SourceTag);
+    Forward.MapImported(SourceTag, Tag);
+    if (llvm::Error Err = Forward.ImportDefinition(SourceTag))
+      llvm::consumeError(std::move(Err));
     Tag->setCompleteDefinition(SourceTag->isCompleteDefinition());
     return true;
   });
@@ -247,8 +252,9 @@ void ExternalASTMerger::CompleteType(ObjCInterfaceDecl *Interface) {
               SourceInterface);
         if (!SourceInterface->getDefinition())
           return false;
-        Forward.Imported(SourceInterface, Interface);
-        Forward.ImportDefinition(SourceInterface);
+        Forward.MapImported(SourceInterface, Interface);
+        if (llvm::Error Err = Forward.ImportDefinition(SourceInterface))
+          llvm::consumeError(std::move(Err));
         return true;
       });
 }
@@ -303,7 +309,7 @@ void ExternalASTMerger::ForceRecordOrigin(const DeclContext *ToDC,
 void ExternalASTMerger::RecordOriginImpl(const DeclContext *ToDC, DCOrigin Origin,
                                          ASTImporter &Importer) {
   Origins[ToDC] = Origin;
-  Importer.ASTImporter::Imported(cast<Decl>(Origin.DC), const_cast<Decl*>(cast<Decl>(ToDC)));
+  Importer.ASTImporter::MapImported(cast<Decl>(Origin.DC), const_cast<Decl*>(cast<Decl>(ToDC)));
 }
 
 ExternalASTMerger::ExternalASTMerger(const ImporterTarget &Target,
@@ -351,6 +357,31 @@ void ExternalASTMerger::RemoveSources(llvm::ArrayRef<ImporterSource> Sources) {
   }
 }
 
+template <typename DeclTy>
+static bool importSpecializations(DeclTy *D, ASTImporter *Importer) {
+  for (auto *Spec : D->specializations()) {
+    auto ImportedSpecOrError = Importer->Import(Spec);
+    if (!ImportedSpecOrError) {
+      llvm::consumeError(ImportedSpecOrError.takeError());
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Imports specializations from template declarations that can be specialized.
+static bool importSpecializationsIfNeeded(Decl *D, ASTImporter *Importer) {
+  if (!isa<TemplateDecl>(D))
+    return false;
+  if (auto *FunctionTD = dyn_cast<FunctionTemplateDecl>(D))
+    return importSpecializations(FunctionTD, Importer);
+  else if (auto *ClassTD = dyn_cast<ClassTemplateDecl>(D))
+    return importSpecializations(ClassTD, Importer);
+  else if (auto *VarTD = dyn_cast<VarTemplateDecl>(D))
+    return importSpecializations(VarTD, Importer);
+  return false;
+}
+
 bool ExternalASTMerger::FindExternalVisibleDeclsByName(const DeclContext *DC,
                                                        DeclarationName Name) {
   llvm::SmallVector<NamedDecl *, 1> Decls;
@@ -361,24 +392,42 @@ bool ExternalASTMerger::FindExternalVisibleDeclsByName(const DeclContext *DC,
      Candidates.push_back(C);
   };
 
-  ForEachMatchingDC(DC, [&](ASTImporter &Forward, ASTImporter &Reverse,
-                            Source<const DeclContext *> SourceDC) -> bool {
-    DeclarationName FromName = Reverse.Import(Name);
-    DeclContextLookupResult Result = SourceDC.get()->lookup(FromName);
-    for (NamedDecl *FromD : Result) {
-      FilterFoundDecl(std::make_pair(FromD, &Forward));
-    }
-    return false;
-  });
+  ForEachMatchingDC(DC,
+                    [&](ASTImporter &Forward, ASTImporter &Reverse,
+                        Source<const DeclContext *> SourceDC) -> bool {
+                      auto FromNameOrErr = Reverse.Import(Name);
+                      if (!FromNameOrErr) {
+                        llvm::consumeError(FromNameOrErr.takeError());
+                        return false;
+                      }
+                      DeclContextLookupResult Result =
+                          SourceDC.get()->lookup(*FromNameOrErr);
+                      for (NamedDecl *FromD : Result) {
+                        FilterFoundDecl(std::make_pair(FromD, &Forward));
+                      }
+                      return false;
+                    });
 
   if (Candidates.empty())
     return false;
 
   Decls.reserve(Candidates.size());
   for (const Candidate &C : Candidates) {
-    NamedDecl *d = cast<NamedDecl>(C.second->Import(C.first.get()));
-    assert(d);
-    Decls.push_back(d);
+    Decl *LookupRes = C.first.get();
+    ASTImporter *Importer = C.second;
+    auto NDOrErr = Importer->Import(LookupRes);
+    assert(NDOrErr);
+    (void)static_cast<bool>(NDOrErr);
+    NamedDecl *ND = cast_or_null<NamedDecl>(*NDOrErr);
+    assert(ND);
+    // If we don't import specialization, they are not available via lookup
+    // because the lookup result is imported TemplateDecl and it does not
+    // reference its specializations until they are imported explicitly.
+    bool IsSpecImportFailed =
+        importSpecializationsIfNeeded(LookupRes, Importer);
+    assert(!IsSpecImportFailed);
+    (void)IsSpecImportFailed;
+    Decls.push_back(ND);
   }
   SetExternalVisibleDeclsForName(DC, Name, Decls);
   return true;
@@ -391,9 +440,12 @@ void ExternalASTMerger::FindExternalLexicalDecls(
                             Source<const DeclContext *> SourceDC) -> bool {
     for (const Decl *SourceDecl : SourceDC.get()->decls()) {
       if (IsKindWeWant(SourceDecl->getKind())) {
-        Decl *ImportedDecl = Forward.Import(const_cast<Decl *>(SourceDecl));
-        assert(!ImportedDecl || IsSameDC(ImportedDecl->getDeclContext(), DC));
-        (void)ImportedDecl;
+        auto ImportedDeclOrErr = Forward.Import(SourceDecl);
+        if (ImportedDeclOrErr)
+          assert(!(*ImportedDeclOrErr) ||
+                 IsSameDC((*ImportedDeclOrErr)->getDeclContext(), DC));
+        else
+          llvm::consumeError(ImportedDeclOrErr.takeError());
       }
     }
     return false;

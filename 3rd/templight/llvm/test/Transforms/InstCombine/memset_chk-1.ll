@@ -15,7 +15,7 @@ define i8* @test_simplify1() {
 ; CHECK-LABEL: @test_simplify1(
   %dst = bitcast %struct.T* @t to i8*
 
-; CHECK-NEXT: call void @llvm.memset.p0i8.i64(i8* bitcast (%struct.T* @t to i8*), i8 0, i64 1824, i32 4, i1 false)
+; CHECK-NEXT: call void @llvm.memset.p0i8.i64(i8* align 4 bitcast (%struct.T* @t to i8*), i8 0, i64 1824, i1 false)
 ; CHECK-NEXT: ret i8* bitcast (%struct.T* @t to i8*)
   %ret = call i8* @__memset_chk(i8* %dst, i32 0, i64 1824, i64 1824)
   ret i8* %ret
@@ -25,7 +25,7 @@ define i8* @test_simplify2() {
 ; CHECK-LABEL: @test_simplify2(
   %dst = bitcast %struct.T* @t to i8*
 
-; CHECK-NEXT: call void @llvm.memset.p0i8.i64(i8* bitcast (%struct.T* @t to i8*), i8 0, i64 1824, i32 4, i1 false)
+; CHECK-NEXT: call void @llvm.memset.p0i8.i64(i8* align 4 bitcast (%struct.T* @t to i8*), i8 0, i64 1824, i1 false)
 ; CHECK-NEXT: ret i8* bitcast (%struct.T* @t to i8*)
   %ret = call i8* @__memset_chk(i8* %dst, i32 0, i64 1824, i64 3648)
   ret i8* %ret
@@ -35,7 +35,7 @@ define i8* @test_simplify3() {
 ; CHECK-LABEL: @test_simplify3(
   %dst = bitcast %struct.T* @t to i8*
 
-; CHECK-NEXT: call void @llvm.memset.p0i8.i64(i8* bitcast (%struct.T* @t to i8*), i8 0, i64 1824, i32 4, i1 false)
+; CHECK-NEXT: call void @llvm.memset.p0i8.i64(i8* align 4 bitcast (%struct.T* @t to i8*), i8 0, i64 1824, i1 false)
 ; CHECK-NEXT: ret i8* bitcast (%struct.T* @t to i8*)
   %ret = call i8* @__memset_chk(i8* %dst, i32 0, i64 1824, i64 -1)
   ret i8* %ret
@@ -69,7 +69,7 @@ define i32 @test_rauw(i8* %a, i8* %b, i8** %c) {
 entry:
   %call49 = call i64 @strlen(i8* %a)
   %add180 = add i64 %call49, 1
-  %yo107 = call i64 @llvm.objectsize.i64.p0i8(i8* %b, i1 false, i1 false)
+  %yo107 = call i64 @llvm.objectsize.i64.p0i8(i8* %b, i1 false, i1 false, i1 false)
   %call50 = call i8* @__memmove_chk(i8* %b, i8* %a, i64 %add180, i64 %yo107)
 ; CHECK: %strlen = call i64 @strlen(i8* %b)
 ; CHECK-NEXT: %strchr2 = getelementptr i8, i8* %b, i64 %strlen
@@ -79,7 +79,7 @@ entry:
   %sub183 = ptrtoint i8* %b to i64
   %sub184 = sub i64 %sub182, %sub183
   %add52.i.i = add nsw i64 %sub184, 1
-; CHECK: call void @llvm.memset.p0i8.i64(i8* %strchr2
+; CHECK: call void @llvm.memset.p0i8.i64(i8* align 1 %strchr2
   %call185 = call i8* @__memset_chk(i8* %call51i, i32 0, i64 %add52.i.i, i64 -1)
   ret i32 4
 }
@@ -87,7 +87,7 @@ entry:
 declare i8* @__memmove_chk(i8*, i8*, i64, i64)
 declare i8* @strrchr(i8*, i32)
 declare i64 @strlen(i8* nocapture)
-declare i64 @llvm.objectsize.i64.p0i8(i8*, i1, i1)
+declare i64 @llvm.objectsize.i64.p0i8(i8*, i1, i1, i1)
 
 declare i8* @__memset_chk(i8*, i32, i64, i64)
 
@@ -100,7 +100,7 @@ entry:
   br i1 %cmp, label %cleanup, label %if.end
 if.end:
   %bc = bitcast i8* %call to float*
-  %call2 = tail call i64 @llvm.objectsize.i64.p0i8(i8* nonnull %call, i1 false, i1 false)
+  %call2 = tail call i64 @llvm.objectsize.i64.p0i8(i8* nonnull %call, i1 false, i1 false, i1 false)
   %call3 = tail call i8* @__memset_chk(i8* nonnull %call, i32 0, i64 %size, i64 %call2) #1
   br label %cleanup
 cleanup:
@@ -114,7 +114,7 @@ cleanup:
 ; CHECK-NEXT:    br i1 %cmp, label %cleanup, label %if.end
 ; CHECK:       if.end:
 ; CHECK-NEXT:    %bc = bitcast i8* %call to float*
-; CHECK-NEXT:    %call2 = tail call i64 @llvm.objectsize.i64.p0i8(i8* nonnull %call, i1 false, i1 false)
+; CHECK-NEXT:    %call2 = tail call i64 @llvm.objectsize.i64.p0i8(i8* nonnull %call, i1 false, i1 false, i1 false)
 ; CHECK-NEXT:    %call3 = tail call i8* @__memset_chk(i8* nonnull %call, i32 0, i64 %size, i64 %call2)
 ; CHECK-NEXT:    br label %cleanup
 ; CHECK:       cleanup:

@@ -1,18 +1,18 @@
 ; RUN: sed -e "s,SRC_COMPDIR,%/p/Inputs,g" %s > %t.ll
-; RUN: llc -mtriple=amdgcn-amd-amdhsa-amdgiz -mcpu=gfx800 -filetype=obj -O0 -o %t.o %t.ll
-; RUN: llvm-objdump -triple=amdgcn-amd-amdhsa-amdgiz -mcpu=gfx800 -disassemble -line-numbers %t.o | FileCheck --check-prefix=LINE %t.ll
-; RUN: llvm-objdump -triple=amdgcn-amd-amdhsa-amdgiz -mcpu=gfx800 -disassemble -source %t.o | FileCheck --check-prefix=SOURCE %t.ll
+; RUN: llc -mtriple=amdgcn-amd-amdhsa -mcpu=gfx802 -filetype=obj -O0 -o %t.o %t.ll
+; RUN: llvm-objdump -triple=amdgcn-amd-amdhsa -mcpu=gfx802 -disassemble -line-numbers %t.o | FileCheck --check-prefix=LINE %t.ll
+; RUN: llvm-objdump -triple=amdgcn-amd-amdhsa -mcpu=gfx802 -disassemble -source %t.o | FileCheck --check-prefix=SOURCE %t.ll
 
 ; Prologue.
 ; LINE:      source_lines_test:
 ; LINE-NEXT: ; {{.*}}source-lines.cl:1
 ; Kernel.
-; LINE: ; {{.*}}source-lines.cl:2
 ; LINE: v_mov_b32_e32 v{{[0-9]+}}, 0x777
-; LINE: ; {{.*}}source-lines.cl:3
+; LINE: ; {{.*}}source-lines.cl:2
 ; LINE: v_mov_b32_e32 v{{[0-9]+}}, 0x888
+; LINE: ; {{.*}}source-lines.cl:3
 ; LINE: ; {{.*}}source-lines.cl:4
-; LINE: v_add_u32_e32
+; LINE: v_add_u32_e64
 ; LINE: ; {{.*}}source-lines.cl:5
 ; LINE: flat_store_dword
 ; Epilogue.
@@ -23,12 +23,12 @@
 ; SOURCE:      source_lines_test:
 ; SOURCE-NEXT: ; kernel void source_lines_test(global int *Out) {
 ; Kernel.
-; SOURCE: ; int var0 = 0x777;
 ; SOURCE: v_mov_b32_e32 v{{[0-9]+}}, 0x777
-; SOURCE: ; int var1 = 0x888;
+; SOURCE: ; int var0 = 0x777;
 ; SOURCE: v_mov_b32_e32 v{{[0-9]+}}, 0x888
+; SOURCE: ; int var1 = 0x888;
 ; SOURCE: ; int var2 = var0 + var1;
-; SOURCE: v_add_u32_e32
+; SOURCE: v_add_u32_e64
 ; SOURCE: ; *Out = var2;
 ; SOURCE: flat_store_dword
 ; Epilogue.
@@ -38,7 +38,7 @@
 ; ModuleID = 'source-lines.cl'
 source_filename = "source-lines.cl"
 target datalayout = "e-p:32:32-p1:64:64-p2:64:64-p3:32:32-p4:64:64-p5:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-v2048:2048-n32:64-A5"
-target triple = "amdgcn-amd-amdhsa-amdgiz"
+target triple = "amdgcn-amd-amdhsa"
 
 ; Function Attrs: noinline nounwind
 define amdgpu_kernel void @source_lines_test(i32 addrspace(1)* %Out) #0 !dbg !7 !kernel_arg_addr_space !12 !kernel_arg_access_qual !13 !kernel_arg_type !14 !kernel_arg_base_type !14 !kernel_arg_type_qual !15 {
@@ -82,7 +82,7 @@ attributes #1 = { nounwind readnone }
 !4 = !{i32 2, !"Dwarf Version", i32 2}
 !5 = !{i32 2, !"Debug Info Version", i32 3}
 !6 = !{!"clang version 5.0.0"}
-!7 = distinct !DISubprogram(name: "source_lines_test", scope: !1, file: !1, line: 1, type: !8, isLocal: false, isDefinition: true, scopeLine: 1, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
+!7 = distinct !DISubprogram(name: "source_lines_test", scope: !1, file: !1, line: 1, type: !8, isLocal: false, isDefinition: true, scopeLine: 1, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
 !8 = !DISubroutineType(types: !9)
 !9 = !{null, !10}
 !10 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !11, size: 64)

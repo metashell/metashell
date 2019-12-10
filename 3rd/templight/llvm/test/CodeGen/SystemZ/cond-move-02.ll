@@ -1,12 +1,17 @@
 ; Test LOCHI and LOCGHI.
 ;
 ; RUN: llc < %s -mtriple=s390x-linux-gnu -mcpu=z13 -verify-machineinstrs | FileCheck %s
+;
+; Run the test again to make sure it still works the same even
+; in the presence of the select instructions.
+; RUN: llc < %s -mtriple=s390x-linux-gnu -mcpu=arch13 -verify-machineinstrs | FileCheck %s
+
 
 define i32 @f1(i32 %x) {
 ; CHECK-LABEL: f1:
-; CHECK: lhi [[REG:%r[0-5]]], 0
 ; CHECK: chi %r2, 0
-; CHECK: lochilh [[REG]], 42
+; CHECK: lhi %r2, 0
+; CHECK: lochilh %r2, 42
 ; CHECK: br %r14
   %cond = icmp ne i32 %x, 0
   %res = select i1 %cond, i32 42, i32 0
@@ -35,9 +40,9 @@ define i32 @f3(i32 %x, i32 %y) {
 
 define i64 @f4(i64 %x) {
 ; CHECK-LABEL: f4:
-; CHECK: lghi [[REG:%r[0-5]]], 0
 ; CHECK: cghi %r2, 0
-; CHECK: locghilh [[REG]], 42
+; CHECK: lghi %r2, 0
+; CHECK: locghilh %r2, 42
 ; CHECK: br %r14
   %cond = icmp ne i64 %x, 0
   %res = select i1 %cond, i64 42, i64 0

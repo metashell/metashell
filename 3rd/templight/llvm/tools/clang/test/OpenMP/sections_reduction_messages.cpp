@@ -1,11 +1,12 @@
-// RUN: %clang_cc1 -verify -fopenmp -ferror-limit 150 -o - %s
-// RUN: %clang_cc1 -verify -fopenmp -std=c++98 -ferror-limit 150 -o - %s
-// RUN: %clang_cc1 -verify -fopenmp -std=c++11 -ferror-limit 150 -o - %s
+// RUN: %clang_cc1 -verify -fopenmp -ferror-limit 150 -o - %s -Wuninitialized
+// RUN: %clang_cc1 -verify -fopenmp -std=c++98 -ferror-limit 150 -o - %s -Wuninitialized
+// RUN: %clang_cc1 -verify -fopenmp -std=c++11 -ferror-limit 150 -o - %s -Wuninitialized
 
-// RUN: %clang_cc1 -verify -fopenmp-simd -ferror-limit 150 -o - %s
-// RUN: %clang_cc1 -verify -fopenmp-simd -std=c++98 -ferror-limit 150 -o - %s
-// RUN: %clang_cc1 -verify -fopenmp-simd -std=c++11 -ferror-limit 150 -o - %s
+// RUN: %clang_cc1 -verify -fopenmp-simd -ferror-limit 150 -o - %s -Wuninitialized
+// RUN: %clang_cc1 -verify -fopenmp-simd -std=c++98 -ferror-limit 150 -o - %s -Wuninitialized
+// RUN: %clang_cc1 -verify -fopenmp-simd -std=c++11 -ferror-limit 150 -o - %s -Wuninitialized
 
+extern int omp_default_mem_alloc;
 void foo() {
 }
 
@@ -14,7 +15,7 @@ bool foobool(int argc) {
 }
 
 void foobar(int &ref) {
-#pragma omp parallel   
+#pragma omp parallel
 #pragma omp sections reduction(+:ref)
   {
     foo();
@@ -87,7 +88,7 @@ T tmain(T argc) {
   const T d = T();       // expected-note 4 {{'d' defined here}}
   const T da[5] = {T()}; // expected-note 2 {{'da' defined here}}
   T qa[5] = {T()};
-  T i;
+  T i, z;
   T &j = i;                // expected-note 4 {{'j' defined here}}
   S3 &p = k;               // expected-note 2 {{'p' defined here}}
   const T &r = da[(int)i]; // expected-note 2 {{'r' defined here}}
@@ -149,7 +150,7 @@ T tmain(T argc) {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(&& : argc)
+#pragma omp sections reduction(&& : argc) allocate , allocate(, allocate(omp_default , allocate(omp_default_mem_alloc, allocate(omp_default_mem_alloc:, allocate(omp_default_mem_alloc: argc, allocate(omp_default_mem_alloc: argv), allocate(argv) // expected-error {{expected '(' after 'allocate'}} expected-error 2 {{expected expression}} expected-error 2 {{expected ')'}} expected-error {{use of undeclared identifier 'omp_default'}} expected-note 2 {{to match this '('}}
   {
     foo();
   }
@@ -159,12 +160,12 @@ T tmain(T argc) {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(+ : a, b, c, d, f) // expected-error {{a reduction list item with incomplete type 'S1'}} expected-error 3 {{const-qualified list item cannot be reduction}} expected-error 2 {{'operator+' is a private member of 'S2'}}
+#pragma omp sections reduction(+ : a, b, c, d, f) // expected-error {{a reduction list item with incomplete type 'S1'}} expected-error 3 {{const-qualified variable cannot be reduction}} expected-error 2 {{'operator+' is a private member of 'S2'}}
   {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(min : a, b, c, d, f) // expected-error {{a reduction list item with incomplete type 'S1'}} expected-error 4 {{arguments of OpenMP clause 'reduction' for 'min' or 'max' must be of arithmetic type}} expected-error 3 {{const-qualified list item cannot be reduction}}
+#pragma omp sections reduction(min : a, b, c, d, f) // expected-error {{a reduction list item with incomplete type 'S1'}} expected-error 4 {{arguments of OpenMP clause 'reduction' for 'min' or 'max' must be of arithmetic type}} expected-error 3 {{const-qualified variable cannot be reduction}}
   {
     foo();
   }
@@ -174,17 +175,17 @@ T tmain(T argc) {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(+ : ba) // expected-error {{const-qualified list item cannot be reduction}}
+#pragma omp sections reduction(+ : ba) // expected-error {{const-qualified variable cannot be reduction}}
   {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(* : ca) // expected-error {{const-qualified list item cannot be reduction}}
+#pragma omp sections reduction(* : ca) // expected-error {{const-qualified variable cannot be reduction}}
   {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(- : da) // expected-error {{const-qualified list item cannot be reduction}} expected-error {{const-qualified list item cannot be reduction}}
+#pragma omp sections reduction(- : da) // expected-error {{const-qualified variable cannot be reduction}} expected-error {{const-qualified variable cannot be reduction}}
   {
     foo();
   }
@@ -199,7 +200,7 @@ T tmain(T argc) {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(&& : S2::S2sc) // expected-error {{const-qualified list item cannot be reduction}}
+#pragma omp sections reduction(&& : S2::S2sc) // expected-error {{const-qualified variable cannot be reduction}}
   {
     foo();
   }
@@ -209,7 +210,7 @@ T tmain(T argc) {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(+ : o) // expected-error 2 {{no viable overloaded '='}}
+#pragma omp sections reduction(+ : o, z) // expected-error 2 {{no viable overloaded '='}}
   {
     foo();
   }
@@ -229,7 +230,7 @@ T tmain(T argc) {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(+ : r) // expected-error 2 {{const-qualified list item cannot be reduction}}
+#pragma omp sections reduction(+ : r) // expected-error 2 {{const-qualified variable cannot be reduction}}
   {
     foo();
   }
@@ -267,7 +268,7 @@ int main(int argc, char **argv) {
   int qa[5] = {0};
   S4 e(4);
   S5 g(5);
-  int i;
+  int i, z;
   int &j = i;           // expected-note 2 {{'j' defined here}}
   S3 &p = k;            // expected-note 2 {{'p' defined here}}
   const int &r = da[i]; // expected-note {{'r' defined here}}
@@ -329,7 +330,7 @@ int main(int argc, char **argv) {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(&& : argc)
+#pragma omp sections reduction(&& : argc, z)
   {
     foo();
   }
@@ -339,12 +340,12 @@ int main(int argc, char **argv) {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(+ : a, b, c, d, f) // expected-error {{a reduction list item with incomplete type 'S1'}} expected-error 2 {{const-qualified list item cannot be reduction}} expected-error {{'operator+' is a private member of 'S2'}}
+#pragma omp sections reduction(+ : a, b, c, d, f) // expected-error {{a reduction list item with incomplete type 'S1'}} expected-error 2 {{const-qualified variable cannot be reduction}} expected-error {{'operator+' is a private member of 'S2'}}
   {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(min : a, b, c, d, f) // expected-error {{a reduction list item with incomplete type 'S1'}} expected-error 2 {{arguments of OpenMP clause 'reduction' for 'min' or 'max' must be of arithmetic type}} expected-error 2 {{const-qualified list item cannot be reduction}}
+#pragma omp sections reduction(min : a, b, c, d, f) // expected-error {{a reduction list item with incomplete type 'S1'}} expected-error 2 {{arguments of OpenMP clause 'reduction' for 'min' or 'max' must be of arithmetic type}} expected-error 2 {{const-qualified variable cannot be reduction}}
   {
     foo();
   }
@@ -354,17 +355,17 @@ int main(int argc, char **argv) {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(+ : ba) // expected-error {{const-qualified list item cannot be reduction}}
+#pragma omp sections reduction(+ : ba) // expected-error {{const-qualified variable cannot be reduction}}
   {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(* : ca) // expected-error {{const-qualified list item cannot be reduction}}
+#pragma omp sections reduction(* : ca) // expected-error {{const-qualified variable cannot be reduction}}
   {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(- : da) // expected-error {{const-qualified list item cannot be reduction}}
+#pragma omp sections reduction(- : da) // expected-error {{const-qualified variable cannot be reduction}}
   {
     foo();
   }
@@ -379,7 +380,7 @@ int main(int argc, char **argv) {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(&& : S2::S2sc) // expected-error {{const-qualified list item cannot be reduction}}
+#pragma omp sections reduction(&& : S2::S2sc) // expected-error {{const-qualified variable cannot be reduction}}
   {
     foo();
   }
@@ -414,7 +415,7 @@ int main(int argc, char **argv) {
     foo();
   }
 #pragma omp parallel
-#pragma omp sections reduction(+ : r) // expected-error {{const-qualified list item cannot be reduction}}
+#pragma omp sections reduction(+ : r) // expected-error {{const-qualified variable cannot be reduction}}
   {
     foo();
   }

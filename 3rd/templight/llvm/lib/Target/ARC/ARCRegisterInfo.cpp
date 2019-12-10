@@ -1,9 +1,8 @@
 //===- ARCRegisterInfo.cpp - ARC Register Information -----------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -66,9 +65,9 @@ static void ReplaceFrameIndex(MachineBasicBlock::iterator II,
           MBB.getParent()->getSubtarget().getRegisterInfo();
       BaseReg = RS->scavengeRegister(&ARC::GPR32RegClass, II, SPAdj);
       assert(BaseReg && "Register scavenging failed.");
-      DEBUG(dbgs() << "Scavenged register " << printReg(BaseReg, TRI)
-                   << " for FrameReg=" << printReg(FrameReg, TRI)
-                   << "+Offset=" << Offset << "\n");
+      LLVM_DEBUG(dbgs() << "Scavenged register " << printReg(BaseReg, TRI)
+                        << " for FrameReg=" << printReg(FrameReg, TRI)
+                        << "+Offset=" << Offset << "\n");
       (void)TRI;
       RS->setRegUsed(BaseReg);
     }
@@ -83,12 +82,14 @@ static void ReplaceFrameIndex(MachineBasicBlock::iterator II,
   switch (MI.getOpcode()) {
   case ARC::LD_rs9:
     assert((Offset % 4 == 0) && "LD needs 4 byte alignment.");
+    LLVM_FALLTHROUGH;
   case ARC::LDH_rs9:
   case ARC::LDH_X_rs9:
     assert((Offset % 2 == 0) && "LDH needs 2 byte alignment.");
+    LLVM_FALLTHROUGH;
   case ARC::LDB_rs9:
   case ARC::LDB_X_rs9:
-    DEBUG(dbgs() << "Building LDFI\n");
+    LLVM_DEBUG(dbgs() << "Building LDFI\n");
     BuildMI(MBB, II, dl, TII.get(MI.getOpcode()), Reg)
         .addReg(BaseReg, KillState)
         .addImm(Offset)
@@ -96,10 +97,12 @@ static void ReplaceFrameIndex(MachineBasicBlock::iterator II,
     break;
   case ARC::ST_rs9:
     assert((Offset % 4 == 0) && "ST needs 4 byte alignment.");
+    LLVM_FALLTHROUGH;
   case ARC::STH_rs9:
     assert((Offset % 2 == 0) && "STH needs 2 byte alignment.");
+    LLVM_FALLTHROUGH;
   case ARC::STB_rs9:
-    DEBUG(dbgs() << "Building STFI\n");
+    LLVM_DEBUG(dbgs() << "Building STFI\n");
     BuildMI(MBB, II, dl, TII.get(MI.getOpcode()))
         .addReg(Reg, getKillRegState(MI.getOperand(0).isKill()))
         .addReg(BaseReg, KillState)
@@ -107,7 +110,7 @@ static void ReplaceFrameIndex(MachineBasicBlock::iterator II,
         .addMemOperand(*MI.memoperands_begin());
     break;
   case ARC::GETFI:
-    DEBUG(dbgs() << "Building GETFI\n");
+    LLVM_DEBUG(dbgs() << "Building GETFI\n");
     BuildMI(MBB, II, dl,
             TII.get(isUInt<6>(Offset) ? ARC::ADD_rru6 : ARC::ADD_rrlimm))
         .addReg(Reg, RegState::Define)
@@ -175,19 +178,19 @@ void ARCRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   int StackSize = MF.getFrameInfo().getStackSize();
   int LocalFrameSize = MF.getFrameInfo().getLocalFrameSize();
 
-  DEBUG(dbgs() << "\nFunction         : " << MF.getName() << "\n");
-  DEBUG(dbgs() << "<--------->\n");
-  DEBUG(dbgs() << MI << "\n");
-  DEBUG(dbgs() << "FrameIndex         : " << FrameIndex << "\n");
-  DEBUG(dbgs() << "ObjSize            : " << ObjSize << "\n");
-  DEBUG(dbgs() << "FrameOffset        : " << Offset << "\n");
-  DEBUG(dbgs() << "StackSize          : " << StackSize << "\n");
-  DEBUG(dbgs() << "LocalFrameSize     : " << LocalFrameSize << "\n");
+  LLVM_DEBUG(dbgs() << "\nFunction         : " << MF.getName() << "\n");
+  LLVM_DEBUG(dbgs() << "<--------->\n");
+  LLVM_DEBUG(dbgs() << MI << "\n");
+  LLVM_DEBUG(dbgs() << "FrameIndex         : " << FrameIndex << "\n");
+  LLVM_DEBUG(dbgs() << "ObjSize            : " << ObjSize << "\n");
+  LLVM_DEBUG(dbgs() << "FrameOffset        : " << Offset << "\n");
+  LLVM_DEBUG(dbgs() << "StackSize          : " << StackSize << "\n");
+  LLVM_DEBUG(dbgs() << "LocalFrameSize     : " << LocalFrameSize << "\n");
   (void)LocalFrameSize;
 
   // Special handling of DBG_VALUE instructions.
   if (MI.isDebugValue()) {
-    unsigned FrameReg = getFrameRegister(MF);
+    Register FrameReg = getFrameRegister(MF);
     MI.getOperand(FIOperandNum).ChangeToRegister(FrameReg, false /*isDef*/);
     MI.getOperand(FIOperandNum + 1).ChangeToImmediate(Offset);
     return;
@@ -200,8 +203,8 @@ void ARCRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   // ldb needs no alignment,
   // ldh needs 2 byte alignment
   // ld needs 4 byte alignment
-  DEBUG(dbgs() << "Offset             : " << Offset << "\n"
-               << "<--------->\n");
+  LLVM_DEBUG(dbgs() << "Offset             : " << Offset << "\n"
+                    << "<--------->\n");
 
   unsigned Reg = MI.getOperand(0).getReg();
   assert(ARC::GPR32RegClass.contains(Reg) && "Unexpected register operand");
@@ -220,7 +223,7 @@ void ARCRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
                     ObjSize, RS, SPAdj);
 }
 
-unsigned ARCRegisterInfo::getFrameRegister(const MachineFunction &MF) const {
+Register ARCRegisterInfo::getFrameRegister(const MachineFunction &MF) const {
   const ARCFrameLowering *TFI = getFrameLowering(MF);
   return TFI->hasFP(MF) ? ARC::FP : ARC::SP;
 }

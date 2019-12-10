@@ -10,14 +10,14 @@
 target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64"
 target triple = "x86_64-unknown-linux-gnu"
 
-%0 = type { i32, void ()* }
+%0 = type { i32, void ()*, i8* }
 %1 = type { i64, i1 }
 %"class.std::vector" = type { [24 x i8] }
 
 @vi = global %"class.std::vector" zeroinitializer, align 8
 @__dso_handle = external unnamed_addr global i8*
 @vp = global %"class.std::vector" zeroinitializer, align 8
-@llvm.global_ctors = appending global [1 x %0] [%0 { i32 65535, void ()* @_GLOBAL__I_a }]
+@llvm.global_ctors = appending global [1 x %0] [%0 { i32 65535, void ()* @_GLOBAL__I_a, i8* null }]
 
 define linkonce_odr void @_ZNSt6vectorIlSaIlEED1Ev(%"class.std::vector"* nocapture %this) unnamed_addr align 2 {
 entry:
@@ -59,7 +59,7 @@ declare void @_ZNSt6vectorIPvSaIS0_EE13_M_insert_auxEN9__gnu_cxx17__normal_itera
 
 declare void @_ZdlPv(i8*) nounwind
 
-declare void @llvm.memmove.p0i8.p0i8.i64(i8* nocapture, i8* nocapture, i64, i32, i1) nounwind
+declare void @llvm.memmove.p0i8.p0i8.i64(i8* nocapture, i8* nocapture, i64, i1) nounwind
 
 declare void @_ZSt17__throw_bad_allocv() noreturn
 

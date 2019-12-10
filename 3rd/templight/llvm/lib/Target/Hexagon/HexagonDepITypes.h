@@ -1,14 +1,12 @@
-//===- HexagonDepITypes.h -------------------------------------------------===//
+//===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 // Automatically generated file, please consult code owner before editing.
 //===----------------------------------------------------------------------===//
-
 
 namespace llvm {
 namespace HexagonII {
@@ -45,6 +43,7 @@ enum Type {
   TypeCVI_VX = 29,
   TypeCVI_VX_DV = 30,
   TypeCVI_VX_LATE = 31,
+  TypeCVI_ZW = 32,
   TypeDUPLEX = 33,
   TypeENDLOOP = 34,
   TypeEXTENDER = 35,
@@ -59,7 +58,7 @@ enum Type {
   TypeS_2op = 44,
   TypeS_3op = 45,
   TypeV2LDST = 48,
-  TypeV4LDST = 49
+  TypeV4LDST = 49,
 };
 }
 }

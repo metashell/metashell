@@ -123,15 +123,15 @@
 // Make sure -pie is passed to along to ld and that the right *crt* files
 // are linked in.
 // RUN: %clang %s -target i386-unknown-freebsd -fPIE -pie -### \
-// RUN: --gcc-toolchain="" \
+// RUN: --gcc-toolchain="" -rtlib=platform \
 // RUN: --sysroot=%S/Inputs/basic_freebsd_tree 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=CHECK-PIE-LD
 // RUN: %clang %s -target i386-linux-gnu -fPIE -pie -### \
-// RUN: --gcc-toolchain="" \
+// RUN: --gcc-toolchain="" -rtlib=platform \
 // RUN: --sysroot=%S/Inputs/basic_linux_tree 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=CHECK-PIE-LD
 // RUN: %clang %s -target i386-linux-gnu -fPIC -pie -### \
-// RUN: --gcc-toolchain="" \
+// RUN: --gcc-toolchain="" -rtlib=platform \
 // RUN: --sysroot=%S/Inputs/basic_linux_tree 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=CHECK-PIE-LD
 //
@@ -292,9 +292,9 @@
 // RUN: %clang -c %s -target mipsel-linux-android14 -### 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=CHECK-PIC1
 // RUN: %clang -c %s -target mipsel-linux-android16 -### 2>&1 \
-// RUN:   | FileCheck %s --check-prefix=CHECK-PIE2
+// RUN:   | FileCheck %s --check-prefix=CHECK-PIE1
 // RUN: %clang -c %s -target mipsel-linux-android24 -### 2>&1 \
-// RUN:   | FileCheck %s --check-prefix=CHECK-PIE2
+// RUN:   | FileCheck %s --check-prefix=CHECK-PIE1
 //
 // 64-bit Android targets are always PIE.
 // RUN: %clang -c %s -target aarch64-linux-android -### 2>&1 \

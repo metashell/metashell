@@ -1,22 +1,20 @@
 //===- EntryExitInstrumenter.cpp - Function Entry/Exit Instrumentation ----===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
 #include "llvm/Transforms/Utils/EntryExitInstrumenter.h"
 #include "llvm/Analysis/GlobalsModRef.h"
-#include "llvm/CodeGen/Passes.h"
 #include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/Pass.h"
-#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Utils.h"
 using namespace llvm;
 
 static void insertCall(Function &CurFn, StringRef Func,
@@ -32,7 +30,7 @@ static void insertCall(Function &CurFn, StringRef Func,
       Func == "__mcount" ||
       Func == "_mcount" ||
       Func == "__cyg_profile_func_enter_bare") {
-    Constant *Fn = M.getOrInsertFunction(Func, Type::getVoidTy(C));
+    FunctionCallee Fn = M.getOrInsertFunction(Func, Type::getVoidTy(C));
     CallInst *Call = CallInst::Create(Fn, "", InsertionPt);
     Call->setDebugLoc(DL);
     return;
@@ -41,7 +39,7 @@ static void insertCall(Function &CurFn, StringRef Func,
   if (Func == "__cyg_profile_func_enter" || Func == "__cyg_profile_func_exit") {
     Type *ArgTypes[] = {Type::getInt8PtrTy(C), Type::getInt8PtrTy(C)};
 
-    Constant *Fn = M.getOrInsertFunction(
+    FunctionCallee Fn = M.getOrInsertFunction(
         Func, FunctionType::get(Type::getVoidTy(C), ArgTypes, false));
 
     Instruction *RetAddr = CallInst::Create(
@@ -92,17 +90,27 @@ static bool runOnFunction(Function &F, bool PostInlining) {
 
   if (!ExitFunc.empty()) {
     for (BasicBlock &BB : F) {
-      TerminatorInst *T = BB.getTerminator();
+      Instruction *T = BB.getTerminator();
+      if (!isa<ReturnInst>(T))
+        continue;
+
+      // If T is preceded by a musttail call, that's the real terminator.
+      Instruction *Prev = T->getPrevNode();
+      if (BitCastInst *BCI = dyn_cast_or_null<BitCastInst>(Prev))
+        Prev = BCI->getPrevNode();
+      if (CallInst *CI = dyn_cast_or_null<CallInst>(Prev)) {
+        if (CI->isMustTailCall())
+          T = CI;
+      }
+
       DebugLoc DL;
       if (DebugLoc TerminatorDL = T->getDebugLoc())
         DL = TerminatorDL;
       else if (auto SP = F.getSubprogram())
         DL = DebugLoc::get(0, 0, SP);
 
-      if (isa<ReturnInst>(T)) {
-        insertCall(F, ExitFunc, T, DL);
-        Changed = true;
-      }
+      insertCall(F, ExitFunc, T, DL);
+      Changed = true;
     }
     F.removeAttribute(AttributeList::FunctionIndex, ExitAttr);
   }

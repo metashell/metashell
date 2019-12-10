@@ -1,9 +1,8 @@
 //===-- sanitizer_stoptheworld_linux_libcdep.cc ---------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -88,7 +87,7 @@ namespace __sanitizer {
 
 class SuspendedThreadsListLinux : public SuspendedThreadsList {
  public:
-  SuspendedThreadsListLinux() : thread_ids_(1024) {}
+  SuspendedThreadsListLinux() { thread_ids_.reserve(1024); }
 
   tid_t GetThreadID(uptr index) const;
   uptr ThreadCount() const;
@@ -209,26 +208,26 @@ void ThreadSuspender::KillAllThreads() {
 
 bool ThreadSuspender::SuspendAllThreads() {
   ThreadLister thread_lister(pid_);
-  bool added_threads;
-  bool first_iteration = true;
-  do {
-    // Run through the directory entries once.
-    added_threads = false;
-    pid_t tid = thread_lister.GetNextTID();
-    while (tid >= 0) {
+  bool retry = true;
+  InternalMmapVector<tid_t> threads;
+  threads.reserve(128);
+  for (int i = 0; i < 30 && retry; ++i) {
+    retry = false;
+    switch (thread_lister.ListThreads(&threads)) {
+      case ThreadLister::Error:
+        ResumeAllThreads();
+        return false;
+      case ThreadLister::Incomplete:
+        retry = true;
+        break;
+      case ThreadLister::Ok:
+        break;
+    }
+    for (tid_t tid : threads)
       if (SuspendThread(tid))
-        added_threads = true;
-      tid = thread_lister.GetNextTID();
-    }
-    if (thread_lister.error() || (first_iteration && !added_threads)) {
-      // Detach threads and fail.
-      ResumeAllThreads();
-      return false;
-    }
-    thread_lister.Reset();
-    first_iteration = false;
-  } while (added_threads);
-  return true;
+        retry = true;
+  };
+  return suspended_threads_list_.ThreadCount();
 }
 
 // Pointer to the ThreadSuspender instance for use in signal handler.
@@ -295,7 +294,7 @@ static int TracerThread(void* argument) {
   thread_suspender_instance = &thread_suspender;
 
   // Alternate stack for signal handling.
-  InternalScopedBuffer<char> handler_stack_memory(kHandlerStackSize);
+  InternalMmapVector<char> handler_stack_memory(kHandlerStackSize);
   stack_t handler_stack;
   internal_memset(&handler_stack, 0, sizeof(handler_stack));
   handler_stack.ss_sp = handler_stack_memory.data();

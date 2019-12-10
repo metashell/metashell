@@ -1,9 +1,8 @@
 //===-- lsan_malloc_mac.cc ------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -37,6 +36,9 @@ using namespace __lsan;
 #define COMMON_MALLOC_CALLOC(count, size) \
   GET_STACK_TRACE_MALLOC; \
   void *p = lsan_calloc(count, size, stack)
+#define COMMON_MALLOC_POSIX_MEMALIGN(memptr, alignment, size) \
+  GET_STACK_TRACE_MALLOC; \
+  int res = lsan_posix_memalign(memptr, alignment, size, stack)
 #define COMMON_MALLOC_VALLOC(size) \
   GET_STACK_TRACE_MALLOC; \
   void *p = lsan_valloc(size, stack)
@@ -49,6 +51,8 @@ using namespace __lsan;
   (void)zone_name; \
   Report("mz_realloc(%p) -- attempting to realloc unallocated memory.\n", ptr);
 #define COMMON_MALLOC_NAMESPACE __lsan
+#define COMMON_MALLOC_HAS_ZONE_ENUMERATOR 0
+#define COMMON_MALLOC_HAS_EXTRA_INTROSPECTION_INIT 0
 
 #include "sanitizer_common/sanitizer_malloc_mac.inc"
 

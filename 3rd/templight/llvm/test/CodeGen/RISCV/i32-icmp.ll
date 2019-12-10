@@ -8,17 +8,31 @@
 define i32 @icmp_eq(i32 %a, i32 %b) nounwind {
 ; RV32I-LABEL: icmp_eq:
 ; RV32I:       # %bb.0:
-; RV32I-NEXT:    addi sp, sp, -16
-; RV32I-NEXT:    sw ra, 12(sp)
-; RV32I-NEXT:    sw s0, 8(sp)
-; RV32I-NEXT:    addi s0, sp, 16
 ; RV32I-NEXT:    xor a0, a0, a1
 ; RV32I-NEXT:    seqz a0, a0
-; RV32I-NEXT:    lw s0, 8(sp)
-; RV32I-NEXT:    lw ra, 12(sp)
-; RV32I-NEXT:    addi sp, sp, 16
 ; RV32I-NEXT:    ret
   %1 = icmp eq i32 %a, %b
+  %2 = zext i1 %1 to i32
+  ret i32 %2
+}
+
+define i32 @icmp_eq_constant(i32 %a) nounwind {
+; RV32I-LABEL: icmp_eq_constant:
+; RV32I:       # %bb.0:
+; RV32I-NEXT:    xori a0, a0, 42
+; RV32I-NEXT:    seqz a0, a0
+; RV32I-NEXT:    ret
+  %1 = icmp eq i32 %a, 42
+  %2 = zext i1 %1 to i32
+  ret i32 %2
+}
+
+define i32 @icmp_eqz(i32 %a) nounwind {
+; RV32I-LABEL: icmp_eqz:
+; RV32I:       # %bb.0:
+; RV32I-NEXT:    seqz a0, a0
+; RV32I-NEXT:    ret
+  %1 = icmp eq i32 %a, 0
   %2 = zext i1 %1 to i32
   ret i32 %2
 }
@@ -26,17 +40,31 @@ define i32 @icmp_eq(i32 %a, i32 %b) nounwind {
 define i32 @icmp_ne(i32 %a, i32 %b) nounwind {
 ; RV32I-LABEL: icmp_ne:
 ; RV32I:       # %bb.0:
-; RV32I-NEXT:    addi sp, sp, -16
-; RV32I-NEXT:    sw ra, 12(sp)
-; RV32I-NEXT:    sw s0, 8(sp)
-; RV32I-NEXT:    addi s0, sp, 16
 ; RV32I-NEXT:    xor a0, a0, a1
 ; RV32I-NEXT:    snez a0, a0
-; RV32I-NEXT:    lw s0, 8(sp)
-; RV32I-NEXT:    lw ra, 12(sp)
-; RV32I-NEXT:    addi sp, sp, 16
 ; RV32I-NEXT:    ret
   %1 = icmp ne i32 %a, %b
+  %2 = zext i1 %1 to i32
+  ret i32 %2
+}
+
+define i32 @icmp_ne_constant(i32 %a) nounwind {
+; RV32I-LABEL: icmp_ne_constant:
+; RV32I:       # %bb.0:
+; RV32I-NEXT:    xori a0, a0, 42
+; RV32I-NEXT:    snez a0, a0
+; RV32I-NEXT:    ret
+  %1 = icmp ne i32 %a, 42
+  %2 = zext i1 %1 to i32
+  ret i32 %2
+}
+
+define i32 @icmp_nez(i32 %a) nounwind {
+; RV32I-LABEL: icmp_nez:
+; RV32I:       # %bb.0:
+; RV32I-NEXT:    snez a0, a0
+; RV32I-NEXT:    ret
+  %1 = icmp ne i32 %a, 0
   %2 = zext i1 %1 to i32
   ret i32 %2
 }
@@ -44,14 +72,7 @@ define i32 @icmp_ne(i32 %a, i32 %b) nounwind {
 define i32 @icmp_ugt(i32 %a, i32 %b) nounwind {
 ; RV32I-LABEL: icmp_ugt:
 ; RV32I:       # %bb.0:
-; RV32I-NEXT:    addi sp, sp, -16
-; RV32I-NEXT:    sw ra, 12(sp)
-; RV32I-NEXT:    sw s0, 8(sp)
-; RV32I-NEXT:    addi s0, sp, 16
 ; RV32I-NEXT:    sltu a0, a1, a0
-; RV32I-NEXT:    lw s0, 8(sp)
-; RV32I-NEXT:    lw ra, 12(sp)
-; RV32I-NEXT:    addi sp, sp, 16
 ; RV32I-NEXT:    ret
   %1 = icmp ugt i32 %a, %b
   %2 = zext i1 %1 to i32
@@ -61,15 +82,8 @@ define i32 @icmp_ugt(i32 %a, i32 %b) nounwind {
 define i32 @icmp_uge(i32 %a, i32 %b) nounwind {
 ; RV32I-LABEL: icmp_uge:
 ; RV32I:       # %bb.0:
-; RV32I-NEXT:    addi sp, sp, -16
-; RV32I-NEXT:    sw ra, 12(sp)
-; RV32I-NEXT:    sw s0, 8(sp)
-; RV32I-NEXT:    addi s0, sp, 16
 ; RV32I-NEXT:    sltu a0, a0, a1
 ; RV32I-NEXT:    xori a0, a0, 1
-; RV32I-NEXT:    lw s0, 8(sp)
-; RV32I-NEXT:    lw ra, 12(sp)
-; RV32I-NEXT:    addi sp, sp, 16
 ; RV32I-NEXT:    ret
   %1 = icmp uge i32 %a, %b
   %2 = zext i1 %1 to i32
@@ -79,14 +93,7 @@ define i32 @icmp_uge(i32 %a, i32 %b) nounwind {
 define i32 @icmp_ult(i32 %a, i32 %b) nounwind {
 ; RV32I-LABEL: icmp_ult:
 ; RV32I:       # %bb.0:
-; RV32I-NEXT:    addi sp, sp, -16
-; RV32I-NEXT:    sw ra, 12(sp)
-; RV32I-NEXT:    sw s0, 8(sp)
-; RV32I-NEXT:    addi s0, sp, 16
 ; RV32I-NEXT:    sltu a0, a0, a1
-; RV32I-NEXT:    lw s0, 8(sp)
-; RV32I-NEXT:    lw ra, 12(sp)
-; RV32I-NEXT:    addi sp, sp, 16
 ; RV32I-NEXT:    ret
   %1 = icmp ult i32 %a, %b
   %2 = zext i1 %1 to i32
@@ -96,15 +103,8 @@ define i32 @icmp_ult(i32 %a, i32 %b) nounwind {
 define i32 @icmp_ule(i32 %a, i32 %b) nounwind {
 ; RV32I-LABEL: icmp_ule:
 ; RV32I:       # %bb.0:
-; RV32I-NEXT:    addi sp, sp, -16
-; RV32I-NEXT:    sw ra, 12(sp)
-; RV32I-NEXT:    sw s0, 8(sp)
-; RV32I-NEXT:    addi s0, sp, 16
 ; RV32I-NEXT:    sltu a0, a1, a0
 ; RV32I-NEXT:    xori a0, a0, 1
-; RV32I-NEXT:    lw s0, 8(sp)
-; RV32I-NEXT:    lw ra, 12(sp)
-; RV32I-NEXT:    addi sp, sp, 16
 ; RV32I-NEXT:    ret
   %1 = icmp ule i32 %a, %b
   %2 = zext i1 %1 to i32
@@ -114,14 +114,7 @@ define i32 @icmp_ule(i32 %a, i32 %b) nounwind {
 define i32 @icmp_sgt(i32 %a, i32 %b) nounwind {
 ; RV32I-LABEL: icmp_sgt:
 ; RV32I:       # %bb.0:
-; RV32I-NEXT:    addi sp, sp, -16
-; RV32I-NEXT:    sw ra, 12(sp)
-; RV32I-NEXT:    sw s0, 8(sp)
-; RV32I-NEXT:    addi s0, sp, 16
 ; RV32I-NEXT:    slt a0, a1, a0
-; RV32I-NEXT:    lw s0, 8(sp)
-; RV32I-NEXT:    lw ra, 12(sp)
-; RV32I-NEXT:    addi sp, sp, 16
 ; RV32I-NEXT:    ret
   %1 = icmp sgt i32 %a, %b
   %2 = zext i1 %1 to i32
@@ -131,15 +124,8 @@ define i32 @icmp_sgt(i32 %a, i32 %b) nounwind {
 define i32 @icmp_sge(i32 %a, i32 %b) nounwind {
 ; RV32I-LABEL: icmp_sge:
 ; RV32I:       # %bb.0:
-; RV32I-NEXT:    addi sp, sp, -16
-; RV32I-NEXT:    sw ra, 12(sp)
-; RV32I-NEXT:    sw s0, 8(sp)
-; RV32I-NEXT:    addi s0, sp, 16
 ; RV32I-NEXT:    slt a0, a0, a1
 ; RV32I-NEXT:    xori a0, a0, 1
-; RV32I-NEXT:    lw s0, 8(sp)
-; RV32I-NEXT:    lw ra, 12(sp)
-; RV32I-NEXT:    addi sp, sp, 16
 ; RV32I-NEXT:    ret
   %1 = icmp sge i32 %a, %b
   %2 = zext i1 %1 to i32
@@ -149,14 +135,7 @@ define i32 @icmp_sge(i32 %a, i32 %b) nounwind {
 define i32 @icmp_slt(i32 %a, i32 %b) nounwind {
 ; RV32I-LABEL: icmp_slt:
 ; RV32I:       # %bb.0:
-; RV32I-NEXT:    addi sp, sp, -16
-; RV32I-NEXT:    sw ra, 12(sp)
-; RV32I-NEXT:    sw s0, 8(sp)
-; RV32I-NEXT:    addi s0, sp, 16
 ; RV32I-NEXT:    slt a0, a0, a1
-; RV32I-NEXT:    lw s0, 8(sp)
-; RV32I-NEXT:    lw ra, 12(sp)
-; RV32I-NEXT:    addi sp, sp, 16
 ; RV32I-NEXT:    ret
   %1 = icmp slt i32 %a, %b
   %2 = zext i1 %1 to i32
@@ -166,15 +145,8 @@ define i32 @icmp_slt(i32 %a, i32 %b) nounwind {
 define i32 @icmp_sle(i32 %a, i32 %b) nounwind {
 ; RV32I-LABEL: icmp_sle:
 ; RV32I:       # %bb.0:
-; RV32I-NEXT:    addi sp, sp, -16
-; RV32I-NEXT:    sw ra, 12(sp)
-; RV32I-NEXT:    sw s0, 8(sp)
-; RV32I-NEXT:    addi s0, sp, 16
 ; RV32I-NEXT:    slt a0, a1, a0
 ; RV32I-NEXT:    xori a0, a0, 1
-; RV32I-NEXT:    lw s0, 8(sp)
-; RV32I-NEXT:    lw ra, 12(sp)
-; RV32I-NEXT:    addi sp, sp, 16
 ; RV32I-NEXT:    ret
   %1 = icmp sle i32 %a, %b
   %2 = zext i1 %1 to i32

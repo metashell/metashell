@@ -92,7 +92,9 @@
 # won't see the value of any arguments the user passed via -D.  Since these are
 # necessary to properly configure MSVC in both the top-level configuration as well as
 # all feature-test invocations, we set environment variables with the values so that
-# these environments get inherited by child invocations.
+# these environments get inherited by child invocations. We can switch to
+# CMAKE_TRY_COMPILE_PLATFORM_VARIABLES once our minimum supported CMake version
+# is 3.6 or greater.
 function(init_user_prop prop)
   if(${prop})
     set(ENV{_${prop}} "${${prop}}")
@@ -136,11 +138,25 @@ function(generate_winsdk_lib_symlinks winsdk_um_lib_dir output_dir)
   execute_process(COMMAND "${CMAKE_COMMAND}" -E make_directory "${output_dir}")
   file(GLOB libraries RELATIVE "${winsdk_um_lib_dir}" "${winsdk_um_lib_dir}/*")
   foreach(library ${libraries})
-    string(TOLOWER "${library}" symlink_name)
-    execute_process(COMMAND "${CMAKE_COMMAND}"
-                            -E create_symlink
-                            "${winsdk_um_lib_dir}/${library}"
-                            "${output_dir}/${symlink_name}")
+    string(TOLOWER "${library}" all_lowercase_symlink_name)
+    if(NOT library STREQUAL all_lowercase_symlink_name)
+      execute_process(COMMAND "${CMAKE_COMMAND}"
+                              -E create_symlink
+                              "${winsdk_um_lib_dir}/${library}"
+                              "${output_dir}/${all_lowercase_symlink_name}")
+    endif()
+
+    get_filename_component(name_we "${library}" NAME_WE)
+    get_filename_component(ext "${library}" EXT)
+    string(TOLOWER "${ext}" lowercase_ext)
+    set(lowercase_ext_symlink_name "${name_we}${lowercase_ext}")
+    if(NOT library STREQUAL lowercase_ext_symlink_name AND
+       NOT all_lowercase_symlink_name STREQUAL lowercase_ext_symlink_name)
+      execute_process(COMMAND "${CMAKE_COMMAND}"
+                              -E create_symlink
+                              "${winsdk_um_lib_dir}/${library}"
+                              "${output_dir}/${lowercase_ext_symlink_name}")
+    endif()
   endforeach()
 endfunction()
 

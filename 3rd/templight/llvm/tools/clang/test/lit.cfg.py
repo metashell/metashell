@@ -43,6 +43,10 @@ llvm_config.use_default_substitutions()
 
 llvm_config.use_clang()
 
+config.substitutions.append(
+    ('%src_include_dir', config.clang_src_dir + '/include'))
+
+
 # Propagate path to symbolizer for ASan/MSan.
 llvm_config.with_system_environment(
     ['ASAN_SYMBOLIZER_PATH', 'MSAN_SYMBOLIZER_PATH'])
@@ -57,24 +61,31 @@ config.substitutions.append(('%PATH%', config.environment['PATH']))
 tool_dirs = [config.clang_tools_dir, config.llvm_tools_dir]
 
 tools = [
-    'c-index-test', 'clang-check', 'clang-diff', 'clang-format', 'opt',
-    ToolSubst('%clang_func_map', command=FindTool(
-        'clang-func-mapping'), unresolved='ignore'),
+    'c-index-test', 'clang-diff', 'clang-format', 'clang-tblgen', 'opt',
+    ToolSubst('%clang_extdef_map', command=FindTool(
+        'clang-extdef-mapping'), unresolved='ignore'),
 ]
 
 if config.clang_examples:
+    config.available_features.add('examples')
     tools.append('clang-interpreter')
+
+if config.clang_staticanalyzer:
+    config.available_features.add('staticanalyzer')
+    tools.append('clang-check')
+
+    if config.clang_staticanalyzer_z3 == '1':
+        config.available_features.add('z3')
+
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)
 
-# Plugins (loadable modules)
-# TODO: This should be supplied by Makefile or autoconf.
-if sys.platform in ['win32', 'cygwin']:
-    has_plugins = config.enable_shared
-else:
-    has_plugins = True
+config.substitutions.append(
+    ('%hmaptool', "'%s' %s" % (config.python_executable,
+                             os.path.join(config.clang_tools_dir, 'hmaptool'))))
 
-if has_plugins and config.llvm_plugin_ext:
+# Plugins (loadable modules)
+if config.has_plugins and config.llvm_plugin_ext:
     config.available_features.add('plugins')
 
 # Set available features we allow tests to conditionalize on.
@@ -82,16 +93,13 @@ if has_plugins and config.llvm_plugin_ext:
 if config.clang_default_cxx_stdlib != '':
     config.available_features.add('default-cxx-stdlib-set')
 
-# Enabled/disabled features
-if config.clang_staticanalyzer:
-    config.available_features.add('staticanalyzer')
-
-    if config.clang_staticanalyzer_z3 == '1':
-        config.available_features.add('z3')
-
 # As of 2011.08, crash-recovery tests still do not pass on FreeBSD.
 if platform.system() not in ['FreeBSD']:
     config.available_features.add('crash-recovery')
+
+# Support for new pass manager.
+if config.enable_experimental_new_pass_manager:
+    config.available_features.add('experimental-new-pass-manager')
 
 # ANSI escape sequences in non-dumb terminal
 if platform.system() not in ['Windows']:
@@ -130,16 +138,12 @@ if is_filesystem_case_insensitive():
 if os.path.exists('/dev/fd/0') and sys.platform not in ['cygwin']:
     config.available_features.add('dev-fd-fs')
 
-# Not set on native MS environment.
-if not re.match(r'.*-win32$', config.target_triple):
-    config.available_features.add('non-ms-sdk')
-
-# Not set on native PS4 environment.
-if not re.match(r'.*-scei-ps4', config.target_triple):
-    config.available_features.add('non-ps4-sdk')
+# Set on native MS environment.
+if re.match(r'.*-(windows-msvc)$', config.target_triple):
+    config.available_features.add('ms-sdk')
 
 # [PR8833] LLP64-incompatible tests
-if not re.match(r'^x86_64.*-(win32|mingw32|windows-gnu)$', config.target_triple):
+if not re.match(r'^x86_64.*-(windows-msvc|windows-gnu)$', config.target_triple):
     config.available_features.add('LP64')
 
 # [PR12920] "clang-driver" -- set if gcc driver is not used.
@@ -179,4 +183,10 @@ if run_console_tests != 0:
 lit.util.usePlatformSdkOnDarwin(config, lit_config)
 macOSSDKVersion = lit.util.findPlatformSdkVersionOnMacOS(config, lit_config)
 if macOSSDKVersion is not None:
-    config.available_features.add('macos-sdk-' + macOSSDKVersion)
+    config.available_features.add('macos-sdk-' + str(macOSSDKVersion))
+
+if os.path.exists('/etc/gentoo-release'):
+    config.available_features.add('gentoo')
+
+if config.enable_shared:
+    config.available_features.add("enable_shared")

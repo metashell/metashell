@@ -1,6 +1,6 @@
-; RUN: llc -verify-machineinstrs < %s -mtriple=x86_64-apple-darwin | FileCheck --check-prefix=CHECK-APPLE %s
-; RUN: llc -verify-machineinstrs -O0 < %s -mtriple=x86_64-apple-darwin | FileCheck --check-prefix=CHECK-O0 %s
-; RUN: llc -verify-machineinstrs < %s -mtriple=i386-apple-darwin | FileCheck --check-prefix=CHECK-i386 %s
+; RUN: llc -verify-machineinstrs < %s -mtriple=x86_64-apple-darwin -disable-block-placement | FileCheck --check-prefix=CHECK-APPLE %s
+; RUN: llc -verify-machineinstrs -O0 < %s -mtriple=x86_64-apple-darwin -disable-block-placement | FileCheck --check-prefix=CHECK-O0 %s
+; RUN: llc -verify-machineinstrs < %s -mtriple=i386-apple-darwin -disable-block-placement | FileCheck --check-prefix=CHECK-i386 %s
 
 declare i8* @malloc(i64)
 declare void @free(i8*)
@@ -37,8 +37,7 @@ define float @caller(i8* %error_ref) {
 ; CHECK-APPLE: testq %r12, %r12
 ; CHECK-APPLE: jne
 ; Access part of the error object and save it to error_ref
-; CHECK-APPLE: movb 8(%r12)
-; CHECK-APPLE: movq %r12, %rdi
+; CHECK-APPLE: movb 8(%rdi)
 ; CHECK-APPLE: callq {{.*}}free
 
 ; CHECK-O0-LABEL: caller:
@@ -250,9 +249,8 @@ define float @caller3(i8* %error_ref) {
 ; CHECK-APPLE: testq %r12, %r12
 ; CHECK-APPLE: jne
 ; Access part of the error object and save it to error_ref
-; CHECK-APPLE: movb 8(%r12),
+; CHECK-APPLE: movb 8(%rdi),
 ; CHECK-APPLE: movb %{{.*}},
-; CHECK-APPLE: movq %r12, %rdi
 ; CHECK-APPLE: callq {{.*}}free
 
 ; CHECK-O0-LABEL: caller3:
@@ -300,8 +298,7 @@ define float @caller_with_multiple_swifterror_values(i8* %error_ref, i8* %error_
 ; CHECK-APPLE: testq %r12, %r12
 ; CHECK-APPLE: jne
 ; Access part of the error object and save it to error_ref
-; CHECK-APPLE: movb 8(%r12)
-; CHECK-APPLE: movq %r12, %rdi
+; CHECK-APPLE: movb 8(%rdi)
 ; CHECK-APPLE: callq {{.*}}free
 
 ; The second swifterror value:
@@ -310,8 +307,7 @@ define float @caller_with_multiple_swifterror_values(i8* %error_ref, i8* %error_
 ; CHECK-APPLE: testq %r12, %r12
 ; CHECK-APPLE: jne
 ; Access part of the error object and save it to error_ref
-; CHECK-APPLE: movb 8(%r12)
-; CHECK-APPLE: movq %r12, %rdi
+; CHECK-APPLE: movb 8(%rdi)
 ; CHECK-APPLE: callq {{.*}}free
 
 ; CHECK-O0-LABEL: caller_with_multiple_swifterror_values:
@@ -438,23 +434,21 @@ define swiftcc float @conditionally_forward_swifterror(%swift_error** swifterror
 ; CHECK-APPLE:  retq
 
 ; CHECK-O0-LABEL: conditionally_forward_swifterror:
-; CHECK-O0:  subq $24, %rsp
-; CHECK-O0:  movq %r12, [[REG1:%[a-z0-9]+]]
+; CHECK-O0: pushq [[REG1:%[a-z0-9]+]]
 ; CHECK-O0:  cmpl $0, %edi
-; CHECK-O0-DAG:  movq [[REG1]], [[STK:[0-9]+]](%rsp)
-; CHECK-O0-DAG:  movq %r12, [[STK2:[0-9]+]](%rsp)
+; CHECK-O0-DAG:  movq %r12, (%rsp)
 ; CHECK-O0:  je
 
-; CHECK-O0:  movq [[STK2]](%rsp), [[REG:%[a-z0-9]+]]
+; CHECK-O0:  movq (%rsp), [[REG:%[a-z0-9]+]]
 ; CHECK-O0:  movq [[REG]], %r12
 ; CHECK-O0:  callq _moo
-; CHECK-O0:  addq $24, %rsp
+; CHECK-O0:  popq [[REG1]]
 ; CHECK-O0:  retq
 
-; CHECK-O0:  movq [[STK2]](%rsp), [[REG:%[a-z0-9]+]]
+; CHECK-O0:  movq (%rsp), [[REG:%[a-z0-9]+]]
 ; CHECK-O0:  xorps %xmm0, %xmm0
 ; CHECK-O0:  movq [[REG]], %r12
-; CHECK-O0:  addq $24, %rsp
+; CHECK-O0:  popq [[REG1]]
 ; CHECK-O0:  retq
 entry:
   %cond = icmp ne i32 %cc, 0
@@ -488,8 +482,8 @@ entry:
 ; CHECK-i386:  retl
 ; CHECK-APPLE-LABEL: empty_swiftcc:
 ; CHECK-APPLE:  movl    %edx, %ecx
-; CHECK-APPLE:  movl    %edi, %eax
-; CHECK-APPLE:  movl    %esi, %edx
+; CHECK-APPLE-DAG:  movl    %edi, %eax
+; CHECK-APPLE-DAG:  movl    %esi, %edx
 ; CHECK-APPLE:  retq
 define swiftcc {i32, i32, i32} @empty_swiftcc({i32, i32, i32} , %swift_error** swifterror %error_ptr_ref) {
 entry:
@@ -749,7 +743,6 @@ a:
 }
 
 ; CHECK-O0-LABEL: testAssign2
-; CHECK-O0:        movq    %r12, {{.*}}
 ; CHECK-O0:        movq    %r12, [[SLOT:[-a-z0-9\(\)\%]*]]
 ; CHECK-O0:        jmp
 ; CHECK-O0:        movq    [[SLOT]], %rax
@@ -796,9 +789,9 @@ a:
 
 ; CHECK-O0-LABEL: testAssign4
 ; CHECK-O0:        callq   _foo2
-; CHECK-O0:        xorl    %ecx, %ecx
-; CHECK-O0:        movl    %ecx, %eax
-; CHECK-O0:        movq    %rax, [[SLOT:[-a-z0-9\(\)\%]*]]
+; CHECK-O0:        xorl    %eax, %eax
+; CHECK-O0:        movl    %eax, %ecx
+; CHECK-O0:        movq    %rcx, [[SLOT:[-a-z0-9\(\)\%]*]]
 ; CHECK-O0:        movq    [[SLOT]], %rax
 ; CHECK-O0:        movq    %rax, [[SLOT2:[-a-z0-9\(\)\%]*]]
 ; CHECK-O0:        movq    [[SLOT2]], %r12

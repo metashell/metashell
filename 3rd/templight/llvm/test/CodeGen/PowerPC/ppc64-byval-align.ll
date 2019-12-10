@@ -24,8 +24,7 @@ entry:
   ret void
 }
 ; CHECK-LABEL: @caller1
-; CHECK: mr [[REG:[0-9]+]], 3
-; CHECK: mr 7, [[REG]]
+; CHECK: mr 7, 3
 ; CHECK: bl test1
 
 define i64 @callee2(%struct.pad* byval nocapture readnone %x, i32 signext %y, %struct.test* byval align 16 nocapture readonly %z) {
@@ -35,7 +34,7 @@ entry:
   ret i64 %0
 }
 ; CHECK-LABEL: @callee2
-; CHECK: ld 3, 128(1)
+; CHECK: ld {{[0-9]+}}, 128(1)
 ; CHECK: blr
 
 declare i64 @test2(%struct.pad* byval, i32 signext, %struct.test* byval align 16)

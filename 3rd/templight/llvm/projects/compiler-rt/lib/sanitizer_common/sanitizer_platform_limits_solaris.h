@@ -1,9 +1,8 @@
 //===-- sanitizer_platform_limits_solaris.h -------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -160,6 +159,18 @@ struct __sanitizer_group {
 
 typedef long __sanitizer_time_t;
 
+typedef long __sanitizer_suseconds_t;
+
+struct __sanitizer_timeval {
+  __sanitizer_time_t tv_sec;
+  __sanitizer_suseconds_t tv_usec;
+};
+
+struct __sanitizer_itimerval {
+  struct __sanitizer_timeval it_interval;
+  struct __sanitizer_timeval it_value;
+};
+
 struct __sanitizer_timeb {
   __sanitizer_time_t time;
   unsigned short millitm;
@@ -198,8 +209,7 @@ struct __sanitizer_cmsghdr {
   int cmsg_type;
 };
 
-#if SANITIZER_SOLARIS32 && 0
-// FIXME: need to deal with large file and non-large file cases
+#if SANITIZER_SOLARIS && (defined(_LP64) || _FILE_OFFSET_BITS == 64)
 struct __sanitizer_dirent {
   unsigned long long d_ino;
   long long d_off;

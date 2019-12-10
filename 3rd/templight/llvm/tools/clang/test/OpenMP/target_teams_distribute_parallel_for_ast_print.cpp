@@ -1,10 +1,10 @@
-// RUN: %clang_cc1 -verify -fopenmp -ast-print %s | FileCheck %s
-// RUN: %clang_cc1 -fopenmp -x c++ -std=c++11 -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -std=c++11 -include-pch %t -fsyntax-only -verify %s -ast-print | FileCheck %s
+// RUN: %clang_cc1 -verify -fopenmp -ast-print %s -Wno-openmp-target | FileCheck %s
+// RUN: %clang_cc1 -fopenmp -x c++ -std=c++11 -emit-pch -o %t %s -Wno-openmp-target
+// RUN: %clang_cc1 -fopenmp -std=c++11 -include-pch %t -fsyntax-only -verify %s -ast-print -Wno-openmp-target | FileCheck %s
 
-// RUN: %clang_cc1 -verify -fopenmp-simd -ast-print %s | FileCheck %s
-// RUN: %clang_cc1 -fopenmp-simd -x c++ -std=c++11 -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -std=c++11 -include-pch %t -fsyntax-only -verify %s -ast-print | FileCheck %s
+// RUN: %clang_cc1 -verify -fopenmp-simd -ast-print %s -Wno-openmp-target | FileCheck %s
+// RUN: %clang_cc1 -fopenmp-simd -x c++ -std=c++11 -emit-pch -o %t %s -Wno-openmp-target
+// RUN: %clang_cc1 -fopenmp-simd -std=c++11 -include-pch %t -fsyntax-only -verify %s -ast-print -Wno-openmp-target | FileCheck %s
 // expected-no-diagnostics
 
 #ifndef HEADER
@@ -72,7 +72,7 @@ public:
   }
   void bar() {
     int b, argv, d, c, e, f8;
-#pragma omp target teams distribute parallel for default(none), private(b) firstprivate(argv) shared(d) reduction(+:c) reduction(max:e) num_teams(f8) thread_limit(d)
+#pragma omp target teams distribute parallel for allocate(b) default(none), private(b) firstprivate(argv) shared(d) reduction(+:c) reduction(max:e) num_teams(f8) thread_limit(d) allocate(e)
     for (int k = 0; k < a.a; ++k)
       ++a.a;
   }
@@ -80,7 +80,7 @@ public:
 // CHECK: #pragma omp target teams distribute parallel for private(this->a) private(this->a) private(this->S::a)
 // CHECK: #pragma omp target teams distribute parallel for private(this->a) private(this->a) private(this->S7<S>::a)
 // CHECK: #pragma omp target teams distribute parallel for private(this->a) private(this->a)
-// CHECK: #pragma omp target teams distribute parallel for default(none) private(b) firstprivate(argv) shared(d) reduction(+: c) reduction(max: e) num_teams(f8) thread_limit(d)
+// CHECK: #pragma omp target teams distribute parallel for allocate(b) default(none) private(b) firstprivate(argv) shared(d) reduction(+: c) reduction(max: e) num_teams(f8) thread_limit(d) allocate(e)
 
 template <class T, int N>
 T tmain(T argc) {
@@ -93,7 +93,7 @@ T tmain(T argc) {
 #pragma omp target teams distribute parallel for
   for (int i=0; i < 2; ++i)
     a = 2;
-// CHECK: #pragma omp target teams distribute parallel for
+// CHECK: #pragma omp target teams distribute parallel for{{$}}
 // CHECK-NEXT: for (int i = 0; i < 2; ++i)
 // CHECK-NEXT: a = 2;
 #pragma omp target teams distribute parallel for private(argc, b), firstprivate(c, d), collapse(2)

@@ -10,6 +10,7 @@ config.compiler_rt_libdir = "@COMPILER_RT_RESOLVED_LIBRARY_OUTPUT_DIR@"
 config.llvm_build_mode = "@LLVM_BUILD_MODE@"
 config.host_arch = "@HOST_ARCH@"
 config.host_os = "@HOST_OS@"
+config.llvm_lib_dir = "@LLVM_LIBRARY_DIR@"
 
 # LLVM tools dir and build mode can be passed in lit parameters,
 # so try to apply substitution.
@@ -22,4 +23,4 @@ except KeyError as e:
   lit_config.fatal("unable to find %r parameter, use '--param=%s=VALUE'" % (key, key))
 
 # Setup attributes common for all compiler-rt unit tests.
-lit_config.load_config(config, "@COMPILER_RT_SOURCE_DIR@/unittests/lit.common.unit.cfg")
+lit_config.load_config(config, "@COMPILER_RT_SOURCE_DIR@/unittests/lit.common.unit.cfg.py")

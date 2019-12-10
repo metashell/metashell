@@ -1,9 +1,8 @@
 //===- LiveRangeShrink.cpp - Move instructions to shrink live range -------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 ///===---------------------------------------------------------------------===//
 ///
@@ -111,7 +110,7 @@ bool LiveRangeShrink::runOnMachineFunction(MachineFunction &MF) {
 
   MachineRegisterInfo &MRI = MF.getRegInfo();
 
-  DEBUG(dbgs() << "**** Analysing " << MF.getName() << '\n');
+  LLVM_DEBUG(dbgs() << "**** Analysing " << MF.getName() << '\n');
 
   InstOrderMap IOM;
   // Map from register to instruction order (value of IOM) where the
@@ -130,7 +129,7 @@ bool LiveRangeShrink::runOnMachineFunction(MachineFunction &MF) {
     for (MachineBasicBlock::iterator Next = MBB.begin(); Next != MBB.end();) {
       MachineInstr &MI = *Next;
       ++Next;
-      if (MI.isPHI() || MI.isDebugValue())
+      if (MI.isPHI() || MI.isDebugInstr())
         continue;
       if (MI.mayStore())
         SawStore = true;
@@ -218,7 +217,7 @@ bool LiveRangeShrink::runOnMachineFunction(MachineFunction &MF) {
       if (DefMO && Insert && NumEligibleUse > 1 && Barrier <= IOM[Insert]) {
         MachineBasicBlock::iterator I = std::next(Insert->getIterator());
         // Skip all the PHI and debug instructions.
-        while (I != MBB.end() && (I->isPHI() || I->isDebugValue()))
+        while (I != MBB.end() && (I->isPHI() || I->isDebugInstr()))
           I = std::next(I);
         if (I == MI.getIterator())
           continue;

@@ -1,9 +1,8 @@
 //===- MCContext.h - Machine Code Context -----------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -11,6 +10,7 @@
 #define LLVM_MC_MCCONTEXT_H
 
 #include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/SetVector.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/SmallVector.h"
@@ -18,12 +18,15 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/BinaryFormat/Dwarf.h"
+#include "llvm/BinaryFormat/XCOFF.h"
 #include "llvm/MC/MCAsmMacro.h"
 #include "llvm/MC/MCDwarf.h"
 #include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/MC/SectionKind.h"
 #include "llvm/Support/Allocator.h"
 #include "llvm/Support/Compiler.h"
+#include "llvm/Support/Error.h"
+#include "llvm/Support/MD5.h"
 #include "llvm/Support/raw_ostream.h"
 #include <algorithm>
 #include <cassert>
@@ -47,6 +50,7 @@ namespace llvm {
   class MCSectionELF;
   class MCSectionMachO;
   class MCSectionWasm;
+  class MCSectionXCOFF;
   class MCStreamer;
   class MCSymbol;
   class MCSymbolELF;
@@ -89,6 +93,7 @@ namespace llvm {
     SpecificBumpPtrAllocator<MCSectionELF> ELFAllocator;
     SpecificBumpPtrAllocator<MCSectionMachO> MachOAllocator;
     SpecificBumpPtrAllocator<MCSectionWasm> WasmAllocator;
+    SpecificBumpPtrAllocator<MCSectionXCOFF> XCOFFAllocator;
 
     /// Bindings of names to symbols.
     SymbolTable Symbols;
@@ -106,6 +111,9 @@ namespace llvm {
     /// non-section symbol (there can be at most one of those, plus an unlimited
     /// number of section symbols with the same name).
     StringMap<bool, BumpPtrAllocator &> UsedNames;
+
+    /// Keeps track of labels that are used in inline assembly.
+    SymbolTable InlineAsmUsedLabelNames;
 
     /// The next ID to dole out to an unnamed assembler temporary symbol with
     /// a given prefix.
@@ -133,6 +141,9 @@ namespace llvm {
 
     /// The compilation directory to use for DW_AT_comp_dir.
     SmallString<128> CompilationDir;
+
+    /// Prefix replacement map for source file information.
+    std::map<const std::string, const std::string> DebugPrefixMap;
 
     /// The main file name if passed in explicitly.
     std::string MainFileName;
@@ -241,10 +252,25 @@ namespace llvm {
       }
     };
 
+    struct XCOFFSectionKey {
+      std::string SectionName;
+      XCOFF::StorageMappingClass MappingClass;
+
+      XCOFFSectionKey(StringRef SectionName,
+                      XCOFF::StorageMappingClass MappingClass)
+          : SectionName(SectionName), MappingClass(MappingClass) {}
+
+      bool operator<(const XCOFFSectionKey &Other) const {
+        return std::tie(SectionName, MappingClass) <
+               std::tie(Other.SectionName, Other.MappingClass);
+      }
+    };
+
     StringMap<MCSectionMachO *> MachOUniquingMap;
     std::map<ELFSectionKey, MCSectionELF *> ELFUniquingMap;
     std::map<COFFSectionKey, MCSectionCOFF *> COFFUniquingMap;
     std::map<WasmSectionKey, MCSectionWasm *> WasmUniquingMap;
+    std::map<XCOFFSectionKey, MCSectionXCOFF *> XCOFFUniquingMap;
     StringMap<bool> RelSecNames;
 
     SpecificBumpPtrAllocator<MCSubtargetInfo> MCSubtargetAllocator;
@@ -269,7 +295,7 @@ namespace llvm {
                                        unsigned UniqueID,
                                        const MCSymbolELF *Associated);
 
-    /// \brief Map of currently defined macros.
+    /// Map of currently defined macros.
     StringMap<MCAsmMacro> MacroMap;
 
   public:
@@ -335,7 +361,7 @@ namespace llvm {
     /// Gets a symbol that will be defined to the final stack offset of a local
     /// variable after codegen.
     ///
-    /// \param Idx - The index of a local variable passed to @llvm.localescape.
+    /// \param Idx - The index of a local variable passed to \@llvm.localescape.
     MCSymbol *getOrCreateFrameAllocSymbol(StringRef FuncName, unsigned Idx);
 
     MCSymbol *getOrCreateParentFrameOffsetSymbol(StringRef FuncName);
@@ -353,6 +379,16 @@ namespace llvm {
     /// still want any modifications to the table itself to use the MCContext
     /// APIs.
     const SymbolTable &getSymbols() const { return Symbols; }
+
+    /// isInlineAsmLabel - Return true if the name is a label referenced in
+    /// inline assembly.
+    MCSymbol *getInlineAsmLabel(StringRef Name) const {
+      return InlineAsmUsedLabelNames.lookup(Name);
+    }
+
+    /// registerInlineAsmLabel - Records that the name is a label referenced in
+    /// inline assembly.
+    void registerInlineAsmLabel(MCSymbol *Sym);
 
     /// @}
 
@@ -435,8 +471,6 @@ namespace llvm {
                                   SectionKind Kind,
                                   const char *BeginSymName = nullptr);
 
-    MCSectionCOFF *getCOFFSection(StringRef Section);
-
     /// Gets or creates a section equivalent to Sec that is associated with the
     /// section containing KeySym. For example, to create a debug info section
     /// associated with an inline function, pass the normal debug info section
@@ -467,6 +501,11 @@ namespace llvm {
                                   const MCSymbolWasm *Group, unsigned UniqueID,
                                   const char *BeginSymName);
 
+    MCSectionXCOFF *getXCOFFSection(StringRef Section,
+                                    XCOFF::StorageMappingClass MappingClass,
+                                    SectionKind K,
+                                    const char *BeginSymName = nullptr);
+
     // Create and save a copy of STI and return a reference to the copy.
     MCSubtargetInfo &getSubtargetCopy(const MCSubtargetInfo &STI);
 
@@ -475,25 +514,33 @@ namespace llvm {
     /// \name Dwarf Management
     /// @{
 
-    /// \brief Get the compilation directory for DW_AT_comp_dir
+    /// Get the compilation directory for DW_AT_comp_dir
     /// The compilation directory should be set with \c setCompilationDir before
     /// calling this function. If it is unset, an empty string will be returned.
     StringRef getCompilationDir() const { return CompilationDir; }
 
-    /// \brief Set the compilation directory for DW_AT_comp_dir
+    /// Set the compilation directory for DW_AT_comp_dir
     void setCompilationDir(StringRef S) { CompilationDir = S.str(); }
 
-    /// \brief Get the main file name for use in error messages and debug
+    /// Add an entry to the debug prefix map.
+    void addDebugPrefixMapEntry(const std::string &From, const std::string &To);
+
+    // Remaps all debug directory paths in-place as per the debug prefix map.
+    void RemapDebugPaths();
+
+    /// Get the main file name for use in error messages and debug
     /// info. This can be set to ensure we've got the correct file name
     /// after preprocessing or for -save-temps.
     const std::string &getMainFileName() const { return MainFileName; }
 
-    /// \brief Set the main file name and override the default.
+    /// Set the main file name and override the default.
     void setMainFileName(StringRef S) { MainFileName = S; }
 
     /// Creates an entry in the dwarf file and directory tables.
-    unsigned getDwarfFile(StringRef Directory, StringRef FileName,
-                          unsigned FileNumber, unsigned CUID);
+    Expected<unsigned> getDwarfFile(StringRef Directory, StringRef FileName,
+                                    unsigned FileNumber,
+                                    Optional<MD5::MD5Result> Checksum,
+                                    Optional<StringRef> Source, unsigned CUID);
 
     bool isValidDwarfFileNumber(unsigned FileNumber, unsigned CUID = 0);
 
@@ -519,21 +566,25 @@ namespace llvm {
       return getMCDwarfLineTable(CUID).getMCDwarfDirs();
     }
 
-    bool hasMCLineSections() const {
-      for (const auto &Table : MCDwarfLineTablesCUMap)
-        if (!Table.second.getMCDwarfFiles().empty() || Table.second.getLabel())
-          return true;
-      return false;
-    }
-
     unsigned getDwarfCompileUnitID() { return DwarfCompileUnitID; }
 
     void setDwarfCompileUnitID(unsigned CUIndex) {
       DwarfCompileUnitID = CUIndex;
     }
 
-    void setMCLineTableCompilationDir(unsigned CUID, StringRef CompilationDir) {
-      getMCDwarfLineTable(CUID).setCompilationDir(CompilationDir);
+    /// Specifies the "root" file and directory of the compilation unit.
+    /// These are "file 0" and "directory 0" in DWARF v5.
+    void setMCLineTableRootFile(unsigned CUID, StringRef CompilationDir,
+                                StringRef Filename,
+                                Optional<MD5::MD5Result> Checksum,
+                                Optional<StringRef> Source) {
+      getMCDwarfLineTable(CUID).setRootFile(CompilationDir, Filename, Checksum,
+                                            Source);
+    }
+
+    /// Reports whether MD5 checksum usage is consistent (all-or-none).
+    bool isDwarfMD5UsageConsistent(unsigned CUID) const {
+      return getMCDwarfLineTable(CUID).isMD5UsageConsistent();
     }
 
     /// Saves the information from the currently parsed dwarf .loc directive
@@ -564,6 +615,10 @@ namespace llvm {
     void setGenDwarfFileNumber(unsigned FileNumber) {
       GenDwarfFileNumber = FileNumber;
     }
+
+    /// Specifies information about the "root file" for assembler clients
+    /// (e.g., llvm-mc). Assumes compilation dir etc. have been set up.
+    void setGenDwarfRootFile(StringRef FileName, StringRef Buffer);
 
     const SetVector<MCSection *> &getGenDwarfSectionSyms() {
       return SectionsForRanges;
@@ -639,7 +694,7 @@ namespace llvm {
 
 // operator new and delete aren't allowed inside namespaces.
 // The throw specifications are mandated by the standard.
-/// \brief Placement new for using the MCContext's allocator.
+/// Placement new for using the MCContext's allocator.
 ///
 /// This placement form of operator new uses the MCContext's allocator for
 /// obtaining memory. It is a non-throwing new, which means that it returns
@@ -665,7 +720,7 @@ inline void *operator new(size_t Bytes, llvm::MCContext &C,
                           size_t Alignment = 8) noexcept {
   return C.allocate(Bytes, Alignment);
 }
-/// \brief Placement delete companion to the new above.
+/// Placement delete companion to the new above.
 ///
 /// This operator is just a companion to the new above. There is no way of
 /// invoking it directly; see the new operator for more details. This operator
@@ -699,7 +754,7 @@ inline void *operator new[](size_t Bytes, llvm::MCContext &C,
   return C.allocate(Bytes, Alignment);
 }
 
-/// \brief Placement delete[] companion to the new[] above.
+/// Placement delete[] companion to the new[] above.
 ///
 /// This operator is just a companion to the new[] above. There is no way of
 /// invoking it directly; see the new[] operator for more details. This operator

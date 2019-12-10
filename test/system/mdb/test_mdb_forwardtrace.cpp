@@ -474,35 +474,61 @@ TEST(mdb_forwardtrace, evaluating_environment_fib_2_3)
 
   // clang-format off
 
-  ASSERT_EQ(
-    call_graph(
-      {
-        {frame(type("<environment>")), 0, 8},
-        {frame( fib<5>(), _, _, event_kind::template_instantiation), 1, 4},
-        {frame(  fib<3>(), _, _, event_kind::template_instantiation), 2, 3},
-        {frame(   fib<1>(), _, _, event_kind::memoization), 3, 0},
-        {frame(   fib<2>(), _, _, event_kind::template_instantiation), 3, 2},
-        {frame(    fib<0>(), _, _, event_kind::memoization), 4, 0},
-        {frame(    fib<1>(), _, _, event_kind::memoization), 4, 0},
-        {frame(   fib<2>(), _, _, event_kind::memoization), 3, 0},
-        {frame(  fib<3>(), _, _, event_kind::memoization), 2, 0},
-        {frame(  fib<4>(), _, _, event_kind::template_instantiation), 2, 2},
-        {frame(   fib<2>(), _, _, event_kind::memoization), 3, 0},
-        {frame(   fib<3>(), _, _, event_kind::memoization), 3, 0},
-        {frame(  fib<4>(), _, _, event_kind::memoization), 2, 0},
-        {frame( fib<5>(), _, _, event_kind::memoization), 1, 0},
-        {frame( type("int_<5>"), _, _, event_kind::template_instantiation), 1, 0},
-        {frame( type("int_<5>"), _, _, event_kind::memoization), 1, 0},
-        {frame( fib<6>(), _, _, event_kind::template_instantiation), 1, 2},
-        {frame(  fib<4>(), _, _, event_kind::memoization), 2, 0},
-        {frame(  fib<5>(), _, _, event_kind::memoization), 2, 0},
-        {frame( fib<6>(), _, _, event_kind::memoization), 1, 0},
-        {frame( type("int_<8>"), _, _, event_kind::template_instantiation), 1, 0},
-        {frame( type("int_<8>"), _, _, event_kind::memoization), 1, 0}
-      }
-    ),
-    mi.command("forwardtrace").front()
-  );
+  const call_graph v1({
+    {frame(type("<environment>")), 0, 8},
+    {frame( fib<5>(), _, _, event_kind::template_instantiation), 1, 4},
+    {frame(  fib<3>(), _, _, event_kind::template_instantiation), 2, 3},
+    {frame(   fib<1>(), _, _, event_kind::memoization), 3, 0},
+    {frame(   fib<2>(), _, _, event_kind::template_instantiation), 3, 2},
+    {frame(    fib<0>(), _, _, event_kind::memoization), 4, 0},
+    {frame(    fib<1>(), _, _, event_kind::memoization), 4, 0},
+    {frame(   fib<2>(), _, _, event_kind::memoization), 3, 0},
+    {frame(  fib<3>(), _, _, event_kind::memoization), 2, 0},
+    {frame(  fib<4>(), _, _, event_kind::template_instantiation), 2, 2},
+    {frame(   fib<2>(), _, _, event_kind::memoization), 3, 0},
+    {frame(   fib<3>(), _, _, event_kind::memoization), 3, 0},
+    {frame(  fib<4>(), _, _, event_kind::memoization), 2, 0},
+    {frame( fib<5>(), _, _, event_kind::memoization), 1, 0},
+    {frame( type("int_<5>"), _, _, event_kind::template_instantiation), 1, 0},
+    {frame( type("int_<5>"), _, _, event_kind::memoization), 1, 0},
+    {frame( fib<6>(), _, _, event_kind::template_instantiation), 1, 2},
+    {frame(  fib<4>(), _, _, event_kind::memoization), 2, 0},
+    {frame(  fib<5>(), _, _, event_kind::memoization), 2, 0},
+    {frame( fib<6>(), _, _, event_kind::memoization), 1, 0},
+    {frame( type("int_<8>"), _, _, event_kind::template_instantiation), 1, 0},
+    {frame( type("int_<8>"), _, _, event_kind::memoization), 1, 0}
+  });
+
+  const call_graph v2({
+    {frame(type("<environment>")), 0, 10},
+    {frame( fib<5>(), _, _, event_kind::template_instantiation), 1, 4},
+    {frame(  fib<3>(), _, _, event_kind::template_instantiation), 2, 3},
+    {frame(   fib<1>(), _, _, event_kind::memoization), 3, 0},
+    {frame(   fib<2>(), _, _, event_kind::template_instantiation), 3, 2},
+    {frame(    fib<0>(), _, _, event_kind::memoization), 4, 0},
+    {frame(    fib<1>(), _, _, event_kind::memoization), 4, 0},
+    {frame(   fib<2>(), _, _, event_kind::memoization), 3, 0},
+    {frame(  fib<3>(), _, _, event_kind::memoization), 2, 0},
+    {frame(  fib<4>(), _, _, event_kind::template_instantiation), 2, 2},
+    {frame(   fib<2>(), _, _, event_kind::memoization), 3, 0},
+    {frame(   fib<3>(), _, _, event_kind::memoization), 3, 0},
+    {frame(  fib<4>(), _, _, event_kind::memoization), 2, 0},
+    {frame( fib<5>(), _, _, event_kind::memoization), 1, 0},
+    {frame( type("int_<5>"), _, _, event_kind::template_instantiation), 1, 0},
+    {frame( type("int_<5>"), _, _, event_kind::memoization), 1, 0},
+    {frame( type("int_<5>"), _, _, event_kind::memoization), 1, 0},
+    {frame( fib<6>(), _, _, event_kind::template_instantiation), 1, 2},
+    {frame(  fib<4>(), _, _, event_kind::memoization), 2, 0},
+    {frame(  fib<5>(), _, _, event_kind::memoization), 2, 0},
+    {frame( fib<6>(), _, _, event_kind::memoization), 1, 0},
+    {frame( type("int_<8>"), _, _, event_kind::template_instantiation), 1, 0},
+    {frame( type("int_<8>"), _, _, event_kind::memoization), 1, 0},
+    {frame( type("int_<8>"), _, _, event_kind::memoization), 1, 0}
+  });
+
+  const auto ft = mi.command("forwardtrace").front();
+
+  ASSERT_TRUE(v1 == ft || v2 == ft);
 
   // clang-format on
 }

@@ -1,9 +1,8 @@
 //===-- asan_test.cc ------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -23,6 +22,11 @@
 #elif defined(__NetBSD__)
 #define SANITIZER_GET_C_LOCALE LC_C_LOCALE
 #endif
+#endif
+
+#if defined(__sun__) && defined(__svr4__)
+using std::_setjmp;
+using std::_longjmp;
 #endif
 
 NOINLINE void *malloc_fff(size_t size) {
@@ -958,7 +962,7 @@ TEST(AddressSanitizer, ThreadNamesTest) {
 #if ASAN_NEEDS_SEGV
 TEST(AddressSanitizer, ShadowGapTest) {
 #if SANITIZER_WORDSIZE == 32
-  char *addr = (char*)0x22000000;
+  char *addr = (char*)0x23000000;
 #else
 # if defined(__powerpc64__)
   char *addr = (char*)0x024000800000;
@@ -1290,6 +1294,7 @@ TEST(AddressSanitizer, DISABLED_DemoTooMuchMemoryTest) {
   }
 }
 
+#if !defined(__NetBSD__) && !defined(__i386__)
 // https://github.com/google/sanitizers/issues/66
 TEST(AddressSanitizer, BufferOverflowAfterManyFrees) {
   for (int i = 0; i < 1000000; i++) {
@@ -1299,6 +1304,7 @@ TEST(AddressSanitizer, BufferOverflowAfterManyFrees) {
   EXPECT_DEATH(x[Ident(8192)] = 0, "AddressSanitizer: heap-buffer-overflow");
   delete [] Ident(x);
 }
+#endif
 
 
 // Test that instrumentation of stack allocations takes into account

@@ -1,9 +1,8 @@
 //===-- RISCVInstrFormatsC.td - RISCV C Instruction Formats --*- tablegen -*-=//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -114,6 +113,19 @@ class RVInst16CS<bits<3> funct3, bits<2> opcode, dag outs, dag ins,
 
   let Inst{15-13} = funct3;
   let Inst{9-7} = rs1;
+  let Inst{4-2} = rs2;
+  let Inst{1-0} = opcode;
+}
+
+class RVInst16CA<bits<6> funct6, bits<2> funct2, bits<2> opcode, dag outs,
+                 dag ins, string opcodestr, string argstr>
+    : RVInst16<outs, ins, opcodestr, argstr, [], InstFormatCA> {
+  bits<3> rs2;
+  bits<3> rs1;
+
+  let Inst{15-10} = funct6;
+  let Inst{9-7} = rs1;
+  let Inst{6-5} = funct2;
   let Inst{4-2} = rs2;
   let Inst{1-0} = opcode;
 }

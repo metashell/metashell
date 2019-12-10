@@ -1,18 +1,18 @@
 // Test the bits of .eh_frame on mips that are already implemented correctly.
 
-// RUN: llvm-mc -filetype=obj %s -o %t.o -arch=mips
+// RUN: llvm-mc -filetype=obj %s -o %t.o -triple mips-unknown-linux-gnu
 // RUN: llvm-objdump -r -section=.rel.eh_frame %t.o | FileCheck --check-prefix=REL32 %s
 // RUN: llvm-dwarfdump -eh-frame %t.o | FileCheck --check-prefix=DWARF32 %s
 
-// RUN: llvm-mc -filetype=obj %s -o %t.o -arch=mipsel
+// RUN: llvm-mc -filetype=obj %s -o %t.o -triple mipsel-unknown-linux-gnu
 // RUN: llvm-objdump -r -section=.rel.eh_frame %t.o | FileCheck --check-prefix=REL32 %s
 // RUN: llvm-dwarfdump -eh-frame %t.o | FileCheck --check-prefix=DWARF32 %s
 
-// RUN: llvm-mc -filetype=obj %s -o %t.o -arch=mips64
+// RUN: llvm-mc -filetype=obj %s -o %t.o -triple mips64-unknown-linux-gnu
 // RUN: llvm-objdump -r -section=.rela.eh_frame %t.o | FileCheck --check-prefix=REL64 %s
 // RUN: llvm-dwarfdump -eh-frame %t.o | FileCheck --check-prefix=DWARF64 %s
 
-// RUN: llvm-mc -filetype=obj %s -o %t.o -arch=mips64el
+// RUN: llvm-mc -filetype=obj %s -o %t.o -triple mips64el-unknown-linux-gnu
 // RUN: llvm-objdump -r -section=.rela.eh_frame %t.o | FileCheck --check-prefix=REL64 %s
 // RUN: llvm-dwarfdump -eh-frame %t.o | FileCheck --check-prefix=DWARF64 %s
 
@@ -31,8 +31,7 @@ func:
 // DWARF32:   Return address column: 31
 // DWARF32:   Augmentation data:     0B
 //                                   ^^ fde pointer encoding: DW_EH_PE_sdata4
-// DWARF32:   DW_CFA_def_cfa: reg29 +0
-// FIXME: The instructions are different from the ones produces by gas.
+// DWARF32:   DW_CFA_def_cfa_register: reg29
 //
 // DWARF32: 00000014 00000010 00000018 FDE cie=00000018 pc=00000000...00000000
 // DWARF32:   DW_CFA_nop:
@@ -49,8 +48,7 @@ func:
 // DWARF64:   Return address column: 31
 // DWARF64:   Augmentation data:     0C
 //                                   ^^ fde pointer encoding: DW_EH_PE_sdata8
-// DWARF64:   DW_CFA_def_cfa: reg29 +0
-// FIXME: The instructions are different from the ones produces by gas.
+// DWARF64:   DW_CFA_def_cfa_register: reg29
 //
 // DWARF64: 00000014 00000018 00000018 FDE cie=00000018 pc=00000000...00000000
 // DWARF64:   DW_CFA_nop:

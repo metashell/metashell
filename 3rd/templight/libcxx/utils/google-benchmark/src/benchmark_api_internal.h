@@ -1,11 +1,13 @@
 #ifndef BENCHMARK_API_INTERNAL_H
 #define BENCHMARK_API_INTERNAL_H
 
-#include "benchmark/benchmark_api.h"
+#include "benchmark/benchmark.h"
+#include "commandlineflags.h"
 
 #include <cmath>
 #include <iosfwd>
 #include <limits>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -13,11 +15,11 @@ namespace benchmark {
 namespace internal {
 
 // Information kept per benchmark we may want to run
-struct Benchmark::Instance {
+struct BenchmarkInstance {
   std::string name;
   Benchmark* benchmark;
-  ReportMode report_mode;
-  std::vector<int> arg;
+  AggregationReportMode aggregation_report_mode;
+  std::vector<int64_t> arg;
   TimeUnit time_unit;
   int range_multiplier;
   bool use_real_time;
@@ -25,24 +27,25 @@ struct Benchmark::Instance {
   BigO complexity;
   BigOFunc* complexity_lambda;
   UserCounters counters;
+  const std::vector<Statistics>* statistics;
   bool last_benchmark_instance;
   int repetitions;
   double min_time;
   size_t iterations;
   int threads;  // Number of concurrent threads to us
+
+  State Run(size_t iters, int thread_id, internal::ThreadTimer* timer,
+            internal::ThreadManager* manager) const;
 };
 
 bool FindBenchmarksInternal(const std::string& re,
-                            std::vector<Benchmark::Instance>* benchmarks,
+                            std::vector<BenchmarkInstance>* benchmarks,
                             std::ostream* Err);
 
-namespace {
+bool IsZero(double n);
 
-bool IsZero(double n) {
-  return std::abs(n) < std::numeric_limits<double>::epsilon();
-}
+ConsoleReporter::OutputOptions GetOutputOptions(bool force_no_color = false);
 
-}  // end namespace
 }  // end namespace internal
 }  // end namespace benchmark
 

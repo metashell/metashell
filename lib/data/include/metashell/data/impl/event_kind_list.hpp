@@ -60,6 +60,7 @@ TEMPLATE_EVENT_KIND(explicit_template_argument_substitution, "ExplicitTemplateAr
 TEMPLATE_EVENT_KIND(deduced_template_argument_substitution,  "DeducedTemplateArgumentSubstitution",  open)
 TEMPLATE_EVENT_KIND(prior_template_argument_substitution,    "PriorTemplateArgumentSubstitution",    open)
 TEMPLATE_EVENT_KIND(default_template_argument_checking,      "DefaultTemplateArgumentChecking",      open)
+TEMPLATE_EVENT_KIND(exception_spec_evaluation,               "ExceptionSpecEvaluation",              flat)
 TEMPLATE_EVENT_KIND(exception_spec_instantiation,            "ExceptionSpecInstantiation",           open)
 TEMPLATE_EVENT_KIND(declaring_special_member,                "DeclaringSpecialMember",               open)
 TEMPLATE_EVENT_KIND(defining_synthesized_function,           "DefiningSynthesizedFunction",          open)

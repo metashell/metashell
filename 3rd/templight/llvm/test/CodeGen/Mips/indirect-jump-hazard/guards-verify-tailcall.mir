@@ -1,5 +1,5 @@
 # RUN: not llc -mtriple=mips-mti-linux-gnu -mcpu=mips32r2 %s \
-# RUN:         -start-after=expand-isel-pseudos -stop-after=expand-isel-pseudos \
+# RUN:         -start-after=finalize-isel -stop-after=finalize-isel \
 # RUN:         -verify-machineinstrs -mattr=+use-indirect-jump-hazard -o - 2>&1 \
 # RUN:   | FileCheck %s
 
@@ -26,7 +26,7 @@ registers:
   - { id: 0, class: gpr32, preferred-register: '' }
   - { id: 1, class: gpr32, preferred-register: '' }
 liveins:
-  - { reg: '%a0', virtual-reg: '%0' }
+  - { reg: '$a0', virtual-reg: '%0' }
 frameInfo:
   isFrameAddressTaken: false
   isReturnAddressTaken: false
@@ -49,11 +49,11 @@ stack:
 constants:
 body:             |
   bb.0.entry:
-    liveins: %a0
+    liveins: $a0
 
-    %0:gpr32 = COPY %a0
+    %0:gpr32 = COPY $a0
     %1:gpr32 = ADDiu $zero, 14
-    %a0 = COPY %1
-    TAILCALLREG %0, csr_o32, implicit-def dead %at, implicit %a0
+    $a0 = COPY %1
+    TAILCALLREG %0, csr_o32, implicit-def dead $at, implicit $a0
 
 ...

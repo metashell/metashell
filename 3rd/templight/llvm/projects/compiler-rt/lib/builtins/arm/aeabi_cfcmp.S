@@ -1,9 +1,8 @@
 //===-- aeabi_cfcmp.S - EABI cfcmp* implementation ------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -55,7 +54,7 @@ DEFINE_COMPILERRT_FUNCTION(__aeabi_cfcmpeq)
         mov ip, #APSR_C
         msr APSR_nzcvq, ip
 #else
-        msr CPSR_f, #APSR_C
+        msr APSR_nzcvq, #APSR_C
 #endif
         JMP(lr)
 #endif
@@ -115,11 +114,7 @@ DEFINE_COMPILERRT_FUNCTION(__aeabi_cfcmple)
         movne ip, #(APSR_C)
 
 1:
-#if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
         msr APSR_nzcvq, ip
-#else
-        msr CPSR_f, ip
-#endif
         pop {r0-r3}
         POP_PC()
 #endif

@@ -1,9 +1,8 @@
 //===-- sanitizer_procmaps_mac.cc -----------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -88,6 +87,10 @@ MemoryMappingLayout::MemoryMappingLayout(bool cache_enabled) {
 MemoryMappingLayout::~MemoryMappingLayout() {
 }
 
+bool MemoryMappingLayout::Error() const {
+  return false;
+}
+
 // More information about Mach-O headers can be found in mach-o/loader.h
 // Each Mach-O image has a header (mach_header or mach_header_64) starting with
 // a magic number, and a list of linker load commands directly following the
@@ -140,12 +143,6 @@ void MemoryMappingLayout::LoadFromCache() {
 // early in the process, when dyld is one of the only images loaded,
 // so it will be hit after only a few iterations.
 static mach_header *get_dyld_image_header() {
-  mach_port_name_t port;
-  if (task_for_pid(mach_task_self(), internal_getpid(), &port) !=
-      KERN_SUCCESS) {
-    return nullptr;
-  }
-
   unsigned depth = 1;
   vm_size_t size = 0;
   vm_address_t address = 0;
@@ -154,7 +151,7 @@ static mach_header *get_dyld_image_header() {
 
   while (true) {
     struct vm_region_submap_info_64 info;
-    err = vm_region_recurse_64(port, &address, &size, &depth,
+    err = vm_region_recurse_64(mach_task_self(), &address, &size, &depth,
                                (vm_region_info_t)&info, &count);
     if (err != KERN_SUCCESS) return nullptr;
 

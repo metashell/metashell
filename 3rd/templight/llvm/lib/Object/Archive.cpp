@@ -1,9 +1,8 @@
 //===- Archive.cpp - ar File Format implementation ------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -175,15 +174,19 @@ Expected<StringRef> ArchiveMemberHeader::getName(uint64_t Size) const {
                             "the end of the string table for archive member "
                             "header at offset " + Twine(ArchiveOffset));
     }
-    const char *addr = Parent->getStringTable().begin() + StringOffset;
 
     // GNU long file names end with a "/\n".
     if (Parent->kind() == Archive::K_GNU ||
         Parent->kind() == Archive::K_GNU64) {
-      StringRef::size_type End = StringRef(addr).find('\n');
-      return StringRef(addr, End - 1);
+      size_t End = Parent->getStringTable().find('\n', /*From=*/StringOffset);
+      if (End == StringRef::npos || End < 1 ||
+          Parent->getStringTable()[End - 1] != '/') {
+        return malformedError("string table at long name offset " +
+                              Twine(StringOffset) + "not terminated");
+      }
+      return Parent->getStringTable().slice(StringOffset, End - 1);
     }
-    return addr;
+    return Parent->getStringTable().begin() + StringOffset;
   }
 
   if (Name.startswith("#1/")) {
@@ -508,7 +511,7 @@ Expected<MemoryBufferRef> Archive::Child::getMemoryBufferRef() const {
   StringRef Name = NameOrErr.get();
   Expected<StringRef> Buf = getBuffer();
   if (!Buf)
-    return Buf.takeError();
+    return createFileError(Name, Buf.takeError());
   return MemoryBufferRef(*Buf, Name);
 }
 
@@ -775,19 +778,18 @@ Archive::child_iterator Archive::child_begin(Error &Err,
     return child_end();
 
   if (SkipInternal)
-    return child_iterator(Child(this, FirstRegularData,
-                                FirstRegularStartOfFile),
-                          &Err);
+    return child_iterator::itr(
+        Child(this, FirstRegularData, FirstRegularStartOfFile), Err);
 
   const char *Loc = Data.getBufferStart() + strlen(Magic);
   Child C(this, Loc, &Err);
   if (Err)
     return child_end();
-  return child_iterator(C, &Err);
+  return child_iterator::itr(C, Err);
 }
 
 Archive::child_iterator Archive::child_end() const {
-  return child_iterator(Child(nullptr, nullptr, nullptr), nullptr);
+  return child_iterator::end(Child(nullptr, nullptr, nullptr));
 }
 
 StringRef Archive::Symbol::getName() const {

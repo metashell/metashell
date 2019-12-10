@@ -1,15 +1,13 @@
 //===- TreeView.cpp - diagtool tool for printing warning flags ------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
 #include "DiagTool.h"
 #include "DiagnosticNames.h"
-#include "clang/AST/ASTDiagnostic.h"
 #include "clang/Basic/AllDiagnostics.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/DiagnosticOptions.h"
@@ -104,9 +102,7 @@ public:
       return 1;
     }
 
-    const GroupRecord *Found =
-        std::lower_bound(AllGroups.begin(), AllGroups.end(), RootGroup);
-
+    const GroupRecord *Found = llvm::lower_bound(AllGroups, RootGroup);
     if (Found == AllGroups.end() || Found->getName() != RootGroup) {
       llvm::errs() << "No such diagnostic group exists\n";
       return 1;

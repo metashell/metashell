@@ -1,9 +1,8 @@
 //===- LiveRangeCalc.cpp - Calculate live ranges --------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -96,10 +95,11 @@ void LiveRangeCalc::calculate(LiveInterval &LI, bool TrackSubRegs) {
       }
 
       LI.refineSubRanges(*Alloc, SubMask,
-          [&MO, this](LiveInterval::SubRange &SR) {
-        if (MO.isDef())
-          createDeadDef(*Indexes, *Alloc, SR, MO);
-      });
+                         [&MO, this](LiveInterval::SubRange &SR) {
+                           if (MO.isDef())
+                             createDeadDef(*Indexes, *Alloc, SR, MO);
+                         },
+                         *Indexes, TRI);
     }
 
     // Create the def in the main liverange. We do not have to do this if
@@ -364,7 +364,7 @@ bool LiveRangeCalc::findReachingDefs(LiveRange &LR, MachineBasicBlock &UseMBB,
 #ifndef NDEBUG
     if (MBB->pred_empty()) {
       MBB->getParent()->verify();
-      errs() << "Use of " << printReg(PhysReg)
+      errs() << "Use of " << printReg(PhysReg, MRI->getTargetRegisterInfo())
              << " does not have a corresponding definition on every path:\n";
       const MachineInstr *MI = Indexes->getInstructionFromIndex(Use);
       if (MI != nullptr)
@@ -583,4 +583,25 @@ void LiveRangeCalc::updateSSA() {
       }
     }
   } while (Changed);
+}
+
+bool LiveRangeCalc::isJointlyDominated(const MachineBasicBlock *MBB,
+                                       ArrayRef<SlotIndex> Defs,
+                                       const SlotIndexes &Indexes) {
+  const MachineFunction &MF = *MBB->getParent();
+  BitVector DefBlocks(MF.getNumBlockIDs());
+  for (SlotIndex I : Defs)
+    DefBlocks.set(Indexes.getMBBFromIndex(I)->getNumber());
+
+  SetVector<unsigned> PredQueue;
+  PredQueue.insert(MBB->getNumber());
+  for (unsigned i = 0; i != PredQueue.size(); ++i) {
+    unsigned BN = PredQueue[i];
+    if (DefBlocks[BN])
+      return true;
+    const MachineBasicBlock *B = MF.getBlockNumbered(BN);
+    for (const MachineBasicBlock *P : B->predecessors())
+      PredQueue.insert(P->getNumber());
+  }
+  return false;
 }

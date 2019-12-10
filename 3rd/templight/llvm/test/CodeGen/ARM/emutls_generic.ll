@@ -11,6 +11,17 @@
 ; RUN: llc < %s -emulated-tls -mtriple=thumbv7-windows-gnu -O3 \
 ; RUN:     | FileCheck -check-prefix=WIN %s
 
+; RUN: llc < %s -mtriple=arm-linux-android -relocation-model=pic \
+; RUN:     | FileCheck -check-prefix=ARM_32 %s
+; RUN: llc < %s -mtriple=arm-linux-androidabi -relocation-model=pic \
+; RUN:     | FileCheck -check-prefix=ARM_32 %s
+; RUN: llc < %s -mtriple=arm-linux-androidabi -relocation-model=pic -O3 \
+; RUN:     | FileCheck -check-prefix=ARM_32 %s
+; RUN: llc < %s -mtriple=arm-linux-androidabi -O3 \
+; RUN:     | FileCheck -check-prefix=ARM_32 %s
+; arm-apple-darwin must use -emulated-tls
+; windows must use -emulated-tls
+
 ; Make sure that TLS symbols are emitted in expected order.
 
 @external_x = external thread_local global i32, align 8
@@ -67,8 +78,9 @@ entry:
 ; ARM_32-NEXT:   .long 0
 
 ; WIN-LABEL:  get_external_x:
-; WIN:        movw r0, :lower16:__emutls_v.external_x
-; WIN:        movt r0, :upper16:__emutls_v.external_x
+; WIN:        movw r0, :lower16:.refptr.__emutls_v.external_x
+; WIN:        movt r0, :upper16:.refptr.__emutls_v.external_x
+; WIN:        ldr  r0, [r0]
 ; WIN:        bl __emutls_get_address
 ; WIN-LABEL:  get_external_y:
 ; WIN:        movw r0, :lower16:__emutls_v.external_y

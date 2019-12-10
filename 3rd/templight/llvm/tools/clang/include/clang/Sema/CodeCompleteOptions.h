@@ -1,9 +1,8 @@
 //===---- CodeCompleteOptions.h - Code Completion Options -------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -35,9 +34,19 @@ public:
   /// Show brief documentation comments in code completion results.
   unsigned IncludeBriefComments : 1;
 
+  /// Hint whether to load data from the external AST to provide full results.
+  /// If false, namespace-level declarations and macros from the preamble may be
+  /// omitted.
+  unsigned LoadExternal : 1;
+
+  /// Include results after corrections (small fix-its), e.g. change '.' to '->'
+  /// on member access, etc.
+  unsigned IncludeFixIts : 1;
+
   CodeCompleteOptions()
       : IncludeMacros(0), IncludeCodePatterns(0), IncludeGlobals(1),
-        IncludeNamespaceLevelDecls(1), IncludeBriefComments(0) {}
+        IncludeNamespaceLevelDecls(1), IncludeBriefComments(0),
+        LoadExternal(1), IncludeFixIts(0) {}
 };
 
 } // namespace clang

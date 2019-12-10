@@ -1,4 +1,4 @@
-; RUN: llc -mtriple i686-windows -filetype obj -o - %s | llvm-readobj -sections \
+; RUN: llc -mtriple i686-windows -filetype obj -o - %s | llvm-readobj --sections \
 ; RUN:    | FileCheck %s
 
 define dllexport void @function() {
@@ -13,7 +13,7 @@ entry:
 
 ; CHECK: Section {
 ; CHECK:   Name: .drectve
-; CHECK:   PointerToRawData: 0xB8
+; CHECK:   PointerToRawData: 0xB5
 ; CHECK:   Characteristics [
 ; CHECK:     IMAGE_SCN_ALIGN_1BYTES
 ; CHECK:     IMAGE_SCN_LNK_INFO

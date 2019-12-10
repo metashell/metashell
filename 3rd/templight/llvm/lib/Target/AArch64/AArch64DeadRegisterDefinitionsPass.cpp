@@ -1,9 +1,8 @@
 //==-- AArch64DeadRegisterDefinitions.cpp - Replace dead defs w/ zero reg --==//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 /// \file When allowed by the instruction, replace a dead definition of a GPR
@@ -55,8 +54,6 @@ public:
     AU.setPreservesCFG();
     MachineFunctionPass::getAnalysisUsage(AU);
   }
-
-  bool shouldSkip(const MachineInstr &MI, const MachineFunction &MF) const;
 };
 char AArch64DeadRegisterDefinitions::ID = 0;
 } // end anonymous namespace
@@ -71,60 +68,48 @@ static bool usesFrameIndex(const MachineInstr &MI) {
   return false;
 }
 
-bool
-AArch64DeadRegisterDefinitions::shouldSkip(const MachineInstr &MI,
-                                           const MachineFunction &MF) const {
-  if (!MF.getSubtarget<AArch64Subtarget>().hasLSE())
-    return false;
-
-#define CASE_AARCH64_ATOMIC_(PREFIX) \
-  case AArch64::PREFIX##X: \
-  case AArch64::PREFIX##W: \
-  case AArch64::PREFIX##H: \
-  case AArch64::PREFIX##B
-
-  for (const MachineMemOperand *MMO : MI.memoperands()) {
-    if (MMO->isAtomic()) {
-      unsigned Opcode = MI.getOpcode();
-      switch (Opcode) {
-      default:
-        return false;
-        break;
-
-      CASE_AARCH64_ATOMIC_(LDADDA):
-      CASE_AARCH64_ATOMIC_(LDADDAL):
-
-      CASE_AARCH64_ATOMIC_(LDCLRA):
-      CASE_AARCH64_ATOMIC_(LDCLRAL):
-
-      CASE_AARCH64_ATOMIC_(LDEORA):
-      CASE_AARCH64_ATOMIC_(LDEORAL):
-
-      CASE_AARCH64_ATOMIC_(LDSETA):
-      CASE_AARCH64_ATOMIC_(LDSETAL):
-
-      CASE_AARCH64_ATOMIC_(LDSMAXA):
-      CASE_AARCH64_ATOMIC_(LDSMAXAL):
-
-      CASE_AARCH64_ATOMIC_(LDSMINA):
-      CASE_AARCH64_ATOMIC_(LDSMINAL):
-
-      CASE_AARCH64_ATOMIC_(LDUMAXA):
-      CASE_AARCH64_ATOMIC_(LDUMAXAL):
-
-      CASE_AARCH64_ATOMIC_(LDUMINA):
-      CASE_AARCH64_ATOMIC_(LDUMINAL):
-
-      CASE_AARCH64_ATOMIC_(SWPA):
-      CASE_AARCH64_ATOMIC_(SWPAL):
-        return true;
-        break;
-                                                                    }
-    }
+// Instructions that lose their 'read' operation for a subesquent fence acquire
+// (DMB LD) once the zero register is used.
+//
+// WARNING: The aquire variants of the instructions are also affected, but they
+// are split out into `atomicBarrierDroppedOnZero()` to support annotations on
+// assembly.
+static bool atomicReadDroppedOnZero(unsigned Opcode) {
+  switch (Opcode) {
+    case AArch64::LDADDB:     case AArch64::LDADDH:
+    case AArch64::LDADDW:     case AArch64::LDADDX:
+    case AArch64::LDADDLB:    case AArch64::LDADDLH:
+    case AArch64::LDADDLW:    case AArch64::LDADDLX:
+    case AArch64::LDCLRB:     case AArch64::LDCLRH:
+    case AArch64::LDCLRW:     case AArch64::LDCLRX:
+    case AArch64::LDCLRLB:    case AArch64::LDCLRLH:
+    case AArch64::LDCLRLW:    case AArch64::LDCLRLX:
+    case AArch64::LDEORB:     case AArch64::LDEORH:
+    case AArch64::LDEORW:     case AArch64::LDEORX:
+    case AArch64::LDEORLB:    case AArch64::LDEORLH:
+    case AArch64::LDEORLW:    case AArch64::LDEORLX:
+    case AArch64::LDSETB:     case AArch64::LDSETH:
+    case AArch64::LDSETW:     case AArch64::LDSETX:
+    case AArch64::LDSETLB:    case AArch64::LDSETLH:
+    case AArch64::LDSETLW:    case AArch64::LDSETLX:
+    case AArch64::LDSMAXB:    case AArch64::LDSMAXH:
+    case AArch64::LDSMAXW:    case AArch64::LDSMAXX:
+    case AArch64::LDSMAXLB:   case AArch64::LDSMAXLH:
+    case AArch64::LDSMAXLW:   case AArch64::LDSMAXLX:
+    case AArch64::LDSMINB:    case AArch64::LDSMINH:
+    case AArch64::LDSMINW:    case AArch64::LDSMINX:
+    case AArch64::LDSMINLB:   case AArch64::LDSMINLH:
+    case AArch64::LDSMINLW:   case AArch64::LDSMINLX:
+    case AArch64::LDUMAXB:    case AArch64::LDUMAXH:
+    case AArch64::LDUMAXW:    case AArch64::LDUMAXX:
+    case AArch64::LDUMAXLB:   case AArch64::LDUMAXLH:
+    case AArch64::LDUMAXLW:   case AArch64::LDUMAXLX:
+    case AArch64::LDUMINB:    case AArch64::LDUMINH:
+    case AArch64::LDUMINW:    case AArch64::LDUMINX:
+    case AArch64::LDUMINLB:   case AArch64::LDUMINLH:
+    case AArch64::LDUMINLW:   case AArch64::LDUMINLX:
+    return true;
   }
-
-#undef CASE_AARCH64_ATOMIC_
-
   return false;
 }
 
@@ -136,18 +121,20 @@ void AArch64DeadRegisterDefinitions::processMachineBasicBlock(
       // We need to skip this instruction because while it appears to have a
       // dead def it uses a frame index which might expand into a multi
       // instruction sequence during EPI.
-      DEBUG(dbgs() << "    Ignoring, operand is frame index\n");
+      LLVM_DEBUG(dbgs() << "    Ignoring, operand is frame index\n");
       continue;
     }
     if (MI.definesRegister(AArch64::XZR) || MI.definesRegister(AArch64::WZR)) {
       // It is not allowed to write to the same register (not even the zero
       // register) twice in a single instruction.
-      DEBUG(dbgs() << "    Ignoring, XZR or WZR already used by the instruction\n");
+      LLVM_DEBUG(
+          dbgs()
+          << "    Ignoring, XZR or WZR already used by the instruction\n");
       continue;
     }
 
-    if (shouldSkip(MI, MF)) {
-      DEBUG(dbgs() << "    Ignoring, Atomic instruction with acquire semantics using WZR/XZR\n");
+    if (atomicBarrierDroppedOnZero(MI.getOpcode()) || atomicReadDroppedOnZero(MI.getOpcode())) {
+      LLVM_DEBUG(dbgs() << "    Ignoring, semantics change with xzr/wzr.\n");
       continue;
     }
 
@@ -163,30 +150,30 @@ void AArch64DeadRegisterDefinitions::processMachineBasicBlock(
           (!MO.isDead() && !MRI->use_nodbg_empty(Reg)))
         continue;
       assert(!MO.isImplicit() && "Unexpected implicit def!");
-      DEBUG(dbgs() << "  Dead def operand #" << I << " in:\n    ";
-            MI.print(dbgs()));
+      LLVM_DEBUG(dbgs() << "  Dead def operand #" << I << " in:\n    ";
+                 MI.print(dbgs()));
       // Be careful not to change the register if it's a tied operand.
       if (MI.isRegTiedToUseOperand(I)) {
-        DEBUG(dbgs() << "    Ignoring, def is tied operand.\n");
+        LLVM_DEBUG(dbgs() << "    Ignoring, def is tied operand.\n");
         continue;
       }
       const TargetRegisterClass *RC = TII->getRegClass(Desc, I, TRI, MF);
       unsigned NewReg;
       if (RC == nullptr) {
-        DEBUG(dbgs() << "    Ignoring, register is not a GPR.\n");
+        LLVM_DEBUG(dbgs() << "    Ignoring, register is not a GPR.\n");
         continue;
       } else if (RC->contains(AArch64::WZR))
         NewReg = AArch64::WZR;
       else if (RC->contains(AArch64::XZR))
         NewReg = AArch64::XZR;
       else {
-        DEBUG(dbgs() << "    Ignoring, register is not a GPR.\n");
+        LLVM_DEBUG(dbgs() << "    Ignoring, register is not a GPR.\n");
         continue;
       }
-      DEBUG(dbgs() << "    Replacing with zero register. New:\n      ");
+      LLVM_DEBUG(dbgs() << "    Replacing with zero register. New:\n      ");
       MO.setReg(NewReg);
       MO.setIsDead();
-      DEBUG(MI.print(dbgs()));
+      LLVM_DEBUG(MI.print(dbgs()));
       ++NumDeadDefsReplaced;
       Changed = true;
       // Only replace one dead register, see check for zero register above.
@@ -204,7 +191,7 @@ bool AArch64DeadRegisterDefinitions::runOnMachineFunction(MachineFunction &MF) {
   TRI = MF.getSubtarget().getRegisterInfo();
   TII = MF.getSubtarget().getInstrInfo();
   MRI = &MF.getRegInfo();
-  DEBUG(dbgs() << "***** AArch64DeadRegisterDefinitions *****\n");
+  LLVM_DEBUG(dbgs() << "***** AArch64DeadRegisterDefinitions *****\n");
   Changed = false;
   for (auto &MBB : MF)
     processMachineBasicBlock(MBB);

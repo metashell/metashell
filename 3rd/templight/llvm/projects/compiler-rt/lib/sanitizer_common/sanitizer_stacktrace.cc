@@ -1,9 +1,8 @@
 //===-- sanitizer_stacktrace.cc -------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -18,9 +17,9 @@
 namespace __sanitizer {
 
 uptr StackTrace::GetNextInstructionPc(uptr pc) {
-#if defined(__mips__)
+#if defined(__sparc__) || defined(__mips__)
   return pc + 8;
-#elif defined(__powerpc__)
+#elif defined(__powerpc__) || defined(__arm__) || defined(__aarch64__)
   return pc + 4;
 #else
   return pc + 1;
@@ -40,12 +39,16 @@ void BufferedStackTrace::Init(const uptr *pcs, uptr cnt, uptr extra_top_pc) {
   top_frame_bp = 0;
 }
 
+// Sparc implemention is in its own file.
+#if !defined(__sparc__)
+
 // In GCC on ARM bp points to saved lr, not fp, so we should check the next
 // cell in stack to be a saved frame pointer. GetCanonicFrame returns the
 // pointer to saved frame pointer in any case.
 static inline uhwptr *GetCanonicFrame(uptr bp,
                                       uptr stack_top,
                                       uptr stack_bottom) {
+  CHECK_GT(stack_top, stack_bottom);
 #ifdef __arm__
   if (!IsValidFrame(bp, stack_top, stack_bottom)) return 0;
   uhwptr *bp_prev = (uhwptr *)bp;
@@ -64,10 +67,11 @@ static inline uhwptr *GetCanonicFrame(uptr bp,
 #endif
 }
 
-void BufferedStackTrace::FastUnwindStack(uptr pc, uptr bp, uptr stack_top,
-                                         uptr stack_bottom, u32 max_depth) {
-  const uptr kPageSize = GetPageSizeCached();
+void BufferedStackTrace::UnwindFast(uptr pc, uptr bp, uptr stack_top,
+                                    uptr stack_bottom, u32 max_depth) {
+  // TODO(yln): add arg sanity check for stack_top/stack_bottom
   CHECK_GE(max_depth, 2);
+  const uptr kPageSize = GetPageSizeCached();
   trace_buffer[0] = pc;
   size = 1;
   if (stack_top < 4096) return;  // Sanity check for stack top.
@@ -105,6 +109,8 @@ void BufferedStackTrace::FastUnwindStack(uptr pc, uptr bp, uptr stack_top,
     frame = GetCanonicFrame((uptr)frame[0], stack_top, bottom);
   }
 }
+
+#endif  // !defined(__sparc__)
 
 void BufferedStackTrace::PopStackFrames(uptr count) {
   CHECK_LT(count, size);

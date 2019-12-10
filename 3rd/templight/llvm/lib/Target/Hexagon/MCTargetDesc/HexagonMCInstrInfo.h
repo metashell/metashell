@@ -1,9 +1,8 @@
 //===- HexagonMCInstrInfo.cpp - Utility functions on Hexagon MCInsts ------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -103,9 +102,6 @@ MCInst deriveExtender(MCInstrInfo const &MCII, MCInst const &Inst,
 // Convert this instruction in to a duplex subinst
 MCInst deriveSubInst(MCInst const &Inst);
 
-// Clamp off upper 26 bits of extendable operand for emission
-void clampExtended(MCInstrInfo const &MCII, MCContext &Context, MCInst &MCI);
-
 // Return the extender for instruction at Index or nullptr if none
 MCInst const *extenderForIndex(MCInst const &MCB, size_t Index);
 void extendIfNeeded(MCContext &Context, MCInstrInfo const &MCII, MCInst &MCB,
@@ -142,6 +138,9 @@ unsigned getExtentAlignment(MCInstrInfo const &MCII, MCInst const &MCI);
 
 // Return the number of logical bits of the extendable operand
 unsigned getExtentBits(MCInstrInfo const &MCII, MCInst const &MCI);
+
+// Check if the extendable operand is signed.
+bool isExtentSigned(MCInstrInfo const &MCII, MCInst const &MCI);
 
 // Return the max value that a constant extendable operand can have
 // without being extended.

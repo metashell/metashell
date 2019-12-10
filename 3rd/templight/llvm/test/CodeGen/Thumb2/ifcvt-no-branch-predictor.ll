@@ -72,7 +72,7 @@ if.end:
 }
 
 ; CHECK-LABEL: diamond1:
-; CHECK: ite eq
+; CHECK: itee eq
 ; CHECK: ldreq
 ; CHECK: strne
 define i32 @diamond1(i32 %n, i32* %p) {
@@ -100,13 +100,13 @@ if.end:
 ; CHECK-BP: str
 ; CHECK-BP: b
 ; CHECK-BP: str
-; CHECK-BP: ldr
+; CHECK-BP: add
 ; CHECK-NOBP: ittee
 ; CHECK-NOBP: streq
-; CHECK-NOBP: ldreq
+; CHECK-NOBP: addeq
 ; CHECK-NOBP: strne
 ; CHECK-NOBP: strne
-define i32 @diamond2(i32 %n, i32 %m, i32* %p, i32* %q) {
+define i32 @diamond2(i32 %n, i32* %p, i32* %q) {
 entry:
   %tobool = icmp eq i32 %n, 0
   br i1 %tobool, label %if.else, label %if.then
@@ -118,8 +118,8 @@ if.then:
   br label %if.end
 
 if.else:
-  store i32 %m, i32* %q, align 4
-  %0 = load i32, i32* %p, align 4
+  store i32 %n, i32* %q, align 4
+  %0 = add i32 %n, 10
   br label %if.end
 
 if.end:

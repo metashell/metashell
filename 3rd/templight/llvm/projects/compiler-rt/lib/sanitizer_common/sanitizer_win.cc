@@ -1,9 +1,8 @@
 //===-- sanitizer_win.cc --------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -23,14 +22,27 @@
 #include <stdlib.h>
 
 #include "sanitizer_common.h"
-#include "sanitizer_dbghelp.h"
 #include "sanitizer_file.h"
 #include "sanitizer_libc.h"
 #include "sanitizer_mutex.h"
 #include "sanitizer_placement_new.h"
-#include "sanitizer_stacktrace.h"
-#include "sanitizer_symbolizer.h"
 #include "sanitizer_win_defs.h"
+
+#if defined(PSAPI_VERSION) && PSAPI_VERSION == 1
+#pragma comment(lib, "psapi")
+#endif
+#if SANITIZER_WIN_TRACE
+#include <traceloggingprovider.h>
+//  Windows trace logging provider init
+#pragma comment(lib, "advapi32.lib")
+TRACELOGGING_DECLARE_PROVIDER(g_asan_provider);
+// GUID must be the same in utils/AddressSanitizerLoggingProvider.wprp
+TRACELOGGING_DEFINE_PROVIDER(g_asan_provider, "AddressSanitizerLoggingProvider",
+                             (0x6c6c766d, 0x3846, 0x4e6a, 0xa4, 0xfb, 0x5b,
+                              0x53, 0x0b, 0xd0, 0xf3, 0xfa));
+#else
+#define TraceLoggingUnregister(x)
+#endif
 
 // A macro to tell the compiler that this part of the code cannot be reached,
 // if the compiler supports this feature. Since we're using this in
@@ -205,7 +217,7 @@ void *MmapAlignedOrDieOnFatalError(uptr size, uptr alignment,
   return (void *)mapped_addr;
 }
 
-void *MmapFixedNoReserve(uptr fixed_addr, uptr size, const char *name) {
+bool MmapFixedNoReserve(uptr fixed_addr, uptr size, const char *name) {
   // FIXME: is this really "NoReserve"? On Win32 this does not matter much,
   // but on Win64 it does.
   (void)name;  // unsupported
@@ -218,16 +230,18 @@ void *MmapFixedNoReserve(uptr fixed_addr, uptr size, const char *name) {
   void *p = VirtualAlloc((LPVOID)fixed_addr, size, MEM_RESERVE | MEM_COMMIT,
                          PAGE_READWRITE);
 #endif
-  if (p == 0)
+  if (p == 0) {
     Report("ERROR: %s failed to "
            "allocate %p (%zd) bytes at %p (error code: %d)\n",
            SanitizerToolName, size, size, fixed_addr, GetLastError());
-  return p;
+    return false;
+  }
+  return true;
 }
 
 // Memory space mapped by 'MmapFixedOrDie' must have been reserved by
 // 'MmapFixedNoAccess'.
-void *MmapFixedOrDie(uptr fixed_addr, uptr size) {
+void *MmapFixedOrDie(uptr fixed_addr, uptr size, const char *name) {
   void *p = VirtualAlloc((LPVOID)fixed_addr, size,
       MEM_COMMIT, PAGE_READWRITE);
   if (p == 0) {
@@ -241,27 +255,25 @@ void *MmapFixedOrDie(uptr fixed_addr, uptr size) {
 
 // Uses fixed_addr for now.
 // Will use offset instead once we've implemented this function for real.
-uptr ReservedAddressRange::Map(uptr fixed_addr, uptr size) {
+uptr ReservedAddressRange::Map(uptr fixed_addr, uptr size, const char *name) {
   return reinterpret_cast<uptr>(MmapFixedOrDieOnFatalError(fixed_addr, size));
 }
 
-uptr ReservedAddressRange::MapOrDie(uptr fixed_addr, uptr size) {
+uptr ReservedAddressRange::MapOrDie(uptr fixed_addr, uptr size,
+                                    const char *name) {
   return reinterpret_cast<uptr>(MmapFixedOrDie(fixed_addr, size));
 }
 
 void ReservedAddressRange::Unmap(uptr addr, uptr size) {
-  void* addr_as_void = reinterpret_cast<void*>(addr);
-  uptr base_as_uptr = reinterpret_cast<uptr>(base_);
   // Only unmap if it covers the entire range.
-  CHECK((addr == base_as_uptr) && (size == size_));
-  UnmapOrDie(addr_as_void, size);
-  if (addr_as_void == base_) {
-    base_ = reinterpret_cast<void*>(addr + size);
-  }
-  size_ = size_ - size;
+  CHECK((addr == reinterpret_cast<uptr>(base_)) && (size == size_));
+  // We unmap the whole range, just null out the base.
+  base_ = nullptr;
+  size_ = 0;
+  UnmapOrDie(reinterpret_cast<void*>(addr), size);
 }
 
-void *MmapFixedOrDieOnFatalError(uptr fixed_addr, uptr size) {
+void *MmapFixedOrDieOnFatalError(uptr fixed_addr, uptr size, const char *name) {
   void *p = VirtualAlloc((LPVOID)fixed_addr, size,
       MEM_COMMIT, PAGE_READWRITE);
   if (p == 0) {
@@ -279,11 +291,7 @@ void *MmapNoReserveOrDie(uptr size, const char *mem_type) {
 }
 
 uptr ReservedAddressRange::Init(uptr size, const char *name, uptr fixed_addr) {
-  if (fixed_addr) {
-    base_ = MmapFixedNoAccess(fixed_addr, size, name);
-  } else {
-    base_ = MmapNoAccess(size);
-  }
+  base_ = fixed_addr ? MmapFixedNoAccess(fixed_addr, size) : MmapNoAccess(size);
   size_ = size;
   name_ = name;
   (void)os_handle_;  // unsupported
@@ -321,17 +329,20 @@ void ReleaseMemoryPagesToOS(uptr beg, uptr end) {
   // FIXME: add madvise-analog when we move to 64-bits.
 }
 
-void NoHugePagesInRegion(uptr addr, uptr size) {
+bool NoHugePagesInRegion(uptr addr, uptr size) {
   // FIXME: probably similar to ReleaseMemoryToOS.
+  return true;
 }
 
-void DontDumpShadowMemory(uptr addr, uptr length) {
+bool DontDumpShadowMemory(uptr addr, uptr length) {
   // This is almost useless on 32-bits.
   // FIXME: add madvise-analog when we move to 64-bits.
+  return true;
 }
 
 uptr FindAvailableMemoryRange(uptr size, uptr alignment, uptr left_padding,
-                              uptr *largest_gap_found) {
+                              uptr *largest_gap_found,
+                              uptr *max_occupied_addr) {
   uptr address = 0;
   while (true) {
     MEMORY_BASIC_INFORMATION info;
@@ -433,7 +444,7 @@ void DumpProcessMap() {
   modules.init();
   uptr num_modules = modules.size();
 
-  InternalScopedBuffer<ModuleInfo> module_infos(num_modules);
+  InternalMmapVector<ModuleInfo> module_infos(num_modules);
   for (size_t i = 0; i < num_modules; ++i) {
     module_infos[i].filepath = modules[i].full_name();
     module_infos[i].base_address = modules[i].ranges().front()->beg;
@@ -466,8 +477,7 @@ void ReExec() {
   UNIMPLEMENTED();
 }
 
-void PrepareForSandboxing(__sanitizer_sandbox_arguments *args) {
-}
+void PlatformPrepareForSandboxing(__sanitizer_sandbox_arguments *args) {}
 
 bool StackSizeIsUnlimited() {
   UNIMPLEMENTED();
@@ -489,8 +499,14 @@ bool IsPathSeparator(const char c) {
   return c == '\\' || c == '/';
 }
 
+static bool IsAlpha(char c) {
+  c = ToLower(c);
+  return c >= 'a' && c <= 'z';
+}
+
 bool IsAbsolutePath(const char *path) {
-  UNIMPLEMENTED();
+  return path != nullptr && IsAlpha(path[0]) && path[1] == ':' &&
+         IsPathSeparator(path[2]);
 }
 
 void SleepForSeconds(int seconds) {
@@ -502,12 +518,19 @@ void SleepForMillis(int millis) {
 }
 
 u64 NanoTime() {
-  return 0;
+  static LARGE_INTEGER frequency = {};
+  LARGE_INTEGER counter;
+  if (UNLIKELY(frequency.QuadPart == 0)) {
+    QueryPerformanceFrequency(&frequency);
+    CHECK_NE(frequency.QuadPart, 0);
+  }
+  QueryPerformanceCounter(&counter);
+  counter.QuadPart *= 1000ULL * 1000000ULL;
+  counter.QuadPart /= frequency.QuadPart;
+  return counter.QuadPart;
 }
 
-u64 MonotonicNanoTime() {
-  return 0;
-}
+u64 MonotonicNanoTime() { return NanoTime(); }
 
 void Abort() {
   internal__exit(3);
@@ -641,6 +664,7 @@ int Atexit(void (*function)(void)) {
 }
 
 static int RunAtexit() {
+  TraceLoggingUnregister(g_asan_provider);
   int ret = 0;
   for (uptr i = 0; i < atexit_functions.size(); ++i) {
     ret |= atexit(atexit_functions[i]);
@@ -732,16 +756,13 @@ bool WriteToFile(fd_t fd, const void *buff, uptr buff_size, uptr *bytes_written,
   }
 }
 
-bool RenameFile(const char *oldpath, const char *newpath, error_t *error_p) {
-  UNIMPLEMENTED();
-}
-
 uptr internal_sched_yield() {
   Sleep(0);
   return 0;
 }
 
 void internal__exit(int exitcode) {
+  TraceLoggingUnregister(g_asan_provider);
   // ExitProcess runs some finalizers, so use TerminateProcess to avoid that.
   // The debugger doesn't stop on TerminateProcess like it does on ExitProcess,
   // so add our own breakpoint here.
@@ -756,50 +777,32 @@ uptr internal_ftruncate(fd_t fd, uptr size) {
 }
 
 uptr GetRSS() {
-  return 0;
+  PROCESS_MEMORY_COUNTERS counters;
+  if (!GetProcessMemoryInfo(GetCurrentProcess(), &counters, sizeof(counters)))
+    return 0;
+  return counters.WorkingSetSize;
 }
 
 void *internal_start_thread(void (*func)(void *arg), void *arg) { return 0; }
 void internal_join_thread(void *th) { }
 
 // ---------------------- BlockingMutex ---------------- {{{1
-const uptr LOCK_UNINITIALIZED = 0;
-const uptr LOCK_READY = (uptr)-1;
-
-BlockingMutex::BlockingMutex(LinkerInitialized li) {
-  // FIXME: see comments in BlockingMutex::Lock() for the details.
-  CHECK(li == LINKER_INITIALIZED || owner_ == LOCK_UNINITIALIZED);
-
-  CHECK(sizeof(CRITICAL_SECTION) <= sizeof(opaque_storage_));
-  InitializeCriticalSection((LPCRITICAL_SECTION)opaque_storage_);
-  owner_ = LOCK_READY;
-}
 
 BlockingMutex::BlockingMutex() {
-  CHECK(sizeof(CRITICAL_SECTION) <= sizeof(opaque_storage_));
-  InitializeCriticalSection((LPCRITICAL_SECTION)opaque_storage_);
-  owner_ = LOCK_READY;
+  CHECK(sizeof(SRWLOCK) <= sizeof(opaque_storage_));
+  internal_memset(this, 0, sizeof(*this));
 }
 
 void BlockingMutex::Lock() {
-  if (owner_ == LOCK_UNINITIALIZED) {
-    // FIXME: hm, global BlockingMutex objects are not initialized?!?
-    // This might be a side effect of the clang+cl+link Frankenbuild...
-    new(this) BlockingMutex((LinkerInitialized)(LINKER_INITIALIZED + 1));
-
-    // FIXME: If it turns out the linker doesn't invoke our
-    // constructors, we should probably manually Lock/Unlock all the global
-    // locks while we're starting in one thread to avoid double-init races.
-  }
-  EnterCriticalSection((LPCRITICAL_SECTION)opaque_storage_);
-  CHECK_EQ(owner_, LOCK_READY);
+  AcquireSRWLockExclusive((PSRWLOCK)opaque_storage_);
+  CHECK_EQ(owner_, 0);
   owner_ = GetThreadSelf();
 }
 
 void BlockingMutex::Unlock() {
-  CHECK_EQ(owner_, GetThreadSelf());
-  owner_ = LOCK_READY;
-  LeaveCriticalSection((LPCRITICAL_SECTION)opaque_storage_);
+  CheckLocked();
+  owner_ = 0;
+  ReleaseSRWLockExclusive((PSRWLOCK)opaque_storage_);
 }
 
 void BlockingMutex::CheckLocked() {
@@ -829,54 +832,6 @@ void GetThreadStackAndTls(bool main, uptr *stk_addr, uptr *stk_size,
   *tls_size = 0;
 #endif
 }
-
-#if !SANITIZER_GO
-void BufferedStackTrace::SlowUnwindStack(uptr pc, u32 max_depth) {
-  CHECK_GE(max_depth, 2);
-  // FIXME: CaptureStackBackTrace might be too slow for us.
-  // FIXME: Compare with StackWalk64.
-  // FIXME: Look at LLVMUnhandledExceptionFilter in Signals.inc
-  size = CaptureStackBackTrace(1, Min(max_depth, kStackTraceMax),
-                               (void **)&trace_buffer[0], 0);
-  if (size == 0)
-    return;
-
-  // Skip the RTL frames by searching for the PC in the stacktrace.
-  uptr pc_location = LocatePcInTrace(pc);
-  PopStackFrames(pc_location);
-}
-
-void BufferedStackTrace::SlowUnwindStackWithContext(uptr pc, void *context,
-                                                    u32 max_depth) {
-  CONTEXT ctx = *(CONTEXT *)context;
-  STACKFRAME64 stack_frame;
-  memset(&stack_frame, 0, sizeof(stack_frame));
-
-  InitializeDbgHelpIfNeeded();
-
-  size = 0;
-#if defined(_WIN64)
-  int machine_type = IMAGE_FILE_MACHINE_AMD64;
-  stack_frame.AddrPC.Offset = ctx.Rip;
-  stack_frame.AddrFrame.Offset = ctx.Rbp;
-  stack_frame.AddrStack.Offset = ctx.Rsp;
-#else
-  int machine_type = IMAGE_FILE_MACHINE_I386;
-  stack_frame.AddrPC.Offset = ctx.Eip;
-  stack_frame.AddrFrame.Offset = ctx.Ebp;
-  stack_frame.AddrStack.Offset = ctx.Esp;
-#endif
-  stack_frame.AddrPC.Mode = AddrModeFlat;
-  stack_frame.AddrFrame.Mode = AddrModeFlat;
-  stack_frame.AddrStack.Mode = AddrModeFlat;
-  while (StackWalk64(machine_type, GetCurrentProcess(), GetCurrentThread(),
-                     &stack_frame, &ctx, NULL, SymFunctionTableAccess64,
-                     SymGetModuleBase64, NULL) &&
-         size < Min(max_depth, kStackTraceMax)) {
-    trace_buffer[size++] = (uptr)stack_frame.AddrPC.Offset;
-  }
-}
-#endif  // #if !SANITIZER_GO
 
 void ReportFile::Write(const char *buffer, uptr length) {
   SpinMutexLock l(mu);
@@ -1069,11 +1024,28 @@ void CheckVMASize() {
   // Do nothing.
 }
 
+void InitializePlatformEarly() {
+  // Do nothing.
+}
+
 void MaybeReexec() {
   // No need to re-exec on Windows.
 }
 
+void CheckASLR() {
+  // Do nothing
+}
+
+void CheckMPROTECT() {
+  // Do nothing
+}
+
 char **GetArgv() {
+  // FIXME: Actually implement this function.
+  return 0;
+}
+
+char **GetEnviron() {
   // FIXME: Actually implement this function.
   return 0;
 }
@@ -1106,10 +1078,37 @@ bool GetRandom(void *buffer, uptr length, bool blocking) {
   UNIMPLEMENTED();
 }
 
-// FIXME: implement on this platform.
 u32 GetNumberOfCPUs() {
-  UNIMPLEMENTED();
+  SYSTEM_INFO sysinfo = {};
+  GetNativeSystemInfo(&sysinfo);
+  return sysinfo.dwNumberOfProcessors;
 }
+
+#if SANITIZER_WIN_TRACE
+// TODO(mcgov): Rename this project-wide to PlatformLogInit
+void AndroidLogInit(void) {
+  HRESULT hr = TraceLoggingRegister(g_asan_provider);
+  if (!SUCCEEDED(hr))
+    return;
+}
+
+void SetAbortMessage(const char *) {}
+
+void LogFullErrorReport(const char *buffer) {
+  if (common_flags()->log_to_syslog) {
+    InternalMmapVector<wchar_t> filename;
+    DWORD filename_length = 0;
+    do {
+      filename.resize(filename.size() + 0x100);
+      filename_length =
+          GetModuleFileNameW(NULL, filename.begin(), filename.size());
+    } while (filename_length >= filename.size());
+    TraceLoggingWrite(g_asan_provider, "AsanReportEvent",
+                      TraceLoggingValue(filename.begin(), "ExecutableName"),
+                      TraceLoggingValue(buffer, "AsanReportContents"));
+  }
+}
+#endif // SANITIZER_WIN_TRACE
 
 }  // namespace __sanitizer
 

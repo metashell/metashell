@@ -11,9 +11,10 @@ define double @_Z3fooddb(double %x, double %y, i1 zeroext %c) local_unnamed_addr
   tail call void @llvm.dbg.value(metadata double %y, metadata !14, metadata !DIExpression()), !dbg !17
   tail call void @llvm.dbg.value(metadata i1 %c, metadata !15, metadata !DIExpression()), !dbg !18
   %a = fdiv double %x, 3.000000e+00
+; CHECK: fdiv {{.*}} !dbg [[NO:![0-9]+]]
   %b = fdiv double %y, 5.000000e+00, !dbg !19
   %cond = select i1 %c,  double %a, double %b
-; CHECK-NOT: debug-location !19
+; CHECK-NOT: debug-location [[NO]]
   ret double %cond, !dbg !20
 }
 
@@ -33,7 +34,7 @@ attributes #1 = { nounwind readnone speculatable }
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{!"clang version 6.0.0 (trunk 313291)"}
-!7 = distinct !DISubprogram(name: "foo", linkageName: "_Z3fooddb", scope: !1, file: !1, line: 1, type: !8, isLocal: false, isDefinition: true, scopeLine: 1, flags: DIFlagPrototyped, isOptimized: true, unit: !0, variables: !12)
+!7 = distinct !DISubprogram(name: "foo", linkageName: "_Z3fooddb", scope: !1, file: !1, line: 1, type: !8, isLocal: false, isDefinition: true, scopeLine: 1, flags: DIFlagPrototyped, isOptimized: true, unit: !0, retainedNodes: !12)
 !8 = !DISubroutineType(types: !9)
 !9 = !{!10, !10, !10, !11}
 !10 = !DIBasicType(name: "double", size: 64, encoding: DW_ATE_float)

@@ -1,9 +1,8 @@
 //===- CodeViewYAMLTypes.cpp - CodeView YAMLIO types implementation -------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -99,7 +98,7 @@ template <typename T> struct LeafRecordImpl : public LeafRecordBase {
 
   CVType toCodeViewRecord(AppendingTypeTableBuilder &TS) const override {
     TS.writeLeafType(Record);
-    return CVType(Kind, TS.records().back());
+    return CVType(TS.records().back());
   }
 
   mutable T Record;
@@ -497,7 +496,7 @@ CVType LeafRecordImpl<FieldListRecord>::toCodeViewRecord(
     Member.Member->writeTo(CRB);
   }
   TS.insertRecord(CRB);
-  return CVType(Kind, TS.records().back());
+  return CVType(TS.records().back());
 }
 
 void MappingTraits<OneMethodRecord>::mapping(IO &io, OneMethodRecord &Record) {
@@ -593,6 +592,17 @@ template <> void LeafRecordImpl<VFTableRecord>::map(IO &IO) {
 
 template <> void LeafRecordImpl<MethodOverloadListRecord>::map(IO &IO) {
   IO.mapRequired("Methods", Record.Methods);
+}
+
+template <> void LeafRecordImpl<PrecompRecord>::map(IO &IO) {
+  IO.mapRequired("StartTypeIndex", Record.StartTypeIndex);
+  IO.mapRequired("TypesCount", Record.TypesCount);
+  IO.mapRequired("Signature", Record.Signature);
+  IO.mapRequired("PrecompFilePath", Record.PrecompFilePath);
+}
+
+template <> void LeafRecordImpl<EndPrecompRecord>::map(IO &IO) {
+  IO.mapRequired("Signature", Record.Signature);
 }
 
 template <> void MemberRecordImpl<OneMethodRecord>::map(IO &IO) {
@@ -763,14 +773,16 @@ void MappingTraits<MemberRecord>::mapping(IO &IO, MemberRecord &Obj) {
 }
 
 std::vector<LeafRecord>
-llvm::CodeViewYAML::fromDebugT(ArrayRef<uint8_t> DebugT) {
-  ExitOnError Err("Invalid .debug$T section!");
-  BinaryStreamReader Reader(DebugT, support::little);
+llvm::CodeViewYAML::fromDebugT(ArrayRef<uint8_t> DebugTorP,
+                               StringRef SectionName) {
+  ExitOnError Err("Invalid " + std::string(SectionName) + " section!");
+  BinaryStreamReader Reader(DebugTorP, support::little);
   CVTypeArray Types;
   uint32_t Magic;
 
   Err(Reader.readInteger(Magic));
-  assert(Magic == COFF::DEBUG_SECTION_MAGIC && "Invalid .debug$T section!");
+  assert(Magic == COFF::DEBUG_SECTION_MAGIC &&
+         "Invalid .debug$T or .debug$P section!");
 
   std::vector<LeafRecord> Result;
   Err(Reader.readArray(Types, Reader.bytesRemaining()));
@@ -782,7 +794,8 @@ llvm::CodeViewYAML::fromDebugT(ArrayRef<uint8_t> DebugT) {
 }
 
 ArrayRef<uint8_t> llvm::CodeViewYAML::toDebugT(ArrayRef<LeafRecord> Leafs,
-                                               BumpPtrAllocator &Alloc) {
+                                               BumpPtrAllocator &Alloc,
+                                               StringRef SectionName) {
   AppendingTypeTableBuilder TS(Alloc);
   uint32_t Size = sizeof(uint32_t);
   for (const auto &Leaf : Leafs) {
@@ -793,7 +806,8 @@ ArrayRef<uint8_t> llvm::CodeViewYAML::toDebugT(ArrayRef<LeafRecord> Leafs,
   uint8_t *ResultBuffer = Alloc.Allocate<uint8_t>(Size);
   MutableArrayRef<uint8_t> Output(ResultBuffer, Size);
   BinaryStreamWriter Writer(Output, support::little);
-  ExitOnError Err("Error writing type record to .debug$T section");
+  ExitOnError Err("Error writing type record to " + std::string(SectionName) +
+                  " section");
   Err(Writer.writeInteger<uint32_t>(COFF::DEBUG_SECTION_MAGIC));
   for (const auto &R : TS.records()) {
     Err(Writer.writeBytes(R));

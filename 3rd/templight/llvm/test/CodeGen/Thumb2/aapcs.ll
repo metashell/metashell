@@ -1,5 +1,5 @@
 ; RUN: llc < %s -mtriple=thumbv7-none-eabi   -mcpu=cortex-m4 -mattr=-vfp2             | FileCheck %s -check-prefix=CHECK -check-prefix=SOFT
-; RUN: llc < %s -mtriple=thumbv7-none-eabihf -mcpu=cortex-m4 -mattr=+vfp4,+fp-only-sp | FileCheck %s -check-prefix=CHECK -check-prefix=HARD -check-prefix=SP
+; RUN: llc < %s -mtriple=thumbv7-none-eabihf -mcpu=cortex-m4 -mattr=+vfp4,-fp64 | FileCheck %s -check-prefix=CHECK -check-prefix=HARD -check-prefix=SP
 ; RUN: llc < %s -mtriple=thumbv7-none-eabihf -mcpu=cortex-a8 -mattr=+vfp3             | FileCheck %s -check-prefix=CHECK -check-prefix=HARD -check-prefix=DP
 
 define float @float_in_reg(float %a, float %b) {
@@ -14,8 +14,8 @@ entry:
 define double @double_in_reg(double %a, double %b) {
 entry:
 ; CHECK-LABEL: double_in_reg:
-; SOFT: mov r0, r2
 ; SOFT: mov r1, r3
+; SOFT: mov r0, r2
 ; SP: vmov.f32  s0, s2
 ; SP: vmov.f32  s1, s3
 ; DP: vmov.f64  d0, d1

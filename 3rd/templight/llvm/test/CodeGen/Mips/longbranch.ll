@@ -9,8 +9,6 @@
 ; RUN:   | FileCheck %s -check-prefix=O32-STATIC
 ; RUN: llc -mtriple=mipsel-unknown-linux-gnu -mcpu=mips32r6 -force-mips-long-branch -O3 \
 ; RUN:   -relocation-model=pic < %s | FileCheck %s -check-prefix=O32-R6-PIC
-; RUN: llc -mtriple=mipsel-unknown-linux-gnu -mcpu=mips32r6 -force-mips-long-branch -O3 \
-; RUN:   -relocation-model=static < %s | FileCheck %s -check-prefix=O32-R6-STATIC
 
 ; RUN: llc -mtriple=mips64el-unknown-linux-gnu -mcpu=mips4 -target-abi=n64 -force-mips-long-branch -O3 -relocation-model=pic \
 ; RUN:   < %s | FileCheck %s -check-prefix=MIPS4
@@ -233,30 +231,25 @@ define void @test1(i32 signext %s) {
 ; MICROMIPSSTATIC:       # %bb.0: # %entry
 ; MICROMIPSSTATIC-NEXT:    bnezc $4, $BB0_2
 ; MICROMIPSSTATIC-NEXT:  # %bb.1: # %entry
-; MICROMIPSSTATIC-NEXT:    j $BB0_4
-; MICROMIPSSTATIC-NEXT:    nop
-; MICROMIPSSTATIC-NEXT:  $BB0_2: # %entry
 ; MICROMIPSSTATIC-NEXT:    j $BB0_3
 ; MICROMIPSSTATIC-NEXT:    nop
-; MICROMIPSSTATIC-NEXT:  $BB0_3: # %then
+; MICROMIPSSTATIC-NEXT:  $BB0_2: # %then
 ; MICROMIPSSTATIC-NEXT:    lui $1, %hi(x)
 ; MICROMIPSSTATIC-NEXT:    li16 $2, 1
 ; MICROMIPSSTATIC-NEXT:    sw $2, %lo(x)($1)
-; MICROMIPSSTATIC-NEXT:  $BB0_4: # %end
+; MICROMIPSSTATIC-NEXT:  $BB0_3: # %end
 ; MICROMIPSSTATIC-NEXT:    jrc $ra
 ;
 ; MICROMIPSR6STATIC-LABEL: test1:
 ; MICROMIPSR6STATIC:       # %bb.0: # %entry
 ; MICROMIPSR6STATIC-NEXT:    bnezc $4, $BB0_2
 ; MICROMIPSR6STATIC-NEXT:  # %bb.1: # %entry
-; MICROMIPSR6STATIC-NEXT:    bc $BB0_4
-; MICROMIPSR6STATIC-NEXT:  $BB0_2: # %entry
 ; MICROMIPSR6STATIC-NEXT:    bc $BB0_3
-; MICROMIPSR6STATIC-NEXT:  $BB0_3: # %then
+; MICROMIPSR6STATIC-NEXT:  $BB0_2: # %then
 ; MICROMIPSR6STATIC-NEXT:    lui $1, %hi(x)
 ; MICROMIPSR6STATIC-NEXT:    li16 $2, 1
 ; MICROMIPSR6STATIC-NEXT:    sw $2, %lo(x)($1)
-; MICROMIPSR6STATIC-NEXT:  $BB0_4: # %end
+; MICROMIPSR6STATIC-NEXT:  $BB0_3: # %end
 ; MICROMIPSR6STATIC-NEXT:    jrc $ra
 ;
 ; MICROMIPSR6PIC-LABEL: test1:

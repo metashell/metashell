@@ -1,9 +1,8 @@
 //===-- RISCVInstrFormats.td - RISCV Instruction Formats ---*- tablegen -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -45,11 +44,12 @@ def InstFormatCSS    : InstFormat<10>;
 def InstFormatCIW    : InstFormat<11>;
 def InstFormatCL     : InstFormat<12>;
 def InstFormatCS     : InstFormat<13>;
-def InstFormatCB     : InstFormat<14>;
-def InstFormatCJ     : InstFormat<15>;
-def InstFormatOther  : InstFormat<16>;
+def InstFormatCA     : InstFormat<14>;
+def InstFormatCB     : InstFormat<15>;
+def InstFormatCJ     : InstFormat<16>;
+def InstFormatOther  : InstFormat<17>;
 
-// The following opcode names and match those given in Table 19.1 in the
+// The following opcode names match those given in Table 19.1 in the
 // RISC-V User-level ISA specification ("RISC-V base opcode map").
 class RISCVOpcode<bits<7> val> {
   bits<7> Value = val;
@@ -102,10 +102,39 @@ class RVInst<dag outs, dag ins, string opcodestr, string argstr,
 }
 
 // Pseudo instructions
-class Pseudo<dag outs, dag ins, list<dag> pattern>
-    : RVInst<outs, ins, "", "", pattern, InstFormatPseudo> {
+class Pseudo<dag outs, dag ins, list<dag> pattern, string opcodestr = "", string argstr = "">
+    : RVInst<outs, ins, opcodestr, argstr, pattern, InstFormatPseudo> {
   let isPseudo = 1;
   let isCodeGenOnly = 1;
+}
+
+// Pseudo load instructions.
+class PseudoLoad<string opcodestr, RegisterClass rdty = GPR>
+    : Pseudo<(outs rdty:$rd), (ins bare_symbol:$addr), [], opcodestr, "$rd, $addr"> {
+  let hasSideEffects = 0;
+  let mayLoad = 1;
+  let mayStore = 0;
+  let isCodeGenOnly = 0;
+  let isAsmParserOnly = 1;
+}
+
+class PseudoFloatLoad<string opcodestr, RegisterClass rdty = GPR>
+    : Pseudo<(outs rdty:$rd, GPR:$tmp), (ins bare_symbol:$addr), [], opcodestr, "$rd, $addr, $tmp"> {
+  let hasSideEffects = 0;
+  let mayLoad = 1;
+  let mayStore = 0;
+  let isCodeGenOnly = 0;
+  let isAsmParserOnly = 1;
+}
+
+// Pseudo store instructions.
+class PseudoStore<string opcodestr, RegisterClass rsty = GPR>
+    : Pseudo<(outs rsty:$rs, GPR:$tmp), (ins bare_symbol:$addr), [], opcodestr, "$rs, $addr, $tmp"> {
+  let hasSideEffects = 0;
+  let mayLoad = 0;
+  let mayStore = 1;
+  let isCodeGenOnly = 0;
+  let isAsmParserOnly = 1;
 }
 
 // Instruction formats are listed in the order they appear in the RISC-V

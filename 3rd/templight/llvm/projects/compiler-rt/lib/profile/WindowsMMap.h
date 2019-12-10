@@ -1,9 +1,8 @@
 /*===- WindowsMMap.h - Support library for PGO instrumentation ------------===*\
 |*
-|*                     The LLVM Compiler Infrastructure
-|*
-|* This file is distributed under the University of Illinois Open Source
-|* License. See LICENSE.TXT for details.
+|* Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+|* See https://llvm.org/LICENSE.txt for license information.
+|* SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 |*
 \*===----------------------------------------------------------------------===*/
 
@@ -12,7 +11,7 @@
 
 #if defined(_WIN32)
 
-#include <BaseTsd.h>
+#include <basetsd.h>
 #include <io.h>
 #include <sys/types.h>
 
@@ -44,6 +43,14 @@
 #define   LOCK_EX   2    /* exclusive lock */
 #define   LOCK_NB   4    /* don't block when locking */
 #define   LOCK_UN   8    /* unlock */
+
+#ifdef __USE_FILE_OFFSET64
+# define DWORD_HI(x) (x >> 32)
+# define DWORD_LO(x) ((x) & 0xffffffff)
+#else
+# define DWORD_HI(x) (0)
+# define DWORD_LO(x) (x)
+#endif
 
 void *mmap(void *start, size_t length, int prot, int flags, int fd,
            off_t offset);

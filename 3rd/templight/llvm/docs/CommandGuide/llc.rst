@@ -1,6 +1,8 @@
 llc - LLVM static compiler
 ==========================
 
+.. program:: llc
+
 SYNOPSIS
 --------
 
@@ -40,6 +42,11 @@ End-user Options
 .. option:: -help
 
  Print a summary of command line options.
+
+.. option:: -o <filename>
+
+ Use ``<filename>`` as the output filename. See the summary above for more
+ details.
 
 .. option:: -O=uint
 
@@ -87,9 +94,9 @@ End-user Options
 
    llvm-as < /dev/null | llc -march=xyz -mattr=help
 
-.. option:: --disable-fp-elim
+.. option:: --frame-pointer
 
- Disable frame pointer elimination optimization.
+ Specify effect of frame pointer elimination optimization (all,non-leaf,none).
 
 .. option:: --disable-excess-fp-precision
 
@@ -135,11 +142,15 @@ End-user Options
 .. option:: -stack-size-section
 
  Emit the .stack_sizes section which contains stack size metadata. The section
- contains an array of pairs of function symbol references (8 byte) and stack
+ contains an array of pairs of function symbol values (pointer size) and stack
  sizes (unsigned LEB128). The stack size values only include the space allocated
  in the function prologue. Functions with dynamic stack allocations are not
  included.
 
+.. option:: -remarks-section
+
+ Emit the .remarks (ELF) / __remarks (MachO) section which contains metadata
+ about remark diagnostics.
 
 Tuning/Configuration Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -200,5 +211,4 @@ occurs, it will exit with a non-zero value.
 SEE ALSO
 --------
 
-lli
-
+:manpage:`lli(1)`

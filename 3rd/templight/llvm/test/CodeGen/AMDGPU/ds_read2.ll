@@ -355,7 +355,8 @@ define amdgpu_kernel void @misaligned_2_simple_read2_f32(float addrspace(1)* %ou
 ; CI-DAG: s_mov_b32 m0
 ; GFX9-NOT: m0
 
-; GCN-DAG: v_lshlrev_b32_e32 [[VPTR:v[0-9]+]], 3, {{v[0-9]+}}
+; GCN-DAG: v_lshlrev_b32_e32 [[VOFS:v[0-9]+]], 3, {{v[0-9]+}}
+; GCN-DAG: v_add_{{[iu]}}32_e32 [[VPTR:v[0-9]+]], {{(vcc, )?}}lds.f64@abs32@lo, [[VOFS]]
 ; GCN: ds_read2_b64 v{{\[}}[[LO_VREG:[0-9]+]]:[[HI_VREG:[0-9]+]]{{\]}}, [[VPTR]] offset1:8
 ; GCN: v_add_f64 [[RESULT:v\[[0-9]+:[0-9]+\]]], v{{\[}}[[LO_VREG]]:{{[0-9]+\]}}, v{{\[[0-9]+}}:[[HI_VREG]]{{\]}}
 
@@ -441,8 +442,8 @@ define amdgpu_kernel void @misaligned_read2_f64(double addrspace(1)* %out, doubl
 ; CI-DAG: s_mov_b32 m0
 ; GFX9-NOT: m0
 
-; GCN-DAG: v_mov_b32_e32 [[ZERO:v[0-9]+]], 0{{$}}
-; GCN: ds_read2_b32 v{{\[[0-9]+:[0-9]+\]}}, [[ZERO]] offset1:1
+; GCN-DAG: v_mov_b32_e32 [[PTR:v[0-9]+]], foo@abs32@lo{{$}}
+; GCN: ds_read2_b32 v{{\[[0-9]+:[0-9]+\]}}, [[PTR]] offset1:1
 define amdgpu_kernel void @load_constant_adjacent_offsets(i32 addrspace(1)* %out) {
   %val0 = load i32, i32 addrspace(3)* getelementptr inbounds ([4 x i32], [4 x i32] addrspace(3)* @foo, i32 0, i32 0), align 4
   %val1 = load i32, i32 addrspace(3)* getelementptr inbounds ([4 x i32], [4 x i32] addrspace(3)* @foo, i32 0, i32 1), align 4
@@ -455,8 +456,8 @@ define amdgpu_kernel void @load_constant_adjacent_offsets(i32 addrspace(1)* %out
 ; CI-DAG: s_mov_b32 m0
 ; GFX9-NOT: m0
 
-; GCN-DAG: v_mov_b32_e32 [[ZERO:v[0-9]+]], 0{{$}}
-; GCN: ds_read2_b32 v{{\[[0-9]+:[0-9]+\]}}, [[ZERO]] offset1:2
+; GCN-DAG: v_mov_b32_e32 [[PTR:v[0-9]+]], foo@abs32@lo{{$}}
+; GCN: ds_read2_b32 v{{\[[0-9]+:[0-9]+\]}}, [[PTR]] offset1:2
 define amdgpu_kernel void @load_constant_disjoint_offsets(i32 addrspace(1)* %out) {
   %val0 = load i32, i32 addrspace(3)* getelementptr inbounds ([4 x i32], [4 x i32] addrspace(3)* @foo, i32 0, i32 0), align 4
   %val1 = load i32, i32 addrspace(3)* getelementptr inbounds ([4 x i32], [4 x i32] addrspace(3)* @foo, i32 0, i32 2), align 4
@@ -471,9 +472,9 @@ define amdgpu_kernel void @load_constant_disjoint_offsets(i32 addrspace(1)* %out
 ; CI-DAG: s_mov_b32 m0
 ; GFX9-NOT: m0
 
-; GCN-DAG: v_mov_b32_e32 [[ZERO:v[0-9]+]], 0{{$}}
-; GCN: ds_read2_b32 v{{\[[0-9]+:[0-9]+\]}}, [[ZERO]] offset1:1
-; GCN: ds_read2_b32 v{{\[[0-9]+:[0-9]+\]}}, [[ZERO]] offset0:2 offset1:3
+; GCN-DAG: v_mov_b32_e32 [[PTR:v[0-9]+]], bar@abs32@lo{{$}}
+; GCN: ds_read2_b32 v{{\[[0-9]+:[0-9]+\]}}, [[PTR]] offset1:1
+; GCN: ds_read2_b32 v{{\[[0-9]+:[0-9]+\]}}, [[PTR]] offset0:2 offset1:3
 define amdgpu_kernel void @load_misaligned64_constant_offsets(i64 addrspace(1)* %out) {
   %val0 = load i64, i64 addrspace(3)* getelementptr inbounds ([4 x i64], [4 x i64] addrspace(3)* @bar, i32 0, i32 0), align 4
   %val1 = load i64, i64 addrspace(3)* getelementptr inbounds ([4 x i64], [4 x i64] addrspace(3)* @bar, i32 0, i32 1), align 4
@@ -488,10 +489,13 @@ define amdgpu_kernel void @load_misaligned64_constant_offsets(i64 addrspace(1)* 
 ; CI-DAG: s_mov_b32 m0
 ; GFX9-NOT: m0
 
-; GCN-DAG: v_mov_b32_e32 [[BASE0:v[0-9]+]], 0x7ff8{{$}}
-; GCN-DAG: v_mov_b32_e32 [[BASE1:v[0-9]+]], 0x4000
-; GCN-DAG: ds_read2_b32 v{{\[[0-9]+:[0-9]+\]}}, [[BASE0]] offset1:1
-; GCN-DAG: ds_read2_b32 v{{\[[0-9]+:[0-9]+\]}}, [[BASE1]] offset1:1
+; GCN-DAG: s_mov_b32 [[SBASE0:s[0-9]+]], bar.large@abs32@lo
+; GCN-DAG: s_add_i32 [[SBASE1:s[0-9]+]], [[SBASE0]], 0x4000{{$}}
+; GCN-DAG: s_addk_i32 [[SBASE0]], 0x7ff8{{$}}
+; GCN-DAG: v_mov_b32_e32 [[VBASE0:v[0-9]+]], [[SBASE0]]
+; GCN-DAG: v_mov_b32_e32 [[VBASE1:v[0-9]+]], [[SBASE1]]
+; GCN-DAG: ds_read2_b32 v{{\[[0-9]+:[0-9]+\]}}, [[VBASE0]] offset1:1
+; GCN-DAG: ds_read2_b32 v{{\[[0-9]+:[0-9]+\]}}, [[VBASE1]] offset1:1
 ; GCN: s_endpgm
 define amdgpu_kernel void @load_misaligned64_constant_large_offsets(i64 addrspace(1)* %out) {
   %val0 = load i64, i64 addrspace(3)* getelementptr inbounds ([4096 x i64], [4096 x i64] addrspace(3)* @bar.large, i32 0, i32 2048), align 4
@@ -613,13 +617,55 @@ bb:
   ret void
 }
 
+; GCN-LABEL: ds_read_call_read:
+; GCN: ds_read_b32
+; GCN: s_swappc_b64
+; GCN: ds_read_b32
+define amdgpu_kernel void @ds_read_call_read(i32 addrspace(1)* %out, i32 addrspace(3)* %arg) {
+  %x = call i32 @llvm.amdgcn.workitem.id.x()
+  %arrayidx0 = getelementptr i32, i32 addrspace(3)* %arg, i32 %x
+  %arrayidx1 = getelementptr i32, i32 addrspace(3)* %arrayidx0, i32 1
+  %v0 = load i32, i32 addrspace(3)* %arrayidx0, align 4
+  call void @void_func_void()
+  %v1 = load i32, i32 addrspace(3)* %arrayidx1, align 4
+  %r = add i32 %v0, %v1
+  store i32 %r, i32 addrspace(1)* %out, align 4
+  ret void
+}
+
+; GCN-LABEL: {{^}}ds_read_interp_read:
+; CI: s_mov_b32 m0, -1
+; CI: ds_read_b32
+; CI: s_mov_b32 m0, s0
+; CI: v_interp_mov_f32
+; CI: s_mov_b32 m0, -1
+; CI: ds_read_b32
+; GFX9: ds_read2_b32 v[0:1], v0 offset1:4
+; GFX9: s_mov_b32 m0, s0
+; GFX9: v_interp_mov_f32
+define amdgpu_ps <2 x float> @ds_read_interp_read(i32 inreg %prims, float addrspace(3)* %inptr) {
+  %v0 = load float, float addrspace(3)* %inptr, align 4
+  %intrp = call float @llvm.amdgcn.interp.mov(i32 0, i32 0, i32 0, i32 %prims)
+  %ptr1 = getelementptr float, float addrspace(3)* %inptr, i32 4
+  %v1 = load float, float addrspace(3)* %ptr1, align 4
+  %v1b = fadd float %v1, %intrp
+  %r0 = insertelement <2 x float> undef, float %v0, i32 0
+  %r1 = insertelement <2 x float> %r0, float %v1b, i32 1
+  ret <2 x float> %r1
+}
+
+declare void @void_func_void() #3
+
 declare i32 @llvm.amdgcn.workgroup.id.x() #1
 declare i32 @llvm.amdgcn.workgroup.id.y() #1
 declare i32 @llvm.amdgcn.workitem.id.x() #1
 declare i32 @llvm.amdgcn.workitem.id.y() #1
+
+declare float @llvm.amdgcn.interp.mov(i32, i32, i32, i32) nounwind readnone
 
 declare void @llvm.amdgcn.s.barrier() #2
 
 attributes #0 = { nounwind }
 attributes #1 = { nounwind readnone speculatable }
 attributes #2 = { convergent nounwind }
+attributes #3 = { nounwind noinline }

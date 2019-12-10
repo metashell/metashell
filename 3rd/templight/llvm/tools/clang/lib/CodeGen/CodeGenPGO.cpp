@@ -1,9 +1,8 @@
 //===--- CodeGenPGO.cpp - PGO Instrumentation for LLVM CodeGen --*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -58,7 +57,7 @@ enum PGOHashVersion : unsigned {
 };
 
 namespace {
-/// \brief Stable hasher for PGO region counters.
+/// Stable hasher for PGO region counters.
 ///
 /// PGOHash produces a stable hash of a given function's control flow.
 ///
@@ -79,7 +78,7 @@ class PGOHash {
   static const unsigned TooBig = 1u << NumBitsPerType;
 
 public:
-  /// \brief Hash values for AST nodes.
+  /// Hash values for AST nodes.
   ///
   /// Distinct values for AST nodes that have region counters attached.
   ///
@@ -165,7 +164,12 @@ struct MapRegionCounters : public RecursiveASTVisitor<MapRegionCounters> {
   // Blocks and lambdas are handled as separate functions, so we need not
   // traverse them in the parent context.
   bool TraverseBlockExpr(BlockExpr *BE) { return true; }
-  bool TraverseLambdaBody(LambdaExpr *LE) { return true; }
+  bool TraverseLambdaExpr(LambdaExpr *LE) {
+    // Traverse the captures, but not the body.
+    for (const auto &C : zip(LE->captures(), LE->capture_inits()))
+      TraverseLambdaCapture(LE, &std::get<0>(C), std::get<1>(C));
+    return true;
+  }
   bool TraverseCapturedStmt(CapturedStmt *CS) { return true; }
 
   bool VisitDecl(const Decl *D) {
@@ -544,6 +548,8 @@ struct ComputeRegionCounts : public ConstStmtVisitor<ComputeRegionCounts> {
 
   void VisitCXXForRangeStmt(const CXXForRangeStmt *S) {
     RecordStmtCount(S);
+    if (S->getInit())
+      Visit(S->getInit());
     Visit(S->getLoopVarStmt());
     Visit(S->getRangeStmt());
     Visit(S->getBeginStmt());
@@ -765,14 +771,14 @@ void CodeGenPGO::assignRegionCounters(GlobalDecl GD, llvm::Function *Fn) {
   // If so, instrument only base variant, others are implemented by delegation
   // to the base one, it would be counted twice otherwise.
   if (CGM.getTarget().getCXXABI().hasConstructorVariants()) {
-    if (isa<CXXDestructorDecl>(D) && GD.getDtorType() != Dtor_Base)
-      return;
-
     if (const auto *CCD = dyn_cast<CXXConstructorDecl>(D))
       if (GD.getCtorType() != Ctor_Base &&
           CodeGenFunction::IsConstructorDelegationValid(CCD))
         return;
   }
+  if (isa<CXXDestructorDecl>(D) && GD.getDtorType() != Dtor_Base)
+    return;
+
   CGM.ClearUnusedCoverageMapping(D);
   setFuncName(Fn);
 
@@ -815,7 +821,7 @@ bool CodeGenPGO::skipRegionMappingForDecl(const Decl *D) {
 
   // Don't map the functions in system headers.
   const auto &SM = CGM.getContext().getSourceManager();
-  auto Loc = D->getBody()->getLocStart();
+  auto Loc = D->getBody()->getBeginLoc();
   return SM.isInSystemHeader(Loc);
 }
 
@@ -978,7 +984,7 @@ void CodeGenPGO::loadRegionCounts(llvm::IndexedInstrProfReader *PGOReader,
   RegionCounts = ProfRecord->Counts;
 }
 
-/// \brief Calculate what to divide by to scale weights.
+/// Calculate what to divide by to scale weights.
 ///
 /// Given the maximum weight, calculate a divisor that will scale all the
 /// weights to strictly less than UINT32_MAX.
@@ -986,7 +992,7 @@ static uint64_t calculateWeightScale(uint64_t MaxWeight) {
   return MaxWeight < UINT32_MAX ? 1 : MaxWeight / UINT32_MAX + 1;
 }
 
-/// \brief Scale an individual branch weight (and add 1).
+/// Scale an individual branch weight (and add 1).
 ///
 /// Scale a 64-bit weight down to 32-bits using \c Scale.
 ///

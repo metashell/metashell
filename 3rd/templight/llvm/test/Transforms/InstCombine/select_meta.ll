@@ -12,7 +12,7 @@ define i32 @foo(i32) local_unnamed_addr #0  {
 ;
   %2 = icmp sgt i32 %0, 2
   %3 = add nsw i32 %0, 20
-  %4 = add nsw i32 %0, -20
+  %4 = add i32 %0, -20
   select i1 %2, i32 %3, i32 %4, !prof !1
   ret i32 %5
 }
@@ -104,9 +104,9 @@ define i16 @t7(i32 %a) {
 
 define i32 @abs_nabs_x01(i32 %x) {
 ; CHECK-LABEL: @abs_nabs_x01(
-; CHECK-NEXT:    [[CMP:%.*]] = icmp sgt i32 %x, -1
+; CHECK-NEXT:    [[CMP:%.*]] = icmp slt i32 %x, 0
 ; CHECK-NEXT:    [[SUB:%.*]] = sub nsw i32 0, %x
-; CHECK-NEXT:    [[COND1:%.*]] = select i1 [[CMP]], i32 %x, i32 [[SUB]], !prof ![[$MD1]]
+; CHECK-NEXT:    [[COND1:%.*]] = select i1 [[CMP]], i32 [[SUB]], i32 %x, !prof ![[$MD3:[0-9]+]]
 ; CHECK-NEXT:    ret i32 [[COND1]]
 ;
   %cmp = icmp sgt i32 %x, -1
@@ -118,11 +118,13 @@ define i32 @abs_nabs_x01(i32 %x) {
   ret i32 %cond18
 }
 
+; Swap predicate / metadata order
+
 define <2 x i32> @abs_nabs_x01_vec(<2 x i32> %x) {
 ; CHECK-LABEL: @abs_nabs_x01_vec(
-; CHECK-NEXT:    [[CMP:%.*]] = icmp sgt <2 x i32> %x, <i32 -1, i32 -1>
+; CHECK-NEXT:    [[CMP:%.*]] = icmp slt <2 x i32> %x, zeroinitializer
 ; CHECK-NEXT:    [[SUB:%.*]] = sub nsw <2 x i32> zeroinitializer, %x
-; CHECK-NEXT:    [[COND1:%.*]] = select <2 x i1> [[CMP]], <2 x i32> %x, <2 x i32> [[SUB]], !prof ![[$MD1]]
+; CHECK-NEXT:    [[COND1:%.*]] = select <2 x i1> [[CMP]], <2 x i32> [[SUB]], <2 x i32> %x, !prof ![[$MD3]]
 ; CHECK-NEXT:    ret <2 x i32> [[COND1]]
 ;
   %cmp = icmp sgt <2 x i32> %x, <i32 -1, i32 -1>
@@ -148,12 +150,11 @@ define i32 @test30(i32 %x, i32 %y) {
   ret i32 %retval
 }
 
-; Swap predicate / metadata order
-; SMAX(SMAX(X, 75), 36) -> SMAX(X, 75)
+; SMAX(SMAX(75, X), 36) -> SMAX(X, 75)
 define i32 @test70(i32 %x) {
 ; CHECK-LABEL: @test70(
 ; CHECK-NEXT:    [[TMP1:%.*]] = icmp sgt i32 %x, 75
-; CHECK-NEXT:    [[COND:%.*]] = select i1 [[TMP1]], i32 %x, i32 75, !prof ![[$MD3:[0-9]+]]
+; CHECK-NEXT:    [[COND:%.*]] = select i1 [[TMP1]], i32 %x, i32 75, !prof ![[$MD3]]
 ; CHECK-NEXT:    ret i32 [[COND]]
 ;
   %cmp = icmp slt i32 %x, 75
@@ -193,12 +194,12 @@ define i32 @test74(i32 %x) {
   ret i32 %retval
 }
 
-; The compare should change, but the metadata remains the same because the select operands are not swapped.
+; The xor is moved after the select. The metadata remains the same because the select operands are not swapped only inverted.
 define i32 @smin1(i32 %x) {
 ; CHECK-LABEL: @smin1(
-; CHECK-NEXT:    [[NOT_X:%.*]] = xor i32 %x, -1
-; CHECK-NEXT:    [[CMP:%.*]] = icmp slt i32 [[NOT_X]], -1
-; CHECK-NEXT:    [[SEL:%.*]] = select i1 [[CMP]], i32 [[NOT_X]], i32 -1, !prof ![[$MD1]]
+; CHECK-NEXT:    [[TMP1:%.*]] = icmp sgt i32 [[X:%.*]], 0
+; CHECK-NEXT:    [[TMP2:%.*]] = select i1 [[TMP1]], i32 [[X]], i32 0, !prof ![[$MD1]]
+; CHECK-NEXT:    [[SEL:%.*]] = xor i32 [[TMP2]], -1
 ; CHECK-NEXT:    ret i32 [[SEL]]
 ;
   %not_x = xor i32 %x, -1
@@ -207,12 +208,12 @@ define i32 @smin1(i32 %x) {
   ret i32 %sel
 }
 
-; The compare should change, and the metadata is swapped because the select operands are swapped.
+; The compare should change, and the metadata is swapped because the select operands are swapped and inverted.
 define i32 @smin2(i32 %x) {
 ; CHECK-LABEL: @smin2(
-; CHECK-NEXT:    [[NOT_X:%.*]] = xor i32 %x, -1
-; CHECK-NEXT:    [[CMP:%.*]] = icmp slt i32 [[NOT_X]], -1
-; CHECK-NEXT:    [[SEL:%.*]] = select i1 [[CMP]], i32 [[NOT_X]], i32 -1, !prof ![[$MD3]]
+; CHECK-NEXT:    [[TMP1:%.*]] = icmp sgt i32 [[X:%.*]], 0
+; CHECK-NEXT:    [[TMP2:%.*]] = select i1 [[TMP1]], i32 [[X]], i32 0, !prof ![[$MD3]]
+; CHECK-NEXT:    [[SEL:%.*]] = xor i32 [[TMP2]], -1
 ; CHECK-NEXT:    ret i32 [[SEL]]
 ;
   %not_x = xor i32 %x, -1
@@ -221,12 +222,12 @@ define i32 @smin2(i32 %x) {
   ret i32 %sel
 }
 
-; The compare should change, but the metadata remains the same because the select operands are not swapped.
+; The xor is moved after the select. The metadata remains the same because the select operands are not swapped only inverted.
 define i32 @smax1(i32 %x) {
 ; CHECK-LABEL: @smax1(
-; CHECK-NEXT:    [[NOT_X:%.*]] = xor i32 %x, -1
-; CHECK-NEXT:    [[CMP:%.*]] = icmp sgt i32 [[NOT_X]], -1
-; CHECK-NEXT:    [[SEL:%.*]] = select i1 [[CMP]], i32 [[NOT_X]], i32 -1, !prof ![[$MD1]]
+; CHECK-NEXT:    [[TMP1:%.*]] = icmp slt i32 [[X:%.*]], 0
+; CHECK-NEXT:    [[TMP2:%.*]] = select i1 [[TMP1]], i32 [[X]], i32 0, !prof ![[$MD1]]
+; CHECK-NEXT:    [[SEL:%.*]] = xor i32 [[TMP2]], -1
 ; CHECK-NEXT:    ret i32 [[SEL]]
 ;
   %not_x = xor i32 %x, -1
@@ -235,12 +236,12 @@ define i32 @smax1(i32 %x) {
   ret i32 %sel
 }
 
-; The compare should change, and the metadata is swapped because the select operands are swapped.
+; The compare should change, and the metadata is swapped because the select operands are swapped and inverted.
 define i32 @smax2(i32 %x) {
 ; CHECK-LABEL: @smax2(
-; CHECK-NEXT:    [[NOT_X:%.*]] = xor i32 %x, -1
-; CHECK-NEXT:    [[CMP:%.*]] = icmp sgt i32 [[NOT_X]], -1
-; CHECK-NEXT:    [[SEL:%.*]] = select i1 [[CMP]], i32 [[NOT_X]], i32 -1, !prof ![[$MD3]]
+; CHECK-NEXT:    [[TMP1:%.*]] = icmp slt i32 [[X:%.*]], 0
+; CHECK-NEXT:    [[TMP2:%.*]] = select i1 [[TMP1]], i32 [[X]], i32 0, !prof ![[$MD3]]
+; CHECK-NEXT:    [[SEL:%.*]] = xor i32 [[TMP2]], -1
 ; CHECK-NEXT:    ret i32 [[SEL]]
 ;
   %not_x = xor i32 %x, -1
@@ -296,6 +297,44 @@ define i32 @umax2(i32 %x) {
   %sel = select i1 %cmp, i32 -2147483648, i32 %x, !prof !1
   ret i32 %sel
 }
+
+; The condition is inverted, and the select ops are swapped. The metadata should be swapped.
+
+define i32 @not_cond(i1 %c, i32 %tv, i32 %fv) {
+; CHECK-LABEL: @not_cond(
+; CHECK-NEXT:    [[R:%.*]] = select i1 [[C:%.*]], i32 [[FV:%.*]], i32 [[TV:%.*]], !prof ![[$MD3]]
+; CHECK-NEXT:    ret i32 [[R]]
+;
+  %notc = xor i1 %c, true
+  %r = select i1 %notc, i32 %tv, i32 %fv, !prof !1
+  ret i32 %r
+}
+
+; The condition is inverted, and the select ops are swapped. The metadata should be swapped.
+
+define <2 x i32> @not_cond_vec(<2 x i1> %c, <2 x i32> %tv, <2 x i32> %fv) {
+; CHECK-LABEL: @not_cond_vec(
+; CHECK-NEXT:    [[R:%.*]] = select <2 x i1> [[C:%.*]], <2 x i32> [[FV:%.*]], <2 x i32> [[TV:%.*]], !prof ![[$MD3]]
+; CHECK-NEXT:    ret <2 x i32> [[R]]
+;
+  %notc = xor <2 x i1> %c, <i1 true, i1 true>
+  %r = select <2 x i1> %notc, <2 x i32> %tv, <2 x i32> %fv, !prof !1
+  ret <2 x i32> %r
+}
+
+; Should match vector 'not' with undef element.
+; The condition is inverted, and the select ops are swapped. The metadata should be swapped.
+
+define <2 x i32> @not_cond_vec_undef(<2 x i1> %c, <2 x i32> %tv, <2 x i32> %fv) {
+; CHECK-LABEL: @not_cond_vec_undef(
+; CHECK-NEXT:    [[R:%.*]] = select <2 x i1> [[C:%.*]], <2 x i32> [[FV:%.*]], <2 x i32> [[TV:%.*]], !prof ![[$MD3]]
+; CHECK-NEXT:    ret <2 x i32> [[R]]
+;
+  %notc = xor <2 x i1> %c, <i1 undef, i1 true>
+  %r = select <2 x i1> %notc, <2 x i32> %tv, <2 x i32> %fv, !prof !1
+  ret <2 x i32> %r
+}
+
 
 !1 = !{!"branch_weights", i32 2, i32 10}
 !2 = !{!"branch_weights", i32 3, i32 10}

@@ -1,5 +1,5 @@
 ; RUN: llc -enable-shrink-wrap=true < %s | FileCheck %s --check-prefix=ASM
-; RUN: llc -enable-shrink-wrap=true -filetype=obj < %s | llvm-readobj -codeview | FileCheck %s --check-prefix=OBJ
+; RUN: llc -enable-shrink-wrap=true -filetype=obj < %s | llvm-readobj --codeview | FileCheck %s --check-prefix=OBJ
 
 ; C source:
 ; int doSomething(int*);
@@ -15,7 +15,7 @@
 ; ASM:         .cv_fpo_proc    @shrink_wrap_basic@16 8
 ; ASM:         .cv_loc 0 1 3 9                 # t.c:3:9
 ; ASM:         movl    %ecx, %eax
-; ASM:         cmpl    %edx, %eax
+; ASM:         cmpl    %edx, %ecx
 ; ASM:         jl      [[EPILOGUE:LBB0_[0-9]+]]
 
 ; ASM:         pushl   %ebx
@@ -33,7 +33,7 @@
 ; ASM:         popl    %ebx
 ; ASM: [[EPILOGUE]]:                                 # %return
 ; ASM:         retl    $8
-; ASM: Ltmp11:
+; ASM: Ltmp10:
 ; ASM:         .cv_fpo_endproc
 
 ; Note how RvaStart advances 7 bytes to skip the shrink-wrapped portion.
@@ -41,26 +41,48 @@
 ; OBJ:    FrameData {
 ; OBJ:      RvaStart: 0x0
 ; OBJ:      CodeSize: 0x34
-; OBJ:      FrameFunc: $T0 .raSearch = $eip $T0 ^ = $esp $T0 4 + =
 ; OBJ:      PrologSize: 0x9
+; OBJ:      FrameFunc [
+; OBJ-NEXT:   $T0 .raSearch =
+; OBJ-NEXT:   $eip $T0 ^ =
+; OBJ-NEXT:   $esp $T0 4 + =
+; OBJ-NEXT: ]
 ; OBJ:    }
 ; OBJ:    FrameData {
 ; OBJ:      RvaStart: 0x7
 ; OBJ:      CodeSize: 0x2D
-; OBJ:      FrameFunc: $T0 .raSearch = $eip $T0 ^ = $esp $T0 4 + = $ebx $T0 4 - ^ =
 ; OBJ:      PrologSize: 0x2
+; OBJ:      FrameFunc [
+; OBJ-NEXT:   $T0 .raSearch =
+; OBJ-NEXT:   $eip $T0 ^ =
+; OBJ-NEXT:   $esp $T0 4 + =
+; OBJ-NEXT:   $ebx $T0 4 - ^ =
+; OBJ-NEXT: ]
 ; OBJ:    }
 ; OBJ:    FrameData {
 ; OBJ:      RvaStart: 0x8
 ; OBJ:      CodeSize: 0x2C
-; OBJ:      FrameFunc: $T0 .raSearch = $eip $T0 ^ = $esp $T0 4 + = $ebx $T0 4 - ^ = $edi $T0 8 - ^ =
 ; OBJ:      PrologSize: 0x1
+; OBJ:      FrameFunc [
+; OBJ-NEXT:   $T0 .raSearch =
+; OBJ-NEXT:   $eip $T0 ^ =
+; OBJ-NEXT:   $esp $T0 4 + =
+; OBJ-NEXT:   $ebx $T0 4 - ^ =
+; OBJ-NEXT:   $edi $T0 8 - ^ =
+; OBJ-NEXT: ]
 ; OBJ:    }
 ; OBJ:    FrameData {
 ; OBJ:      RvaStart: 0x9
 ; OBJ:      CodeSize: 0x2B
-; OBJ:      FrameFunc: $T0 .raSearch = $eip $T0 ^ = $esp $T0 4 + = $ebx $T0 4 - ^ = $edi $T0 8 - ^ = $esi $T0 12 - ^ =
 ; OBJ:      PrologSize: 0x0
+; OBJ:      FrameFunc [
+; OBJ-NEXT:   $T0 .raSearch =
+; OBJ-NEXT:   $eip $T0 ^ =
+; OBJ-NEXT:   $esp $T0 4 + =
+; OBJ-NEXT:   $ebx $T0 4 - ^ =
+; OBJ-NEXT:   $edi $T0 8 - ^ =
+; OBJ-NEXT:   $esi $T0 12 - ^ =
+; OBJ-NEXT: ]
 ; OBJ:    }
 ; OBJ-NOT: FrameData
 
@@ -121,7 +143,7 @@ attributes #3 = { nounwind }
 !5 = !{i32 2, !"Debug Info Version", i32 3}
 !6 = !{i32 1, !"wchar_size", i32 2}
 !7 = !{!"clang version 6.0.0 "}
-!8 = distinct !DISubprogram(name: "shrink_wrap_basic", linkageName: "\01@shrink_wrap_basic@16", scope: !1, file: !1, line: 2, type: !9, isLocal: false, isDefinition: true, scopeLine: 2, flags: DIFlagPrototyped, isOptimized: true, unit: !0, variables: !12)
+!8 = distinct !DISubprogram(name: "shrink_wrap_basic", linkageName: "\01@shrink_wrap_basic@16", scope: !1, file: !1, line: 2, type: !9, isLocal: false, isDefinition: true, scopeLine: 2, flags: DIFlagPrototyped, isOptimized: true, unit: !0, retainedNodes: !12)
 !9 = !DISubroutineType(cc: DW_CC_BORLAND_msfastcall, types: !10)
 !10 = !{!11, !11, !11, !11, !11}
 !11 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)

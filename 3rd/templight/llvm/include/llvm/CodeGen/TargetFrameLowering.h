@@ -1,9 +1,8 @@
 //===-- llvm/CodeGen/TargetFrameLowering.h ----------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -15,6 +14,7 @@
 #define LLVM_CODEGEN_TARGETFRAMELOWERING_H
 
 #include "llvm/CodeGen/MachineBasicBlock.h"
+#include "llvm/ADT/StringSwitch.h"
 #include <utility>
 #include <vector>
 
@@ -23,6 +23,14 @@ namespace llvm {
   class CalleeSavedInfo;
   class MachineFunction;
   class RegScavenger;
+
+namespace TargetStackID {
+  enum Value {
+    Default = 0,
+    SGPRSpill = 1,
+    NoAlloc = 255
+  };
+}
 
 /// Information about stack frame layout on the target.  It holds the direction
 /// of stack growth, the known stack alignment on entry to each function, and
@@ -158,6 +166,10 @@ public:
     return false;
   }
 
+  /// Returns true if the target can safely skip saving callee-saved registers
+  /// for noreturn nounwind functions.
+  virtual bool enableCalleeSaveSkip(const MachineFunction &MF) const;
+
   /// emitProlog/emitEpilog - These methods insert prolog and epilog code into
   /// the function.
   virtual void emitPrologue(MachineFunction &MF,
@@ -203,8 +215,11 @@ public:
     return false;
   }
 
-  /// Return true if the target needs to disable frame pointer elimination.
-  virtual bool noFramePointerElim(const MachineFunction &MF) const;
+  /// Return true if the target wants to keep the frame pointer regardless of
+  /// the function attribute "frame-pointer".
+  virtual bool keepFramePointer(const MachineFunction &MF) const {
+    return false;
+  }
 
   /// hasFP - Return true if the specified function should have a dedicated
   /// frame pointer register. For most targets this is true only if the function
@@ -252,6 +267,17 @@ public:
                                              unsigned &FrameReg,
                                              bool IgnoreSPUpdates) const {
     // Always safe to dispatch to getFrameIndexReference.
+    return getFrameIndexReference(MF, FI, FrameReg);
+  }
+
+  /// getNonLocalFrameIndexReference - This method returns the offset used to
+  /// reference a frame index location. The offset can be from either FP/BP/SP
+  /// based on which base register is returned by llvm.localaddress.
+  virtual int getNonLocalFrameIndexReference(const MachineFunction &MF,
+                                       int FI) const {
+    // By default, dispatch to getFrameIndexReference. Interested targets can
+    // override this.
+    unsigned FrameReg;
     return getFrameIndexReference(MF, FI, FrameReg);
   }
 
@@ -328,6 +354,16 @@ public:
     return true;
   }
 
+  virtual bool isSupportedStackID(TargetStackID::Value ID) const {
+    switch (ID) {
+    default:
+      return false;
+    case TargetStackID::Default:
+    case TargetStackID::NoAlloc:
+      return true;
+    }
+  }
+
   /// Check if given function is safe for not having callee saved registers.
   /// This is used when interprocedural register allocation is enabled.
   static bool isSafeForNoCSROpt(const Function &F) {
@@ -341,6 +377,14 @@ public:
           return false;
     return true;
   }
+
+  /// Return initial CFA offset value i.e. the one valid at the beginning of the
+  /// function (before any stack operations).
+  virtual int getInitialCFAOffset(const MachineFunction &MF) const;
+
+  /// Return initial CFA register value i.e. the one valid at the beginning of
+  /// the function (before any stack operations).
+  virtual unsigned getInitialCFARegister(const MachineFunction &MF) const;
 };
 
 } // End llvm namespace
