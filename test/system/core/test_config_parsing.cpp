@@ -79,20 +79,19 @@ namespace
   private:
     just::temp::directory _tmp;
 
-    std::vector<std::string>
+    metashell::data::command_line_argument_list
     write_configs(const std::vector<json_string>& configs_)
     {
       const boost::filesystem::path tmp(_tmp.path());
 
-      std::vector<std::string> args;
+      metashell::data::command_line_argument_list args;
       for (std::vector<json_string>::size_type i = 0; i != configs_.size(); ++i)
       {
-        const std::string config = (tmp / std::to_string(i)).string();
+        const boost::filesystem::path config = tmp / std::to_string(i);
 
-        just::file::write(config, configs_[i].get());
+        just::file::write(config.string(), configs_[i].get());
 
-        args.emplace_back("--load_configs");
-        args.emplace_back(config);
+        args.push_back("--load_configs", config);
       }
 
       return args;

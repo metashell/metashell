@@ -21,12 +21,11 @@ namespace metashell
 {
   namespace process
   {
-    data::process_output run(const boost::filesystem::path& binary_,
-                             const std::vector<std::string>& args_,
+    data::process_output run(const data::command_line& cmd_,
                              const std::string& input_,
                              const boost::filesystem::path& cwd_)
     {
-      execution child(binary_, args_, cwd_);
+      execution child(cmd_, cwd_);
 
       child.standard_input().write(input_);
       child.standard_input().close();

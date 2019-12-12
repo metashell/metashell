@@ -1,9 +1,8 @@
 //===--- InfoByHwMode.cpp -------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 // Classes that implement data parameterized by HW modes for instruction
@@ -37,6 +36,11 @@ ValueTypeByHwMode::ValueTypeByHwMode(Record *R, const CodeGenHwModes &CGH) {
     assert(I.second && "Duplicate entry?");
     (void)I;
   }
+}
+
+ValueTypeByHwMode::ValueTypeByHwMode(Record *R, MVT T) : ValueTypeByHwMode(T) {
+  if (R->isSubClassOf("PtrValueType"))
+    PtrAddrSpace = R->getValueAsInt("AddrSpace");
 }
 
 bool ValueTypeByHwMode::operator== (const ValueTypeByHwMode &T) const {
@@ -84,7 +88,7 @@ void ValueTypeByHwMode::writeToStream(raw_ostream &OS) const {
   std::vector<const PairType*> Pairs;
   for (const auto &P : Map)
     Pairs.push_back(&P);
-  std::sort(Pairs.begin(), Pairs.end(), deref<std::less<PairType>>());
+  llvm::sort(Pairs, deref<std::less<PairType>>());
 
   OS << '{';
   for (unsigned i = 0, e = Pairs.size(); i != e; ++i) {
@@ -112,7 +116,7 @@ ValueTypeByHwMode llvm::getValueTypeByHwMode(Record *Rec,
          "Record must be derived from ValueType");
   if (Rec->isSubClassOf("HwModeSelect"))
     return ValueTypeByHwMode(Rec, CGH);
-  return ValueTypeByHwMode(llvm::getValueType(Rec));
+  return ValueTypeByHwMode(Rec, llvm::getValueType(Rec));
 }
 
 RegSizeInfo::RegSizeInfo(Record *R, const CodeGenHwModes &CGH) {
@@ -176,7 +180,7 @@ void RegSizeInfoByHwMode::writeToStream(raw_ostream &OS) const {
   std::vector<const PairType*> Pairs;
   for (const auto &P : Map)
     Pairs.push_back(&P);
-  std::sort(Pairs.begin(), Pairs.end(), deref<std::less<PairType>>());
+  llvm::sort(Pairs, deref<std::less<PairType>>());
 
   OS << '{';
   for (unsigned i = 0, e = Pairs.size(); i != e; ++i) {

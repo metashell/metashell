@@ -17,9 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/command_line_argument_list.hpp>
+
 #include <iosfwd>
 #include <string>
-#include <vector>
 
 namespace metashell
 {
@@ -28,9 +29,9 @@ namespace metashell
     class process_execution
     {
     public:
-      explicit process_execution(std::vector<std::string> cmd_);
+      explicit process_execution(data::command_line_argument_list);
 
-      const std::vector<std::string>& cmd() const;
+      const data::command_line_argument_list& args() const;
 
       const std::string& standard_input() const;
       std::string& standard_input();
@@ -39,7 +40,7 @@ namespace metashell
       std::string& standard_output();
 
     private:
-      std::vector<std::string> _cmd;
+      data::command_line_argument_list _args;
       std::string _stdin;
       std::string _stdout;
     };

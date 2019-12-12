@@ -1,9 +1,8 @@
 //===--- IndexSymbol.cpp - Types and functions for indexing symbols -------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -12,6 +11,7 @@
 #include "clang/AST/DeclObjC.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/PrettyPrinter.h"
+#include "clang/Lex/MacroInfo.h"
 
 using namespace clang;
 using namespace clang::index;
@@ -55,9 +55,6 @@ bool index::isFunctionLocalSymbol(const Decl *D) {
   if (isa<ParmVarDecl>(D))
     return true;
 
-  if (isa<TemplateTemplateParmDecl>(D))
-    return true;
-
   if (isa<ObjCTypeParamDecl>(D))
     return true;
 
@@ -94,6 +91,16 @@ SymbolInfo index::getSymbolInfo(const Decl *D) {
 
   if (isFunctionLocalSymbol(D)) {
     Info.Properties |= (SymbolPropertySet)SymbolProperty::Local;
+  }
+  if (isa<ObjCProtocolDecl>(D->getDeclContext())) {
+    Info.Properties |= (SymbolPropertySet)SymbolProperty::ProtocolInterface;
+  }
+
+  if (auto *VT = dyn_cast<VarTemplateDecl>(D)) {
+    Info.Properties |= (SymbolPropertySet)SymbolProperty::Generic;
+    Info.Lang = SymbolLanguage::CXX;
+    // All other fields are filled from the templated decl.
+    D = VT->getTemplatedDecl();
   }
 
   if (const TagDecl *TD = dyn_cast<TagDecl>(D)) {
@@ -168,6 +175,7 @@ SymbolInfo index::getSymbolInfo(const Decl *D) {
       Info.Kind = SymbolKind::Function;
       break;
     case Decl::Field:
+    case Decl::IndirectField:
       Info.Kind = SymbolKind::Field;
       if (const CXXRecordDecl *
             CXXRec = dyn_cast<CXXRecordDecl>(D->getDeclContext())) {
@@ -316,10 +324,39 @@ SymbolInfo index::getSymbolInfo(const Decl *D) {
       Info.Lang = SymbolLanguage::CXX;
       Info.Properties |= (SymbolPropertySet)SymbolProperty::Generic;
       break;
+    case Decl::Using:
+      Info.Kind = SymbolKind::Using;
+      Info.Lang = SymbolLanguage::CXX;
+      break;
     case Decl::Binding:
       Info.Kind = SymbolKind::Variable;
       Info.Lang = SymbolLanguage::CXX;
       break;
+    case Decl::MSProperty:
+      Info.Kind = SymbolKind::InstanceProperty;
+      if (const CXXRecordDecl *CXXRec =
+              dyn_cast<CXXRecordDecl>(D->getDeclContext())) {
+        if (!CXXRec->isCLike())
+          Info.Lang = SymbolLanguage::CXX;
+      }
+      break;
+    case Decl::ClassTemplatePartialSpecialization:
+    case Decl::ClassScopeFunctionSpecialization:
+    case Decl::ClassTemplateSpecialization:
+    case Decl::CXXRecord:
+    case Decl::Enum:
+    case Decl::Record:
+      llvm_unreachable("records handled before");
+      break;
+    case Decl::VarTemplateSpecialization:
+    case Decl::VarTemplatePartialSpecialization:
+    case Decl::ImplicitParam:
+    case Decl::ParmVar:
+    case Decl::Var:
+    case Decl::VarTemplate:
+      llvm_unreachable("variables handled before");
+      break;
+    // Other decls get the 'unknown' kind.
     default:
       break;
     }
@@ -348,6 +385,15 @@ SymbolInfo index::getSymbolInfo(const Decl *D) {
   return Info;
 }
 
+SymbolInfo index::getSymbolInfoForMacro(const MacroInfo &) {
+  SymbolInfo Info;
+  Info.Kind = SymbolKind::Macro;
+  Info.SubKind = SymbolSubKind::None;
+  Info.Properties = SymbolPropertySet();
+  Info.Lang = SymbolLanguage::C;
+  return Info;
+}
+
 bool index::applyForEachSymbolRoleInterruptible(SymbolRoleSet Roles,
                                    llvm::function_ref<bool(SymbolRole)> Fn) {
 #define APPLY_FOR_ROLE(Role) \
@@ -364,6 +410,7 @@ bool index::applyForEachSymbolRoleInterruptible(SymbolRoleSet Roles,
   APPLY_FOR_ROLE(Dynamic);
   APPLY_FOR_ROLE(AddressOf);
   APPLY_FOR_ROLE(Implicit);
+  APPLY_FOR_ROLE(Undefinition);
   APPLY_FOR_ROLE(RelationChildOf);
   APPLY_FOR_ROLE(RelationBaseOf);
   APPLY_FOR_ROLE(RelationOverrideOf);
@@ -374,6 +421,7 @@ bool index::applyForEachSymbolRoleInterruptible(SymbolRoleSet Roles,
   APPLY_FOR_ROLE(RelationContainedBy);
   APPLY_FOR_ROLE(RelationIBTypeOf);
   APPLY_FOR_ROLE(RelationSpecializationOf);
+  APPLY_FOR_ROLE(NameReference);
 
 #undef APPLY_FOR_ROLE
 
@@ -405,6 +453,7 @@ void index::printSymbolRoles(SymbolRoleSet Roles, raw_ostream &OS) {
     case SymbolRole::Dynamic: OS << "Dyn"; break;
     case SymbolRole::AddressOf: OS << "Addr"; break;
     case SymbolRole::Implicit: OS << "Impl"; break;
+    case SymbolRole::Undefinition: OS << "Undef"; break;
     case SymbolRole::RelationChildOf: OS << "RelChild"; break;
     case SymbolRole::RelationBaseOf: OS << "RelBase"; break;
     case SymbolRole::RelationOverrideOf: OS << "RelOver"; break;
@@ -415,6 +464,7 @@ void index::printSymbolRoles(SymbolRoleSet Roles, raw_ostream &OS) {
     case SymbolRole::RelationContainedBy: OS << "RelCont"; break;
     case SymbolRole::RelationIBTypeOf: OS << "RelIBType"; break;
     case SymbolRole::RelationSpecializationOf: OS << "RelSpecialization"; break;
+    case SymbolRole::NameReference: OS << "NameReference"; break;
     }
   });
 }
@@ -507,6 +557,7 @@ void index::applyForEachSymbolProperty(SymbolPropertySet Props,
   APPLY_FOR_PROPERTY(IBOutletCollection);
   APPLY_FOR_PROPERTY(GKInspectable);
   APPLY_FOR_PROPERTY(Local);
+  APPLY_FOR_PROPERTY(ProtocolInterface);
 
 #undef APPLY_FOR_PROPERTY
 }
@@ -527,6 +578,7 @@ void index::printSymbolProperties(SymbolPropertySet Props, raw_ostream &OS) {
     case SymbolProperty::IBOutletCollection: OS << "IBColl"; break;
     case SymbolProperty::GKInspectable: OS << "GKI"; break;
     case SymbolProperty::Local: OS << "local"; break;
+    case SymbolProperty::ProtocolInterface: OS << "protocol"; break;
     }
   });
 }

@@ -8,6 +8,7 @@ if(NOT COMPILER_RT_STANDALONE_BUILD)
   list(APPEND TSAN_TEST_DEPS tsan)
 endif()
 if(COMPILER_RT_LIBCXX_PATH AND
+   COMPILER_RT_LIBCXXABI_PATH AND
    COMPILER_RT_TEST_COMPILER_ID STREQUAL "Clang"
    AND NOT APPLE AND NOT ANDROID)
   list(APPEND TSAN_TEST_DEPS libcxx_tsan)
@@ -24,21 +25,21 @@ if(APPLE)
 endif()
 
 foreach(arch ${TSAN_TEST_ARCH})
-  set(TSAN_TEST_IOS "0")
-  pythonize_bool(TSAN_TEST_IOS)
-  set(TSAN_TEST_IOSSIM "0")
-  pythonize_bool(TSAN_TEST_IOSSIM)
+  set(TSAN_TEST_APPLE_PLATFORM "osx")
 
   set(TSAN_TEST_TARGET_ARCH ${arch})
   string(TOLOWER "-${arch}" TSAN_TEST_CONFIG_SUFFIX)
   get_test_cc_for_arch(${arch} TSAN_TEST_TARGET_CC TSAN_TEST_TARGET_CFLAGS)
 
+  string(REPLACE ";" " " LIBDISPATCH_CFLAGS_STRING " ${COMPILER_RT_TEST_LIBDISPATCH_CFLAGS}")
+  string(APPEND TSAN_TEST_TARGET_CFLAGS ${LIBDISPATCH_CFLAGS_STRING})
+
   string(TOUPPER ${arch} ARCH_UPPER_CASE)
   set(CONFIG_NAME ${ARCH_UPPER_CASE}Config)
 
   configure_lit_site_cfg(
-    ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG_NAME}/lit.site.cfg)
+    ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.py.in
+    ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG_NAME}/lit.site.cfg.py)
   list(APPEND TSAN_TESTSUITES ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG_NAME})
 endforeach()
 
@@ -51,36 +52,32 @@ if(APPLE)
   set(EXCLUDE_FROM_ALL ON)
 
   set(TSAN_TEST_TARGET_CC ${COMPILER_RT_TEST_COMPILER})
-  set(TSAN_TEST_IOS "1")
-  pythonize_bool(TSAN_TEST_IOS)
 
+  set(TSAN_TEST_APPLE_PLATFORM "iossim")
   set(arch "x86_64")
-  set(TSAN_TEST_IOSSIM "1")
-  pythonize_bool(TSAN_TEST_IOSSIM)
   set(TSAN_TEST_TARGET_ARCH ${arch})
   set(TSAN_TEST_TARGET_CFLAGS "-arch ${arch} -isysroot ${DARWIN_iossim_SYSROOT} ${COMPILER_RT_TEST_COMPILER_CFLAGS}")
-  set(TSAN_TEST_CONFIG_SUFFIX "-${arch}-iossim")
+  set(TSAN_TEST_CONFIG_SUFFIX "-${arch}-${TSAN_TEST_APPLE_PLATFORM}")
   string(TOUPPER ${arch} ARCH_UPPER_CASE)
   set(CONFIG_NAME "IOSSim${ARCH_UPPER_CASE}Config")
   configure_lit_site_cfg(
-    ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG_NAME}/lit.site.cfg
+    ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.py.in
+    ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG_NAME}/lit.site.cfg.py
     )
   add_lit_testsuite(check-tsan-iossim-${arch} "ThreadSanitizer iOS Simulator ${arch} tests"
     ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG_NAME}/
     DEPENDS ${TSAN_TEST_DEPS})
 
+  set(TSAN_TEST_APPLE_PLATFORM "ios")
   set(arch "arm64")
-  set(TSAN_TEST_IOSSIM "0")
-  pythonize_bool(TSAN_TEST_IOSSIM)
   set(TSAN_TEST_TARGET_ARCH ${arch})
   set(TSAN_TEST_TARGET_CFLAGS "-arch ${arch} -isysroot ${DARWIN_ios_SYSROOT} ${COMPILER_RT_TEST_COMPILER_CFLAGS}")
-  set(TSAN_TEST_CONFIG_SUFFIX "-${arch}-ios")
+  set(TSAN_TEST_CONFIG_SUFFIX "-${arch}-${TSAN_TEST_APPLE_PLATFORM}")
   string(TOUPPER ${arch} ARCH_UPPER_CASE)
   set(CONFIG_NAME "IOS${ARCH_UPPER_CASE}Config")
   configure_lit_site_cfg(
-    ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG_NAME}/lit.site.cfg
+    ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.py.in
+    ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG_NAME}/lit.site.cfg.py
     )
   add_lit_testsuite(check-tsan-ios-${arch} "ThreadSanitizer iOS Simulator ${arch} tests"
     ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG_NAME}/
@@ -91,8 +88,8 @@ endif()
 
 if(COMPILER_RT_INCLUDE_TESTS)
   configure_lit_site_cfg(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Unit/lit.site.cfg.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Unit/lit.site.cfg)
+    ${CMAKE_CURRENT_SOURCE_DIR}/Unit/lit.site.cfg.py.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Unit/lit.site.cfg.py)
   list(APPEND TSAN_TEST_DEPS TsanUnitTests)
   list(APPEND TSAN_TESTSUITES ${CMAKE_CURRENT_BINARY_DIR}/Unit)
 endif()

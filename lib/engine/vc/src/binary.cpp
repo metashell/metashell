@@ -19,7 +19,6 @@
 #include <metashell/data/exception.hpp>
 
 #include <metashell/process/run.hpp>
-#include <metashell/process/util.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -116,8 +115,8 @@ namespace metashell
         }
       }
 
-      binary::binary(boost::filesystem::path cl_path_,
-                     std::vector<std::string> base_args_,
+      binary::binary(data::executable_path cl_path_,
+                     data::command_line_argument_list base_args_,
                      boost::filesystem::path temp_dir_,
                      core::logger* logger_)
         : _cl_path(std::move(cl_path_)),
@@ -125,23 +124,17 @@ namespace metashell
           _temp_dir(std::move(temp_dir_)),
           _logger(logger_)
       {
-        process::quote_arguments(_base_args);
       }
 
-      data::process_output binary::run(const std::vector<std::string>& args_,
-                                       const std::string& stdin_) const
+      data::process_output
+      binary::run(const data::command_line_argument_list& args_,
+                  const std::string& stdin_) const
       {
-        std::vector<std::string> cmd(_base_args.size() + args_.size());
+        const data::command_line cmd(_cl_path, _base_args + args_);
 
-        process::quote_arguments(
-            args_.begin(), args_.end(),
-            std::copy(_base_args.begin(), _base_args.end(), cmd.begin()));
+        METASHELL_LOG(_logger, "Running cl.exe: " + to_string(cmd));
 
-        METASHELL_LOG(_logger, "Running cl.exe: " + _cl_path.string() + " " +
-                                   boost::algorithm::join(cmd, " "));
-
-        const data::process_output o =
-            dos2unix(process::run(_cl_path, cmd, stdin_));
+        const data::process_output o = dos2unix(process::run(cmd, stdin_));
 
         METASHELL_LOG(_logger, "cl.exe's exit code: " + to_string(o.exit_code));
         METASHELL_LOG(_logger, "cl.exe's stdout: " + o.standard_output);
@@ -155,13 +148,13 @@ namespace metashell
         return _temp_dir;
       }
 
-      const std::vector<std::string>& binary::base_args() const
+      const data::command_line_argument_list& binary::base_args() const
       {
         return _base_args;
       }
 
       data::process_output run(const binary& binary_,
-                               std::vector<std::string> args_,
+                               data::command_line_argument_list args_,
                                const data::cpp_code& input_)
       {
         const boost::filesystem::path temp_path =

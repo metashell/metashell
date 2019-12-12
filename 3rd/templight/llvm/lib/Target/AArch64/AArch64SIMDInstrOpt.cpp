@@ -1,8 +1,7 @@
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -700,7 +699,7 @@ bool AArch64SIMDInstrOpt::runOnMachineFunction(MachineFunction &MF) {
       static_cast<const AArch64InstrInfo *>(ST.getInstrInfo());
   if (!AAII)
     return false;
-  SchedModel.init(ST.getSchedModel(), &ST, AAII);
+  SchedModel.init(&ST);
   if (!SchedModel.hasInstrSchedModel())
     return false;
 

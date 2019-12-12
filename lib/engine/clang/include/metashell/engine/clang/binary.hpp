@@ -17,8 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/command_line_argument.hpp>
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/engine_name.hpp>
+#include <metashell/data/executable_path.hpp>
 #include <metashell/data/result.hpp>
 
 #include <metashell/iface/displayer.hpp>
@@ -33,7 +35,6 @@
 
 #include <string>
 #include <tuple>
-#include <vector>
 
 namespace metashell
 {
@@ -44,42 +45,52 @@ namespace metashell
       class binary : public iface::executable
       {
       public:
-        binary(boost::filesystem::path clang_path_,
-               std::vector<std::string> base_args_,
+        binary(data::executable_path clang_path_,
+               data::command_line_argument_list base_args_,
                core::logger* logger_);
 
         binary(bool use_internal_templight_,
-               boost::filesystem::path clang_path_,
-               const std::vector<std::string>& extra_clang_args_,
+               data::executable_path clang_path_,
+               const data::command_line_argument_list& extra_clang_args_,
                const boost::filesystem::path& internal_dir_,
                iface::environment_detector& env_detector_,
                core::logger* logger_);
 
         virtual data::process_output
-        run(const std::vector<std::string>& args_,
+        run(const data::command_line_argument_list&,
             const std::string& stdin_) const override;
 
-        data::result precompile(std::vector<std::string> args_,
+        data::result precompile(data::command_line_argument_list args_,
                                 const data::cpp_code& exp_) const;
 
       private:
-        boost::filesystem::path _clang_path;
-        std::vector<std::string> _base_args;
+        data::executable_path _clang_path;
+        data::command_line_argument_list _base_args;
         core::logger* _logger;
       };
 
-      boost::filesystem::path
+      boost::optional<data::executable_path> find_clang_nothrow(
+          bool use_internal_templight_,
+          const data::command_line_argument_list& extra_clang_args_,
+          const data::executable_path& metashell_binary_,
+          const data::engine_name& engine_,
+          iface::environment_detector& env_detector_,
+          iface::displayer& displayer_,
+          core::logger* logger_);
+
+      data::executable_path
       find_clang(bool use_internal_templight_,
-                 const std::vector<std::string>& extra_clang_args_,
-                 const std::string& metashell_binary_,
+                 const data::command_line_argument_list& extra_clang_args_,
+                 const data::executable_path& metashell_binary_,
                  const data::engine_name& engine_,
                  iface::environment_detector& env_detector_,
                  iface::displayer& displayer_,
                  core::logger* logger_);
 
-      data::process_output run_clang(const iface::executable& clang_binary_,
-                                     std::vector<std::string> clang_args_,
-                                     const data::cpp_code& input_);
+      data::process_output
+      run_clang(const iface::executable& clang_binary_,
+                data::command_line_argument_list clang_args_,
+                const data::cpp_code& input_);
 
       data::result
       eval(const iface::environment& env_,

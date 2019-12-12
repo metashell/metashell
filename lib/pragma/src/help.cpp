@@ -18,9 +18,11 @@
 
 #include <metashell/core/version.hpp>
 
-#include <algorithm>
+#include <boost/range/adaptor/filtered.hpp>
+#include <boost/range/adaptor/transformed.hpp>
+#include <boost/range/iterator_range.hpp>
+
 #include <cassert>
-#include <iterator>
 
 namespace metashell
 {
@@ -81,13 +83,16 @@ namespace metashell
       }
       else
       {
-        std::vector<data::token> args;
-        std::copy_if(args_begin_, args_end_, std::back_inserter(args),
-                     [](const data::token& t_) {
-                       const auto cat = category(t_);
-                       return cat != data::token_category::whitespace &&
-                              cat != data::token_category::comment;
-                     });
+        auto args =
+            boost::make_iterator_range(args_begin_, args_end_) |
+            boost::adaptors::filtered([](const data::token& t_) {
+              const auto cat = category(t_);
+              return cat != data::token_category::whitespace &&
+                     cat != data::token_category::comment;
+            }) |
+            boost::adaptors::transformed([](const data::token& t_) {
+              return data::make_token(value(t_), data::token_type::identifier);
+            });
 
         data::text help_text;
         bool was_pragma = false;

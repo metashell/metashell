@@ -1,4 +1,4 @@
-// RUN: llvm-tblgen -gen-intrinsic %s | FileCheck %s
+// RUN: llvm-tblgen -gen-intrinsic-impl %s | FileCheck %s
 // XFAIL: vg_leak
 
 class IntrinsicProperty;
@@ -25,7 +25,7 @@ class Intrinsic<string name, list<LLVMType> param_types = []> {
 }
 
 // isVoid needs to match the definition in ValueTypes.td
-def isVoid : ValueType<0, 111>;   // Produces no value
+def isVoid : ValueType<0, 127>;   // Produces no value
 def llvm_vararg_ty : LLVMType<isVoid>;   // this means vararg here
 
 // CHECK: /* 0 */ 0, 29, 0,

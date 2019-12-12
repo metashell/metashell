@@ -17,34 +17,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/constraint/name_first.hpp>
-#include <metashell/data/constraint/name_non_first.hpp>
+#include <metashell/data/auto_engine_name.hpp>
+#include <metashell/data/real_engine_name.hpp>
 
-#include <metashell/data/string.hpp>
+#include <variant.hpp>
+
+#include <iosfwd>
+#include <string>
+#include <string_view>
 
 namespace metashell
 {
   namespace data
   {
-    class engine_name : string<engine_name,
-                               false,
-                               constraint::name_non_first,
-                               constraint::name_first>
-    {
-    public:
-      using string<engine_name,
-                   false,
-                   constraint::name_non_first,
-                   constraint::name_first>::string;
-      using string<engine_name,
-                   false,
-                   constraint::name_non_first,
-                   constraint::name_first>::value;
+    using engine_name = mpark::variant<auto_engine_name, real_engine_name>;
 
-      engine_name() = delete;
+    std::string operator+(const std::string&, engine_name);
+    std::string operator+(engine_name, const std::string&);
 
-      static constexpr const char* name_of_type() { return "engine name"; }
-    };
+    engine_name parse_engine_name(const std::string_view&);
+
+    std::string to_string(engine_name);
+    std::ostream& operator<<(std::ostream&, engine_name);
   }
 }
 

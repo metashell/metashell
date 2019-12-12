@@ -31,8 +31,6 @@
 
 namespace
 {
-  const char* c_str(const std::string& s_) { return s_.c_str(); }
-
 #ifdef _WIN32
   void clear(PROCESS_INFORMATION& pi_)
   {
@@ -49,12 +47,10 @@ namespace metashell
   namespace process
   {
 #ifdef _WIN32
-    execution::execution(const boost::filesystem::path& binary_,
-                         const std::vector<std::string>& args_,
+    execution::execution(const data::command_line& cmd_,
                          const boost::filesystem::path& cwd_)
     {
-      const std::string cmds =
-          binary_.string() + " " + boost::algorithm::join(args_, " ");
+      const std::string cmds = to_string(cmd_);
       std::vector<char> cmd(cmds.begin(), cmds.end());
       cmd.push_back(0);
 
@@ -112,13 +108,10 @@ namespace metashell
 #endif
 
 #ifndef _WIN32
-    execution::execution(const boost::filesystem::path& binary_,
-                         const std::vector<std::string>& args_,
+    execution::execution(const data::command_line& cmd_,
                          const boost::filesystem::path& cwd_)
     {
-      std::vector<const char*> cmd(args_.size() + 2, 0);
-      cmd[0] = binary_.c_str();
-      std::transform(args_.begin(), args_.end(), cmd.begin() + 1, ::c_str);
+      const std::vector<const char*> cmd = cmd_.argv();
 
       pipe error_reporting;
 
@@ -144,8 +137,7 @@ namespace metashell
         {
           const int err = errno;
           std::ostringstream s;
-          s << "Error running " << binary_ << " "
-            << boost::algorithm::join(args_, " ") << ": " << strerror(err);
+          s << "Error running " << to_string(cmd_) << ": " << strerror(err);
           error_reporting.output.write(s.str());
         }
         _exit(0);

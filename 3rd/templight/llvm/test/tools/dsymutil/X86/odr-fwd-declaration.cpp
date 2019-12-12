@@ -4,7 +4,7 @@
    done
  */
 
-// RUN: llvm-dsymutil -f -oso-prepend-path=%p/../Inputs/odr-fwd-declaration -y %p/dummy-debug-map.map -o - | llvm-dwarfdump -v -debug-info - | FileCheck %s
+// RUN: dsymutil -f -oso-prepend-path=%p/../Inputs/odr-fwd-declaration -y %p/dummy-debug-map.map -o - | llvm-dwarfdump -v -debug-info - | FileCheck %s
 
 #ifdef FILE1
 # 1 "Header.h" 1
@@ -49,7 +49,7 @@ void foo() {
 // CHECK: AT_name{{.*}} "S"
 // CHECK-NOT: {{DW_TAG|NULL}}
 // CHECK: AT_declaration
-// CHECK-NOT AT_byte_size
+// CHECK-NOT: AT_byte_size
 
 #elif defined(FILE2)
 # 1 "Header.h" 1

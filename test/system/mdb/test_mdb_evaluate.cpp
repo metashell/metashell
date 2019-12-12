@@ -203,21 +203,6 @@ TEST(mdb_evaluate, filters_similar_edges)
   ASSERT_EQ(raw_text("Metaprogram started"),
             mi.command("evaluate int_<fib<2>::value>").front());
 
-// On Windows clang tries to be compatible with MSVC, and this affects the Sema
-// code to take slightly different paths. Probably because of this, Memoization
-// events are not generated for the nested enum type.
-#ifdef _WIN32
-  ASSERT_EQ(
-      call_graph(
-          {{frame(type("int_<fib<2>::value>")), 0, 3},
-           {frame(fib<2>(), _, _, event_kind::template_instantiation), 1, 2},
-           {frame(fib<0>(), _, _, event_kind::memoization), 2, 0},
-           {frame(fib<1>(), _, _, event_kind::memoization), 2, 0},
-           {frame(fib<2>(), _, _, event_kind::memoization), 1, 0},
-           {frame(type("int_<1>"), _, _, event_kind::template_instantiation), 1,
-            0}}),
-      mi.command("forwardtrace").front());
-#else
   ASSERT_EQ(
       call_graph(
           {{frame(type("int_<fib<2>::value>")), 0, 4},
@@ -231,7 +216,6 @@ TEST(mdb_evaluate, filters_similar_edges)
            {frame(type("int_<1>"), _, _, event_kind::template_instantiation), 1,
             0}}),
       mi.command("forwardtrace").front());
-#endif
 }
 
 TEST(mdb_evaluate, clears_breakpoints)

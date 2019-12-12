@@ -42,12 +42,12 @@ bb:
   ret void
 }
 
-; CHECK-LABEL: define internal void @_Z3foov.1_
+; CHECK-LABEL: define internal void @_Z3foov.1.
 ; CHECK: newFuncRoot:
 ; CHECK-NEXT:  alloca 
+; CHECK-NEXT:  alloca
 ; CHECK-NEXT:  bitcast 
 ; CHECK-NEXT:  call void @llvm.lifetime.start.p0i8
-; CHECK-NEXT:  alloca
 ; CHECK-NEXT:  bitcast 
 ; CHECK-NEXT:  call void @llvm.lifetime.start.p0i8
 ; CHECK:  call void @llvm.lifetime.end.p0i8

@@ -1,9 +1,8 @@
 //===-- sanitizer_procmaps_test.cc ----------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -37,7 +36,8 @@ TEST(MemoryMappingLayout, DumpListOfModules) {
   const char *binary_name = last_slash ? last_slash + 1 : argv0;
   MemoryMappingLayout memory_mapping(false);
   const uptr kMaxModules = 100;
-  InternalMmapVector<LoadedModule> modules(kMaxModules);
+  InternalMmapVector<LoadedModule> modules;
+  modules.reserve(kMaxModules);
   memory_mapping.DumpListOfModules(&modules);
   EXPECT_GT(modules.size(), 0U);
   bool found = false;
@@ -56,7 +56,8 @@ TEST(MemoryMapping, LoadedModuleArchAndUUID) {
   if (SANITIZER_MAC) {
     MemoryMappingLayout memory_mapping(false);
     const uptr kMaxModules = 100;
-    InternalMmapVector<LoadedModule> modules(kMaxModules);
+    InternalMmapVector<LoadedModule> modules;
+    modules.reserve(kMaxModules);
     memory_mapping.DumpListOfModules(&modules);
     for (uptr i = 0; i < modules.size(); ++i) {
       ModuleArch arch = modules[i].arch();

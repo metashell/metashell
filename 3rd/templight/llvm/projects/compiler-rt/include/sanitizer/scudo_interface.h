@@ -1,9 +1,8 @@
 //===-- sanitizer/scudo_interface.h -----------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -26,7 +25,12 @@ extern "C" {
   // the hard limit (HardLimit=1) or the soft limit (HardLimit=0). The limit
   // can be removed by setting LimitMb to 0. This function's parameters should
   // be fully trusted to avoid security mishaps.
-  void __scudo_set_rss_limit(unsigned long LimitMb, int HardLimit);
+  void __scudo_set_rss_limit(size_t LimitMb, int HardLimit);
+
+  // This function outputs various allocator statistics for both the Primary
+  // and Secondary allocators, including memory usage, number of allocations
+  // and deallocations.
+  void __scudo_print_stats(void);
 #ifdef __cplusplus
 }  // extern "C"
 #endif

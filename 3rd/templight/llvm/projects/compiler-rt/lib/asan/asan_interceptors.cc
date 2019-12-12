@@ -1,9 +1,8 @@
 //===-- asan_interceptors.cc ----------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -24,13 +23,18 @@
 #include "lsan/lsan_common.h"
 #include "sanitizer_common/sanitizer_libc.h"
 
-// There is no general interception at all on Fuchsia.
+// There is no general interception at all on Fuchsia and RTEMS.
 // Only the functions in asan_interceptors_memintrinsics.cc are
 // really defined to replace libc functions.
-#if !SANITIZER_FUCHSIA
+#if !SANITIZER_FUCHSIA && !SANITIZER_RTEMS
 
 #if SANITIZER_POSIX
 #include "sanitizer_common/sanitizer_posix.h"
+#endif
+
+#if ASAN_INTERCEPT__UNWIND_RAISEEXCEPTION || \
+    ASAN_INTERCEPT__SJLJ_UNWIND_RAISEEXCEPTION
+#include <unwind.h>
 #endif
 
 #if defined(__i386) && SANITIZER_LINUX
@@ -178,6 +182,7 @@ DECLARE_REAL_AND_INTERCEPTOR(void, free, void *)
     (void)(s);                                \
   } while (false)
 #include "sanitizer_common/sanitizer_common_syscalls.inc"
+#include "sanitizer_common/sanitizer_syscalls_netbsd.inc"
 
 struct ThreadStartParam {
   atomic_uintptr_t t;
@@ -269,7 +274,15 @@ INTERCEPTOR(int, swapcontext, struct ucontext_t *oucp,
   uptr stack, ssize;
   ReadContextStack(ucp, &stack, &ssize);
   ClearShadowMemoryForContextStack(stack, ssize);
+#if __has_attribute(__indirect_return__) && \
+    (defined(__x86_64__) || defined(__i386__))
+  int (*real_swapcontext)(struct ucontext_t *, struct ucontext_t *)
+    __attribute__((__indirect_return__))
+    = REAL(swapcontext);
+  int res = real_swapcontext(oucp, ucp);
+#else
   int res = REAL(swapcontext)(oucp, ucp);
+#endif
   // swapcontext technically does not return, but program may swap context to
   // "oucp" later, that would look as if swapcontext() returned 0.
   // We need to clear shadow for ucp once again, as it may be in arbitrary
@@ -315,6 +328,32 @@ INTERCEPTOR(void, __cxa_throw, void *a, void *b, void *c) {
   CHECK(REAL(__cxa_throw));
   __asan_handle_no_return();
   REAL(__cxa_throw)(a, b, c);
+}
+#endif
+
+#if ASAN_INTERCEPT___CXA_RETHROW_PRIMARY_EXCEPTION
+INTERCEPTOR(void, __cxa_rethrow_primary_exception, void *a) {
+  CHECK(REAL(__cxa_rethrow_primary_exception));
+  __asan_handle_no_return();
+  REAL(__cxa_rethrow_primary_exception)(a);
+}
+#endif
+
+#if ASAN_INTERCEPT__UNWIND_RAISEEXCEPTION
+INTERCEPTOR(_Unwind_Reason_Code, _Unwind_RaiseException,
+            _Unwind_Exception *object) {
+  CHECK(REAL(_Unwind_RaiseException));
+  __asan_handle_no_return();
+  return REAL(_Unwind_RaiseException)(object);
+}
+#endif
+
+#if ASAN_INTERCEPT__SJLJ_UNWIND_RAISEEXCEPTION
+INTERCEPTOR(_Unwind_Reason_Code, _Unwind_SjLj_RaiseException,
+            _Unwind_Exception *object) {
+  CHECK(REAL(_Unwind_SjLj_RaiseException));
+  __asan_handle_no_return();
+  return REAL(_Unwind_SjLj_RaiseException)(object);
 }
 #endif
 
@@ -540,13 +579,10 @@ INTERCEPTOR(int, __cxa_atexit, void (*func)(void *), void *arg,
 }
 #endif  // ASAN_INTERCEPT___CXA_ATEXIT
 
-#if ASAN_INTERCEPT_FORK
-INTERCEPTOR(int, fork, void) {
-  ENSURE_ASAN_INITED();
-  int pid = REAL(fork)();
-  return pid;
-}
-#endif  // ASAN_INTERCEPT_FORK
+#if ASAN_INTERCEPT_VFORK
+DEFINE_REAL(int, vfork)
+DECLARE_EXTERN_INTERCEPTOR_AND_WRAPPER(int, vfork)
+#endif
 
 // ---------------------- InitializeAsanInterceptors ---------------- {{{1
 namespace __asan {
@@ -598,6 +634,17 @@ void InitializeAsanInterceptors() {
 #if ASAN_INTERCEPT___CXA_THROW
   ASAN_INTERCEPT_FUNC(__cxa_throw);
 #endif
+#if ASAN_INTERCEPT___CXA_RETHROW_PRIMARY_EXCEPTION
+  ASAN_INTERCEPT_FUNC(__cxa_rethrow_primary_exception);
+#endif
+  // Indirectly intercept std::rethrow_exception.
+#if ASAN_INTERCEPT__UNWIND_RAISEEXCEPTION
+  INTERCEPT_FUNCTION(_Unwind_RaiseException);
+#endif
+  // Indirectly intercept std::rethrow_exception.
+#if ASAN_INTERCEPT__UNWIND_SJLJ_RAISEEXCEPTION
+  INTERCEPT_FUNCTION(_Unwind_SjLj_RaiseException);
+#endif
 
   // Intercept threading-related functions
 #if ASAN_INTERCEPT_PTHREAD_CREATE
@@ -614,8 +661,8 @@ void InitializeAsanInterceptors() {
   ASAN_INTERCEPT_FUNC(__cxa_atexit);
 #endif
 
-#if ASAN_INTERCEPT_FORK
-  ASAN_INTERCEPT_FUNC(fork);
+#if ASAN_INTERCEPT_VFORK
+  ASAN_INTERCEPT_FUNC(vfork);
 #endif
 
   InitializePlatformInterceptors();

@@ -47,8 +47,8 @@ TEST(evaluation, throwing_environment_not_breaking_validate)
   ON_CALL(det, file_exists(_)).WillByDefault(Return(true));
 
   const data::result r =
-      engine::templight::entry(true)
-          .build(cfg, "", "", "env.hpp", {}, det, d, nullptr)
+      engine::templight::entry(true, data::executable_path("metashell"))
+          .build(cfg.active_shell_config(), "", "", "env.hpp", det, d, nullptr)
           ->cpp_validator()
           .validate_code(data::cpp_code("typedef int foo;"), cfg, e, false);
 

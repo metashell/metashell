@@ -1,9 +1,8 @@
 //===-- tsan_flags.cc -----------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -50,7 +49,7 @@ void RegisterTsanFlags(FlagParser *parser, Flags *f) {
       &f->second_deadlock_stack);
 }
 
-void InitializeFlags(Flags *f, const char *env) {
+void InitializeFlags(Flags *f, const char *env, const char *env_option_name) {
   SetCommonFlagsDefaults();
   {
     // Override some common flags defaults.
@@ -61,8 +60,7 @@ void InitializeFlags(Flags *f, const char *env) {
       // Does not work as expected for Go: runtime handles SIGABRT and crashes.
       cf.abort_on_error = false;
       // Go does not have mutexes.
-    } else {
-      cf.detect_deadlocks = true;
+      cf.detect_deadlocks = false;
     }
     cf.print_suppressions = false;
     cf.stack_trace_format = "    #%n %f %S %M";
@@ -93,9 +91,9 @@ void InitializeFlags(Flags *f, const char *env) {
   ubsan_parser.ParseString(ubsan_default_options);
 #endif
   // Override from command line.
-  parser.ParseString(env);
+  parser.ParseString(env, env_option_name);
 #if TSAN_CONTAINS_UBSAN
-  ubsan_parser.ParseString(GetEnv("UBSAN_OPTIONS"));
+  ubsan_parser.ParseStringFromEnv("UBSAN_OPTIONS");
 #endif
 
   // Sanity check.

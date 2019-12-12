@@ -1,9 +1,8 @@
 //===- llvm/unittest/ADT/DenseMapMap.cpp - DenseMap unit tests --*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -30,7 +29,7 @@ uint32_t *getTestValue(int i, uint32_t **) {
   return &dummy_arr1[i];
 }
 
-/// \brief A test class that tries to check that construction and destruction
+/// A test class that tries to check that construction and destruction
 /// occur correctly.
 class CtorTester {
   static std::set<CtorTester *> Constructed;
@@ -120,17 +119,8 @@ TYPED_TEST(DenseMapTest, EmptyIntMapTest) {
   // Lookup tests
   EXPECT_FALSE(this->Map.count(this->getKey()));
   EXPECT_TRUE(this->Map.find(this->getKey()) == this->Map.end());
-#if !defined(_MSC_VER) || defined(__clang__)
   EXPECT_EQ(typename TypeParam::mapped_type(),
             this->Map.lookup(this->getKey()));
-#else
-  // MSVC, at least old versions, cannot parse the typename to disambiguate
-  // TypeParam::mapped_type as a type. However, because MSVC doesn't implement
-  // two-phase name lookup, it also doesn't require the typename. Deal with
-  // this mutual incompatibility through specialized code.
-  EXPECT_EQ(TypeParam::mapped_type(),
-            this->Map.lookup(this->getKey()));
-#endif
 }
 
 // Constant map tests
@@ -247,7 +237,7 @@ TYPED_TEST(DenseMapTest, AssignmentTest) {
   EXPECT_EQ(this->getValue(), copyMap[this->getKey()]);
 
   // test self-assignment.
-  copyMap = copyMap;
+  copyMap = static_cast<TypeParam &>(copyMap);
   EXPECT_EQ(1u, copyMap.size());
   EXPECT_EQ(this->getValue(), copyMap[this->getKey()]);
 }
@@ -262,7 +252,7 @@ TYPED_TEST(DenseMapTest, AssignmentTestNotSmall) {
     EXPECT_EQ(this->getValue(Key), copyMap[this->getKey(Key)]);
 
   // test self-assignment.
-  copyMap = copyMap;
+  copyMap = static_cast<TypeParam &>(copyMap);
   EXPECT_EQ(5u, copyMap.size());
   for (int Key = 0; Key < 5; ++Key)
     EXPECT_EQ(this->getValue(Key), copyMap[this->getKey(Key)]);
@@ -362,6 +352,26 @@ int CountCopyAndMove::Move = 0;
 
 } // anonymous namespace
 
+// Test initializer list construction.
+TEST(DenseMapCustomTest, InitializerList) {
+  DenseMap<int, int> M({{0, 0}, {0, 1}, {1, 2}});
+  EXPECT_EQ(2u, M.size());
+  EXPECT_EQ(1u, M.count(0));
+  EXPECT_EQ(0, M[0]);
+  EXPECT_EQ(1u, M.count(1));
+  EXPECT_EQ(2, M[1]);
+}
+
+// Test initializer list construction.
+TEST(DenseMapCustomTest, EqualityComparison) {
+  DenseMap<int, int> M1({{0, 0}, {1, 2}});
+  DenseMap<int, int> M2({{0, 0}, {1, 2}});
+  DenseMap<int, int> M3({{0, 0}, {1, 3}});
+
+  EXPECT_EQ(M1, M2);
+  EXPECT_NE(M1, M3);
+}
+
 // Test for the default minimum size of a DenseMap
 TEST(DenseMapCustomTest, DefaultMinReservedSizeTest) {
   // IF THIS VALUE CHANGE, please update InitialSizeTest, InitFromIterator, and
@@ -384,7 +394,7 @@ TEST(DenseMapCustomTest, DefaultMinReservedSizeTest) {
   EXPECT_EQ(MemorySize, Map.getMemorySize());
   // Check that move was called the expected number of times
   EXPECT_EQ(ExpectedMaxInitialEntries, CountCopyAndMove::Move);
-  // Check that no copy occured
+  // Check that no copy occurred
   EXPECT_EQ(0, CountCopyAndMove::Copy);
 
   // Adding one extra element should grow the map
@@ -397,7 +407,7 @@ TEST(DenseMapCustomTest, DefaultMinReservedSizeTest) {
   // Check that move was called the expected number of times
   //  This relies on move-construction elision, and cannot be reliably tested.
   //   EXPECT_EQ(ExpectedMaxInitialEntries + 2, CountCopyAndMove::Move);
-  // Check that no copy occured
+  // Check that no copy occurred
   EXPECT_EQ(0, CountCopyAndMove::Copy);
 }
 
@@ -422,7 +432,7 @@ TEST(DenseMapCustomTest, InitialSizeTest) {
     EXPECT_EQ(MemorySize, Map.getMemorySize());
     // Check that move was called the expected number of times
     EXPECT_EQ(Size, CountCopyAndMove::Move);
-    // Check that no copy occured
+    // Check that no copy occurred
     EXPECT_EQ(0, CountCopyAndMove::Copy);
   }
 }
@@ -438,7 +448,7 @@ TEST(DenseMapCustomTest, InitFromIterator) {
   CountCopyAndMove::Move = 0;
   CountCopyAndMove::Copy = 0;
   DenseMap<int, CountCopyAndMove> Map(Values.begin(), Values.end());
-  // Check that no move occured
+  // Check that no move occurred
   EXPECT_EQ(0, CountCopyAndMove::Move);
   // Check that copy was called the expected number of times
   EXPECT_EQ(Count, CountCopyAndMove::Copy);
@@ -466,7 +476,7 @@ TEST(DenseMapCustomTest, ReserveTest) {
     EXPECT_EQ(MemorySize, Map.getMemorySize());
     // Check that move was called the expected number of times
     EXPECT_EQ(Size, CountCopyAndMove::Move);
-    // Check that no copy occured
+    // Check that no copy occurred
     EXPECT_EQ(0, CountCopyAndMove::Copy);
   }
 }

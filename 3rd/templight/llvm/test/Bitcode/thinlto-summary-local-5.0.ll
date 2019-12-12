@@ -14,7 +14,7 @@ define void @foo() {
 ;CHECK-DAG: @bar = global i32 0
 
 @baz = alias i32, i32* @bar
-;CHECK-DAG: @bar = global i32 0
+;CHECK-DAG: @baz = alias i32, i32* @bar
 
 ;BCAN: <SOURCE_FILENAME
 ;BCAN-NEXT: <GLOBALVAR {{.*}} op7=0/>

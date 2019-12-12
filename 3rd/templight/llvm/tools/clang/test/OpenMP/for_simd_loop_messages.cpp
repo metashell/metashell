@@ -1,6 +1,6 @@
-// RUN: %clang_cc1 -fsyntax-only -fopenmp -x c++ -std=c++11 -fexceptions -fcxx-exceptions -verify %s
+// RUN: %clang_cc1 -fsyntax-only -fopenmp -x c++ -std=c++11 -fexceptions -fcxx-exceptions -verify %s -Wuninitialized
 
-// RUN: %clang_cc1 -fsyntax-only -fopenmp-simd -x c++ -std=c++11 -fexceptions -fcxx-exceptions -verify %s
+// RUN: %clang_cc1 -fsyntax-only -fopenmp-simd -x c++ -std=c++11 -fexceptions -fcxx-exceptions -verify %s -Wuninitialized
 
 class S {
   int a;
@@ -126,8 +126,8 @@ int test_iteration_spaces() {
   for (int i = 0; !!i; i++)
     c[i] = a[i];
 
+// Ok
 #pragma omp parallel
-// expected-error@+2 {{condition of OpenMP for loop must be a relational comparison ('<', '<=', '>', or '>=') of loop variable 'i'}}
 #pragma omp for simd
   for (int i = 0; i != 1; i++)
     c[i] = a[i];

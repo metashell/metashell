@@ -1,9 +1,8 @@
 //===- IfConversion.cpp - Machine code if conversion pass -----------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -252,7 +251,7 @@ namespace {
         BBInfo &TrueBBI, BBInfo &FalseBBI) const;
     void AnalyzeBlock(MachineBasicBlock &MBB,
                       std::vector<std::unique_ptr<IfcvtToken>> &Tokens);
-    bool FeasibilityAnalysis(BBInfo &BBI, SmallVectorImpl<MachineOperand> &Cond,
+    bool FeasibilityAnalysis(BBInfo &BBI, SmallVectorImpl<MachineOperand> &Pred,
                              bool isTriangle = false, bool RevBranch = false,
                              bool hasCommonTail = false);
     void AnalyzeBlocks(MachineFunction &MF,
@@ -273,7 +272,7 @@ namespace {
     void PredicateBlock(BBInfo &BBI,
                         MachineBasicBlock::iterator E,
                         SmallVectorImpl<MachineOperand> &Cond,
-                        SmallSet<unsigned, 4> *LaterRedefs = nullptr);
+                        SmallSet<MCPhysReg, 4> *LaterRedefs = nullptr);
     void CopyAndPredicateBlock(BBInfo &ToBBI, BBInfo &FromBBI,
                                SmallVectorImpl<MachineOperand> &Cond,
                                bool IgnoreBr = false);
@@ -347,7 +346,7 @@ bool IfConverter::runOnMachineFunction(MachineFunction &MF) {
   BranchFolder::MBFIWrapper MBFI(getAnalysis<MachineBlockFrequencyInfo>());
   MBPI = &getAnalysis<MachineBranchProbabilityInfo>();
   MRI = &MF.getRegInfo();
-  SchedModel.init(ST.getSchedModel(), &ST, TII);
+  SchedModel.init(&ST);
 
   if (!TII) return false;
 
@@ -361,14 +360,14 @@ bool IfConverter::runOnMachineFunction(MachineFunction &MF) {
                                    getAnalysisIfAvailable<MachineModuleInfo>());
   }
 
-  DEBUG(dbgs() << "\nIfcvt: function (" << ++FnNum <<  ") \'"
-               << MF.getName() << "\'");
+  LLVM_DEBUG(dbgs() << "\nIfcvt: function (" << ++FnNum << ") \'"
+                    << MF.getName() << "\'");
 
   if (FnNum < IfCvtFnStart || (IfCvtFnStop != -1 && FnNum > IfCvtFnStop)) {
-    DEBUG(dbgs() << " skipped\n");
+    LLVM_DEBUG(dbgs() << " skipped\n");
     return false;
   }
-  DEBUG(dbgs() << "\n");
+  LLVM_DEBUG(dbgs() << "\n");
 
   MF.RenumberBlocks();
   BBAnalysis.resize(MF.getNumBlockIDs());
@@ -406,14 +405,14 @@ bool IfConverter::runOnMachineFunction(MachineFunction &MF) {
       case ICSimpleFalse: {
         bool isFalse = Kind == ICSimpleFalse;
         if ((isFalse && DisableSimpleF) || (!isFalse && DisableSimple)) break;
-        DEBUG(dbgs() << "Ifcvt (Simple"
-                     << (Kind == ICSimpleFalse ? " false" : "")
-                     << "): " << printMBBReference(*BBI.BB) << " ("
-                     << ((Kind == ICSimpleFalse) ? BBI.FalseBB->getNumber()
-                                                 : BBI.TrueBB->getNumber())
-                     << ") ");
+        LLVM_DEBUG(dbgs() << "Ifcvt (Simple"
+                          << (Kind == ICSimpleFalse ? " false" : "")
+                          << "): " << printMBBReference(*BBI.BB) << " ("
+                          << ((Kind == ICSimpleFalse) ? BBI.FalseBB->getNumber()
+                                                      : BBI.TrueBB->getNumber())
+                          << ") ");
         RetVal = IfConvertSimple(BBI, Kind);
-        DEBUG(dbgs() << (RetVal ? "succeeded!" : "failed!") << "\n");
+        LLVM_DEBUG(dbgs() << (RetVal ? "succeeded!" : "failed!") << "\n");
         if (RetVal) {
           if (isFalse) ++NumSimpleFalse;
           else         ++NumSimple;
@@ -430,16 +429,16 @@ bool IfConverter::runOnMachineFunction(MachineFunction &MF) {
         if (DisableTriangleR && !isFalse && isRev) break;
         if (DisableTriangleF && isFalse && !isRev) break;
         if (DisableTriangleFR && isFalse && isRev) break;
-        DEBUG(dbgs() << "Ifcvt (Triangle");
+        LLVM_DEBUG(dbgs() << "Ifcvt (Triangle");
         if (isFalse)
-          DEBUG(dbgs() << " false");
+          LLVM_DEBUG(dbgs() << " false");
         if (isRev)
-          DEBUG(dbgs() << " rev");
-        DEBUG(dbgs() << "): " << printMBBReference(*BBI.BB)
-                     << " (T:" << BBI.TrueBB->getNumber()
-                     << ",F:" << BBI.FalseBB->getNumber() << ") ");
+          LLVM_DEBUG(dbgs() << " rev");
+        LLVM_DEBUG(dbgs() << "): " << printMBBReference(*BBI.BB)
+                          << " (T:" << BBI.TrueBB->getNumber()
+                          << ",F:" << BBI.FalseBB->getNumber() << ") ");
         RetVal = IfConvertTriangle(BBI, Kind);
-        DEBUG(dbgs() << (RetVal ? "succeeded!" : "failed!") << "\n");
+        LLVM_DEBUG(dbgs() << (RetVal ? "succeeded!" : "failed!") << "\n");
         if (RetVal) {
           if (isFalse) {
             if (isRev) ++NumTriangleFRev;
@@ -453,24 +452,25 @@ bool IfConverter::runOnMachineFunction(MachineFunction &MF) {
       }
       case ICDiamond:
         if (DisableDiamond) break;
-        DEBUG(dbgs() << "Ifcvt (Diamond): " << printMBBReference(*BBI.BB)
-                     << " (T:" << BBI.TrueBB->getNumber()
-                     << ",F:" << BBI.FalseBB->getNumber() << ") ");
+        LLVM_DEBUG(dbgs() << "Ifcvt (Diamond): " << printMBBReference(*BBI.BB)
+                          << " (T:" << BBI.TrueBB->getNumber()
+                          << ",F:" << BBI.FalseBB->getNumber() << ") ");
         RetVal = IfConvertDiamond(BBI, Kind, NumDups, NumDups2,
                                   Token->TClobbersPred,
                                   Token->FClobbersPred);
-        DEBUG(dbgs() << (RetVal ? "succeeded!" : "failed!") << "\n");
+        LLVM_DEBUG(dbgs() << (RetVal ? "succeeded!" : "failed!") << "\n");
         if (RetVal) ++NumDiamonds;
         break;
       case ICForkedDiamond:
         if (DisableForkedDiamond) break;
-        DEBUG(dbgs() << "Ifcvt (Forked Diamond): " << printMBBReference(*BBI.BB)
-                     << " (T:" << BBI.TrueBB->getNumber()
-                     << ",F:" << BBI.FalseBB->getNumber() << ") ");
+        LLVM_DEBUG(dbgs() << "Ifcvt (Forked Diamond): "
+                          << printMBBReference(*BBI.BB)
+                          << " (T:" << BBI.TrueBB->getNumber()
+                          << ",F:" << BBI.FalseBB->getNumber() << ") ");
         RetVal = IfConvertForkedDiamond(BBI, Kind, NumDups, NumDups2,
                                       Token->TClobbersPred,
                                       Token->FClobbersPred);
-        DEBUG(dbgs() << (RetVal ? "succeeded!" : "failed!") << "\n");
+        LLVM_DEBUG(dbgs() << (RetVal ? "succeeded!" : "failed!") << "\n");
         if (RetVal) ++NumForkedDiamonds;
         break;
       }
@@ -912,6 +912,12 @@ void IfConverter::AnalyzeBranches(BBInfo &BBI) {
   BBI.BrCond.clear();
   BBI.IsBrAnalyzable =
       !TII->analyzeBranch(*BBI.BB, BBI.TrueBB, BBI.FalseBB, BBI.BrCond);
+  if (!BBI.IsBrAnalyzable) {
+    BBI.TrueBB = nullptr;
+    BBI.FalseBB = nullptr;
+    BBI.BrCond.clear();
+  }
+
   SmallVector<MachineOperand, 4> RevCond(BBI.BrCond.begin(), BBI.BrCond.end());
   BBI.IsBrReversible = (RevCond.size() == 0) ||
       !TII->reverseBranchCondition(RevCond);
@@ -948,7 +954,7 @@ void IfConverter::ScanInstructions(BBInfo &BBI,
   BBI.ExtraCost2 = 0;
   BBI.ClobbersPred = false;
   for (MachineInstr &MI : make_range(Begin, End)) {
-    if (MI.isDebugValue())
+    if (MI.isDebugInstr())
       continue;
 
     // It's unsafe to duplicate convergent instructions in this context, so set
@@ -1316,7 +1322,7 @@ void IfConverter::AnalyzeBlocks(
     AnalyzeBlock(MBB, Tokens);
 
   // Sort to favor more complex ifcvt scheme.
-  std::stable_sort(Tokens.begin(), Tokens.end(), IfcvtTokenCmp);
+  llvm::stable_sort(Tokens, IfcvtTokenCmp);
 }
 
 /// Returns true either if ToMBB is the next block after MBB or that all the
@@ -1365,12 +1371,12 @@ static void UpdatePredRedefs(MachineInstr &MI, LivePhysRegs &Redefs) {
   // Before stepping forward past MI, remember which regs were live
   // before MI. This is needed to set the Undef flag only when reg is
   // dead.
-  SparseSet<unsigned> LiveBeforeMI;
+  SparseSet<MCPhysReg, identity<MCPhysReg>> LiveBeforeMI;
   LiveBeforeMI.setUniverse(TRI->getNumRegs());
   for (unsigned Reg : Redefs)
     LiveBeforeMI.insert(Reg);
 
-  SmallVector<std::pair<unsigned, const MachineOperand*>, 4> Clobbers;
+  SmallVector<std::pair<MCPhysReg, const MachineOperand*>, 4> Clobbers;
   Redefs.stepForward(MI, Clobbers);
 
   // Now add the implicit uses for each of the clobbered values.
@@ -1443,7 +1449,7 @@ bool IfConverter::IfConvertSimple(BBInfo &BBI, IfcvtKind Kind) {
   Redefs.init(*TRI);
 
   if (MRI->tracksLiveness()) {
-    // Initialize liveins to the first BB. These are potentiall redefined by
+    // Initialize liveins to the first BB. These are potentially redefined by
     // predicated instructions.
     Redefs.addLiveIns(CvtMBB);
     Redefs.addLiveIns(NextMBB);
@@ -1726,20 +1732,20 @@ bool IfConverter::IfConvertDiamondCommon(
   for (unsigned i = 0; i < NumDups1; ++DI1) {
     if (DI1 == MBB1.end())
       break;
-    if (!DI1->isDebugValue())
+    if (!DI1->isDebugInstr())
       ++i;
   }
   while (NumDups1 != 0) {
     ++DI2;
     if (DI2 == MBB2.end())
       break;
-    if (!DI2->isDebugValue())
+    if (!DI2->isDebugInstr())
       --NumDups1;
   }
 
   if (MRI->tracksLiveness()) {
     for (const MachineInstr &MI : make_range(MBB1.begin(), DI1)) {
-      SmallVector<std::pair<unsigned, const MachineOperand*>, 4> Dummy;
+      SmallVector<std::pair<MCPhysReg, const MachineOperand*>, 4> Dummy;
       Redefs.stepForward(MI, Dummy);
     }
   }
@@ -1758,16 +1764,22 @@ bool IfConverter::IfConvertDiamondCommon(
   if (!BBI1->IsBrAnalyzable)
     verifySameBranchInstructions(&MBB1, &MBB2);
 #endif
-  BBI1->NonPredSize -= TII->removeBranch(*BBI1->BB);
-  // Remove duplicated instructions.
+  // Remove duplicated instructions from the tail of MBB1: any branch
+  // instructions, and the common instructions counted by NumDups2.
   DI1 = MBB1.end();
+  while (DI1 != MBB1.begin()) {
+    MachineBasicBlock::iterator Prev = std::prev(DI1);
+    if (!Prev->isBranch() && !Prev->isDebugInstr())
+      break;
+    DI1 = Prev;
+  }
   for (unsigned i = 0; i != NumDups2; ) {
     // NumDups2 only counted non-dbg_value instructions, so this won't
     // run off the head of the list.
     assert(DI1 != MBB1.begin());
     --DI1;
     // skip dbg_value instructions
-    if (!DI1->isDebugValue())
+    if (!DI1->isDebugInstr())
       ++i;
   }
   MBB1.erase(DI1, MBB1.end());
@@ -1782,7 +1794,7 @@ bool IfConverter::IfConvertDiamondCommon(
     // instructions could be found.
     while (DI2 != MBB2.begin()) {
       MachineBasicBlock::iterator Prev = std::prev(DI2);
-      if (!Prev->isBranch() && !Prev->isDebugValue())
+      if (!Prev->isBranch() && !Prev->isDebugInstr())
         break;
       DI2 = Prev;
     }
@@ -1793,7 +1805,7 @@ bool IfConverter::IfConvertDiamondCommon(
     assert(DI2 != MBB2.begin());
     --DI2;
     // skip dbg_value instructions
-    if (!DI2->isDebugValue())
+    if (!DI2->isDebugInstr())
       --NumDups2;
   }
 
@@ -1805,13 +1817,13 @@ bool IfConverter::IfConvertDiamondCommon(
   // generate:
   //   sub    r0, r1, #1
   //   addne  r0, r1, #1
-  SmallSet<unsigned, 4> RedefsByFalse;
-  SmallSet<unsigned, 4> ExtUses;
+  SmallSet<MCPhysReg, 4> RedefsByFalse;
+  SmallSet<MCPhysReg, 4> ExtUses;
   if (TII->isProfitableToUnpredicate(MBB1, MBB2)) {
     for (const MachineInstr &FI : make_range(MBB2.begin(), DI2)) {
-      if (FI.isDebugValue())
+      if (FI.isDebugInstr())
         continue;
-      SmallVector<unsigned, 4> Defs;
+      SmallVector<MCPhysReg, 4> Defs;
       for (const MachineOperand &MO : FI.operands()) {
         if (!MO.isReg())
           continue;
@@ -1829,7 +1841,7 @@ bool IfConverter::IfConvertDiamondCommon(
         }
       }
 
-      for (unsigned Reg : Defs) {
+      for (MCPhysReg Reg : Defs) {
         if (!ExtUses.count(Reg)) {
           for (MCSubRegIterator SubRegs(Reg, TRI, /*IncludeSelf=*/true);
                SubRegs.isValid(); ++SubRegs)
@@ -1975,7 +1987,7 @@ bool IfConverter::IfConvertDiamond(BBInfo &BBI, IfcvtKind Kind,
 }
 
 static bool MaySpeculate(const MachineInstr &MI,
-                         SmallSet<unsigned, 4> &LaterRedefs) {
+                         SmallSet<MCPhysReg, 4> &LaterRedefs) {
   bool SawStore = true;
   if (!MI.isSafeToMove(nullptr, SawStore))
     return false;
@@ -1998,11 +2010,11 @@ static bool MaySpeculate(const MachineInstr &MI,
 void IfConverter::PredicateBlock(BBInfo &BBI,
                                  MachineBasicBlock::iterator E,
                                  SmallVectorImpl<MachineOperand> &Cond,
-                                 SmallSet<unsigned, 4> *LaterRedefs) {
+                                 SmallSet<MCPhysReg, 4> *LaterRedefs) {
   bool AnyUnpred = false;
   bool MaySpec = LaterRedefs != nullptr;
   for (MachineInstr &I : make_range(BBI.BB->begin(), E)) {
-    if (I.isDebugValue() || TII->isPredicated(I))
+    if (I.isDebugInstr() || TII->isPredicated(I))
       continue;
     // It may be possible not to predicate an instruction if it's the 'true'
     // side of a diamond and the 'false' side may re-define the instruction's
@@ -2058,7 +2070,7 @@ void IfConverter::CopyAndPredicateBlock(BBInfo &ToBBI, BBInfo &FromBBI,
       ToBBI.ExtraCost += NumCycles-1;
     ToBBI.ExtraCost2 += ExtraPredCost;
 
-    if (!TII->isPredicated(I) && !MI->isDebugValue()) {
+    if (!TII->isPredicated(I) && !MI->isDebugInstr()) {
       if (!TII->PredicateInstruction(*MI, Cond)) {
 #ifndef NDEBUG
         dbgs() << "Unable to predicate " << I << "!\n";
@@ -2147,7 +2159,7 @@ void IfConverter::MergeBlocks(BBInfo &ToBBI, BBInfo &FromBBI, bool AddEdges) {
       // Calculate the edge probability for the edge from ToBBI.BB to Succ,
       // which is a portion of the edge probability from FromMBB to Succ. The
       // portion ratio is the edge probability from ToBBI.BB to FromMBB (if
-      // FromBBI is a successor of ToBBI.BB. See comment below for excepion).
+      // FromBBI is a successor of ToBBI.BB. See comment below for exception).
       NewProb = MBPI->getEdgeProbability(&FromMBB, Succ);
 
       // To2FromProb is 0 when FromMBB is not a successor of ToBBI.BB. This

@@ -637,13 +637,13 @@ pshufw $90, %mm4, %mm0
 // CHECK:  encoding: [0x66,0xca,0xce,0x7a]
         	lretl	$0x7ace
 
-// CHECK: bound	2(%eax), %bx
+// CHECK: bound	%bx, 2(%eax)
 // CHECK:  encoding: [0x67,0x62,0x58,0x02]
-        	bound	2(%eax),%bx
+        	bound	%bx,2(%eax)
 
-// CHECK: bound	4(%ebx), %ecx
+// CHECK: bound	%ecx, 4(%ebx)
 // CHECK:  encoding: [0x67,0x66,0x62,0x4b,0x04]
-        	bound	4(%ebx),%ecx
+        	bound	%ecx,4(%ebx)
 
 // CHECK: arpl	%bx, %bx
 // CHECK:  encoding: [0x63,0xdb]
@@ -920,11 +920,11 @@ pshufw $90, %mm4, %mm0
 	str %eax
 
 
-// CHECK: fsubp
+// CHECK: fsubp %st, %st(1)
 // CHECK: encoding: [0xde,0xe1]
 fsubp %st,%st(1)
 
-// CHECK: fsubp	%st(2)
+// CHECK: fsubp %st, %st(2)
 // CHECK: encoding: [0xde,0xe2]
 fsubp   %st, %st(2)
 
@@ -969,3 +969,63 @@ data32
 // CHECK: lgdtw 4(%eax)
 // CHECK:  encoding: [0x67,0x0f,0x01,0x50,0x04]
 data32 lgdt 4(%eax)
+
+// CHECK: wbnoinvd
+// CHECK:  encoding: [0xf3,0x0f,0x09]
+wbnoinvd
+
+// CHECK: umonitor %ax
+// CHECK:  encoding: [0xf3,0x0f,0xae,0xf0]
+umonitor %ax
+
+// CHECK: umonitor %eax
+// CHECK:  encoding: [0x67,0xf3,0x0f,0xae,0xf0]
+umonitor %eax
+
+// CHECK: movdir64b (%esi), %eax
+// CHECK: encoding: [0x67,0x66,0x0f,0x38,0xf8,0x06]
+movdir64b (%esi), %eax
+
+// CHECK: movdir64b (%si), %ax
+// CHECK: encoding: [0x66,0x0f,0x38,0xf8,0x04]
+movdir64b (%si), %ax
+
+// CHECK: enqcmd (%bx), %di
+// CHECK: encoding: [0xf2,0x0f,0x38,0xf8,0x3f]
+enqcmd  (%bx), %di
+
+// CHECK: enqcmd 8128(%si), %ax
+// CHECK: encoding: [0xf2,0x0f,0x38,0xf8,0x84,0xc0,0x1f]
+enqcmd  8128(%si), %ax
+
+// CHECK: enqcmd -8192(%di), %bx
+// CHECK: encoding: [0xf2,0x0f,0x38,0xf8,0x9d,0x00,0xe0]
+enqcmd  -8192(%di), %bx
+
+// CHECK: enqcmd 7408, %cx
+// CHECK: encoding: [0xf2,0x0f,0x38,0xf8,0x0e,0xf0,0x1c]
+enqcmd  7408, %cx
+
+// CHECK: enqcmds (%bx), %di
+// CHECK: encoding: [0xf3,0x0f,0x38,0xf8,0x3f]
+enqcmds (%bx), %di
+
+// CHECK: enqcmds 8128(%si), %ax
+// CHECK: encoding: [0xf3,0x0f,0x38,0xf8,0x84,0xc0,0x1f]
+enqcmds 8128(%si), %ax
+
+// CHECK: enqcmds -8192(%di), %bx
+// CHECK: encoding: [0xf3,0x0f,0x38,0xf8,0x9d,0x00,0xe0]
+enqcmds -8192(%di), %bx
+
+// CHECK: enqcmds 7408, %cx
+// CHECK: encoding: [0xf3,0x0f,0x38,0xf8,0x0e,0xf0,0x1c]
+enqcmds  7408, %cx
+
+// CHECK: enqcmd (%edi), %edi
+// CHECK: encoding: [0x67,0xf2,0x0f,0x38,0xf8,0x3f]
+enqcmd  (%edi), %edi
+
+// CHECK: enqcmds (%edi), %edi
+// CHECK: encoding: [0x67,0xf3,0x0f,0x38,0xf8,0x3f]
+enqcmds (%edi), %edi

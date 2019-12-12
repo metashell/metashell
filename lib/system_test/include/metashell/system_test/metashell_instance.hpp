@@ -22,6 +22,8 @@
 
 #include <metashell/process/execution.hpp>
 
+#include <metashell/data/command_line_argument_list.hpp>
+
 #include <just/environment.hpp>
 #include <just/lines.hpp>
 
@@ -41,7 +43,7 @@ namespace metashell
     {
     public:
       explicit metashell_instance(
-          const std::vector<std::string>& extra_args_ = {},
+          const data::command_line_argument_list& extra_args_ = {},
           const boost::filesystem::path& cwd_ = boost::filesystem::path(),
           bool allow_user_defined_args_ = true,
           bool allow_standard_headers_ = true);
@@ -73,11 +75,12 @@ namespace metashell
     bool using_msvc();
     bool using_wave();
 
-    std::vector<std::string>
-    with_sysincludes(std::vector<std::string> args_,
+    data::command_line_argument_list
+    with_sysincludes(data::command_line_argument_list args_,
                      const std::vector<boost::filesystem::path>& paths_);
-    std::vector<std::string>
-    with_quoteincludes(std::vector<std::string> args_,
+
+    data::command_line_argument_list
+    with_quoteincludes(data::command_line_argument_list args_,
                        const std::vector<boost::filesystem::path>& paths_);
   }
 }

@@ -9,11 +9,11 @@
 define i32 @main() nounwind {
 ; CHECK-LABEL: main:
 ; CHECK:       # %bb.0: # %entry
+; CHECK-NEXT:    pushq %rax
 ; CHECK-NEXT:    xorl %eax, %eax
 ; CHECK-NEXT:    cmpq {{.*}}(%rip), %rax
-; CHECK-NEXT:    sbbl %eax, %eax
-; CHECK-NEXT:    andl $150, %eax
-; CHECK-NEXT:    testb %al, %al
+; CHECK-NEXT:    sbbb %al, %al
+; CHECK-NEXT:    testb $-106, %al
 ; CHECK-NEXT:    jle .LBB0_1
 ; CHECK-NEXT:  # %bb.2: # %if.then
 ; CHECK-NEXT:    movl $1, {{.*}}(%rip)
@@ -22,7 +22,6 @@ define i32 @main() nounwind {
 ; CHECK-NEXT:  .LBB0_1: # %entry.if.end_crit_edge
 ; CHECK-NEXT:    movl {{.*}}(%rip), %esi
 ; CHECK-NEXT:  .LBB0_3: # %if.end
-; CHECK-NEXT:    pushq %rax
 ; CHECK-NEXT:    movl $.L.str, %edi
 ; CHECK-NEXT:    xorl %eax, %eax
 ; CHECK-NEXT:    callq printf

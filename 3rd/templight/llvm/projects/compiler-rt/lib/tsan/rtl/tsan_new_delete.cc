@@ -1,9 +1,8 @@
 //===-- tsan_new_delete.cc ----------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -13,8 +12,10 @@
 //===----------------------------------------------------------------------===//
 #include "interception/interception.h"
 #include "sanitizer_common/sanitizer_allocator.h"
+#include "sanitizer_common/sanitizer_allocator_report.h"
 #include "sanitizer_common/sanitizer_internal_defs.h"
 #include "tsan_interceptors.h"
+#include "tsan_rtl.h"
 
 using namespace __tsan;  // NOLINT
 
@@ -28,25 +29,31 @@ DECLARE_REAL(void, free, void *ptr)
 
 // TODO(alekseys): throw std::bad_alloc instead of dying on OOM.
 #define OPERATOR_NEW_BODY(mangled_name, nothrow) \
-  if (cur_thread()->in_symbolizer) \
+  if (in_symbolizer()) \
     return InternalAlloc(size); \
   void *p = 0; \
   {  \
     SCOPED_INTERCEPTOR_RAW(mangled_name, size); \
     p = user_alloc(thr, pc, size); \
-    if (!nothrow && UNLIKELY(!p)) DieOnFailure::OnOOM(); \
+    if (!nothrow && UNLIKELY(!p)) { \
+      GET_STACK_TRACE_FATAL(thr, pc); \
+      ReportOutOfMemory(size, &stack); \
+    } \
   }  \
   invoke_malloc_hook(p, size);  \
   return p;
 
 #define OPERATOR_NEW_BODY_ALIGN(mangled_name, nothrow) \
-  if (cur_thread()->in_symbolizer) \
+  if (in_symbolizer()) \
     return InternalAlloc(size, nullptr, (uptr)align); \
   void *p = 0; \
   {  \
     SCOPED_INTERCEPTOR_RAW(mangled_name, size); \
     p = user_memalign(thr, pc, (uptr)align, size); \
-    if (!nothrow && UNLIKELY(!p)) DieOnFailure::OnOOM(); \
+    if (!nothrow && UNLIKELY(!p)) { \
+      GET_STACK_TRACE_FATAL(thr, pc); \
+      ReportOutOfMemory(size, &stack); \
+    } \
   }  \
   invoke_malloc_hook(p, size);  \
   return p;
@@ -107,7 +114,7 @@ void *operator new[](__sanitizer::uptr size, std::align_val_t align,
 
 #define OPERATOR_DELETE_BODY(mangled_name) \
   if (ptr == 0) return;  \
-  if (cur_thread()->in_symbolizer) \
+  if (in_symbolizer()) \
     return InternalFree(ptr); \
   invoke_free_hook(ptr);  \
   SCOPED_INTERCEPTOR_RAW(mangled_name, ptr);  \

@@ -68,33 +68,36 @@ namespace metashell
       }
 
       void show_engine_help(
-          const std::map<data::engine_name, engine_entry>& engines_,
+          const std::map<data::real_engine_name, engine_entry>& engines_,
           const data::engine_name& engine_,
           std::ostream* out_,
           const std::string& app_name_)
       {
-        const auto e = engines_.find(engine_);
-        if (e == engines_.end())
+        if (auto engine = mpark::get_if<data::real_engine_name>(&engine_))
         {
-          throw std::runtime_error("Engine " + engine_ + " not found.");
+          const auto e = engines_.find(*engine);
+          if (e == engines_.end())
+          {
+            throw std::runtime_error("Engine " + *engine + " not found.");
+          }
+          else if (out_)
+          {
+            *out_ << "Usage: \n\n  " << app_name_ << " --engine " << e->first;
+            const auto args = e->second.args();
+            if (!args.empty())
+            {
+              *out_ << " -- " << e->second.args();
+            }
+            *out_ << "\n\n"
+                  << unformat(e->second.description())
+                  << "\n\nSupported features: " << list_features(e->second)
+                  << "\n\n";
+          }
         }
         else if (out_)
         {
-          *out_ << "Usage: " << std::endl
-                << std::endl
-                << "  " << app_name_ << " --engine " << e->first;
-          const auto args = e->second.args();
-          if (!args.empty())
-          {
-            *out_ << " -- " << e->second.args();
-          }
-          *out_ << std::endl
-                << std::endl
-                << unformat(e->second.description()) << std::endl
-                << std::endl
-                << "Supported features: " << list_features(e->second)
-                << std::endl
-                << std::endl;
+          *out_ << "Usage: \n\n  " << app_name_ << " --engine auto\n\n"
+                << unformat(data::auto_engine_description()) << "\n\n";
         }
       }
 
@@ -202,8 +205,10 @@ namespace metashell
         data::shell_config result(
             data::shell_config_name("default"), data::shell_config_data());
 
-        result.engine_args.insert(
-            result.engine_args.end(), extra_args_begin_, extra_args_end_);
+        for (auto i = extra_args_begin_; i != extra_args_end_; ++i)
+        {
+          result.engine_args.push_back(data::command_line_argument(*i));
+        }
 
         if (engine_)
         {
@@ -244,7 +249,7 @@ namespace metashell
     parse_config_result
     parse_config(int argc_,
                  const char* argv_[],
-                 const std::map<data::engine_name, engine_entry>& engines_,
+                 const std::map<data::real_engine_name, engine_entry>& engines_,
                  iface::environment_detector& env_detector_,
                  std::ostream* out_,
                  std::ostream* err_)
@@ -257,11 +262,6 @@ namespace metashell
       using boost::program_options::value;
 
       data::config cfg;
-
-      if (argc_ > 0)
-      {
-        cfg.metashell_binary = argv_[0];
-      }
 
       const char** args_end = argv_ + argc_;
 
@@ -279,12 +279,12 @@ namespace metashell
       std::string engine;
 
       const std::string engine_info =
-          "The engine (C++ compiler) to use. Available engines: " +
+          "The engine (C++ compiler) to use. Available engines: auto, " +
           boost::algorithm::join(engines_ | boost::adaptors::map_keys |
-                                     boost::adaptors::transformed(
-                                         [](const data::engine_name& name_) {
-                                           return to_string(name_);
-                                         }),
+                                     boost::adaptors::transformed([](
+                                         const data::real_engine_name& name_) {
+                                       return to_string(name_);
+                                     }),
                                  ", ") +
           ". Default: " + data::shell_config_data().engine;
 
@@ -389,7 +389,7 @@ namespace metashell
         const auto default_shell_config = parse_default_shell_config(
             vm, extra_args_begin, args_end,
             vm.count("engine") ?
-                boost::make_optional(data::engine_name(engine)) :
+                boost::make_optional(data::parse_engine_name(engine)) :
                 boost::none);
 
         cfg.push_back(default_shell_config);
@@ -439,73 +439,29 @@ namespace metashell
         if (vm.count("help"))
         {
           show_help(out_, desc);
-          return parse_config_result::exit(false);
+          return exit{false};
         }
         else if (vm.count("help_engine"))
         {
           show_engine_help(
-              engines_, data::engine_name(help_engine), out_, argv_[0]);
-          return parse_config_result::exit(false);
+              engines_, data::parse_engine_name(help_engine), out_, argv_[0]);
+          return exit{false};
         }
         else
         {
-          return parse_config_result::start_shell(cfg);
+          return cfg;
         }
       }
       catch (const json_parsing_error& e_)
       {
         show_error(err_, e_);
-        return parse_config_result::exit(true);
+        return exit{true};
       }
       catch (const std::exception& e_)
       {
         show_error(err_, e_);
         show_help(err_, desc);
-        return parse_config_result::exit(true);
-      }
-    }
-
-    parse_config_result parse_config_result::exit(bool with_error_)
-    {
-      parse_config_result r;
-      r.action = with_error_ ? action_t::exit_with_error :
-                               action_t::exit_without_error;
-      return r;
-    }
-
-    parse_config_result
-    parse_config_result::start_shell(const data::config& cfg_)
-    {
-      parse_config_result r;
-      r.action = action_t::run_shell;
-      r.cfg = cfg_;
-      return r;
-    }
-
-    bool parse_config_result::should_run_shell() const
-    {
-      return action == action_t::run_shell;
-    }
-
-    bool parse_config_result::should_error_at_exit() const
-    {
-      return action == action_t::exit_with_error;
-    }
-
-    std::ostream& operator<<(std::ostream& out_,
-                             parse_config_result::action_t a_)
-    {
-      switch (a_)
-      {
-      case parse_config_result::action_t::run_shell:
-        return out_ << "run_shell";
-      case parse_config_result::action_t::exit_with_error:
-        return out_ << "exit_with_error";
-      case parse_config_result::action_t::exit_without_error:
-        return out_ << "exit_without_error";
-      default:
-        assert(!"Invalid action");
-        std::abort();
+        return exit{true};
       }
     }
   }

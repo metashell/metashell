@@ -47,6 +47,7 @@
 ; RUN: llc < %s -mtriple=i386-unknown-unknown -mcpu=bdver3        2>&1 | FileCheck %s --check-prefix=FAST
 ; RUN: llc < %s -mtriple=i386-unknown-unknown -mcpu=bdver4        2>&1 | FileCheck %s --check-prefix=FAST
 ; RUN: llc < %s -mtriple=i386-unknown-unknown -mcpu=znver1        2>&1 | FileCheck %s --check-prefix=FAST
+; RUN: llc < %s -mtriple=i386-unknown-unknown -mcpu=znver2        2>&1 | FileCheck %s --check-prefix=FAST
 
 ; Other chips with slow unaligned memory accesses
 
@@ -88,9 +89,9 @@ define void @store_zeros(i8* %a) {
 ; FAST:       # %bb.0:
 ; FAST-NEXT:    movl {{[0-9]+}}(%esp), %eax
 ; FAST-NOT:     movl
-  call void @llvm.memset.p0i8.i64(i8* %a, i8 0, i64 64, i32 1, i1 false)
+  call void @llvm.memset.p0i8.i64(i8* %a, i8 0, i64 64, i1 false)
   ret void
 }
 
-declare void @llvm.memset.p0i8.i64(i8* nocapture, i8, i64, i32, i1)
+declare void @llvm.memset.p0i8.i64(i8* nocapture, i8, i64, i1)
 

@@ -1,15 +1,16 @@
 //===- AMDGPUBaseInfo.cpp - AMDGPU Base encoding information --------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
 #include "AMDGPUBaseInfo.h"
+#include "AMDGPUTargetTransformInfo.h"
 #include "AMDGPU.h"
 #include "SIDefines.h"
+#include "AMDGPUAsmUtils.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Triple.h"
 #include "llvm/BinaryFormat/ELF.h"
@@ -52,7 +53,7 @@ unsigned getBitMask(unsigned Shift, unsigned Width) {
   return ((1 << Width) - 1) << Shift;
 }
 
-/// \brief Packs \p Src into \p Dst for given bit \p Shift and bit \p Width.
+/// Packs \p Src into \p Dst for given bit \p Shift and bit \p Width.
 ///
 /// \returns Packed \p Dst.
 unsigned packBits(unsigned Src, unsigned Dst, unsigned Shift, unsigned Width) {
@@ -61,7 +62,7 @@ unsigned packBits(unsigned Src, unsigned Dst, unsigned Shift, unsigned Width) {
   return Dst;
 }
 
-/// \brief Unpacks bits from \p Src for given bit \p Shift and bit \p Width.
+/// Unpacks bits from \p Src for given bit \p Shift and bit \p Width.
 ///
 /// \returns Unpacked bits.
 unsigned unpackBits(unsigned Src, unsigned Shift, unsigned Width) {
@@ -84,7 +85,9 @@ unsigned getExpcntBitWidth() { return 3; }
 unsigned getLgkmcntBitShift() { return 8; }
 
 /// \returns Lgkmcnt bit width.
-unsigned getLgkmcntBitWidth() { return 4; }
+unsigned getLgkmcntBitWidth(unsigned VersionMajor) {
+  return (VersionMajor >= 10) ? 6 : 4;
+}
 
 /// \returns Vmcnt bit shift (higher bits).
 unsigned getVmcntBitShiftHi() { return 14; }
@@ -96,64 +99,76 @@ unsigned getVmcntBitWidthHi() { return 2; }
 
 namespace llvm {
 
-static cl::opt<bool> EnablePackedInlinableLiterals(
-    "enable-packed-inlinable-literals",
-    cl::desc("Enable packed inlinable literals (v2f16, v2i16)"),
-    cl::init(false));
-
 namespace AMDGPU {
 
-LLVM_READNONE
-static inline Channels indexToChannel(unsigned Channel) {
-  switch (Channel) {
-  case 1:
-    return AMDGPU::Channels_1;
-  case 2:
-    return AMDGPU::Channels_2;
-  case 3:
-    return AMDGPU::Channels_3;
-  case 4:
-    return AMDGPU::Channels_4;
-  default:
-    llvm_unreachable("invalid MIMG channel");
-  }
+#define GET_MIMGBaseOpcodesTable_IMPL
+#define GET_MIMGDimInfoTable_IMPL
+#define GET_MIMGInfoTable_IMPL
+#define GET_MIMGLZMappingTable_IMPL
+#define GET_MIMGMIPMappingTable_IMPL
+#include "AMDGPUGenSearchableTables.inc"
+
+int getMIMGOpcode(unsigned BaseOpcode, unsigned MIMGEncoding,
+                  unsigned VDataDwords, unsigned VAddrDwords) {
+  const MIMGInfo *Info = getMIMGOpcodeHelper(BaseOpcode, MIMGEncoding,
+                                             VDataDwords, VAddrDwords);
+  return Info ? Info->Opcode : -1;
 }
 
-
-// FIXME: Need to handle d16 images correctly.
-static unsigned rcToChannels(unsigned RCID) {
-  switch (RCID) {
-  case AMDGPU::VGPR_32RegClassID:
-    return 1;
-  case AMDGPU::VReg_64RegClassID:
-    return 2;
-  case AMDGPU::VReg_96RegClassID:
-    return 3;
-  case AMDGPU::VReg_128RegClassID:
-    return 4;
-  default:
-    llvm_unreachable("invalid MIMG register class");
-  }
+const MIMGBaseOpcodeInfo *getMIMGBaseOpcode(unsigned Opc) {
+  const MIMGInfo *Info = getMIMGInfo(Opc);
+  return Info ? getMIMGBaseOpcodeInfo(Info->BaseOpcode) : nullptr;
 }
 
-int getMaskedMIMGOp(const MCInstrInfo &MII, unsigned Opc, unsigned NewChannels) {
-  AMDGPU::Channels Channel = AMDGPU::indexToChannel(NewChannels);
-  unsigned OrigChannels = rcToChannels(MII.get(Opc).OpInfo[0].RegClass);
-  if (NewChannels == OrigChannels)
-    return Opc;
+int getMaskedMIMGOp(unsigned Opc, unsigned NewChannels) {
+  const MIMGInfo *OrigInfo = getMIMGInfo(Opc);
+  const MIMGInfo *NewInfo =
+      getMIMGOpcodeHelper(OrigInfo->BaseOpcode, OrigInfo->MIMGEncoding,
+                          NewChannels, OrigInfo->VAddrDwords);
+  return NewInfo ? NewInfo->Opcode : -1;
+}
 
-  switch (OrigChannels) {
-  case 1:
-    return AMDGPU::getMaskedMIMGOp1(Opc, Channel);
-  case 2:
-    return AMDGPU::getMaskedMIMGOp2(Opc, Channel);
-  case 3:
-    return AMDGPU::getMaskedMIMGOp3(Opc, Channel);
-  case 4:
-    return AMDGPU::getMaskedMIMGOp4(Opc, Channel);
-  default:
-    llvm_unreachable("invalid MIMG channel");
-  }
+struct MUBUFInfo {
+  uint16_t Opcode;
+  uint16_t BaseOpcode;
+  uint8_t dwords;
+  bool has_vaddr;
+  bool has_srsrc;
+  bool has_soffset;
+};
+
+#define GET_MUBUFInfoTable_DECL
+#define GET_MUBUFInfoTable_IMPL
+#include "AMDGPUGenSearchableTables.inc"
+
+int getMUBUFBaseOpcode(unsigned Opc) {
+  const MUBUFInfo *Info = getMUBUFInfoFromOpcode(Opc);
+  return Info ? Info->BaseOpcode : -1;
+}
+
+int getMUBUFOpcode(unsigned BaseOpc, unsigned Dwords) {
+  const MUBUFInfo *Info = getMUBUFInfoFromBaseOpcodeAndDwords(BaseOpc, Dwords);
+  return Info ? Info->Opcode : -1;
+}
+
+int getMUBUFDwords(unsigned Opc) {
+  const MUBUFInfo *Info = getMUBUFOpcodeHelper(Opc);
+  return Info ? Info->dwords : 0;
+}
+
+bool getMUBUFHasVAddr(unsigned Opc) {
+  const MUBUFInfo *Info = getMUBUFOpcodeHelper(Opc);
+  return Info ? Info->has_vaddr : false;
+}
+
+bool getMUBUFHasSrsrc(unsigned Opc) {
+  const MUBUFInfo *Info = getMUBUFOpcodeHelper(Opc);
+  return Info ? Info->has_srsrc : false;
+}
+
+bool getMUBUFHasSoffset(unsigned Opc) {
+  const MUBUFInfo *Info = getMUBUFOpcodeHelper(Opc);
+  return Info ? Info->has_soffset : false;
 }
 
 // Wrapper for Tablegen'd function.  enum Subtarget is not defined in any
@@ -165,244 +180,270 @@ int getMCOpcode(uint16_t Opcode, unsigned Gen) {
 
 namespace IsaInfo {
 
-IsaVersion getIsaVersion(const FeatureBitset &Features) {
-  // GCN GFX6 (Southern Islands (SI)).
-  if (Features.test(FeatureISAVersion6_0_0))
-    return {6, 0, 0};
-  if (Features.test(FeatureISAVersion6_0_1))
-    return {6, 0, 1};
-
-  // GCN GFX7 (Sea Islands (CI)).
-  if (Features.test(FeatureISAVersion7_0_0))
-    return {7, 0, 0};
-  if (Features.test(FeatureISAVersion7_0_1))
-    return {7, 0, 1};
-  if (Features.test(FeatureISAVersion7_0_2))
-    return {7, 0, 2};
-  if (Features.test(FeatureISAVersion7_0_3))
-    return {7, 0, 3};
-  if (Features.test(FeatureISAVersion7_0_4))
-    return {7, 0, 4};
-
-  // GCN GFX8 (Volcanic Islands (VI)).
-  if (Features.test(FeatureISAVersion8_0_0))
-    return {8, 0, 0};
-  if (Features.test(FeatureISAVersion8_0_1))
-    return {8, 0, 1};
-  if (Features.test(FeatureISAVersion8_0_2))
-    return {8, 0, 2};
-  if (Features.test(FeatureISAVersion8_0_3))
-    return {8, 0, 3};
-  if (Features.test(FeatureISAVersion8_1_0))
-    return {8, 1, 0};
-
-  // GCN GFX9.
-  if (Features.test(FeatureISAVersion9_0_0))
-    return {9, 0, 0};
-  if (Features.test(FeatureISAVersion9_0_2))
-    return {9, 0, 2};
-
-  if (!Features.test(FeatureGCN) || Features.test(FeatureSouthernIslands))
-    return {0, 0, 0};
-  return {7, 0, 0};
-}
-
 void streamIsaVersion(const MCSubtargetInfo *STI, raw_ostream &Stream) {
   auto TargetTriple = STI->getTargetTriple();
-  auto ISAVersion = IsaInfo::getIsaVersion(STI->getFeatureBits());
+  auto Version = getIsaVersion(STI->getCPU());
 
   Stream << TargetTriple.getArchName() << '-'
          << TargetTriple.getVendorName() << '-'
          << TargetTriple.getOSName() << '-'
          << TargetTriple.getEnvironmentName() << '-'
          << "gfx"
-         << ISAVersion.Major
-         << ISAVersion.Minor
-         << ISAVersion.Stepping;
+         << Version.Major
+         << Version.Minor
+         << Version.Stepping;
+
+  if (hasXNACK(*STI))
+    Stream << "+xnack";
+  if (hasSRAMECC(*STI))
+    Stream << "+sram-ecc";
+
   Stream.flush();
 }
 
-bool hasCodeObjectV3(const FeatureBitset &Features) {
-  return Features.test(FeatureCodeObjectV3);
+bool hasCodeObjectV3(const MCSubtargetInfo *STI) {
+  return STI->getTargetTriple().getOS() == Triple::AMDHSA &&
+             STI->getFeatureBits().test(FeatureCodeObjectV3);
 }
 
-unsigned getWavefrontSize(const FeatureBitset &Features) {
-  if (Features.test(FeatureWavefrontSize16))
+unsigned getWavefrontSize(const MCSubtargetInfo *STI) {
+  if (STI->getFeatureBits().test(FeatureWavefrontSize16))
     return 16;
-  if (Features.test(FeatureWavefrontSize32))
+  if (STI->getFeatureBits().test(FeatureWavefrontSize32))
     return 32;
 
   return 64;
 }
 
-unsigned getLocalMemorySize(const FeatureBitset &Features) {
-  if (Features.test(FeatureLocalMemorySize32768))
+unsigned getLocalMemorySize(const MCSubtargetInfo *STI) {
+  if (STI->getFeatureBits().test(FeatureLocalMemorySize32768))
     return 32768;
-  if (Features.test(FeatureLocalMemorySize65536))
+  if (STI->getFeatureBits().test(FeatureLocalMemorySize65536))
     return 65536;
 
   return 0;
 }
 
-unsigned getEUsPerCU(const FeatureBitset &Features) {
+unsigned getEUsPerCU(const MCSubtargetInfo *STI) {
   return 4;
 }
 
-unsigned getMaxWorkGroupsPerCU(const FeatureBitset &Features,
+unsigned getMaxWorkGroupsPerCU(const MCSubtargetInfo *STI,
                                unsigned FlatWorkGroupSize) {
-  if (!Features.test(FeatureGCN))
+  assert(FlatWorkGroupSize != 0);
+  if (STI->getTargetTriple().getArch() != Triple::amdgcn)
     return 8;
-  unsigned N = getWavesPerWorkGroup(Features, FlatWorkGroupSize);
+  unsigned N = getWavesPerWorkGroup(STI, FlatWorkGroupSize);
   if (N == 1)
     return 40;
   N = 40 / N;
   return std::min(N, 16u);
 }
 
-unsigned getMaxWavesPerCU(const FeatureBitset &Features) {
-  return getMaxWavesPerEU(Features) * getEUsPerCU(Features);
+unsigned getMaxWavesPerCU(const MCSubtargetInfo *STI) {
+  return getMaxWavesPerEU() * getEUsPerCU(STI);
 }
 
-unsigned getMaxWavesPerCU(const FeatureBitset &Features,
+unsigned getMaxWavesPerCU(const MCSubtargetInfo *STI,
                           unsigned FlatWorkGroupSize) {
-  return getWavesPerWorkGroup(Features, FlatWorkGroupSize);
+  return getWavesPerWorkGroup(STI, FlatWorkGroupSize);
 }
 
-unsigned getMinWavesPerEU(const FeatureBitset &Features) {
+unsigned getMinWavesPerEU(const MCSubtargetInfo *STI) {
   return 1;
 }
 
-unsigned getMaxWavesPerEU(const FeatureBitset &Features) {
-  if (!Features.test(FeatureGCN))
-    return 8;
+unsigned getMaxWavesPerEU() {
   // FIXME: Need to take scratch memory into account.
   return 10;
 }
 
-unsigned getMaxWavesPerEU(const FeatureBitset &Features,
+unsigned getMaxWavesPerEU(const MCSubtargetInfo *STI,
                           unsigned FlatWorkGroupSize) {
-  return alignTo(getMaxWavesPerCU(Features, FlatWorkGroupSize),
-                 getEUsPerCU(Features)) / getEUsPerCU(Features);
+  return alignTo(getMaxWavesPerCU(STI, FlatWorkGroupSize),
+                 getEUsPerCU(STI)) / getEUsPerCU(STI);
 }
 
-unsigned getMinFlatWorkGroupSize(const FeatureBitset &Features) {
+unsigned getMinFlatWorkGroupSize(const MCSubtargetInfo *STI) {
   return 1;
 }
 
-unsigned getMaxFlatWorkGroupSize(const FeatureBitset &Features) {
+unsigned getMaxFlatWorkGroupSize(const MCSubtargetInfo *STI) {
   return 2048;
 }
 
-unsigned getWavesPerWorkGroup(const FeatureBitset &Features,
+unsigned getWavesPerWorkGroup(const MCSubtargetInfo *STI,
                               unsigned FlatWorkGroupSize) {
-  return alignTo(FlatWorkGroupSize, getWavefrontSize(Features)) /
-                 getWavefrontSize(Features);
+  return alignTo(FlatWorkGroupSize, getWavefrontSize(STI)) /
+                 getWavefrontSize(STI);
 }
 
-unsigned getSGPRAllocGranule(const FeatureBitset &Features) {
-  IsaVersion Version = getIsaVersion(Features);
+unsigned getSGPRAllocGranule(const MCSubtargetInfo *STI) {
+  IsaVersion Version = getIsaVersion(STI->getCPU());
+  if (Version.Major >= 10)
+    return getAddressableNumSGPRs(STI);
   if (Version.Major >= 8)
     return 16;
   return 8;
 }
 
-unsigned getSGPREncodingGranule(const FeatureBitset &Features) {
+unsigned getSGPREncodingGranule(const MCSubtargetInfo *STI) {
   return 8;
 }
 
-unsigned getTotalNumSGPRs(const FeatureBitset &Features) {
-  IsaVersion Version = getIsaVersion(Features);
+unsigned getTotalNumSGPRs(const MCSubtargetInfo *STI) {
+  IsaVersion Version = getIsaVersion(STI->getCPU());
   if (Version.Major >= 8)
     return 800;
   return 512;
 }
 
-unsigned getAddressableNumSGPRs(const FeatureBitset &Features) {
-  if (Features.test(FeatureSGPRInitBug))
+unsigned getAddressableNumSGPRs(const MCSubtargetInfo *STI) {
+  if (STI->getFeatureBits().test(FeatureSGPRInitBug))
     return FIXED_NUM_SGPRS_FOR_INIT_BUG;
 
-  IsaVersion Version = getIsaVersion(Features);
+  IsaVersion Version = getIsaVersion(STI->getCPU());
+  if (Version.Major >= 10)
+    return 106;
   if (Version.Major >= 8)
     return 102;
   return 104;
 }
 
-unsigned getMinNumSGPRs(const FeatureBitset &Features, unsigned WavesPerEU) {
+unsigned getMinNumSGPRs(const MCSubtargetInfo *STI, unsigned WavesPerEU) {
   assert(WavesPerEU != 0);
 
-  if (WavesPerEU >= getMaxWavesPerEU(Features))
+  IsaVersion Version = getIsaVersion(STI->getCPU());
+  if (Version.Major >= 10)
     return 0;
-  unsigned MinNumSGPRs =
-      alignDown(getTotalNumSGPRs(Features) / (WavesPerEU + 1),
-                getSGPRAllocGranule(Features)) + 1;
-  return std::min(MinNumSGPRs, getAddressableNumSGPRs(Features));
+
+  if (WavesPerEU >= getMaxWavesPerEU())
+    return 0;
+
+  unsigned MinNumSGPRs = getTotalNumSGPRs(STI) / (WavesPerEU + 1);
+  if (STI->getFeatureBits().test(FeatureTrapHandler))
+    MinNumSGPRs -= std::min(MinNumSGPRs, (unsigned)TRAP_NUM_SGPRS);
+  MinNumSGPRs = alignDown(MinNumSGPRs, getSGPRAllocGranule(STI)) + 1;
+  return std::min(MinNumSGPRs, getAddressableNumSGPRs(STI));
 }
 
-unsigned getMaxNumSGPRs(const FeatureBitset &Features, unsigned WavesPerEU,
+unsigned getMaxNumSGPRs(const MCSubtargetInfo *STI, unsigned WavesPerEU,
                         bool Addressable) {
   assert(WavesPerEU != 0);
 
-  IsaVersion Version = getIsaVersion(Features);
-  unsigned MaxNumSGPRs = alignDown(getTotalNumSGPRs(Features) / WavesPerEU,
-                                   getSGPRAllocGranule(Features));
-  unsigned AddressableNumSGPRs = getAddressableNumSGPRs(Features);
+  unsigned AddressableNumSGPRs = getAddressableNumSGPRs(STI);
+  IsaVersion Version = getIsaVersion(STI->getCPU());
+  if (Version.Major >= 10)
+    return Addressable ? AddressableNumSGPRs : 108;
   if (Version.Major >= 8 && !Addressable)
     AddressableNumSGPRs = 112;
+  unsigned MaxNumSGPRs = getTotalNumSGPRs(STI) / WavesPerEU;
+  if (STI->getFeatureBits().test(FeatureTrapHandler))
+    MaxNumSGPRs -= std::min(MaxNumSGPRs, (unsigned)TRAP_NUM_SGPRS);
+  MaxNumSGPRs = alignDown(MaxNumSGPRs, getSGPRAllocGranule(STI));
   return std::min(MaxNumSGPRs, AddressableNumSGPRs);
 }
 
-unsigned getVGPRAllocGranule(const FeatureBitset &Features) {
-  return 4;
+unsigned getNumExtraSGPRs(const MCSubtargetInfo *STI, bool VCCUsed,
+                          bool FlatScrUsed, bool XNACKUsed) {
+  unsigned ExtraSGPRs = 0;
+  if (VCCUsed)
+    ExtraSGPRs = 2;
+
+  IsaVersion Version = getIsaVersion(STI->getCPU());
+  if (Version.Major >= 10)
+    return ExtraSGPRs;
+
+  if (Version.Major < 8) {
+    if (FlatScrUsed)
+      ExtraSGPRs = 4;
+  } else {
+    if (XNACKUsed)
+      ExtraSGPRs = 4;
+
+    if (FlatScrUsed)
+      ExtraSGPRs = 6;
+  }
+
+  return ExtraSGPRs;
 }
 
-unsigned getVGPREncodingGranule(const FeatureBitset &Features) {
-  return getVGPRAllocGranule(Features);
+unsigned getNumExtraSGPRs(const MCSubtargetInfo *STI, bool VCCUsed,
+                          bool FlatScrUsed) {
+  return getNumExtraSGPRs(STI, VCCUsed, FlatScrUsed,
+                          STI->getFeatureBits().test(AMDGPU::FeatureXNACK));
 }
 
-unsigned getTotalNumVGPRs(const FeatureBitset &Features) {
+unsigned getNumSGPRBlocks(const MCSubtargetInfo *STI, unsigned NumSGPRs) {
+  NumSGPRs = alignTo(std::max(1u, NumSGPRs), getSGPREncodingGranule(STI));
+  // SGPRBlocks is actual number of SGPR blocks minus 1.
+  return NumSGPRs / getSGPREncodingGranule(STI) - 1;
+}
+
+unsigned getVGPRAllocGranule(const MCSubtargetInfo *STI,
+                             Optional<bool> EnableWavefrontSize32) {
+  bool IsWave32 = EnableWavefrontSize32 ?
+      *EnableWavefrontSize32 :
+      STI->getFeatureBits().test(FeatureWavefrontSize32);
+  return IsWave32 ? 8 : 4;
+}
+
+unsigned getVGPREncodingGranule(const MCSubtargetInfo *STI,
+                                Optional<bool> EnableWavefrontSize32) {
+  return getVGPRAllocGranule(STI, EnableWavefrontSize32);
+}
+
+unsigned getTotalNumVGPRs(const MCSubtargetInfo *STI) {
   return 256;
 }
 
-unsigned getAddressableNumVGPRs(const FeatureBitset &Features) {
-  return getTotalNumVGPRs(Features);
+unsigned getAddressableNumVGPRs(const MCSubtargetInfo *STI) {
+  return getTotalNumVGPRs(STI);
 }
 
-unsigned getMinNumVGPRs(const FeatureBitset &Features, unsigned WavesPerEU) {
+unsigned getMinNumVGPRs(const MCSubtargetInfo *STI, unsigned WavesPerEU) {
   assert(WavesPerEU != 0);
 
-  if (WavesPerEU >= getMaxWavesPerEU(Features))
+  if (WavesPerEU >= getMaxWavesPerEU())
     return 0;
   unsigned MinNumVGPRs =
-      alignDown(getTotalNumVGPRs(Features) / (WavesPerEU + 1),
-                getVGPRAllocGranule(Features)) + 1;
-  return std::min(MinNumVGPRs, getAddressableNumVGPRs(Features));
+      alignDown(getTotalNumVGPRs(STI) / (WavesPerEU + 1),
+                getVGPRAllocGranule(STI)) + 1;
+  return std::min(MinNumVGPRs, getAddressableNumVGPRs(STI));
 }
 
-unsigned getMaxNumVGPRs(const FeatureBitset &Features, unsigned WavesPerEU) {
+unsigned getMaxNumVGPRs(const MCSubtargetInfo *STI, unsigned WavesPerEU) {
   assert(WavesPerEU != 0);
 
-  unsigned MaxNumVGPRs = alignDown(getTotalNumVGPRs(Features) / WavesPerEU,
-                                   getVGPRAllocGranule(Features));
-  unsigned AddressableNumVGPRs = getAddressableNumVGPRs(Features);
+  unsigned MaxNumVGPRs = alignDown(getTotalNumVGPRs(STI) / WavesPerEU,
+                                   getVGPRAllocGranule(STI));
+  unsigned AddressableNumVGPRs = getAddressableNumVGPRs(STI);
   return std::min(MaxNumVGPRs, AddressableNumVGPRs);
+}
+
+unsigned getNumVGPRBlocks(const MCSubtargetInfo *STI, unsigned NumVGPRs,
+                          Optional<bool> EnableWavefrontSize32) {
+  NumVGPRs = alignTo(std::max(1u, NumVGPRs),
+                     getVGPREncodingGranule(STI, EnableWavefrontSize32));
+  // VGPRBlocks is actual number of VGPR blocks minus 1.
+  return NumVGPRs / getVGPREncodingGranule(STI, EnableWavefrontSize32) - 1;
 }
 
 } // end namespace IsaInfo
 
 void initDefaultAMDKernelCodeT(amd_kernel_code_t &Header,
-                               const FeatureBitset &Features) {
-  IsaInfo::IsaVersion ISA = IsaInfo::getIsaVersion(Features);
+                               const MCSubtargetInfo *STI) {
+  IsaVersion Version = getIsaVersion(STI->getCPU());
 
   memset(&Header, 0, sizeof(Header));
 
   Header.amd_kernel_code_version_major = 1;
-  Header.amd_kernel_code_version_minor = 1;
+  Header.amd_kernel_code_version_minor = 2;
   Header.amd_machine_kind = 1; // AMD_MACHINE_KIND_AMDGPU
-  Header.amd_machine_version_major = ISA.Major;
-  Header.amd_machine_version_minor = ISA.Minor;
-  Header.amd_machine_version_stepping = ISA.Stepping;
+  Header.amd_machine_version_major = Version.Major;
+  Header.amd_machine_version_minor = Version.Minor;
+  Header.amd_machine_version_stepping = Version.Stepping;
   Header.kernel_code_entry_byte_offset = sizeof(Header);
-  // wavefront_size is specified as a power of 2: 2^6 = 64 threads.
   Header.wavefront_size = 6;
 
   // If the code object does not support indirect functions, then the value must
@@ -414,6 +455,45 @@ void initDefaultAMDKernelCodeT(amd_kernel_code_t &Header,
   Header.kernarg_segment_alignment = 4;
   Header.group_segment_alignment = 4;
   Header.private_segment_alignment = 4;
+
+  if (Version.Major >= 10) {
+    if (STI->getFeatureBits().test(FeatureWavefrontSize32)) {
+      Header.wavefront_size = 5;
+      Header.code_properties |= AMD_CODE_PROPERTY_ENABLE_WAVEFRONT_SIZE32;
+    }
+    Header.compute_pgm_resource_registers |=
+      S_00B848_WGP_MODE(STI->getFeatureBits().test(FeatureCuMode) ? 0 : 1) |
+      S_00B848_MEM_ORDERED(1);
+  }
+}
+
+amdhsa::kernel_descriptor_t getDefaultAmdhsaKernelDescriptor(
+    const MCSubtargetInfo *STI) {
+  IsaVersion Version = getIsaVersion(STI->getCPU());
+
+  amdhsa::kernel_descriptor_t KD;
+  memset(&KD, 0, sizeof(KD));
+
+  AMDHSA_BITS_SET(KD.compute_pgm_rsrc1,
+                  amdhsa::COMPUTE_PGM_RSRC1_FLOAT_DENORM_MODE_16_64,
+                  amdhsa::FLOAT_DENORM_MODE_FLUSH_NONE);
+  AMDHSA_BITS_SET(KD.compute_pgm_rsrc1,
+                  amdhsa::COMPUTE_PGM_RSRC1_ENABLE_DX10_CLAMP, 1);
+  AMDHSA_BITS_SET(KD.compute_pgm_rsrc1,
+                  amdhsa::COMPUTE_PGM_RSRC1_ENABLE_IEEE_MODE, 1);
+  AMDHSA_BITS_SET(KD.compute_pgm_rsrc2,
+                  amdhsa::COMPUTE_PGM_RSRC2_ENABLE_SGPR_WORKGROUP_ID_X, 1);
+  if (Version.Major >= 10) {
+    AMDHSA_BITS_SET(KD.kernel_code_properties,
+                    amdhsa::KERNEL_CODE_PROPERTY_ENABLE_WAVEFRONT_SIZE32,
+                    STI->getFeatureBits().test(FeatureWavefrontSize32) ? 1 : 0);
+    AMDHSA_BITS_SET(KD.compute_pgm_rsrc1,
+                    amdhsa::COMPUTE_PGM_RSRC1_WGP_MODE,
+                    STI->getFeatureBits().test(FeatureCuMode) ? 0 : 1);
+    AMDHSA_BITS_SET(KD.compute_pgm_rsrc1,
+                    amdhsa::COMPUTE_PGM_RSRC1_MEM_ORDERED, 1);
+  }
+  return KD;
 }
 
 bool isGroupSegment(const GlobalValue *GV) {
@@ -425,7 +505,8 @@ bool isGlobalSegment(const GlobalValue *GV) {
 }
 
 bool isReadOnlySegment(const GlobalValue *GV) {
-  return GV->getType()->getAddressSpace() == AMDGPUAS::CONSTANT_ADDRESS;
+  return GV->getType()->getAddressSpace() == AMDGPUAS::CONSTANT_ADDRESS ||
+         GV->getType()->getAddressSpace() == AMDGPUAS::CONSTANT_ADDRESS_32BIT;
 }
 
 bool shouldEmitConstantsToTextSection(const Triple &TT) {
@@ -472,7 +553,7 @@ std::pair<int, int> getIntegerPairAttribute(const Function &F,
   return Ints;
 }
 
-unsigned getVmcntBitMask(const IsaInfo::IsaVersion &Version) {
+unsigned getVmcntBitMask(const IsaVersion &Version) {
   unsigned VmcntLo = (1 << getVmcntBitWidthLo()) - 1;
   if (Version.Major < 9)
     return VmcntLo;
@@ -481,18 +562,19 @@ unsigned getVmcntBitMask(const IsaInfo::IsaVersion &Version) {
   return VmcntLo | VmcntHi;
 }
 
-unsigned getExpcntBitMask(const IsaInfo::IsaVersion &Version) {
+unsigned getExpcntBitMask(const IsaVersion &Version) {
   return (1 << getExpcntBitWidth()) - 1;
 }
 
-unsigned getLgkmcntBitMask(const IsaInfo::IsaVersion &Version) {
-  return (1 << getLgkmcntBitWidth()) - 1;
+unsigned getLgkmcntBitMask(const IsaVersion &Version) {
+  return (1 << getLgkmcntBitWidth(Version.Major)) - 1;
 }
 
-unsigned getWaitcntBitMask(const IsaInfo::IsaVersion &Version) {
+unsigned getWaitcntBitMask(const IsaVersion &Version) {
   unsigned VmcntLo = getBitMask(getVmcntBitShiftLo(), getVmcntBitWidthLo());
   unsigned Expcnt = getBitMask(getExpcntBitShift(), getExpcntBitWidth());
-  unsigned Lgkmcnt = getBitMask(getLgkmcntBitShift(), getLgkmcntBitWidth());
+  unsigned Lgkmcnt = getBitMask(getLgkmcntBitShift(),
+                                getLgkmcntBitWidth(Version.Major));
   unsigned Waitcnt = VmcntLo | Expcnt | Lgkmcnt;
   if (Version.Major < 9)
     return Waitcnt;
@@ -501,7 +583,7 @@ unsigned getWaitcntBitMask(const IsaInfo::IsaVersion &Version) {
   return Waitcnt | VmcntHi;
 }
 
-unsigned decodeVmcnt(const IsaInfo::IsaVersion &Version, unsigned Waitcnt) {
+unsigned decodeVmcnt(const IsaVersion &Version, unsigned Waitcnt) {
   unsigned VmcntLo =
       unpackBits(Waitcnt, getVmcntBitShiftLo(), getVmcntBitWidthLo());
   if (Version.Major < 9)
@@ -513,22 +595,31 @@ unsigned decodeVmcnt(const IsaInfo::IsaVersion &Version, unsigned Waitcnt) {
   return VmcntLo | VmcntHi;
 }
 
-unsigned decodeExpcnt(const IsaInfo::IsaVersion &Version, unsigned Waitcnt) {
+unsigned decodeExpcnt(const IsaVersion &Version, unsigned Waitcnt) {
   return unpackBits(Waitcnt, getExpcntBitShift(), getExpcntBitWidth());
 }
 
-unsigned decodeLgkmcnt(const IsaInfo::IsaVersion &Version, unsigned Waitcnt) {
-  return unpackBits(Waitcnt, getLgkmcntBitShift(), getLgkmcntBitWidth());
+unsigned decodeLgkmcnt(const IsaVersion &Version, unsigned Waitcnt) {
+  return unpackBits(Waitcnt, getLgkmcntBitShift(),
+                    getLgkmcntBitWidth(Version.Major));
 }
 
-void decodeWaitcnt(const IsaInfo::IsaVersion &Version, unsigned Waitcnt,
+void decodeWaitcnt(const IsaVersion &Version, unsigned Waitcnt,
                    unsigned &Vmcnt, unsigned &Expcnt, unsigned &Lgkmcnt) {
   Vmcnt = decodeVmcnt(Version, Waitcnt);
   Expcnt = decodeExpcnt(Version, Waitcnt);
   Lgkmcnt = decodeLgkmcnt(Version, Waitcnt);
 }
 
-unsigned encodeVmcnt(const IsaInfo::IsaVersion &Version, unsigned Waitcnt,
+Waitcnt decodeWaitcnt(const IsaVersion &Version, unsigned Encoded) {
+  Waitcnt Decoded;
+  Decoded.VmCnt = decodeVmcnt(Version, Encoded);
+  Decoded.ExpCnt = decodeExpcnt(Version, Encoded);
+  Decoded.LgkmCnt = decodeLgkmcnt(Version, Encoded);
+  return Decoded;
+}
+
+unsigned encodeVmcnt(const IsaVersion &Version, unsigned Waitcnt,
                      unsigned Vmcnt) {
   Waitcnt =
       packBits(Vmcnt, Waitcnt, getVmcntBitShiftLo(), getVmcntBitWidthLo());
@@ -539,17 +630,18 @@ unsigned encodeVmcnt(const IsaInfo::IsaVersion &Version, unsigned Waitcnt,
   return packBits(Vmcnt, Waitcnt, getVmcntBitShiftHi(), getVmcntBitWidthHi());
 }
 
-unsigned encodeExpcnt(const IsaInfo::IsaVersion &Version, unsigned Waitcnt,
+unsigned encodeExpcnt(const IsaVersion &Version, unsigned Waitcnt,
                       unsigned Expcnt) {
   return packBits(Expcnt, Waitcnt, getExpcntBitShift(), getExpcntBitWidth());
 }
 
-unsigned encodeLgkmcnt(const IsaInfo::IsaVersion &Version, unsigned Waitcnt,
+unsigned encodeLgkmcnt(const IsaVersion &Version, unsigned Waitcnt,
                        unsigned Lgkmcnt) {
-  return packBits(Lgkmcnt, Waitcnt, getLgkmcntBitShift(), getLgkmcntBitWidth());
+  return packBits(Lgkmcnt, Waitcnt, getLgkmcntBitShift(),
+                                    getLgkmcntBitWidth(Version.Major));
 }
 
-unsigned encodeWaitcnt(const IsaInfo::IsaVersion &Version,
+unsigned encodeWaitcnt(const IsaVersion &Version,
                        unsigned Vmcnt, unsigned Expcnt, unsigned Lgkmcnt) {
   unsigned Waitcnt = getWaitcntBitMask(Version);
   Waitcnt = encodeVmcnt(Version, Waitcnt, Vmcnt);
@@ -557,6 +649,185 @@ unsigned encodeWaitcnt(const IsaInfo::IsaVersion &Version,
   Waitcnt = encodeLgkmcnt(Version, Waitcnt, Lgkmcnt);
   return Waitcnt;
 }
+
+unsigned encodeWaitcnt(const IsaVersion &Version, const Waitcnt &Decoded) {
+  return encodeWaitcnt(Version, Decoded.VmCnt, Decoded.ExpCnt, Decoded.LgkmCnt);
+}
+
+//===----------------------------------------------------------------------===//
+// hwreg
+//===----------------------------------------------------------------------===//
+
+namespace Hwreg {
+
+int64_t getHwregId(const StringRef Name) {
+  for (int Id = ID_SYMBOLIC_FIRST_; Id < ID_SYMBOLIC_LAST_; ++Id) {
+    if (IdSymbolic[Id] && Name == IdSymbolic[Id])
+      return Id;
+  }
+  return ID_UNKNOWN_;
+}
+
+static unsigned getLastSymbolicHwreg(const MCSubtargetInfo &STI) {
+  if (isSI(STI) || isCI(STI) || isVI(STI))
+    return ID_SYMBOLIC_FIRST_GFX9_;
+  else if (isGFX9(STI))
+    return ID_SYMBOLIC_FIRST_GFX10_;
+  else
+    return ID_SYMBOLIC_LAST_;
+}
+
+bool isValidHwreg(int64_t Id, const MCSubtargetInfo &STI) {
+  return ID_SYMBOLIC_FIRST_ <= Id && Id < getLastSymbolicHwreg(STI) &&
+         IdSymbolic[Id];
+}
+
+bool isValidHwreg(int64_t Id) {
+  return 0 <= Id && isUInt<ID_WIDTH_>(Id);
+}
+
+bool isValidHwregOffset(int64_t Offset) {
+  return 0 <= Offset && isUInt<OFFSET_WIDTH_>(Offset);
+}
+
+bool isValidHwregWidth(int64_t Width) {
+  return 0 <= (Width - 1) && isUInt<WIDTH_M1_WIDTH_>(Width - 1);
+}
+
+uint64_t encodeHwreg(uint64_t Id, uint64_t Offset, uint64_t Width) {
+  return (Id << ID_SHIFT_) |
+         (Offset << OFFSET_SHIFT_) |
+         ((Width - 1) << WIDTH_M1_SHIFT_);
+}
+
+StringRef getHwreg(unsigned Id, const MCSubtargetInfo &STI) {
+  return isValidHwreg(Id, STI) ? IdSymbolic[Id] : "";
+}
+
+void decodeHwreg(unsigned Val, unsigned &Id, unsigned &Offset, unsigned &Width) {
+  Id = (Val & ID_MASK_) >> ID_SHIFT_;
+  Offset = (Val & OFFSET_MASK_) >> OFFSET_SHIFT_;
+  Width = ((Val & WIDTH_M1_MASK_) >> WIDTH_M1_SHIFT_) + 1;
+}
+
+} // namespace Hwreg
+
+//===----------------------------------------------------------------------===//
+// SendMsg
+//===----------------------------------------------------------------------===//
+
+namespace SendMsg {
+
+int64_t getMsgId(const StringRef Name) {
+  for (int i = ID_GAPS_FIRST_; i < ID_GAPS_LAST_; ++i) {
+    if (IdSymbolic[i] && Name == IdSymbolic[i])
+      return i;
+  }
+  return ID_UNKNOWN_;
+}
+
+static bool isValidMsgId(int64_t MsgId) {
+  return (ID_GAPS_FIRST_ <= MsgId && MsgId < ID_GAPS_LAST_) && IdSymbolic[MsgId];
+}
+
+bool isValidMsgId(int64_t MsgId, const MCSubtargetInfo &STI, bool Strict) {
+  if (Strict) {
+    if (MsgId == ID_GS_ALLOC_REQ || MsgId == ID_GET_DOORBELL)
+      return isGFX9(STI) || isGFX10(STI);
+    else
+      return isValidMsgId(MsgId);
+  } else {
+    return 0 <= MsgId && isUInt<ID_WIDTH_>(MsgId);
+  }
+}
+
+StringRef getMsgName(int64_t MsgId) {
+  return isValidMsgId(MsgId)? IdSymbolic[MsgId] : "";
+}
+
+int64_t getMsgOpId(int64_t MsgId, const StringRef Name) {
+  const char* const *S = (MsgId == ID_SYSMSG) ? OpSysSymbolic : OpGsSymbolic;
+  const int F = (MsgId == ID_SYSMSG) ? OP_SYS_FIRST_ : OP_GS_FIRST_;
+  const int L = (MsgId == ID_SYSMSG) ? OP_SYS_LAST_ : OP_GS_LAST_;
+  for (int i = F; i < L; ++i) {
+    if (Name == S[i]) {
+      return i;
+    }
+  }
+  return OP_UNKNOWN_;
+}
+
+bool isValidMsgOp(int64_t MsgId, int64_t OpId, bool Strict) {
+
+  if (!Strict)
+    return 0 <= OpId && isUInt<OP_WIDTH_>(OpId);
+
+  switch(MsgId)
+  {
+  case ID_GS:
+    return (OP_GS_FIRST_ <= OpId && OpId < OP_GS_LAST_) && OpId != OP_GS_NOP;
+  case ID_GS_DONE:
+    return OP_GS_FIRST_ <= OpId && OpId < OP_GS_LAST_;
+  case ID_SYSMSG:
+    return OP_SYS_FIRST_ <= OpId && OpId < OP_SYS_LAST_;
+  default:
+    return OpId == OP_NONE_;
+  }
+}
+
+StringRef getMsgOpName(int64_t MsgId, int64_t OpId) {
+  assert(msgRequiresOp(MsgId));
+  return (MsgId == ID_SYSMSG)? OpSysSymbolic[OpId] : OpGsSymbolic[OpId];
+}
+
+bool isValidMsgStream(int64_t MsgId, int64_t OpId, int64_t StreamId, bool Strict) {
+
+  if (!Strict)
+    return 0 <= StreamId && isUInt<STREAM_ID_WIDTH_>(StreamId);
+
+  switch(MsgId)
+  {
+  case ID_GS:
+    return STREAM_ID_FIRST_ <= StreamId && StreamId < STREAM_ID_LAST_;
+  case ID_GS_DONE:
+    return (OpId == OP_GS_NOP)?
+           (StreamId == STREAM_ID_NONE_) :
+           (STREAM_ID_FIRST_ <= StreamId && StreamId < STREAM_ID_LAST_);
+  default:
+    return StreamId == STREAM_ID_NONE_;
+  }
+}
+
+bool msgRequiresOp(int64_t MsgId) {
+  return MsgId == ID_GS || MsgId == ID_GS_DONE || MsgId == ID_SYSMSG;
+}
+
+bool msgSupportsStream(int64_t MsgId, int64_t OpId) {
+  return (MsgId == ID_GS || MsgId == ID_GS_DONE) && OpId != OP_GS_NOP;
+}
+
+void decodeMsg(unsigned Val,
+               uint16_t &MsgId,
+               uint16_t &OpId,
+               uint16_t &StreamId) {
+  MsgId = Val & ID_MASK_;
+  OpId = (Val & OP_MASK_) >> OP_SHIFT_;
+  StreamId = (Val & STREAM_ID_MASK_) >> STREAM_ID_SHIFT_;
+}
+
+uint64_t encodeMsg(uint64_t MsgId,
+                   uint64_t OpId,
+                   uint64_t StreamId) {
+  return (MsgId << ID_SHIFT_) |
+         (OpId << OP_SHIFT_) |
+         (StreamId << STREAM_ID_SHIFT_);
+}
+
+} // namespace SendMsg
+
+//===----------------------------------------------------------------------===//
+//
+//===----------------------------------------------------------------------===//
 
 unsigned getInitialPSInputAddr(const Function &F) {
   return getIntegerAttribute(F, "InitialPSInputAddr", 0);
@@ -598,6 +869,22 @@ bool isEntryFunctionCC(CallingConv::ID CC) {
   }
 }
 
+bool hasXNACK(const MCSubtargetInfo &STI) {
+  return STI.getFeatureBits()[AMDGPU::FeatureXNACK];
+}
+
+bool hasSRAMECC(const MCSubtargetInfo &STI) {
+  return STI.getFeatureBits()[AMDGPU::FeatureSRAMECC];
+}
+
+bool hasMIMG_R128(const MCSubtargetInfo &STI) {
+  return STI.getFeatureBits()[AMDGPU::FeatureMIMG_R128];
+}
+
+bool hasPackedD16(const MCSubtargetInfo &STI) {
+  return !STI.getFeatureBits()[AMDGPU::FeatureUnpackedD16VMem];
+}
+
 bool isSI(const MCSubtargetInfo &STI) {
   return STI.getFeatureBits()[AMDGPU::FeatureSouthernIslands];
 }
@@ -612,6 +899,10 @@ bool isVI(const MCSubtargetInfo &STI) {
 
 bool isGFX9(const MCSubtargetInfo &STI) {
   return STI.getFeatureBits()[AMDGPU::FeatureGFX9];
+}
+
+bool isGFX10(const MCSubtargetInfo &STI) {
+  return STI.getFeatureBits()[AMDGPU::FeatureGFX10];
 }
 
 bool isGCN3Encoding(const MCSubtargetInfo &STI) {
@@ -639,63 +930,65 @@ bool isRegIntersect(unsigned Reg0, unsigned Reg1, const MCRegisterInfo* TRI) {
   CASE_CI_VI(FLAT_SCR) \
   CASE_CI_VI(FLAT_SCR_LO) \
   CASE_CI_VI(FLAT_SCR_HI) \
-  CASE_VI_GFX9(TTMP0) \
-  CASE_VI_GFX9(TTMP1) \
-  CASE_VI_GFX9(TTMP2) \
-  CASE_VI_GFX9(TTMP3) \
-  CASE_VI_GFX9(TTMP4) \
-  CASE_VI_GFX9(TTMP5) \
-  CASE_VI_GFX9(TTMP6) \
-  CASE_VI_GFX9(TTMP7) \
-  CASE_VI_GFX9(TTMP8) \
-  CASE_VI_GFX9(TTMP9) \
-  CASE_VI_GFX9(TTMP10) \
-  CASE_VI_GFX9(TTMP11) \
-  CASE_VI_GFX9(TTMP12) \
-  CASE_VI_GFX9(TTMP13) \
-  CASE_VI_GFX9(TTMP14) \
-  CASE_VI_GFX9(TTMP15) \
-  CASE_VI_GFX9(TTMP0_TTMP1) \
-  CASE_VI_GFX9(TTMP2_TTMP3) \
-  CASE_VI_GFX9(TTMP4_TTMP5) \
-  CASE_VI_GFX9(TTMP6_TTMP7) \
-  CASE_VI_GFX9(TTMP8_TTMP9) \
-  CASE_VI_GFX9(TTMP10_TTMP11) \
-  CASE_VI_GFX9(TTMP12_TTMP13) \
-  CASE_VI_GFX9(TTMP14_TTMP15) \
-  CASE_VI_GFX9(TTMP0_TTMP1_TTMP2_TTMP3) \
-  CASE_VI_GFX9(TTMP4_TTMP5_TTMP6_TTMP7) \
-  CASE_VI_GFX9(TTMP8_TTMP9_TTMP10_TTMP11) \
-  CASE_VI_GFX9(TTMP12_TTMP13_TTMP14_TTMP15) \
-  CASE_VI_GFX9(TTMP0_TTMP1_TTMP2_TTMP3_TTMP4_TTMP5_TTMP6_TTMP7) \
-  CASE_VI_GFX9(TTMP4_TTMP5_TTMP6_TTMP7_TTMP8_TTMP9_TTMP10_TTMP11) \
-  CASE_VI_GFX9(TTMP8_TTMP9_TTMP10_TTMP11_TTMP12_TTMP13_TTMP14_TTMP15) \
-  CASE_VI_GFX9(TTMP0_TTMP1_TTMP2_TTMP3_TTMP4_TTMP5_TTMP6_TTMP7_TTMP8_TTMP9_TTMP10_TTMP11_TTMP12_TTMP13_TTMP14_TTMP15) \
+  CASE_VI_GFX9_GFX10(TTMP0) \
+  CASE_VI_GFX9_GFX10(TTMP1) \
+  CASE_VI_GFX9_GFX10(TTMP2) \
+  CASE_VI_GFX9_GFX10(TTMP3) \
+  CASE_VI_GFX9_GFX10(TTMP4) \
+  CASE_VI_GFX9_GFX10(TTMP5) \
+  CASE_VI_GFX9_GFX10(TTMP6) \
+  CASE_VI_GFX9_GFX10(TTMP7) \
+  CASE_VI_GFX9_GFX10(TTMP8) \
+  CASE_VI_GFX9_GFX10(TTMP9) \
+  CASE_VI_GFX9_GFX10(TTMP10) \
+  CASE_VI_GFX9_GFX10(TTMP11) \
+  CASE_VI_GFX9_GFX10(TTMP12) \
+  CASE_VI_GFX9_GFX10(TTMP13) \
+  CASE_VI_GFX9_GFX10(TTMP14) \
+  CASE_VI_GFX9_GFX10(TTMP15) \
+  CASE_VI_GFX9_GFX10(TTMP0_TTMP1) \
+  CASE_VI_GFX9_GFX10(TTMP2_TTMP3) \
+  CASE_VI_GFX9_GFX10(TTMP4_TTMP5) \
+  CASE_VI_GFX9_GFX10(TTMP6_TTMP7) \
+  CASE_VI_GFX9_GFX10(TTMP8_TTMP9) \
+  CASE_VI_GFX9_GFX10(TTMP10_TTMP11) \
+  CASE_VI_GFX9_GFX10(TTMP12_TTMP13) \
+  CASE_VI_GFX9_GFX10(TTMP14_TTMP15) \
+  CASE_VI_GFX9_GFX10(TTMP0_TTMP1_TTMP2_TTMP3) \
+  CASE_VI_GFX9_GFX10(TTMP4_TTMP5_TTMP6_TTMP7) \
+  CASE_VI_GFX9_GFX10(TTMP8_TTMP9_TTMP10_TTMP11) \
+  CASE_VI_GFX9_GFX10(TTMP12_TTMP13_TTMP14_TTMP15) \
+  CASE_VI_GFX9_GFX10(TTMP0_TTMP1_TTMP2_TTMP3_TTMP4_TTMP5_TTMP6_TTMP7) \
+  CASE_VI_GFX9_GFX10(TTMP4_TTMP5_TTMP6_TTMP7_TTMP8_TTMP9_TTMP10_TTMP11) \
+  CASE_VI_GFX9_GFX10(TTMP8_TTMP9_TTMP10_TTMP11_TTMP12_TTMP13_TTMP14_TTMP15) \
+  CASE_VI_GFX9_GFX10(TTMP0_TTMP1_TTMP2_TTMP3_TTMP4_TTMP5_TTMP6_TTMP7_TTMP8_TTMP9_TTMP10_TTMP11_TTMP12_TTMP13_TTMP14_TTMP15) \
   }
 
 #define CASE_CI_VI(node) \
   assert(!isSI(STI)); \
   case node: return isCI(STI) ? node##_ci : node##_vi;
 
-#define CASE_VI_GFX9(node) \
-  case node: return isGFX9(STI) ? node##_gfx9 : node##_vi;
+#define CASE_VI_GFX9_GFX10(node) \
+  case node: return (isGFX9(STI) || isGFX10(STI)) ? node##_gfx9_gfx10 : node##_vi;
 
 unsigned getMCReg(unsigned Reg, const MCSubtargetInfo &STI) {
+  if (STI.getTargetTriple().getArch() == Triple::r600)
+    return Reg;
   MAP_REG2REG
 }
 
 #undef CASE_CI_VI
-#undef CASE_VI_GFX9
+#undef CASE_VI_GFX9_GFX10
 
 #define CASE_CI_VI(node)   case node##_ci: case node##_vi:   return node;
-#define CASE_VI_GFX9(node) case node##_vi: case node##_gfx9: return node;
+#define CASE_VI_GFX9_GFX10(node) case node##_vi: case node##_gfx9_gfx10: return node;
 
 unsigned mc2PseudoReg(unsigned Reg) {
   MAP_REG2REG
 }
 
 #undef CASE_CI_VI
-#undef CASE_VI_GFX9
+#undef CASE_VI_GFX9_GFX10
 #undef MAP_REG2REG
 
 bool isSISrcOperand(const MCInstrDesc &Desc, unsigned OpNo) {
@@ -712,10 +1005,17 @@ bool isSISrcFPOperand(const MCInstrDesc &Desc, unsigned OpNo) {
   case AMDGPU::OPERAND_REG_IMM_FP32:
   case AMDGPU::OPERAND_REG_IMM_FP64:
   case AMDGPU::OPERAND_REG_IMM_FP16:
+  case AMDGPU::OPERAND_REG_IMM_V2FP16:
+  case AMDGPU::OPERAND_REG_IMM_V2INT16:
   case AMDGPU::OPERAND_REG_INLINE_C_FP32:
   case AMDGPU::OPERAND_REG_INLINE_C_FP64:
   case AMDGPU::OPERAND_REG_INLINE_C_FP16:
   case AMDGPU::OPERAND_REG_INLINE_C_V2FP16:
+  case AMDGPU::OPERAND_REG_INLINE_C_V2INT16:
+  case AMDGPU::OPERAND_REG_INLINE_AC_FP32:
+  case AMDGPU::OPERAND_REG_INLINE_AC_FP16:
+  case AMDGPU::OPERAND_REG_INLINE_AC_V2FP16:
+  case AMDGPU::OPERAND_REG_INLINE_AC_V2INT16:
     return true;
   default:
     return false;
@@ -735,27 +1035,46 @@ unsigned getRegBitWidth(unsigned RCID) {
   switch (RCID) {
   case AMDGPU::SGPR_32RegClassID:
   case AMDGPU::VGPR_32RegClassID:
+  case AMDGPU::VRegOrLds_32RegClassID:
+  case AMDGPU::AGPR_32RegClassID:
   case AMDGPU::VS_32RegClassID:
+  case AMDGPU::AV_32RegClassID:
   case AMDGPU::SReg_32RegClassID:
   case AMDGPU::SReg_32_XM0RegClassID:
+  case AMDGPU::SRegOrLds_32RegClassID:
     return 32;
   case AMDGPU::SGPR_64RegClassID:
   case AMDGPU::VS_64RegClassID:
+  case AMDGPU::AV_64RegClassID:
   case AMDGPU::SReg_64RegClassID:
   case AMDGPU::VReg_64RegClassID:
+  case AMDGPU::AReg_64RegClassID:
+  case AMDGPU::SReg_64_XEXECRegClassID:
     return 64;
+  case AMDGPU::SGPR_96RegClassID:
+  case AMDGPU::SReg_96RegClassID:
   case AMDGPU::VReg_96RegClassID:
     return 96;
   case AMDGPU::SGPR_128RegClassID:
   case AMDGPU::SReg_128RegClassID:
   case AMDGPU::VReg_128RegClassID:
+  case AMDGPU::AReg_128RegClassID:
     return 128;
+  case AMDGPU::SGPR_160RegClassID:
+  case AMDGPU::SReg_160RegClassID:
+  case AMDGPU::VReg_160RegClassID:
+    return 160;
   case AMDGPU::SReg_256RegClassID:
   case AMDGPU::VReg_256RegClassID:
     return 256;
   case AMDGPU::SReg_512RegClassID:
   case AMDGPU::VReg_512RegClassID:
+  case AMDGPU::AReg_512RegClassID:
     return 512;
+  case AMDGPU::SReg_1024RegClassID:
+  case AMDGPU::VReg_1024RegClassID:
+  case AMDGPU::AReg_1024RegClassID:
+    return 1024;
   default:
     llvm_unreachable("Unexpected register class");
   }
@@ -837,8 +1156,12 @@ bool isInlinableLiteral16(int16_t Literal, bool HasInv2Pi) {
 bool isInlinableLiteralV216(int32_t Literal, bool HasInv2Pi) {
   assert(HasInv2Pi);
 
-  if (!EnablePackedInlinableLiterals)
-    return false;
+  if (isInt<16>(Literal) || isUInt<16>(Literal)) {
+    int16_t Trunc = static_cast<int16_t>(Literal);
+    return AMDGPU::isInlinableLiteral16(Trunc, HasInv2Pi);
+  }
+  if (!(Literal & 0xffff))
+    return AMDGPU::isInlinableLiteral16(Literal >> 16, HasInv2Pi);
 
   int16_t Lo16 = static_cast<int16_t>(Literal);
   int16_t Hi16 = static_cast<int16_t>(Literal >> 16);
@@ -871,47 +1194,96 @@ bool isArgPassedInSGPR(const Argument *A) {
   }
 }
 
+static bool hasSMEMByteOffset(const MCSubtargetInfo &ST) {
+  return isGCN3Encoding(ST) || isGFX10(ST);
+}
+
 int64_t getSMRDEncodedOffset(const MCSubtargetInfo &ST, int64_t ByteOffset) {
-  if (isGCN3Encoding(ST))
+  if (hasSMEMByteOffset(ST))
     return ByteOffset;
   return ByteOffset >> 2;
 }
 
 bool isLegalSMRDImmOffset(const MCSubtargetInfo &ST, int64_t ByteOffset) {
   int64_t EncodedOffset = getSMRDEncodedOffset(ST, ByteOffset);
-  return isGCN3Encoding(ST) ?
+  return (hasSMEMByteOffset(ST)) ?
     isUInt<20>(EncodedOffset) : isUInt<8>(EncodedOffset);
 }
 
-} // end namespace AMDGPU
+// Given Imm, split it into the values to put into the SOffset and ImmOffset
+// fields in an MUBUF instruction. Return false if it is not possible (due to a
+// hardware bug needing a workaround).
+//
+// The required alignment ensures that individual address components remain
+// aligned if they are aligned to begin with. It also ensures that additional
+// offsets within the given alignment can be added to the resulting ImmOffset.
+bool splitMUBUFOffset(uint32_t Imm, uint32_t &SOffset, uint32_t &ImmOffset,
+                      const GCNSubtarget *Subtarget, uint32_t Align) {
+  const uint32_t MaxImm = alignDown(4095, Align);
+  uint32_t Overflow = 0;
 
-} // end namespace llvm
-
-namespace llvm {
-namespace AMDGPU {
-
-AMDGPUAS getAMDGPUAS(Triple T) {
-  auto Env = T.getEnvironmentName();
-  AMDGPUAS AS;
-  if (Env == "amdgiz" || Env == "amdgizcl") {
-    AS.FLAT_ADDRESS     = 0;
-    AS.PRIVATE_ADDRESS  = 5;
-    AS.REGION_ADDRESS   = 4;
+  if (Imm > MaxImm) {
+    if (Imm <= MaxImm + 64) {
+      // Use an SOffset inline constant for 4..64
+      Overflow = Imm - MaxImm;
+      Imm = MaxImm;
+    } else {
+      // Try to keep the same value in SOffset for adjacent loads, so that
+      // the corresponding register contents can be re-used.
+      //
+      // Load values with all low-bits (except for alignment bits) set into
+      // SOffset, so that a larger range of values can be covered using
+      // s_movk_i32.
+      //
+      // Atomic operations fail to work correctly when individual address
+      // components are unaligned, even if their sum is aligned.
+      uint32_t High = (Imm + Align) & ~4095;
+      uint32_t Low = (Imm + Align) & 4095;
+      Imm = Low;
+      Overflow = High - Align;
+    }
   }
-  else {
-    AS.FLAT_ADDRESS     = 4;
-    AS.PRIVATE_ADDRESS  = 0;
-    AS.REGION_ADDRESS   = 5;
-   }
-  return AS;
+
+  // There is a hardware bug in SI and CI which prevents address clamping in
+  // MUBUF instructions from working correctly with SOffsets. The immediate
+  // offset is unaffected.
+  if (Overflow > 0 &&
+      Subtarget->getGeneration() <= AMDGPUSubtarget::SEA_ISLANDS)
+    return false;
+
+  ImmOffset = Imm;
+  SOffset = Overflow;
+  return true;
 }
 
-AMDGPUAS getAMDGPUAS(const TargetMachine &M) {
-  return getAMDGPUAS(M.getTargetTriple());
+SIModeRegisterDefaults::SIModeRegisterDefaults(const Function &F) {
+  *this = getDefaultForCallingConv(F.getCallingConv());
+
+  StringRef IEEEAttr = F.getFnAttribute("amdgpu-ieee").getValueAsString();
+  if (!IEEEAttr.empty())
+    IEEE = IEEEAttr == "true";
+
+  StringRef DX10ClampAttr
+    = F.getFnAttribute("amdgpu-dx10-clamp").getValueAsString();
+  if (!DX10ClampAttr.empty())
+    DX10Clamp = DX10ClampAttr == "true";
 }
 
-AMDGPUAS getAMDGPUAS(const Module &M) {
-  return getAMDGPUAS(Triple(M.getTargetTriple()));
+namespace {
+
+struct SourceOfDivergence {
+  unsigned Intr;
+};
+const SourceOfDivergence *lookupSourceOfDivergence(unsigned Intr);
+
+#define GET_SourcesOfDivergence_IMPL
+#include "AMDGPUGenSearchableTables.inc"
+
+} // end anonymous namespace
+
+bool isIntrinsicSourceOfDivergence(unsigned IntrID) {
+  return lookupSourceOfDivergence(IntrID);
 }
+
 } // namespace AMDGPU
 } // namespace llvm

@@ -1,9 +1,8 @@
 //===- llvm/MC/MCTargetAsmParser.h - Target Assembly Parser -----*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -14,8 +13,10 @@
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCParser/MCAsmLexer.h"
+#include "llvm/MC/MCParser/MCParsedAsmOperand.h"
 #include "llvm/MC/MCParser/MCAsmParserExtension.h"
 #include "llvm/MC/MCTargetOptions.h"
+#include "llvm/MC/SubtargetFeature.h"
 #include "llvm/Support/SMLoc.h"
 #include <cstdint>
 #include <memory>
@@ -133,6 +134,53 @@ enum OperandMatchResultTy {
   MatchOperand_ParseFail // operand matched but had errors
 };
 
+enum class DiagnosticPredicateTy {
+  Match,
+  NearMatch,
+  NoMatch,
+};
+
+// When an operand is parsed, the assembler will try to iterate through a set of
+// possible operand classes that the operand might match and call the
+// corresponding PredicateMethod to determine that.
+//
+// If there are two AsmOperands that would give a specific diagnostic if there
+// is no match, there is currently no mechanism to distinguish which operand is
+// a closer match. The DiagnosticPredicate distinguishes between 'completely
+// no match' and 'near match', so the assembler can decide whether to give a
+// specific diagnostic, or use 'InvalidOperand' and continue to find a
+// 'better matching' diagnostic.
+//
+// For example:
+//    opcode opnd0, onpd1, opnd2
+//
+// where:
+//    opnd2 could be an 'immediate of range [-8, 7]'
+//    opnd2 could be a  'register + shift/extend'.
+//
+// If opnd2 is a valid register, but with a wrong shift/extend suffix, it makes
+// little sense to give a diagnostic that the operand should be an immediate
+// in range [-8, 7].
+//
+// This is a light-weight alternative to the 'NearMissInfo' approach
+// below which collects *all* possible diagnostics. This alternative
+// is optional and fully backward compatible with existing
+// PredicateMethods that return a 'bool' (match or no match).
+struct DiagnosticPredicate {
+  DiagnosticPredicateTy Type;
+
+  explicit DiagnosticPredicate(bool Match)
+      : Type(Match ? DiagnosticPredicateTy::Match
+                   : DiagnosticPredicateTy::NearMatch) {}
+  DiagnosticPredicate(DiagnosticPredicateTy T) : Type(T) {}
+  DiagnosticPredicate(const DiagnosticPredicate &) = default;
+
+  operator bool() const { return Type == DiagnosticPredicateTy::Match; }
+  bool isMatch() const { return Type == DiagnosticPredicateTy::Match; }
+  bool isNearMatch() const { return Type == DiagnosticPredicateTy::NearMatch; }
+  bool isNoMatch() const { return Type == DiagnosticPredicateTy::NoMatch; }
+};
+
 // When matching of an assembly instruction fails, there may be multiple
 // encodings that are close to being a match. It's often ambiguous which one
 // the programmer intended to use, so we want to report an error which mentions
@@ -155,7 +203,7 @@ public:
   // The instruction encoding is not valid because it requires some target
   // features that are not currently enabled. MissingFeatures has a bit set for
   // each feature that the encoding needs but which is not enabled.
-  static NearMissInfo getMissedFeature(uint64_t MissingFeatures) {
+  static NearMissInfo getMissedFeature(const FeatureBitset &MissingFeatures) {
     NearMissInfo Result;
     Result.Kind = NearMissFeature;
     Result.Features = MissingFeatures;
@@ -207,7 +255,7 @@ public:
 
   // Feature flags required by the instruction, that the current target does
   // not have.
-  uint64_t getFeatures() const {
+  const FeatureBitset& getFeatures() const {
     assert(Kind == NearMissFeature);
     return Features;
   }
@@ -257,7 +305,7 @@ private:
   };
 
   union {
-    uint64_t Features;
+    FeatureBitset Features;
     unsigned PredicateError;
     MissedOpInfo MissedOperand;
     TooFewOperandsInfo TooFewOperands;
@@ -271,6 +319,7 @@ class MCTargetAsmParser : public MCAsmParserExtension {
 public:
   enum MatchResultTy {
     Match_InvalidOperand,
+    Match_InvalidTiedOperand,
     Match_MissingFeature,
     Match_MnemonicFail,
     Match_Success,
@@ -286,7 +335,7 @@ protected: // Can only create subclasses.
   MCSubtargetInfo &copySTI();
 
   /// AvailableFeatures - The current set of available features.
-  uint64_t AvailableFeatures = 0;
+  FeatureBitset AvailableFeatures;
 
   /// ParsingInlineAsm - Are we parsing ms-style inline assembly?
   bool ParsingInlineAsm = false;
@@ -311,8 +360,12 @@ public:
 
   const MCSubtargetInfo &getSTI() const;
 
-  uint64_t getAvailableFeatures() const { return AvailableFeatures; }
-  void setAvailableFeatures(uint64_t Value) { AvailableFeatures = Value; }
+  const FeatureBitset& getAvailableFeatures() const {
+    return AvailableFeatures;
+  }
+  void setAvailableFeatures(const FeatureBitset& Value) {
+    AvailableFeatures = Value;
+  }
 
   bool isParsingInlineAsm () { return ParsingInlineAsm; }
   void setParsingInlineAsm (bool Value) { ParsingInlineAsm = Value; }
@@ -323,11 +376,13 @@ public:
     SemaCallback = Callback;
   }
 
+  // Target-specific parsing of expression.
+  virtual bool parsePrimaryExpr(const MCExpr *&Res, SMLoc &EndLoc) {
+    return getParser().parsePrimaryExpr(Res, EndLoc);
+  }
+
   virtual bool ParseRegister(unsigned &RegNo, SMLoc &StartLoc,
                              SMLoc &EndLoc) = 0;
-
-  /// Sets frame register corresponding to the current MachineFunction.
-  virtual void SetFrameRegister(unsigned RegNo) {}
 
   /// ParseInstruction - Parse one assembly instruction.
   ///
@@ -400,6 +455,15 @@ public:
   virtual void convertToMapAndConstraints(unsigned Kind,
                                           const OperandVector &Operands) = 0;
 
+  /// Returns whether two registers are equal and is used by the tied-operands
+  /// checks in the AsmMatcher. This method can be overridden allow e.g. a
+  /// sub- or super-register as the tied operand.
+  virtual bool regsEqual(const MCParsedAsmOperand &Op1,
+                         const MCParsedAsmOperand &Op2) const {
+    assert(Op1.isReg() && Op2.isReg() && "Operands not all regs");
+    return Op1.getReg() == Op2.getReg();
+  }
+
   // Return whether this parser uses assignment statements with equals tokens
   virtual bool equalIsAsmAssignment() { return true; };
   // Return whether this start of statement identifier is a label
@@ -413,6 +477,9 @@ public:
     return nullptr;
   }
 
+  // For actions that have to be performed before a label is emitted
+  virtual void doBeforeLabelEmit(MCSymbol *Symbol) {}
+  
   virtual void onLabelParsed(MCSymbol *Symbol) {}
 
   /// Ensure that all previously parsed instructions have been emitted to the
@@ -424,6 +491,9 @@ public:
                                               MCContext &Ctx) {
     return nullptr;
   }
+
+  // For any checks or cleanups at the end of parsing.
+  virtual void onEndOfFile() {}
 };
 
 } // end namespace llvm

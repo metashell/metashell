@@ -1,5 +1,5 @@
-; RUN: llc -mtriple=powerpc64le-unknown-linux-gnu -mcpu=pwr8 %s -o - | FileCheck %s --check-prefix=CHECK --check-prefix=ENABLE
-; RUN: llc -mtriple=powerpc64le-unknown-linux-gnu %s -o - -enable-shrink-wrap=false |  FileCheck %s --check-prefix=CHECK --check-prefix=DISABLE
+; RUN: llc -mtriple=powerpc64le-unknown-linux-gnu -mcpu=pwr8 %s -o - -verify-machineinstrs | FileCheck %s --check-prefix=CHECK --check-prefix=ENABLE
+; RUN: llc -mtriple=powerpc64le-unknown-linux-gnu %s -o - -enable-shrink-wrap=false -verify-machineinstrs |  FileCheck %s --check-prefix=CHECK --check-prefix=DISABLE
 ;
 ; Note: Lots of tests use inline asm instead of regular calls.
 ; This allows to have a better control on what the allocation will do.
@@ -110,7 +110,7 @@ declare i32 @doSomething(i32, i32*)
 ;
 ; Epilogue code.
 ; CHECK: mtlr {{[0-9]+}}
-; CHECK-NEXT: blr
+; CHECK: blr
 ;
 ; ENABLE: .[[ELSE_LABEL]]: # %if.else
 ; Shift second argument by one and store into returned register.
@@ -169,9 +169,9 @@ declare i32 @something(...)
 ; CHECK-NEXT: bne 0, .[[LOOP]]
 ;
 ; Next BB
-; CHECK: %for.end
+; CHECK: %for.exit
 ; CHECK: mtlr {{[0-9]+}}
-; CHECK-NEXT: blr
+; CHECK: blr
 define i32 @freqSaveAndRestoreOutsideLoop2(i32 %cond) {
 entry:
   br label %for.preheader
@@ -209,9 +209,9 @@ for.end:                                          ; preds = %for.body
 ; Make sure we save the link register 
 ; CHECK: mflr {{[0-9]+}}
 ;
+; DISABLE: std
+; DISABLE-NEXT: std
 ; DISABLE: cmplwi 0, 3, 0
-; DISABLE-NEXT: std
-; DISABLE-NEXT: std
 ; DISABLE-NEXT: beq 0, .[[ELSE_LABEL:LBB[0-9_]+]]
 ;
 ; Loop preheader
@@ -240,7 +240,7 @@ for.end:                                          ; preds = %for.body
 ; DISABLE: .[[EPILOG_BB]]: # %if.end
 ; Epilog code
 ; CHECK: mtlr {{[0-9]+}}
-; CHECK-NEXT: blr
+; CHECK: blr
 ; 
 ; ENABLE: .[[ELSE_LABEL]]: # %if.else
 ; Shift second argument by one and store into returned register.
@@ -291,9 +291,9 @@ declare void @somethingElse(...)
 ; Make sure we save the link register
 ; CHECK: mflr {{[0-9]+}}
 ;
+; DISABLE: std
+; DISABLE-NEXT: std
 ; DISABLE: cmplwi 0, 3, 0
-; DISABLE-NEXT: std
-; DISABLE-NEXT: std
 ; DISABLE-NEXT: beq 0, .[[ELSE_LABEL:LBB[0-9_]+]]
 ;
 ; CHECK: bl somethingElse
@@ -322,13 +322,13 @@ declare void @somethingElse(...)
 ;
 ; Epilogue code.
 ; CHECK: mtlr {{[0-9]+}}
-; CHECK-NEXT: blr
+; CHECK: blr
 ;
 ; ENABLE: .[[ELSE_LABEL]]: # %if.else
 ; Shift second argument by one and store into returned register.
 ; ENABLE: slwi 3, 4, 1
 ; ENABLE-NEXT: blr
-define i32 @loopInfoRestoreOutsideLoop(i32 %cond, i32 %N) #0 {
+define i32 @loopInfoRestoreOutsideLoop(i32 %cond, i32 %N) nounwind {
 entry:
   %tobool = icmp eq i32 %cond, 0
   br i1 %tobool, label %if.else, label %if.then

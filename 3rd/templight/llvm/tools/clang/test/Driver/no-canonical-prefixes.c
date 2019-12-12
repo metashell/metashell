@@ -4,7 +4,10 @@
 // RUN: cd %t.real
 // RUN: ln -sf %clang test-clang
 // RUN: cd ..
-// RUN: ln -sf %t.real %t.fake
+// If %.fake already is a symlink to %t.real when `ln -sf %t.real %t.fake`
+// runs, then that would symlink %t.real to itself, forming a cycle.
+// The `-n` flag prevents this.
+// RUN: ln -sfn %t.real %t.fake
 // RUN: cd %t.fake
 // RUN: ./test-clang -v -S %s 2>&1 | FileCheck --check-prefix=CANONICAL %s
 // RUN: ./test-clang -v -S %s -no-canonical-prefixes 2>&1 | FileCheck --check-prefix=NON-CANONICAL %s

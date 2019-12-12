@@ -1,9 +1,8 @@
 //===-- scudo_flags.cpp -----------------------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 ///
@@ -12,12 +11,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "scudo_flags.h"
+#include "scudo_interface_internal.h"
 #include "scudo_utils.h"
 
 #include "sanitizer_common/sanitizer_flags.h"
 #include "sanitizer_common/sanitizer_flag_parser.h"
-
-SANITIZER_INTERFACE_WEAK_DEF(const char*, __scudo_default_options, void);
 
 namespace __scudo {
 
@@ -34,6 +32,14 @@ static void RegisterScudoFlags(FlagParser *parser, Flags *f) {
   RegisterFlag(parser, #Name, Description, &f->Name);
 #include "scudo_flags.inc"
 #undef SCUDO_FLAG
+}
+
+static const char *getCompileDefinitionScudoDefaultOptions() {
+#ifdef SCUDO_DEFAULT_OPTIONS
+  return SANITIZER_STRINGIFY(SCUDO_DEFAULT_OPTIONS);
+#else
+  return "";
+#endif
 }
 
 static const char *getScudoDefaultOptions() {
@@ -55,11 +61,14 @@ void initFlags() {
   RegisterScudoFlags(&ScudoParser, f);
   RegisterCommonFlags(&ScudoParser);
 
+  // Override from compile definition.
+  ScudoParser.ParseString(getCompileDefinitionScudoDefaultOptions());
+
   // Override from user-specified string.
   ScudoParser.ParseString(getScudoDefaultOptions());
 
   // Override from environment.
-  ScudoParser.ParseString(GetEnv("SCUDO_OPTIONS"));
+  ScudoParser.ParseStringFromEnv("SCUDO_OPTIONS");
 
   InitializeCommonFlags();
 
@@ -119,3 +128,9 @@ Flags *getFlags() {
 }
 
 }  // namespace __scudo
+
+#if !SANITIZER_SUPPORTS_WEAK_HOOKS
+SANITIZER_INTERFACE_WEAK_DEF(const char*, __scudo_default_options, void) {
+  return "";
+}
+#endif

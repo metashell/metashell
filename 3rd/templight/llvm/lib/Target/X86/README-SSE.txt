@@ -827,24 +827,3 @@ and inversion with an rsqrtss instruction, which computes 1/sqrt faster at the
 cost of reduced accuracy.
 
 //===---------------------------------------------------------------------===//
-
-This function should be matched to haddpd when the appropriate CPU is enabled:
-
-#include <x86intrin.h>
-double f (__m128d p) {
-  return p[0] + p[1];
-}
-
-similarly, v[0]-v[1] should match to hsubpd, and {v[0]-v[1], w[0]-w[1]} should
-turn into hsubpd also.
-
-//===---------------------------------------------------------------------===//
-
-define <2 x i32> @foo(<2 x double> %in) {
-  %x = fptosi <2 x double> %in to <2 x i32>
-  ret <2 x i32> %x
-}
-
-Should compile into cvttpd2dq instead of being scalarized into 2 cvttsd2si.
-
-//===---------------------------------------------------------------------===//

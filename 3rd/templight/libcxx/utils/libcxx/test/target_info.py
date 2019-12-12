@@ -1,9 +1,8 @@
 #===----------------------------------------------------------------------===//
 #
-#                     The LLVM Compiler Infrastructure
-#
-# This file is dual licensed under the MIT and the University of Illinois Open
-# Source Licenses. See LICENSE.TXT for details.
+# Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+# See https://llvm.org/LICENSE.txt for license information.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 #
 #===----------------------------------------------------------------------===//
 
@@ -14,6 +13,8 @@ import platform
 import re
 import subprocess
 import sys
+
+from libcxx.util import executeCommand
 
 class DefaultTargetInfo(object):
     def __init__(self, full_config):
@@ -127,14 +128,13 @@ class DarwinLocalTI(DefaultTargetInfo):
             cmd = ['xcrun', '--sdk', name, '--show-sdk-path']
         else:
             cmd = ['xcrun', '--show-sdk-path']
-        try:
-            out = subprocess.check_output(cmd).strip()
-            res = 0
-        except OSError:
-            res = -1
-        if res == 0 and out:
-            sdk_path = out
+        out, err, exit_code = executeCommand(cmd)
+        if exit_code != 0:
+            self.full_config.lit_config.warning("Could not determine macOS SDK path! stderr was " + err)
+        if exit_code == 0 and out:
+            sdk_path = out.strip()
             self.full_config.lit_config.note('using SDKROOT: %r' % sdk_path)
+            assert isinstance(sdk_path, str)
             flags += ["-isysroot", sdk_path]
 
     def add_cxx_link_flags(self, flags):
@@ -143,12 +143,12 @@ class DarwinLocalTI(DefaultTargetInfo):
     def configure_env(self, env):
         library_paths = []
         # Configure the library path for libc++
-        if self.full_config.use_system_cxx_lib:
+        if self.full_config.cxx_runtime_root:
+            library_paths += [self.full_config.cxx_runtime_root]
+        elif self.full_config.use_system_cxx_lib:
             if (os.path.isdir(str(self.full_config.use_system_cxx_lib))):
                 library_paths += [self.full_config.use_system_cxx_lib]
-            pass
-        elif self.full_config.cxx_runtime_root:
-            library_paths += [self.full_config.cxx_runtime_root]
+
         # Configure the abi library path
         if self.full_config.abi_library_root:
             library_paths += [self.full_config.abi_library_root]
@@ -156,15 +156,6 @@ class DarwinLocalTI(DefaultTargetInfo):
             env['DYLD_LIBRARY_PATH'] = ':'.join(library_paths)
 
     def allow_cxxabi_link(self):
-        # FIXME: PR27405
-        # libc++ *should* export all of the symbols found in libc++abi on OS X.
-        # For this reason LibcxxConfiguration will not link libc++abi in OS X.
-        # However __cxa_throw_bad_new_array_length doesn't get exported into
-        # libc++ yet so we still need to explicitly link libc++abi when testing
-        # libc++abi
-        # See PR22654.
-        if(self.full_config.get_lit_conf('name', '') == 'libc++abi'):
-            return True
         # Don't link libc++abi explicitly on OS X because the symbols
         # should be available in libc++ directly.
         return False
@@ -179,6 +170,18 @@ class FreeBSDLocalTI(DefaultTargetInfo):
 
     def add_cxx_link_flags(self, flags):
         flags += ['-lc', '-lm', '-lpthread', '-lgcc_s', '-lcxxrt']
+
+
+class NetBSDLocalTI(DefaultTargetInfo):
+    def __init__(self, full_config):
+        super(NetBSDLocalTI, self).__init__(full_config)
+
+    def add_locale_features(self, features):
+        add_common_locales(features, self.full_config.lit_config)
+
+    def add_cxx_link_flags(self, flags):
+        flags += ['-lc', '-lm', '-lpthread', '-lgcc_s', '-lc++abi',
+                  '-lunwind']
 
 
 class LinuxLocalTI(DefaultTargetInfo):
@@ -228,13 +231,17 @@ class LinuxLocalTI(DefaultTargetInfo):
         if enable_threads:
             flags += ['-lpthread']
             if not shared_libcxx:
-              flags += ['-lrt']
+                flags += ['-lrt']
         flags += ['-lc']
         if llvm_unwinder:
             flags += ['-lunwind', '-ldl']
         else:
             flags += ['-lgcc_s']
-        flags += ['-lgcc']
+        builtins_lib = self.full_config.get_lit_conf('builtins_library')
+        if builtins_lib:
+            flags += [builtins_lib]
+        else:
+            flags += ['-lgcc']
         use_libatomic = self.full_config.get_lit_bool('use_libatomic', False)
         if use_libatomic:
             flags += ['-latomic']
@@ -272,6 +279,7 @@ def make_target_info(full_config):
     target_system = platform.system()
     if target_system == 'Darwin':  return DarwinLocalTI(full_config)
     if target_system == 'FreeBSD': return FreeBSDLocalTI(full_config)
+    if target_system == 'NetBSD':  return NetBSDLocalTI(full_config)
     if target_system == 'Linux':   return LinuxLocalTI(full_config)
     if target_system == 'Windows': return WindowsLocalTI(full_config)
     return DefaultTargetInfo(full_config)

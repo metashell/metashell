@@ -127,10 +127,10 @@
         @ Out of range 4 and 3 bit immediates on CDP[2]
 
         @ Out of range immediates for CDP/CDP2
-        cdp  p7, #2, c1, c1, c1, #8
-        cdp  p7, #1, c1, c1, c1, #8
-        cdp2  p7, #2, c1, c1, c1, #8
-        cdp2  p7, #1, c1, c1, c1, #8
+        cdp  p14, #2, c1, c1, c1, #8
+        cdp  p14, #1, c1, c1, c1, #8
+        cdp2  p14, #2, c1, c1, c1, #8
+        cdp2  p14, #1, c1, c1, c1, #8
 
 @ CHECK-ERRORS-V7: error: operand must be an immediate in the range [0,7]
 @ CHECK-ERRORS-V7: error: operand must be an immediate in the range [0,7]
@@ -154,12 +154,12 @@
 @ CHECK-ERRORS:     ^
 
         @ Out of range immediate for MCR/MCR2/MCRR/MCRR2
-        mcr  p7, #8, r5, c1, c1, #4
-        mcr  p7, #2, r5, c1, c1, #8
-        mcr2  p7, #8, r5, c1, c1, #4
-        mcr2  p7, #1, r5, c1, c1, #8
-        mcrr  p7, #16, r5, r4, c1
-        mcrr2  p7, #16, r5, r4, c1
+        mcr  p14, #8, r5, c1, c1, #4
+        mcr  p14, #2, r5, c1, c1, #8
+        mcr2  p14, #8, r5, c1, c1, #4
+        mcr2  p14, #1, r5, c1, c1, #8
+        mcrr  p14, #16, r5, r4, c1
+        mcrr2  p14, #16, r5, r4, c1
 @ CHECK-ERRORS: operand must be an immediate in the range [0,7]
 @ CHECK-ERRORS: operand must be an immediate in the range [0,7]
 @ CHECK-ERRORS-V7: operand must be an immediate in the range [0,7]
@@ -203,8 +203,8 @@
         mrc  p14, #1, r1, c1, c2, #8
         mrc2  p14, #8, r1, c1, c2, #4
         mrc2  p14, #0, r1, c1, c2, #9
-        mrrc  p7, #16, r5, r4, c1
-        mrrc2  p7, #17, r5, r4, c1
+        mrrc  p14, #16, r5, r4, c1
+        mrrc2  p14, #17, r5, r4, c1
 @ CHECK-ERRORS: operand must be an immediate in the range [0,7]
 @ CHECK-ERRORS: operand must be an immediate in the range [0,7]
 @ CHECK-ERRORS-V7: operand must be an immediate in the range [0,7]
@@ -399,10 +399,13 @@
 @ CHECK-ERRORS:         ubfx r14, pc, #1, #2
 @ CHECK-ERRORS:                   ^
 
-        @ Out of order Rt/Rt2 operands for ldrd
+        @ Out of order Rt/Rt2 operands for ldrd/strd
         ldrd  r4, r3, [r8]
         ldrd  r4, r3, [r8, #8]!
         ldrd  r4, r3, [r8], #8
+        strd  r4, r3, [r8]
+        strd  r4, r3, [r8, #8]!
+        strd  r4, r3, [r8], #8
 @ CHECK-ERRORS: error: destination operands must be sequential
 @ CHECK-ERRORS:         ldrd  r4, r3, [r8]
 @ CHECK-ERRORS:                   ^
@@ -411,6 +414,53 @@
 @ CHECK-ERRORS:                   ^
 @ CHECK-ERRORS: error: destination operands must be sequential
 @ CHECK-ERRORS:         ldrd  r4, r3, [r8], #8
+@ CHECK-ERRORS:                   ^
+@ CHECK-ERRORS: error: source operands must be sequential
+@ CHECK-ERRORS:         strd  r4, r3, [r8]
+@ CHECK-ERRORS:                   ^
+@ CHECK-ERRORS: error: source operands must be sequential
+@ CHECK-ERRORS:         strd  r4, r3, [r8, #8]!
+@ CHECK-ERRORS:                   ^
+@ CHECK-ERRORS: error: source operands must be sequential
+@ CHECK-ERRORS:         strd  r4, r3, [r8], #8
+@ CHECK-ERRORS:                   ^
+
+        @ Odd first register for ldrd/strd
+        ldrd  r5, r6, [r8]
+        strd  r5, r6, [r8]
+@ CHECK-ERRORS: error: Rt must be even-numbered
+@ CHECK-ERRORS:         ldrd  r5, r6, [r8]
+@ CHECK-ERRORS:                   ^
+@ CHECK-ERRORS: error: Rt must be even-numbered
+@ CHECK-ERRORS:         strd  r5, r6, [r8]
+@ CHECK-ERRORS:                   ^
+
+        @ Post-increment with base equal to source
+        ldrd  r6, r7, [r6]!
+        ldrd  r6, r7, [r7]!
+        strd  r6, r7, [r6]!
+        strd  r6, r7, [r7]!
+@ CHECK-ERRORS: error: base register needs to be different from destination registers
+@ CHECK-ERRORS:         ldrd  r6, r7, [r6]!
+@ CHECK-ERRORS:                   ^
+@ CHECK-ERRORS: error: base register needs to be different from destination registers
+@ CHECK-ERRORS:         ldrd  r6, r7, [r7]!
+@ CHECK-ERRORS:                   ^
+@ CHECK-ERRORS: error: source register and base register can't be identical
+@ CHECK-ERRORS:         strd  r6, r7, [r6]!
+@ CHECK-ERRORS:                   ^
+@ CHECK-ERRORS: error: source register and base register can't be identical
+@ CHECK-ERRORS:         strd  r6, r7, [r7]!
+@ CHECK-ERRORS:                   ^
+
+        @ Paired load/store of pc
+        ldrd  lr, pc, [r6]!
+        strd  lr, pc, [r6]!
+@ CHECK-ERRORS: error: Rt can't be R14
+@ CHECK-ERRORS:         ldrd  lr, pc, [r6]!
+@ CHECK-ERRORS:                   ^
+@ CHECK-ERRORS: error: Rt can't be R14
+@ CHECK-ERRORS:         strd  lr, pc, [r6]!
 @ CHECK-ERRORS:                   ^
 
 
@@ -742,3 +792,10 @@ foo2:
         adds r0
 @ CHECK-ERRORS: error: too few operands for instruction
 @ CHECK-ERRORS: error: too few operands for instruction
+
+        @ Using pc for MVN
+	mvn pc, r6, lsl r7
+@ CHECK-ERRORS: error: invalid instruction, any one of the following would fix this:
+@ CHECK-ERRORS: note: operand must be a register in range [r0, r14]
+@ CHECK-ERRORS:         mvn pc, r6, lsl r7
+@ CHECK-ERRORS:             ^

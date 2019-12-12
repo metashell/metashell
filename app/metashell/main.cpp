@@ -33,9 +33,7 @@
 
 #include <metashell/data/config.hpp>
 
-#include <boost/algorithm/string/join.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/range/adaptor/map.hpp>
 
 #include <just/temp.hpp>
 
@@ -67,102 +65,100 @@ int main(int argc_, const char* argv_[])
 {
   const std::string env_filename = "metashell_environment.hpp";
 
+  if (argc_ < 1)
+  {
+    std::cerr << "Error: no arguments (not even the path of the current "
+                 "binary) provided\n";
+    return 1;
+  }
+
+  const metashell::data::executable_path metashell_binary(argv_[0]);
+
   try
   {
     using metashell::core::parse_config;
     using metashell::core::parse_config_result;
 
-    const std::map<metashell::data::engine_name, metashell::core::engine_entry>
-        engines = metashell::defaults::available_engines();
+    const std::map<metashell::data::real_engine_name,
+                   metashell::core::engine_entry>
+        engines = metashell::defaults::available_engines(metashell_binary);
 
     metashell::core::default_environment_detector det(argv_[0]);
 
     const parse_config_result r =
         parse_config(argc_, argv_, engines, det, &std::cout, &std::cerr);
 
-    if (r.should_run_shell())
+    if (const metashell::core::exit* e =
+            mpark::get_if<metashell::core::exit>(&r))
     {
-      metashell::console_config ccfg(
-          r.cfg.con_type, r.cfg.indent, r.cfg.syntax_highlight);
-
-      metashell::core::fstream_file_writer file_writer;
-      metashell::core::logger logger(ccfg.displayer(), file_writer);
-      switch (r.cfg.log_mode)
-      {
-      case metashell::data::logging_mode::none:
-        // do nothing
-        break;
-      case metashell::data::logging_mode::console:
-        logger.log_to_console();
-        break;
-      case metashell::data::logging_mode::file:
-        logger.log_into_file(r.cfg.log_file);
-        break;
-      }
-
-      METASHELL_LOG(&logger, "Start logging");
-
-      using boost::filesystem::path;
-
-      METASHELL_LOG(&logger, "Running shell");
-
-      just::temp::directory dir;
-
-      const path shell_dir = path(dir.path()) / "shell";
-      const path temp_dir = path(dir.path()) / "tmp";
-      const path mdb_dir = path(dir.path()) / "mdb";
-
-      create_directories(shell_dir);
-      create_directories(temp_dir);
-      create_directories(mdb_dir);
-
-      auto shell = std::make_unique<metashell::main_shell::shell>(
-          r.cfg, shell_dir, env_filename,
-          // The shell should be destroyed when this scope is left, capturing
-          // locals by reference should be safe.
-          [&engines, &shell_dir, &temp_dir, &env_filename, &det, &ccfg,
-           &logger](const metashell::data::config& config_) {
-            const auto eentry =
-                engines.find(config_.active_shell_config().engine);
-            if (eentry == engines.end())
-            {
-              throw std::runtime_error(
-                  "Engine " + config_.active_shell_config().engine +
-                  " not found. Available engines: " +
-                  boost::algorithm::join(
-                      engines | boost::adaptors::map_keys |
-                          boost::adaptors::transformed(
-                              [](const metashell::data::engine_name& engine_) {
-                                return to_string(engine_);
-                              }),
-                      ", "));
-            }
-            else
-            {
-              return eentry->second.build(config_, shell_dir, temp_dir,
-                                          env_filename, engines, det,
-                                          ccfg.displayer(), &logger);
-            }
-          },
-          metashell::defaults::pragma_map(
-              &ccfg.processor_queue(), mdb_dir, &logger),
-          &logger);
-
-      if (r.cfg.splash_enabled)
-      {
-        shell->display_splash(ccfg.displayer(), get_dependency_versions());
-      }
-
-      ccfg.processor_queue().push(move(shell));
-
-      METASHELL_LOG(&logger, "Starting input loop");
-
-      metashell::core::input_loop(
-          ccfg.processor_queue(), ccfg.displayer(), ccfg.reader());
-
-      METASHELL_LOG(&logger, "Input loop finished");
+      return e->with_error ? 1 : 0;
     }
-    return r.should_error_at_exit() ? 1 : 0;
+
+    const metashell::data::config cfg = mpark::get<metashell::data::config>(r);
+
+    metashell::console_config ccfg(
+        cfg.con_type, cfg.indent, cfg.syntax_highlight);
+
+    metashell::core::fstream_file_writer file_writer;
+    metashell::core::logger logger(ccfg.displayer(), file_writer);
+    switch (cfg.log_mode)
+    {
+    case metashell::data::logging_mode::none:
+      // do nothing
+      break;
+    case metashell::data::logging_mode::console:
+      logger.log_to_console();
+      break;
+    case metashell::data::logging_mode::file:
+      logger.log_into_file(cfg.log_file);
+      break;
+    }
+
+    METASHELL_LOG(&logger, "Start logging");
+
+    using boost::filesystem::path;
+
+    METASHELL_LOG(&logger, "Running shell");
+
+    just::temp::directory dir;
+
+    const path shell_dir = path(dir.path()) / "shell";
+    const path temp_dir = path(dir.path()) / "tmp";
+    const path mdb_dir = path(dir.path()) / "mdb";
+
+    create_directories(shell_dir);
+    create_directories(temp_dir);
+    create_directories(mdb_dir);
+
+    auto shell = std::make_unique<metashell::main_shell::shell>(
+        cfg, shell_dir, env_filename,
+        // The shell should be destroyed when this scope is left, capturing
+        // locals by reference should be safe.
+        [&engines, &shell_dir, &temp_dir, &env_filename, &det, &ccfg,
+         &logger](const metashell::data::shell_config& config_) {
+          return find(engines, config_.engine, config_.engine_args, &logger)
+              .build(config_, shell_dir, temp_dir, env_filename, det,
+                     ccfg.displayer(), &logger);
+        },
+        metashell::defaults::pragma_map(
+            &ccfg.processor_queue(), mdb_dir, &logger),
+        &logger);
+
+    if (cfg.splash_enabled)
+    {
+      shell->display_splash(ccfg.displayer(), get_dependency_versions());
+    }
+
+    ccfg.processor_queue().push(move(shell));
+
+    METASHELL_LOG(&logger, "Starting input loop");
+
+    metashell::core::input_loop(
+        ccfg.processor_queue(), ccfg.displayer(), ccfg.reader());
+
+    METASHELL_LOG(&logger, "Input loop finished");
+
+    return 0;
   }
   catch (std::exception& e_)
   {

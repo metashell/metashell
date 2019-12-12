@@ -1,9 +1,8 @@
-//===--- CodeGenTypes.cpp - TBAA information for LLVM CodeGen -------------===//
+//===-- CodeGenTBAA.cpp - TBAA information for LLVM CodeGen ---------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -20,7 +19,7 @@
 #include "clang/AST/Attr.h"
 #include "clang/AST/Mangle.h"
 #include "clang/AST/RecordLayout.h"
-#include "clang/Frontend/CodeGenOptions.h"
+#include "clang/Basic/CodeGenOptions.h"
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/LLVMContext.h"
@@ -215,6 +214,19 @@ llvm::MDNode *CodeGenTBAA::getTypeInfo(QualType QTy) {
   return MetadataCache[Ty] = TypeNode;
 }
 
+TBAAAccessInfo CodeGenTBAA::getAccessInfo(QualType AccessType) {
+  // Pointee values may have incomplete types, but they shall never be
+  // dereferenced.
+  if (AccessType->isIncompleteType())
+    return TBAAAccessInfo::getIncompleteInfo();
+
+  if (TypeHasMayAlias(AccessType))
+    return TBAAAccessInfo::getMayAliasInfo();
+
+  uint64_t Size = Context.getTypeSizeInChars(AccessType).getQuantity();
+  return TBAAAccessInfo(getTypeInfo(AccessType), Size);
+}
+
 TBAAAccessInfo CodeGenTBAA::getVTablePtrAccessInfo(llvm::Type *VTablePtrType) {
   llvm::DataLayout DL(&Module);
   unsigned Size = DL.getPointerTypeSize(VTablePtrType);
@@ -245,6 +257,8 @@ CodeGenTBAA::CollectFields(uint64_t BaseOffset,
     unsigned idx = 0;
     for (RecordDecl::field_iterator i = RD->field_begin(),
          e = RD->field_end(); i != e; ++i, ++idx) {
+      if ((*i)->isZeroSize(Context) || (*i)->isUnnamedBitfield())
+        continue;
       uint64_t Offset = BaseOffset +
                         Layout.getFieldOffset(idx) / Context.getCharWidth();
       QualType FieldQTy = i->getType();
@@ -285,6 +299,8 @@ llvm::MDNode *CodeGenTBAA::getBaseTypeInfoHelper(const Type *Ty) {
     const ASTRecordLayout &Layout = Context.getASTRecordLayout(RD);
     SmallVector<llvm::MDBuilder::TBAAStructField, 4> Fields;
     for (FieldDecl *Field : RD->fields()) {
+      if (Field->isZeroSize(Context) || Field->isUnnamedBitfield())
+        continue;
       QualType FieldQTy = Field->getType();
       llvm::MDNode *TypeNode = isValidBaseType(FieldQTy) ?
           getBaseTypeInfo(FieldQTy) : getTypeInfo(FieldQTy);
@@ -384,6 +400,24 @@ CodeGenTBAA::mergeTBAAInfoForConditionalOperator(TBAAAccessInfo InfoA,
     return TBAAAccessInfo();
 
   if (InfoA.isMayAlias() || InfoB.isMayAlias())
+    return TBAAAccessInfo::getMayAliasInfo();
+
+  // TODO: Implement the rest of the logic here. For example, two accesses
+  // with same final access types result in an access to an object of that final
+  // access type regardless of their base types.
+  return TBAAAccessInfo::getMayAliasInfo();
+}
+
+TBAAAccessInfo
+CodeGenTBAA::mergeTBAAInfoForMemoryTransfer(TBAAAccessInfo DestInfo,
+                                            TBAAAccessInfo SrcInfo) {
+  if (DestInfo == SrcInfo)
+    return DestInfo;
+
+  if (!DestInfo || !SrcInfo)
+    return TBAAAccessInfo();
+
+  if (DestInfo.isMayAlias() || SrcInfo.isMayAlias())
     return TBAAAccessInfo::getMayAliasInfo();
 
   // TODO: Implement the rest of the logic here. For example, two accesses

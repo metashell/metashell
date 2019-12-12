@@ -57,13 +57,6 @@ namespace metashell
         return !(f.fail() || f.bad());
       }
 
-      boost::filesystem::path default_clang_path()
-      {
-        const data::default_clang_search_path sp;
-        const auto p = std::find_if(sp.begin(), sp.end(), file_exists_impl);
-        return p == sp.end() ? "" : *p;
-      }
-
 #if !(defined _WIN32 || defined __FreeBSD__ || defined __APPLE__)
       boost::filesystem::path read_link(const boost::filesystem::path& path_)
       {
@@ -171,9 +164,13 @@ namespace metashell
     {
     }
 
-    boost::filesystem::path default_environment_detector::search_clang_binary()
+    boost::optional<data::executable_path>
+    default_environment_detector::search_clang_binary()
     {
-      return default_clang_path();
+      const data::default_clang_search_path sp;
+      const auto p = std::find_if(sp.begin(), sp.end(), file_exists_impl);
+      return p == sp.end() ? boost::none :
+                             boost::make_optional(data::executable_path(*p));
     }
 
     bool default_environment_detector::file_exists(

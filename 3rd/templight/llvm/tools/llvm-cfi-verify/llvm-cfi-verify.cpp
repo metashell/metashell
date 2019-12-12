@@ -1,9 +1,8 @@
 //===-- llvm-cfi-verify.cpp - CFI Verification tool for LLVM --------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -41,8 +40,86 @@ cl::opt<bool> PrintGraphs(
     "print-graphs",
     cl::desc("Print graphs around indirect CF instructions in DOT format."),
     cl::init(false));
+cl::opt<unsigned> PrintBlameContext(
+    "blame-context",
+    cl::desc("Print the blame context (if possible) for BAD instructions. This "
+             "specifies the number of lines of context to include, where zero "
+             "disables this feature."),
+    cl::init(0));
+cl::opt<unsigned> PrintBlameContextAll(
+    "blame-context-all",
+    cl::desc("Prints the blame context (if possible) for ALL instructions. "
+             "This specifies the number of lines of context for non-BAD "
+             "instructions (see --blame-context). If --blame-context is "
+             "unspecified, it prints this number of contextual lines for BAD "
+             "instructions as well."),
+    cl::init(0));
+cl::opt<bool> Summarize("summarize", cl::desc("Print the summary only."),
+                        cl::init(false));
 
 ExitOnError ExitOnErr;
+
+void printBlameContext(const DILineInfo &LineInfo, unsigned Context) {
+  auto FileOrErr = MemoryBuffer::getFile(LineInfo.FileName);
+  if (!FileOrErr) {
+    errs() << "Could not open file: " << LineInfo.FileName << "\n";
+    return;
+  }
+
+  std::unique_ptr<MemoryBuffer> File = std::move(FileOrErr.get());
+  SmallVector<StringRef, 100> Lines;
+  File->getBuffer().split(Lines, '\n');
+
+  for (unsigned i = std::max<size_t>(1, LineInfo.Line - Context);
+       i <
+       std::min<size_t>(Lines.size() + 1, LineInfo.Line + Context + 1);
+       ++i) {
+    if (i == LineInfo.Line)
+      outs() << ">";
+    else
+      outs() << " ";
+
+    outs() << i << ": " << Lines[i - 1] << "\n";
+  }
+}
+
+void printInstructionInformation(const FileAnalysis &Analysis,
+                                 const Instr &InstrMeta,
+                                 const GraphResult &Graph,
+                                 CFIProtectionStatus ProtectionStatus) {
+  outs() << "Instruction: " << format_hex(InstrMeta.VMAddress, 2) << " ("
+         << stringCFIProtectionStatus(ProtectionStatus) << "): ";
+  Analysis.printInstruction(InstrMeta, outs());
+  outs() << " \n";
+
+  if (PrintGraphs)
+    Graph.printToDOT(Analysis, outs());
+}
+
+void printInstructionStatus(unsigned BlameLine, bool CFIProtected,
+                            const DILineInfo &LineInfo) {
+  if (BlameLine) {
+    outs() << "Blacklist Match: " << BlacklistFilename << ":" << BlameLine
+           << "\n";
+    if (CFIProtected)
+      outs() << "====> Unexpected Protected\n";
+    else
+      outs() << "====> Expected Unprotected\n";
+
+    if (PrintBlameContextAll)
+      printBlameContext(LineInfo, PrintBlameContextAll);
+  } else {
+    if (CFIProtected) {
+      outs() << "====> Expected Protected\n";
+      if (PrintBlameContextAll)
+        printBlameContext(LineInfo, PrintBlameContextAll);
+    } else {
+      outs() << "====> Unexpected Unprotected (BAD)\n";
+      if (PrintBlameContext)
+        printBlameContext(LineInfo, PrintBlameContext);
+    }
+  }
+}
 
 void printIndirectCFInstructions(FileAnalysis &Analysis,
                                  const SpecialCaseList *SpecialCaseList) {
@@ -53,25 +130,18 @@ void printIndirectCFInstructions(FileAnalysis &Analysis,
 
   std::map<unsigned, uint64_t> BlameCounter;
 
-  for (uint64_t Address : Analysis.getIndirectInstructions()) {
-    const auto &InstrMeta = Analysis.getInstructionOrDie(Address);
+  for (object::SectionedAddress Address : Analysis.getIndirectInstructions()) {
+    const auto &InstrMeta = Analysis.getInstructionOrDie(Address.Address);
     GraphResult Graph = GraphBuilder::buildFlowGraph(Analysis, Address);
 
     CFIProtectionStatus ProtectionStatus =
         Analysis.validateCFIProtection(Graph);
     bool CFIProtected = (ProtectionStatus == CFIProtectionStatus::PROTECTED);
 
-    if (CFIProtected)
-      outs() << "P ";
-    else
-      outs() << "U ";
-
-    outs() << format_hex(Address, 2) << " | ";
-    Analysis.printInstruction(InstrMeta, outs());
-    outs() << " \n";
-
-    if (PrintGraphs)
-      Graph.printToDOT(Analysis, outs());
+    if (!Summarize) {
+      outs() << "-----------------------------------------------------\n";
+      printInstructionInformation(Analysis, InstrMeta, Graph, ProtectionStatus);
+    }
 
     if (IgnoreDWARFFlag) {
       if (CFIProtected)
@@ -83,27 +153,33 @@ void printIndirectCFInstructions(FileAnalysis &Analysis,
 
     auto InliningInfo = Analysis.symbolizeInlinedCode(Address);
     if (!InliningInfo || InliningInfo->getNumberOfFrames() == 0) {
-      errs() << "Failed to symbolise " << format_hex(Address, 2)
+      errs() << "Failed to symbolise " << format_hex(Address.Address, 2)
              << " with line tables from " << InputFilename << "\n";
       exit(EXIT_FAILURE);
     }
 
-    const auto &LineInfo =
-        InliningInfo->getFrame(InliningInfo->getNumberOfFrames() - 1);
+    const auto &LineInfo = InliningInfo->getFrame(0);
 
     // Print the inlining symbolisation of this instruction.
-    for (uint32_t i = 0; i < InliningInfo->getNumberOfFrames(); ++i) {
-      const auto &Line = InliningInfo->getFrame(i);
-      outs() << "  " << format_hex(Address, 2) << " = " << Line.FileName << ":"
-             << Line.Line << ":" << Line.Column << " (" << Line.FunctionName
-             << ")\n";
+    if (!Summarize) {
+      for (uint32_t i = 0; i < InliningInfo->getNumberOfFrames(); ++i) {
+        const auto &Line = InliningInfo->getFrame(i);
+        outs() << "  " << format_hex(Address.Address, 2) << " = "
+               << Line.FileName << ":" << Line.Line << ":" << Line.Column
+               << " (" << Line.FunctionName << ")\n";
+      }
     }
 
     if (!SpecialCaseList) {
-      if (CFIProtected)
+      if (CFIProtected) {
+        if (PrintBlameContextAll && !Summarize)
+          printBlameContext(LineInfo, PrintBlameContextAll);
         ExpectedProtected++;
-      else
+      } else {
+        if (PrintBlameContext && !Summarize)
+          printBlameContext(LineInfo, PrintBlameContext);
         UnexpectedUnprotected++;
+      }
       continue;
     }
 
@@ -118,25 +194,20 @@ void printIndirectCFInstructions(FileAnalysis &Analysis,
     }
 
     if (BlameLine) {
-      outs() << "Blacklist Match: " << BlacklistFilename << ":" << BlameLine
-             << "\n";
       BlameCounter[BlameLine]++;
-      if (CFIProtected) {
+      if (CFIProtected)
         UnexpectedProtected++;
-        outs() << "====> Unexpected Protected\n";
-      } else {
+      else
         ExpectedUnprotected++;
-        outs() << "====> Expected Unprotected\n";
-      }
     } else {
-      if (CFIProtected) {
+      if (CFIProtected)
         ExpectedProtected++;
-        outs() << "====> Expected Protected\n";
-      } else {
+      else
         UnexpectedUnprotected++;
-        outs() << "====> Unexpected Unprotected\n";
-      }
     }
+
+    if (!Summarize)
+      printInstructionStatus(BlameLine, CFIProtected, LineInfo);
   }
 
   uint64_t IndirectCFInstructions = ExpectedProtected + UnexpectedProtected +
@@ -147,11 +218,12 @@ void printIndirectCFInstructions(FileAnalysis &Analysis,
     return;
   }
 
-  outs() << formatv("Expected Protected: {0} ({1:P})\n"
-                    "Unexpected Protected: {2} ({3:P})\n"
-                    "Expected Unprotected: {4} ({5:P})\n"
-                    "Unexpected Unprotected (BAD): {6} ({7:P})\n",
-                    ExpectedProtected,
+  outs() << formatv("\nTotal Indirect CF Instructions: {0}\n"
+                    "Expected Protected: {1} ({2:P})\n"
+                    "Unexpected Protected: {3} ({4:P})\n"
+                    "Expected Unprotected: {5} ({6:P})\n"
+                    "Unexpected Unprotected (BAD): {7} ({8:P})\n",
+                    IndirectCFInstructions, ExpectedProtected,
                     ((double)ExpectedProtected) / IndirectCFInstructions,
                     UnexpectedProtected,
                     ((double)UnexpectedProtected) / IndirectCFInstructions,
@@ -163,7 +235,7 @@ void printIndirectCFInstructions(FileAnalysis &Analysis,
   if (!SpecialCaseList)
     return;
 
-  outs() << "Blacklist Results:\n";
+  outs() << "\nBlacklist Results:\n";
   for (const auto &KV : BlameCounter) {
     outs() << "  " << BlacklistFilename << ":" << KV.first << " affects "
            << KV.second << " indirect CF instructions.\n";
@@ -182,6 +254,9 @@ int main(int argc, char **argv) {
   InitializeAllTargetMCs();
   InitializeAllAsmParsers();
   InitializeAllDisassemblers();
+
+  if (PrintBlameContextAll && !PrintBlameContext)
+    PrintBlameContext.setValue(PrintBlameContextAll);
 
   std::unique_ptr<SpecialCaseList> SpecialCaseList;
   if (BlacklistFilename != "-") {

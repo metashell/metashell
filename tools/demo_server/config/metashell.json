@@ -30,7 +30,7 @@
       "tools/demo_server/bin/run"
     ],
     "include" : [
-      { "src": "bin/${PLATFORM_ID}/templight/lib/clang/6.0.1/include", "dst": "" }
+      { "src": "3rd/templight/llvm/tools/clang/lib/Headers", "dst": "" }
     ],
     "share" : [ { "src": "tools/demo_server/share", "dst": "" } ],
     "launcher" : {

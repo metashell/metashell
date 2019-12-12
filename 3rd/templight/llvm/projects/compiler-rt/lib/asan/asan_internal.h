@@ -1,9 +1,8 @@
 //===-- asan_internal.h -----------------------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -36,7 +35,7 @@
 // If set, values like allocator chunk size, as well as defaults for some flags
 // will be changed towards less memory overhead.
 #ifndef ASAN_LOW_MEMORY
-# if SANITIZER_IOS || SANITIZER_ANDROID
+# if SANITIZER_IOS || SANITIZER_ANDROID || SANITIZER_RTEMS
 #  define ASAN_LOW_MEMORY 1
 # else
 #  define ASAN_LOW_MEMORY 0
@@ -78,7 +77,7 @@ void InitializeShadowMemory();
 // asan_malloc_linux.cc / asan_malloc_mac.cc
 void ReplaceSystemMalloc();
 
-// asan_linux.cc / asan_mac.cc / asan_win.cc
+// asan_linux.cc / asan_mac.cc / asan_rtems.cc / asan_win.cc
 uptr FindDynamicShadowStart();
 void *AsanDoesNotSupportStaticLinkage();
 void AsanCheckDynamicRTPrereqs();
@@ -110,6 +109,11 @@ void AppendToErrorMessageBuffer(const char *buffer);
 void *AsanDlSymNext(const char *sym);
 
 void ReserveShadowMemoryRange(uptr beg, uptr end, const char *name);
+
+// Returns `true` iff most of ASan init process should be skipped due to the
+// ASan library being loaded via `dlopen()`. Platforms may perform any
+// `dlopen()` specific initialization inside this function.
+bool HandleDlopenInit();
 
 // Add convenient macro for interface functions that may be represented as
 // weak hooks.
@@ -147,6 +151,9 @@ const int kAsanArrayCookieMagic = 0xac;
 const int kAsanIntraObjectRedzone = 0xbb;
 const int kAsanAllocaLeftMagic = 0xca;
 const int kAsanAllocaRightMagic = 0xcb;
+// Used to populate the shadow gap for systems without memory
+// protection there (i.e. Myriad).
+const int kAsanShadowGap = 0xcc;
 
 static const uptr kCurrentStackFrameMagic = 0x41B58AB3;
 static const uptr kRetiredStackFrameMagic = 0x45E0360E;

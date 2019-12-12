@@ -1,9 +1,8 @@
 //===-- sanitizer_allocator_test.cc ---------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -53,6 +52,7 @@ static const u64 kAddressSpaceSize = 1ULL << 47;
 typedef DefaultSizeClassMap SizeClassMap;
 #endif
 
+template <typename AddressSpaceViewTy>
 struct AP64 {  // Allocator Params. Short name for shorter demangled names..
   static const uptr kSpaceBeg = kAllocatorSpace;
   static const uptr kSpaceSize = kAllocatorSize;
@@ -60,8 +60,10 @@ struct AP64 {  // Allocator Params. Short name for shorter demangled names..
   typedef ::SizeClassMap SizeClassMap;
   typedef NoOpMapUnmapCallback MapUnmapCallback;
   static const uptr kFlags = 0;
+  using AddressSpaceView = AddressSpaceViewTy;
 };
 
+template <typename AddressSpaceViewTy>
 struct AP64Dyn {
   static const uptr kSpaceBeg = ~(uptr)0;
   static const uptr kSpaceSize = kAllocatorSize;
@@ -69,8 +71,10 @@ struct AP64Dyn {
   typedef ::SizeClassMap SizeClassMap;
   typedef NoOpMapUnmapCallback MapUnmapCallback;
   static const uptr kFlags = 0;
+  using AddressSpaceView = AddressSpaceViewTy;
 };
 
+template <typename AddressSpaceViewTy>
 struct AP64Compact {
   static const uptr kSpaceBeg = ~(uptr)0;
   static const uptr kSpaceSize = kAllocatorSize;
@@ -78,8 +82,10 @@ struct AP64Compact {
   typedef CompactSizeClassMap SizeClassMap;
   typedef NoOpMapUnmapCallback MapUnmapCallback;
   static const uptr kFlags = 0;
+  using AddressSpaceView = AddressSpaceViewTy;
 };
 
+template <typename AddressSpaceViewTy>
 struct AP64VeryCompact {
   static const uptr kSpaceBeg = ~(uptr)0;
   static const uptr kSpaceSize = 1ULL << 37;
@@ -87,13 +93,43 @@ struct AP64VeryCompact {
   typedef VeryCompactSizeClassMap SizeClassMap;
   typedef NoOpMapUnmapCallback MapUnmapCallback;
   static const uptr kFlags = 0;
+  using AddressSpaceView = AddressSpaceViewTy;
 };
 
+template <typename AddressSpaceViewTy>
+struct AP64Dense {
+  static const uptr kSpaceBeg = kAllocatorSpace;
+  static const uptr kSpaceSize = kAllocatorSize;
+  static const uptr kMetadataSize = 16;
+  typedef DenseSizeClassMap SizeClassMap;
+  typedef NoOpMapUnmapCallback MapUnmapCallback;
+  static const uptr kFlags = 0;
+  using AddressSpaceView = AddressSpaceViewTy;
+};
 
-typedef SizeClassAllocator64<AP64> Allocator64;
-typedef SizeClassAllocator64<AP64Dyn> Allocator64Dynamic;
-typedef SizeClassAllocator64<AP64Compact> Allocator64Compact;
-typedef SizeClassAllocator64<AP64VeryCompact> Allocator64VeryCompact;
+template <typename AddressSpaceView>
+using Allocator64ASVT = SizeClassAllocator64<AP64<AddressSpaceView>>;
+using Allocator64 = Allocator64ASVT<LocalAddressSpaceView>;
+
+template <typename AddressSpaceView>
+using Allocator64DynamicASVT = SizeClassAllocator64<AP64Dyn<AddressSpaceView>>;
+using Allocator64Dynamic = Allocator64DynamicASVT<LocalAddressSpaceView>;
+
+template <typename AddressSpaceView>
+using Allocator64CompactASVT =
+    SizeClassAllocator64<AP64Compact<AddressSpaceView>>;
+using Allocator64Compact = Allocator64CompactASVT<LocalAddressSpaceView>;
+
+template <typename AddressSpaceView>
+using Allocator64VeryCompactASVT =
+    SizeClassAllocator64<AP64VeryCompact<AddressSpaceView>>;
+using Allocator64VeryCompact =
+    Allocator64VeryCompactASVT<LocalAddressSpaceView>;
+
+template <typename AddressSpaceView>
+using Allocator64DenseASVT = SizeClassAllocator64<AP64Dense<AddressSpaceView>>;
+using Allocator64Dense = Allocator64DenseASVT<LocalAddressSpaceView>;
+
 #elif defined(__mips64)
 static const u64 kAddressSpaceSize = 1ULL << 40;
 #elif defined(__aarch64__)
@@ -107,19 +143,22 @@ static const u64 kAddressSpaceSize = 1ULL << 32;
 #endif
 
 static const uptr kRegionSizeLog = FIRST_32_SECOND_64(20, 24);
-static const uptr kFlatByteMapSize = kAddressSpaceSize >> kRegionSizeLog;
 
+template <typename AddressSpaceViewTy>
 struct AP32Compact {
   static const uptr kSpaceBeg = 0;
   static const u64 kSpaceSize = kAddressSpaceSize;
   static const uptr kMetadataSize = 16;
   typedef CompactSizeClassMap SizeClassMap;
   static const uptr kRegionSizeLog = ::kRegionSizeLog;
-  typedef FlatByteMap<kFlatByteMapSize> ByteMap;
+  using AddressSpaceView = AddressSpaceViewTy;
   typedef NoOpMapUnmapCallback MapUnmapCallback;
   static const uptr kFlags = 0;
 };
-typedef SizeClassAllocator32<AP32Compact> Allocator32Compact;
+template <typename AddressSpaceView>
+using Allocator32CompactASVT =
+    SizeClassAllocator32<AP32Compact<AddressSpaceView>>;
+using Allocator32Compact = Allocator32CompactASVT<LocalAddressSpaceView>;
 
 template <class SizeClassMap>
 void TestSizeClassMap() {
@@ -144,11 +183,15 @@ TEST(SanitizerCommon, InternalSizeClassMap) {
   TestSizeClassMap<InternalSizeClassMap>();
 }
 
+TEST(SanitizerCommon, DenseSizeClassMap) {
+  TestSizeClassMap<VeryCompactSizeClassMap>();
+}
+
 template <class Allocator>
 void TestSizeClassAllocator() {
   Allocator *a = new Allocator;
   a->Init(kReleaseToOSIntervalNever);
-  SizeClassAllocatorLocalCache<Allocator> cache;
+  typename Allocator::AllocatorCache cache;
   memset(&cache, 0, sizeof(cache));
   cache.Init(0);
 
@@ -226,8 +269,13 @@ TEST(SanitizerCommon, SizeClassAllocator64Dynamic) {
 }
 
 #if !SANITIZER_ANDROID
+//FIXME(kostyak): find values so that those work on Android as well.
 TEST(SanitizerCommon, SizeClassAllocator64Compact) {
   TestSizeClassAllocator<Allocator64Compact>();
+}
+
+TEST(SanitizerCommon, SizeClassAllocator64Dense) {
+  TestSizeClassAllocator<Allocator64Dense>();
 }
 #endif
 
@@ -241,18 +289,23 @@ TEST(SanitizerCommon, SizeClassAllocator32Compact) {
   TestSizeClassAllocator<Allocator32Compact>();
 }
 
+template <typename AddressSpaceViewTy>
 struct AP32SeparateBatches {
   static const uptr kSpaceBeg = 0;
   static const u64 kSpaceSize = kAddressSpaceSize;
   static const uptr kMetadataSize = 16;
   typedef DefaultSizeClassMap SizeClassMap;
   static const uptr kRegionSizeLog = ::kRegionSizeLog;
-  typedef FlatByteMap<kFlatByteMapSize> ByteMap;
+  using AddressSpaceView = AddressSpaceViewTy;
   typedef NoOpMapUnmapCallback MapUnmapCallback;
   static const uptr kFlags =
       SizeClassAllocator32FlagMasks::kUseSeparateSizeClassForBatch;
 };
-typedef SizeClassAllocator32<AP32SeparateBatches> Allocator32SeparateBatches;
+template <typename AddressSpaceView>
+using Allocator32SeparateBatchesASVT =
+    SizeClassAllocator32<AP32SeparateBatches<AddressSpaceView>>;
+using Allocator32SeparateBatches =
+    Allocator32SeparateBatchesASVT<LocalAddressSpaceView>;
 
 TEST(SanitizerCommon, SizeClassAllocator32SeparateBatches) {
   TestSizeClassAllocator<Allocator32SeparateBatches>();
@@ -262,7 +315,7 @@ template <class Allocator>
 void SizeClassAllocatorMetadataStress() {
   Allocator *a = new Allocator;
   a->Init(kReleaseToOSIntervalNever);
-  SizeClassAllocatorLocalCache<Allocator> cache;
+  typename Allocator::AllocatorCache cache;
   memset(&cache, 0, sizeof(cache));
   cache.Init(0);
 
@@ -316,7 +369,7 @@ template <class Allocator>
 void SizeClassAllocatorGetBlockBeginStress(u64 TotalSize) {
   Allocator *a = new Allocator;
   a->Init(kReleaseToOSIntervalNever);
-  SizeClassAllocatorLocalCache<Allocator> cache;
+  typename Allocator::AllocatorCache cache;
   memset(&cache, 0, sizeof(cache));
   cache.Init(0);
 
@@ -375,6 +428,7 @@ int TestMapUnmapCallback::unmap_count;
 // to run them all at the same time. FIXME: Make them not flaky and reenable.
 #if !SANITIZER_WINDOWS
 
+template <typename AddressSpaceViewTy = LocalAddressSpaceView>
 struct AP64WithCallback {
   static const uptr kSpaceBeg = kAllocatorSpace;
   static const uptr kSpaceSize = kAllocatorSize;
@@ -382,16 +436,17 @@ struct AP64WithCallback {
   typedef ::SizeClassMap SizeClassMap;
   typedef TestMapUnmapCallback MapUnmapCallback;
   static const uptr kFlags = 0;
+  using AddressSpaceView = AddressSpaceViewTy;
 };
 
 TEST(SanitizerCommon, SizeClassAllocator64MapUnmapCallback) {
   TestMapUnmapCallback::map_count = 0;
   TestMapUnmapCallback::unmap_count = 0;
-  typedef SizeClassAllocator64<AP64WithCallback> Allocator64WithCallBack;
+  typedef SizeClassAllocator64<AP64WithCallback<>> Allocator64WithCallBack;
   Allocator64WithCallBack *a = new Allocator64WithCallBack;
   a->Init(kReleaseToOSIntervalNever);
   EXPECT_EQ(TestMapUnmapCallback::map_count, 1);  // Allocator state.
-  SizeClassAllocatorLocalCache<Allocator64WithCallBack> cache;
+  typename Allocator64WithCallBack::AllocatorCache cache;
   memset(&cache, 0, sizeof(cache));
   cache.Init(0);
   AllocatorStats stats;
@@ -408,13 +463,14 @@ TEST(SanitizerCommon, SizeClassAllocator64MapUnmapCallback) {
 #endif
 #endif
 
+template <typename AddressSpaceViewTy = LocalAddressSpaceView>
 struct AP32WithCallback {
   static const uptr kSpaceBeg = 0;
   static const u64 kSpaceSize = kAddressSpaceSize;
   static const uptr kMetadataSize = 16;
   typedef CompactSizeClassMap SizeClassMap;
   static const uptr kRegionSizeLog = ::kRegionSizeLog;
-  typedef FlatByteMap<kFlatByteMapSize> ByteMap;
+  using AddressSpaceView = AddressSpaceViewTy;
   typedef TestMapUnmapCallback MapUnmapCallback;
   static const uptr kFlags = 0;
 };
@@ -422,11 +478,11 @@ struct AP32WithCallback {
 TEST(SanitizerCommon, SizeClassAllocator32MapUnmapCallback) {
   TestMapUnmapCallback::map_count = 0;
   TestMapUnmapCallback::unmap_count = 0;
-  typedef SizeClassAllocator32<AP32WithCallback> Allocator32WithCallBack;
+  typedef SizeClassAllocator32<AP32WithCallback<>> Allocator32WithCallBack;
   Allocator32WithCallBack *a = new Allocator32WithCallBack;
   a->Init(kReleaseToOSIntervalNever);
   EXPECT_EQ(TestMapUnmapCallback::map_count, 0);
-  SizeClassAllocatorLocalCache<Allocator32WithCallBack>  cache;
+  Allocator32WithCallBack::AllocatorCache cache;
   memset(&cache, 0, sizeof(cache));
   cache.Init(0);
   AllocatorStats stats;
@@ -444,7 +500,7 @@ TEST(SanitizerCommon, SizeClassAllocator32MapUnmapCallback) {
 TEST(SanitizerCommon, LargeMmapAllocatorMapUnmapCallback) {
   TestMapUnmapCallback::map_count = 0;
   TestMapUnmapCallback::unmap_count = 0;
-  LargeMmapAllocator<TestMapUnmapCallback, DieOnFailure> a;
+  LargeMmapAllocator<TestMapUnmapCallback> a;
   a.Init();
   AllocatorStats stats;
   stats.Init();
@@ -460,7 +516,7 @@ TEST(SanitizerCommon, LargeMmapAllocatorMapUnmapCallback) {
 TEST(SanitizerCommon, SizeClassAllocator64Overflow) {
   Allocator64 a;
   a.Init(kReleaseToOSIntervalNever);
-  SizeClassAllocatorLocalCache<Allocator64> cache;
+  Allocator64::AllocatorCache cache;
   memset(&cache, 0, sizeof(cache));
   cache.Init(0);
   AllocatorStats stats;
@@ -482,7 +538,7 @@ TEST(SanitizerCommon, SizeClassAllocator64Overflow) {
 #endif
 
 TEST(SanitizerCommon, LargeMmapAllocator) {
-  LargeMmapAllocator<NoOpMapUnmapCallback, DieOnFailure> a;
+  LargeMmapAllocator<NoOpMapUnmapCallback> a;
   a.Init();
   AllocatorStats stats;
   stats.Init();
@@ -559,18 +615,14 @@ TEST(SanitizerCommon, LargeMmapAllocator) {
   a.Deallocate(&stats, p);
 }
 
-template
-<class PrimaryAllocator, class SecondaryAllocator, class AllocatorCache>
+template <class PrimaryAllocator>
 void TestCombinedAllocator() {
-  typedef
-      CombinedAllocator<PrimaryAllocator, AllocatorCache, SecondaryAllocator>
-      Allocator;
-  SetAllocatorMayReturnNull(true);
+  typedef CombinedAllocator<PrimaryAllocator> Allocator;
   Allocator *a = new Allocator;
   a->Init(kReleaseToOSIntervalNever);
   std::mt19937 r;
 
-  AllocatorCache cache;
+  typename Allocator::AllocatorCache cache;
   memset(&cache, 0, sizeof(cache));
   a->InitCache(&cache);
 
@@ -579,11 +631,7 @@ void TestCombinedAllocator() {
   EXPECT_EQ(a->Allocate(&cache, (uptr)-1 - 1024, 1), (void*)0);
   EXPECT_EQ(a->Allocate(&cache, (uptr)-1 - 1024, 1024), (void*)0);
   EXPECT_EQ(a->Allocate(&cache, (uptr)-1 - 1023, 1024), (void*)0);
-
-  // Set to false
-  SetAllocatorMayReturnNull(false);
-  EXPECT_DEATH(a->Allocate(&cache, -1, 1),
-               "allocator is terminating the process");
+  EXPECT_EQ(a->Allocate(&cache, -1, 1), (void*)0);
 
   const uptr kNumAllocs = 100000;
   const uptr kNumIter = 10;
@@ -602,6 +650,22 @@ void TestCombinedAllocator() {
 
     std::shuffle(allocated.begin(), allocated.end(), r);
 
+    // Test ForEachChunk(...)
+    {
+      std::set<void *> reported_chunks;
+      auto cb = [](uptr chunk, void *arg) {
+        auto reported_chunks_ptr = reinterpret_cast<std::set<void *> *>(arg);
+        auto pair =
+            reported_chunks_ptr->insert(reinterpret_cast<void *>(chunk));
+        // Check chunk is never reported more than once.
+        ASSERT_TRUE(pair.second);
+      };
+      a->ForEachChunk(cb, reinterpret_cast<void *>(&reported_chunks));
+      for (const auto &allocated_ptr : allocated) {
+        ASSERT_NE(reported_chunks.find(allocated_ptr), reported_chunks.end());
+      }
+    }
+
     for (uptr i = 0; i < kNumAllocs; i++) {
       void *x = allocated[i];
       uptr *meta = reinterpret_cast<uptr*>(a->GetMetaData(x));
@@ -619,42 +683,32 @@ void TestCombinedAllocator() {
 
 #if SANITIZER_CAN_USE_ALLOCATOR64
 TEST(SanitizerCommon, CombinedAllocator64) {
-  TestCombinedAllocator<Allocator64,
-      LargeMmapAllocator<>,
-      SizeClassAllocatorLocalCache<Allocator64> > ();
+  TestCombinedAllocator<Allocator64>();
 }
 
 TEST(SanitizerCommon, CombinedAllocator64Dynamic) {
-  TestCombinedAllocator<Allocator64Dynamic,
-      LargeMmapAllocator<>,
-      SizeClassAllocatorLocalCache<Allocator64Dynamic> > ();
+  TestCombinedAllocator<Allocator64Dynamic>();
 }
 
 #if !SANITIZER_ANDROID
 TEST(SanitizerCommon, CombinedAllocator64Compact) {
-  TestCombinedAllocator<Allocator64Compact,
-      LargeMmapAllocator<>,
-      SizeClassAllocatorLocalCache<Allocator64Compact> > ();
+  TestCombinedAllocator<Allocator64Compact>();
 }
 #endif
 
 TEST(SanitizerCommon, CombinedAllocator64VeryCompact) {
-  TestCombinedAllocator<Allocator64VeryCompact,
-      LargeMmapAllocator<>,
-      SizeClassAllocatorLocalCache<Allocator64VeryCompact> > ();
+  TestCombinedAllocator<Allocator64VeryCompact>();
 }
 #endif
 
 TEST(SanitizerCommon, CombinedAllocator32Compact) {
-  TestCombinedAllocator<Allocator32Compact,
-      LargeMmapAllocator<>,
-      SizeClassAllocatorLocalCache<Allocator32Compact> > ();
+  TestCombinedAllocator<Allocator32Compact>();
 }
 
-template <class AllocatorCache>
+template <class Allocator>
 void TestSizeClassAllocatorLocalCache() {
+  using AllocatorCache = typename Allocator::AllocatorCache;
   AllocatorCache cache;
-  typedef typename AllocatorCache::Allocator Allocator;
   Allocator *a = new Allocator();
 
   a->Init(kReleaseToOSIntervalNever);
@@ -690,35 +744,30 @@ void TestSizeClassAllocatorLocalCache() {
 // to run them all at the same time. FIXME: Make them not flaky and reenable.
 #if !SANITIZER_WINDOWS
 TEST(SanitizerCommon, SizeClassAllocator64LocalCache) {
-  TestSizeClassAllocatorLocalCache<
-      SizeClassAllocatorLocalCache<Allocator64> >();
+  TestSizeClassAllocatorLocalCache<Allocator64>();
 }
 
 TEST(SanitizerCommon, SizeClassAllocator64DynamicLocalCache) {
-  TestSizeClassAllocatorLocalCache<
-      SizeClassAllocatorLocalCache<Allocator64Dynamic> >();
+  TestSizeClassAllocatorLocalCache<Allocator64Dynamic>();
 }
 
 #if !SANITIZER_ANDROID
 TEST(SanitizerCommon, SizeClassAllocator64CompactLocalCache) {
-  TestSizeClassAllocatorLocalCache<
-      SizeClassAllocatorLocalCache<Allocator64Compact> >();
+  TestSizeClassAllocatorLocalCache<Allocator64Compact>();
 }
 #endif
 TEST(SanitizerCommon, SizeClassAllocator64VeryCompactLocalCache) {
-  TestSizeClassAllocatorLocalCache<
-      SizeClassAllocatorLocalCache<Allocator64VeryCompact> >();
+  TestSizeClassAllocatorLocalCache<Allocator64VeryCompact>();
 }
 #endif
 #endif
 
 TEST(SanitizerCommon, SizeClassAllocator32CompactLocalCache) {
-  TestSizeClassAllocatorLocalCache<
-      SizeClassAllocatorLocalCache<Allocator32Compact> >();
+  TestSizeClassAllocatorLocalCache<Allocator32Compact>();
 }
 
 #if SANITIZER_CAN_USE_ALLOCATOR64
-typedef SizeClassAllocatorLocalCache<Allocator64> AllocatorCache;
+typedef Allocator64::AllocatorCache AllocatorCache;
 static AllocatorCache static_allocator_cache;
 
 void *AllocatorLeakTestWorker(void *arg) {
@@ -818,11 +867,11 @@ TEST(Allocator, LargeAlloc) {
 TEST(Allocator, ScopedBuffer) {
   const int kSize = 512;
   {
-    InternalScopedBuffer<int> int_buf(kSize);
-    EXPECT_EQ(sizeof(int) * kSize, int_buf.size());  // NOLINT
+    InternalMmapVector<int> int_buf(kSize);
+    EXPECT_EQ((uptr)kSize, int_buf.size()); // NOLINT
   }
-  InternalScopedBuffer<char> char_buf(kSize);
-  EXPECT_EQ(sizeof(char) * kSize, char_buf.size());  // NOLINT
+  InternalMmapVector<char> char_buf(kSize);
+  EXPECT_EQ((uptr)kSize, char_buf.size()); // NOLINT
   internal_memset(char_buf.data(), 'c', kSize);
   for (int i = 0; i < kSize; i++) {
     EXPECT_EQ('c', char_buf[i]);
@@ -837,7 +886,7 @@ template <class Allocator>
 void TestSizeClassAllocatorIteration() {
   Allocator *a = new Allocator;
   a->Init(kReleaseToOSIntervalNever);
-  SizeClassAllocatorLocalCache<Allocator> cache;
+  typename Allocator::AllocatorCache cache;
   memset(&cache, 0, sizeof(cache));
   cache.Init(0);
 
@@ -893,7 +942,7 @@ TEST(SanitizerCommon, SizeClassAllocator32Iteration) {
 }
 
 TEST(SanitizerCommon, LargeMmapAllocatorIteration) {
-  LargeMmapAllocator<NoOpMapUnmapCallback, DieOnFailure> a;
+  LargeMmapAllocator<NoOpMapUnmapCallback> a;
   a.Init();
   AllocatorStats stats;
   stats.Init();
@@ -920,7 +969,7 @@ TEST(SanitizerCommon, LargeMmapAllocatorIteration) {
 }
 
 TEST(SanitizerCommon, LargeMmapAllocatorBlockBegin) {
-  LargeMmapAllocator<NoOpMapUnmapCallback, DieOnFailure> a;
+  LargeMmapAllocator<NoOpMapUnmapCallback> a;
   a.Init();
   AllocatorStats stats;
   stats.Init();
@@ -960,7 +1009,8 @@ TEST(SanitizerCommon, LargeMmapAllocatorBlockBegin) {
 // Don't test OOM conditions on Win64 because it causes other tests on the same
 // machine to OOM.
 #if SANITIZER_CAN_USE_ALLOCATOR64 && !SANITIZER_WINDOWS64 && !SANITIZER_ANDROID
-typedef SizeClassMap<3, 4, 8, 63, 128, 16> SpecialSizeClassMap;
+typedef __sanitizer::SizeClassMap<3, 4, 8, 63, 128, 16> SpecialSizeClassMap;
+template <typename AddressSpaceViewTy = LocalAddressSpaceView>
 struct AP64_SpecialSizeClassMap {
   static const uptr kSpaceBeg = kAllocatorSpace;
   static const uptr kSpaceSize = kAllocatorSize;
@@ -968,17 +1018,18 @@ struct AP64_SpecialSizeClassMap {
   typedef SpecialSizeClassMap SizeClassMap;
   typedef NoOpMapUnmapCallback MapUnmapCallback;
   static const uptr kFlags = 0;
+  using AddressSpaceView = AddressSpaceViewTy;
 };
 
 // Regression test for out-of-memory condition in PopulateFreeList().
 TEST(SanitizerCommon, SizeClassAllocator64PopulateFreeListOOM) {
   // In a world where regions are small and chunks are huge...
-  typedef SizeClassAllocator64<AP64_SpecialSizeClassMap> SpecialAllocator64;
+  typedef SizeClassAllocator64<AP64_SpecialSizeClassMap<>> SpecialAllocator64;
   const uptr kRegionSize =
       kAllocatorSize / SpecialSizeClassMap::kNumClassesRounded;
   SpecialAllocator64 *a = new SpecialAllocator64;
   a->Init(kReleaseToOSIntervalNever);
-  SizeClassAllocatorLocalCache<SpecialAllocator64> cache;
+  SpecialAllocator64::AllocatorCache cache;
   memset(&cache, 0, sizeof(cache));
   cache.Init(0);
 
@@ -1294,7 +1345,7 @@ TEST(SanitizerCommon, TwoLevelByteMap) {
   const u64 kSize1 = 1 << 6, kSize2 = 1 << 12;
   const u64 n = kSize1 * kSize2;
   TwoLevelByteMap<kSize1, kSize2> m;
-  m.TestOnlyInit();
+  m.Init();
   for (u64 i = 0; i < n; i += 7) {
     m.set(i, (i % 100) + 1);
   }
@@ -1308,8 +1359,10 @@ TEST(SanitizerCommon, TwoLevelByteMap) {
   m.TestOnlyUnmap();
 }
 
-
-typedef TwoLevelByteMap<1 << 12, 1 << 13, TestMapUnmapCallback> TestByteMap;
+template <typename AddressSpaceView>
+using TestByteMapASVT =
+    TwoLevelByteMap<1 << 12, 1 << 13, AddressSpaceView, TestMapUnmapCallback>;
+using TestByteMap = TestByteMapASVT<LocalAddressSpaceView>;
 
 struct TestByteMapParam {
   TestByteMap *m;
@@ -1329,7 +1382,7 @@ void *TwoLevelByteMapUserThread(void *param) {
 
 TEST(SanitizerCommon, ThreadedTwoLevelByteMap) {
   TestByteMap m;
-  m.TestOnlyInit();
+  m.Init();
   TestMapUnmapCallback::map_count = 0;
   TestMapUnmapCallback::unmap_count = 0;
   static const int kNumThreads = 4;

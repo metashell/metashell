@@ -1,9 +1,8 @@
 //===- X86VZeroUpper.cpp - AVX vzeroupper instruction inserter ------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -264,8 +263,8 @@ void VZeroUpperInserter::processBasicBlock(MachineBasicBlock &MBB) {
     }
   }
 
-  DEBUG(dbgs() << "MBB #" << MBB.getNumber() << " exit state: "
-               << getBlockExitStateName(CurState) << '\n');
+  LLVM_DEBUG(dbgs() << "MBB #" << MBB.getNumber() << " exit state: "
+                    << getBlockExitStateName(CurState) << '\n');
 
   if (CurState == EXITS_DIRTY)
     for (MachineBasicBlock::succ_iterator SI = MBB.succ_begin(),
@@ -341,8 +340,8 @@ bool VZeroUpperInserter::runOnMachineFunction(MachineFunction &MF) {
     // successors need to be added to the worklist (if they haven't been
     // already).
     if (BBState.ExitState == PASS_THROUGH) {
-      DEBUG(dbgs() << "MBB #" << MBB.getNumber()
-                   << " was Pass-through, is now Dirty-out.\n");
+      LLVM_DEBUG(dbgs() << "MBB #" << MBB.getNumber()
+                        << " was Pass-through, is now Dirty-out.\n");
       for (MachineBasicBlock *Succ : MBB.successors())
         addDirtySuccessor(*Succ);
     }

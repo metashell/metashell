@@ -1,4 +1,4 @@
-// RUN: llvm-mc -filetype=obj -triple x86_64-pc-linux-gnu %s -o - | llvm-readobj -s | FileCheck %s
+// RUN: llvm-mc -filetype=obj -triple x86_64-pc-linux-gnu %s -o - | llvm-readobj -S | FileCheck %s
 // RUN: llvm-mc -filetype=asm -triple x86_64-pc-linux-gnu %s -o - |  FileCheck %s --check-prefix=ASM
 
 // Test that these names are accepted.
@@ -279,3 +279,42 @@ bar:
 // CHECK-NEXT:     Flags [
 // CHECK-NEXT:       SHF_EXCLUDE
 // CHECK-NEXT:     ]
+
+// Test SHT_LLVM_LINKER_OPTIONS
+
+.section ".linker-options","e",@llvm_linker_options
+// ASM: .section ".linker-options","e",@llvm_linker_options
+
+// CHECK: Section {
+// CHECK:   Name: .linker-options
+// CHECK-NEXT:   Type: SHT_LLVM_LINKER_OPTIONS
+// CHECK-NEXT:   Flags [
+// CHECK-NEXT:     SHF_EXCLUDE
+// CHECK-NEXT:   ]
+// CHECK: }
+
+// Test SHT_LLVM_DEPENDENT_LIBRARIES
+
+.section .deplibs,"MS",@llvm_dependent_libraries,1
+// ASM: .section .deplibs,"MS",@llvm_dependent_libraries,1
+
+// CHECK: Section {
+// CHECK:   Name: .deplibs
+// CHECK-NEXT:   Type: SHT_LLVM_DEPENDENT_LIBRARIES
+// CHECK-NEXT:   Flags [
+// CHECK-NEXT:       SHF_MERGE
+// CHECK-NEXT:       SHF_STRINGS
+// CHECK-NEXT:   ]
+// CHECK: }
+
+// Test SHT_LLVM_SYMPART
+
+.section .llvm_sympart,"",@llvm_sympart
+// ASM: .section .llvm_sympart,"",@llvm_sympart
+
+// CHECK: Section {
+// CHECK:   Name: .llvm_sympart
+// CHECK-NEXT:   Type: SHT_LLVM_SYMPART
+// CHECK-NEXT:   Flags [
+// CHECK-NEXT:   ]
+// CHECK: }

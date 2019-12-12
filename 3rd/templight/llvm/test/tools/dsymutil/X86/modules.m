@@ -18,11 +18,11 @@ EOF
    clang -c -g odr_violation.c -o 2.o
 */
 
-// RUN: llvm-dsymutil -f -oso-prepend-path=%p/../Inputs/modules \
+// RUN: dsymutil -f -oso-prepend-path=%p/../Inputs/modules \
 // RUN:   -y %p/dummy-debug-map.map -o - \
 // RUN:     | llvm-dwarfdump -v --debug-info - | FileCheck %s
 
-// RUN: llvm-dsymutil -f -oso-prepend-path=%p/../Inputs/modules -y \
+// RUN: dsymutil -f -oso-prepend-path=%p/../Inputs/modules -y \
 // RUN:   %p/dummy-debug-map.map -o %t 2>&1 | FileCheck --check-prefix=WARN %s
 
 // WARN-NOT: warning: hash mismatch
@@ -116,6 +116,7 @@ Bar odr_violation = { 42 };
 // CHECK:       DW_AT_type {{.*}}{0x{{0*}}[[PTR:.*]]}
 //
 // CHECK: 0x{{0*}}[[PTR]]: DW_TAG_pointer_type
+// FIXME: The next line doesn't work.
 // CHECK-NEXT   DW_AT_type [DW_FORM_ref_addr] {0x{{0*}}[[INTERFACE]]
 extern int odr_violation;
 

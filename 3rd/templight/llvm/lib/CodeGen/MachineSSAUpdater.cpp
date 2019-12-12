@@ -1,9 +1,8 @@
 //===- MachineSSAUpdater.cpp - Unstructured SSA Update Tool ---------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -204,7 +203,7 @@ unsigned MachineSSAUpdater::GetValueInMiddleOfBlock(MachineBasicBlock *BB) {
   // If the client wants to know about all new instructions, tell it.
   if (InsertedPHIs) InsertedPHIs->push_back(InsertedPHI);
 
-  DEBUG(dbgs() << "  Inserted PHI: " << *InsertedPHI << "\n");
+  LLVM_DEBUG(dbgs() << "  Inserted PHI: " << *InsertedPHI << "\n");
   return InsertedPHI->getOperand(0).getReg();
 }
 
@@ -254,14 +253,14 @@ public:
   private:
     MachineInstr *PHI;
     unsigned idx;
- 
+
   public:
     explicit PHI_iterator(MachineInstr *P) // begin iterator
       : PHI(P), idx(1) {}
     PHI_iterator(MachineInstr *P, bool) // end iterator
       : PHI(P), idx(PHI->getNumOperands()) {}
 
-    PHI_iterator &operator++() { idx += 2; return *this; } 
+    PHI_iterator &operator++() { idx += 2; return *this; }
     bool operator==(const PHI_iterator& x) const { return idx == x.idx; }
     bool operator!=(const PHI_iterator& x) const { return !operator==(x); }
 

@@ -1,9 +1,8 @@
 //===-- sanitizer_linux_s390.cc -------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -126,7 +125,7 @@ static bool FixedCVE_2016_2143() {
   // This should never fail, but just in case...
   if (uname(&buf))
     return false;
-  char *ptr = buf.release;
+  const char *ptr = buf.release;
   major = internal_simple_strtoll(ptr, &ptr, 10);
   // At least first 2 should be matched.
   if (ptr[0] != '.')

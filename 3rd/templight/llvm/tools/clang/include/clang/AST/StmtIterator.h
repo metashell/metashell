@@ -1,9 +1,8 @@
 //===- StmtIterator.h - Iterators for Statements ----------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -33,14 +32,14 @@ protected:
     DeclGroupMode = 0x2,
     Flags = 0x3
   };
-  
+
   union {
     Stmt **stmt;
     Decl **DGI;
   };
   uintptr_t RawVAPtr = 0;
   Decl **DGE;
-  
+
   StmtIteratorBase(Stmt **s) : stmt(s) {}
   StmtIteratorBase(const VariableArrayType *t);
   StmtIteratorBase(Decl **dgi, Decl **dge);

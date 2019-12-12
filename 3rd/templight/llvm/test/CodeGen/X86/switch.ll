@@ -318,15 +318,15 @@ return: ret void
 ; NOOPT-LABEL: optimal_jump_table1
 ; NOOPT: testl %edi, %edi
 ; NOOPT: je
-; NOOPT: subl $5, %eax
+; NOOPT: subl $5, [[REG:%e[abcd][xi]]]
 ; NOOPT: je
-; NOOPT: subl $6, %eax
+; NOOPT: subl $6, [[REG]]
 ; NOOPT: je
-; NOOPT: subl $12, %eax
+; NOOPT: subl $12, [[REG]]
 ; NOOPT: je
-; NOOPT: subl $13, %eax
+; NOOPT: subl $13, [[REG]]
 ; NOOPT: je
-; NOOPT: subl $15, %eax
+; NOOPT: subl $15, [[REG]]
 ; NOOPT: je
 }
 
@@ -777,4 +777,31 @@ end:
 ; (-verify-machine-instrs cathces this).
 ; CHECK: btl
 ; CHECK-NOT: btl
+}
+
+
+define void @range_with_unreachable_fallthrough(i32 %i) {
+entry:
+  switch i32 %i, label %default [
+    i32 1, label %bb1
+    i32 2, label %bb1
+    i32 3, label %bb1
+    i32 4, label %bb2
+    i32 5, label %bb2
+    i32 6, label %bb2
+  ]
+bb1: tail call void @g(i32 0) br label %return
+bb2: tail call void @g(i32 1) br label %return
+default: unreachable
+
+return:
+  ret void
+
+; CHECK-LABEL: range_with_unreachable_fallthrough:
+; Since the default is unreachable, either cluster will be reached.
+; Only one comparison should be emitted.
+; CHECK: cmpl
+; CHECK-NOT: cmpl
+; CHECK: jmp g
+; CHECK: jmp g
 }

@@ -1,9 +1,8 @@
 //===- DeclFriend.h - Classes for C++ friend declarations -------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -148,17 +147,17 @@ public:
   /// Retrieves the source range for the friend declaration.
   SourceRange getSourceRange() const override LLVM_READONLY {
     if (NamedDecl *ND = getFriendDecl()) {
-      if (FunctionDecl *FD = dyn_cast<FunctionDecl>(ND))
+      if (const auto *FD = dyn_cast<FunctionDecl>(ND))
         return FD->getSourceRange();
-      if (FunctionTemplateDecl *FTD = dyn_cast<FunctionTemplateDecl>(ND))
+      if (const auto *FTD = dyn_cast<FunctionTemplateDecl>(ND))
         return FTD->getSourceRange();
-      if (ClassTemplateDecl *CTD = dyn_cast<ClassTemplateDecl>(ND))
+      if (const auto *CTD = dyn_cast<ClassTemplateDecl>(ND))
         return CTD->getSourceRange();
-      if (DeclaratorDecl *DD = dyn_cast<DeclaratorDecl>(ND)) {
+      if (const auto *DD = dyn_cast<DeclaratorDecl>(ND)) {
         if (DD->getOuterLocStart() != DD->getInnerLocStart())
           return DD->getSourceRange();
       }
-      return SourceRange(getFriendLoc(), ND->getLocEnd());
+      return SourceRange(getFriendLoc(), ND->getEndLoc());
     }
     else if (TypeSourceInfo *TInfo = getFriendType()) {
       SourceLocation StartL =
@@ -254,7 +253,7 @@ inline void CXXRecordDecl::pushFriendDecl(FriendDecl *FD) {
   FD->NextFriend = data().FirstFriend;
   data().FirstFriend = FD;
 }
-  
+
 } // namespace clang
 
 #endif // LLVM_CLANG_AST_DECLFRIEND_H

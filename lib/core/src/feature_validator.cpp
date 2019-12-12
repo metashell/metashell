@@ -28,7 +28,7 @@ namespace metashell
   namespace core
   {
     feature_validator::feature_validator(
-        data::engine_name engine_,
+        data::real_engine_name engine_,
         std::vector<data::feature> supported_features_)
       : _engine(std::move(engine_)),
         _supported_features(move(supported_features_)),

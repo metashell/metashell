@@ -6,20 +6,15 @@
 define x86_mmx @t0(i32 %A) nounwind {
 ; X32-LABEL: t0:
 ; X32:       ## %bb.0:
-; X32-NEXT:    subl $12, %esp
-; X32-NEXT:    movd {{.*#+}} xmm0 = mem[0],zero,zero,zero
-; X32-NEXT:    pshufd {{.*#+}} xmm0 = xmm0[1,0,1,1]
-; X32-NEXT:    movq %xmm0, (%esp)
-; X32-NEXT:    movq (%esp), %mm0
-; X32-NEXT:    addl $12, %esp
+; X32-NEXT:    movd {{[0-9]+}}(%esp), %mm1
+; X32-NEXT:    pxor %mm0, %mm0
+; X32-NEXT:    punpckldq %mm1, %mm0 ## mm0 = mm0[0],mm1[0]
 ; X32-NEXT:    retl
 ;
 ; X64-LABEL: t0:
 ; X64:       ## %bb.0:
-; X64-NEXT:    ## kill: def %edi killed %edi def %rdi
-; X64-NEXT:    movq %rdi, %xmm0
-; X64-NEXT:    pslldq {{.*#+}} xmm0 = zero,zero,zero,zero,zero,zero,zero,zero,xmm0[0,1,2,3,4,5,6,7]
-; X64-NEXT:    pshufd {{.*#+}} xmm0 = xmm0[0,2,2,3]
+; X64-NEXT:    movd %edi, %xmm0
+; X64-NEXT:    pshufd {{.*#+}} xmm0 = xmm0[1,0,1,1]
 ; X64-NEXT:    retq
   %tmp3 = insertelement <2 x i32> < i32 0, i32 undef >, i32 %A, i32 1
   %tmp4 = bitcast <2 x i32> %tmp3 to x86_mmx

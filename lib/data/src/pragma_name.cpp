@@ -68,7 +68,7 @@ namespace metashell
     {
       for (const auto& token : name_.tokens())
       {
-        if (begin_ == end_ || *begin_ != token)
+        if (begin_ == end_ || value(*begin_) != value(token))
         {
           return boost::none;
         }

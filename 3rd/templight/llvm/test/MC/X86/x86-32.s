@@ -65,8 +65,8 @@
 	skinit %eax
 // CHECK: skinit %eax
 // CHECK: encoding: [0x0f,0x01,0xde]
-	invlpga %ecx, %eax
-// CHECK: invlpga %ecx, %eax
+	invlpga %eax, %ecx
+// CHECK: invlpga %eax, %ecx
 // CHECK: encoding: [0x0f,0x01,0xdf]
 
 	rdtscp
@@ -262,28 +262,28 @@ cmovnae	%bx,%bx
 // CHECK:  encoding: [0x0f,0x44,0xd0]
         	cmovzl	%eax,%edx
 
-// CHECK: cmpps	$0, %xmm0, %xmm1
+// CHECK: cmpeqps	%xmm0, %xmm1
 // CHECK: encoding: [0x0f,0xc2,0xc8,0x00]
         cmpps $0, %xmm0, %xmm1
-// CHECK:	cmpps	$0, (%eax), %xmm1
+// CHECK:	cmpeqps	(%eax), %xmm1
 // CHECK: encoding: [0x0f,0xc2,0x08,0x00]
         cmpps $0, 0(%eax), %xmm1
-// CHECK:	cmppd	$0, %xmm0, %xmm1
+// CHECK:	cmpeqpd	%xmm0, %xmm1
 // CHECK: encoding: [0x66,0x0f,0xc2,0xc8,0x00]
         cmppd $0, %xmm0, %xmm1
-// CHECK:	cmppd	$0, (%eax), %xmm1
+// CHECK:	cmpeqpd	(%eax), %xmm1
 // CHECK: encoding: [0x66,0x0f,0xc2,0x08,0x00]
         cmppd $0, 0(%eax), %xmm1
-// CHECK:	cmpss	$0, %xmm0, %xmm1
+// CHECK:	cmpeqss	%xmm0, %xmm1
 // CHECK: encoding: [0xf3,0x0f,0xc2,0xc8,0x00]
         cmpss $0, %xmm0, %xmm1
-// CHECK:	cmpss	$0, (%eax), %xmm1
+// CHECK:	cmpeqss	(%eax), %xmm1
 // CHECK: encoding: [0xf3,0x0f,0xc2,0x08,0x00]
         cmpss $0, 0(%eax), %xmm1
-// CHECK:	cmpsd	$0, %xmm0, %xmm1
+// CHECK:	cmpeqsd	%xmm0, %xmm1
 // CHECK: encoding: [0xf2,0x0f,0xc2,0xc8,0x00]
         cmpsd $0, %xmm0, %xmm1
-// CHECK:	cmpsd	$0, (%eax), %xmm1
+// CHECK:	cmpeqsd	(%eax), %xmm1
 // CHECK: encoding: [0xf2,0x0f,0xc2,0x08,0x00]
         cmpsd $0, 0(%eax), %xmm1
 
@@ -644,8 +644,6 @@ inl	(%dx), %eax
 
 //PR15455
 
-outs	(%esi), (%dx)
-// CHECK: outsw	(%esi), %dx
 outsb	(%esi), (%dx)
 // CHECK: outsb	(%esi), %dx
 outsw	(%esi), (%dx)
@@ -653,8 +651,6 @@ outsw	(%esi), (%dx)
 outsl	(%esi), (%dx)
 // CHECK: outsl	(%esi), %dx
 
-ins 	(%dx), %es:(%edi)
-// CHECK: insw	%dx, %es:(%edi)
 insb	(%dx), %es:(%edi)
 // CHECK: insb	%dx, %es:(%edi)
 insw	(%dx), %es:(%edi)
@@ -770,13 +766,13 @@ pshufw $90, %mm4, %mm0
 // CHECK:  encoding: [0x66,0xca,0xce,0x7a]
         	lretw	$0x7ace
 
-// CHECK: bound	2(%eax), %bx
+// CHECK: bound	%bx, 2(%eax)
 // CHECK:  encoding: [0x66,0x62,0x58,0x02]
-        	bound	2(%eax),%bx
+        	bound	%bx,2(%eax)
 
-// CHECK: bound	4(%ebx), %ecx
+// CHECK: bound	%ecx, 4(%ebx)
 // CHECK:  encoding: [0x62,0x4b,0x04]
-        	bound	4(%ebx),%ecx
+        	bound	%ecx,4(%ebx)
 
 // CHECK: arpl	%bx, %bx
 // CHECK:  encoding: [0x63,0xdb]
@@ -1059,7 +1055,7 @@ pshufw $90, %mm4, %mm0
 fsubp %st,%st(1)
 
 // PR9164
-// CHECK: fsubp	%st(2)
+// CHECK: fsubp %st, %st(2)
 // CHECK: encoding: [0xde,0xe2]
 fsubp   %st, %st(2)
 

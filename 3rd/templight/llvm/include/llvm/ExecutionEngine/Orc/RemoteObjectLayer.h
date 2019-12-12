@@ -1,9 +1,8 @@
 //===------ RemoteObjectLayer.h - Forwards objs to a remote -----*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -14,9 +13,10 @@
 #ifndef LLVM_EXECUTIONENGINE_ORC_REMOTEOBJECTLAYER_H
 #define LLVM_EXECUTIONENGINE_ORC_REMOTEOBJECTLAYER_H
 
+#include "llvm/ExecutionEngine/Orc/Core.h"
+#include "llvm/ExecutionEngine/Orc/LambdaResolver.h"
 #include "llvm/ExecutionEngine/Orc/OrcRemoteTargetRPCAPI.h"
 #include "llvm/Object/ObjectFile.h"
-#include "llvm/ExecutionEngine/Orc/LambdaResolver.h"
 #include <map>
 
 namespace llvm {
@@ -306,15 +306,21 @@ public:
   using ObjHandleT = RemoteObjectLayerAPI::ObjHandleT;
   using RemoteSymbol = RemoteObjectLayerAPI::RemoteSymbol;
 
-  using ObjectPtr =
-    std::shared_ptr<object::OwningBinary<object::ObjectFile>>;
+  using ObjectPtr = std::unique_ptr<MemoryBuffer>;
 
   /// Create a RemoteObjectClientLayer that communicates with a
   /// RemoteObjectServerLayer instance via the given RPCEndpoint.
   ///
   /// The ReportError functor can be used locally log errors that are intended
   /// to be sent  sent
-  RemoteObjectClientLayer(RPCEndpoint &Remote,
+  LLVM_ATTRIBUTE_DEPRECATED(
+      RemoteObjectClientLayer(RPCEndpoint &Remote,
+                              std::function<void(Error)> ReportError),
+      "ORCv1 layers (including RemoteObjectClientLayer) are deprecated. Please "
+      "use "
+      "ORCv2 (see docs/ORCv2.rst)");
+
+  RemoteObjectClientLayer(ORCv1DeprecationAcknowledgement, RPCEndpoint &Remote,
                           std::function<void(Error)> ReportError)
       : RemoteObjectLayer<RPCEndpoint>(Remote, std::move(ReportError)) {
     using ThisT = RemoteObjectClientLayer<RPCEndpoint>;
@@ -323,15 +329,15 @@ public:
             *this, &ThisT::lookupInLogicalDylib);
   }
 
-  /// @brief Add an object to the JIT.
+  /// Add an object to the JIT.
   ///
   /// @return A handle that can be used to refer to the loaded object (for
   ///         symbol searching, finalization, freeing memory, etc.).
   Expected<ObjHandleT>
-  addObject(ObjectPtr Object, std::shared_ptr<JITSymbolResolver> Resolver) {
-    StringRef ObjBuffer = Object->getBinary()->getData();
+  addObject(ObjectPtr ObjBuffer,
+            std::shared_ptr<LegacyJITSymbolResolver> Resolver) {
     if (auto HandleOrErr =
-          this->Remote.template callB<AddObject>(ObjBuffer)) {
+            this->Remote.template callB<AddObject>(ObjBuffer->getBuffer())) {
       auto &Handle = *HandleOrErr;
       // FIXME: Return an error for this:
       assert(!Resolvers.count(Handle) && "Handle already in use?");
@@ -341,26 +347,26 @@ public:
       return HandleOrErr.takeError();
   }
 
-  /// @brief Remove the given object from the JIT.
+  /// Remove the given object from the JIT.
   Error removeObject(ObjHandleT H) {
     return this->Remote.template callB<RemoveObject>(H);
   }
 
-  /// @brief Search for the given named symbol.
+  /// Search for the given named symbol.
   JITSymbol findSymbol(StringRef Name, bool ExportedSymbolsOnly) {
     return remoteToJITSymbol(
              this->Remote.template callB<FindSymbol>(Name,
                                                      ExportedSymbolsOnly));
   }
 
-  /// @brief Search for the given named symbol within the given context.
+  /// Search for the given named symbol within the given context.
   JITSymbol findSymbolIn(ObjHandleT H, StringRef Name, bool ExportedSymbolsOnly) {
     return remoteToJITSymbol(
              this->Remote.template callB<FindSymbolIn>(H, Name,
                                                        ExportedSymbolsOnly));
   }
 
-  /// @brief Immediately emit and finalize the object with the given handle.
+  /// Immediately emit and finalize the object with the given handle.
   Error emitAndFinalize(ObjHandleT H) {
     return this->Remote.template callB<EmitAndFinalize>(H);
   }
@@ -386,7 +392,8 @@ private:
   }
 
   std::map<remote::ResourceIdMgr::ResourceId,
-           std::shared_ptr<JITSymbolResolver>> Resolvers;
+           std::shared_ptr<LegacyJITSymbolResolver>>
+      Resolvers;
 };
 
 /// RemoteObjectServerLayer acts as a server and handling RPC calls for the
@@ -418,11 +425,18 @@ public:
 
   /// Create a RemoteObjectServerLayer with the given base layer (which must be
   /// an object layer), RPC endpoint, and error reporter function.
-  RemoteObjectServerLayer(BaseLayerT &BaseLayer,
-                          RPCEndpoint &Remote,
+  LLVM_ATTRIBUTE_DEPRECATED(
+      RemoteObjectServerLayer(BaseLayerT &BaseLayer, RPCEndpoint &Remote,
+                              std::function<void(Error)> ReportError),
+      "ORCv1 layers (including RemoteObjectServerLayer) are deprecated. Please "
+      "use "
+      "ORCv2 (see docs/ORCv2.rst)");
+
+  RemoteObjectServerLayer(ORCv1DeprecationAcknowledgement,
+                          BaseLayerT &BaseLayer, RPCEndpoint &Remote,
                           std::function<void(Error)> ReportError)
-    : RemoteObjectLayer<RPCEndpoint>(Remote, std::move(ReportError)),
-      BaseLayer(BaseLayer), HandleIdMgr(1) {
+      : RemoteObjectLayer<RPCEndpoint>(Remote, std::move(ReportError)),
+        BaseLayer(BaseLayer), HandleIdMgr(1) {
     using ThisT = RemoteObjectServerLayer<BaseLayerT, RPCEndpoint>;
 
     Remote.template addHandler<AddObject>(*this, &ThisT::addObject);
@@ -459,30 +473,22 @@ private:
 
   Expected<ObjHandleT> addObject(std::string ObjBuffer) {
     auto Buffer = llvm::make_unique<StringMemoryBuffer>(std::move(ObjBuffer));
-    if (auto ObjectOrErr =
-          object::ObjectFile::createObjectFile(Buffer->getMemBufferRef())) {
-      auto Object =
-        std::make_shared<object::OwningBinary<object::ObjectFile>>(
-          std::move(*ObjectOrErr), std::move(Buffer));
+    auto Id = HandleIdMgr.getNext();
+    assert(!BaseLayerHandles.count(Id) && "Id already in use?");
 
-      auto Id = HandleIdMgr.getNext();
-      assert(!BaseLayerHandles.count(Id) && "Id already in use?");
+    auto Resolver = createLambdaResolver(
+        AcknowledgeORCv1Deprecation,
+        [this, Id](const std::string &Name) { return lookup(Id, Name); },
+        [this, Id](const std::string &Name) {
+          return lookupInLogicalDylib(Id, Name);
+        });
 
-      auto Resolver =
-        createLambdaResolver(
-          [this, Id](const std::string &Name) { return lookup(Id, Name); },
-          [this, Id](const std::string &Name) {
-            return lookupInLogicalDylib(Id, Name);
-          });
-
-      if (auto HandleOrErr =
-          BaseLayer.addObject(std::move(Object), std::move(Resolver))) {
-        BaseLayerHandles[Id] = std::move(*HandleOrErr);
-        return Id;
-      } else
-        return teeLog(HandleOrErr.takeError());
+    if (auto HandleOrErr =
+            BaseLayer.addObject(std::move(Buffer), std::move(Resolver))) {
+      BaseLayerHandles[Id] = std::move(*HandleOrErr);
+      return Id;
     } else
-      return teeLog(ObjectOrErr.takeError());
+      return teeLog(HandleOrErr.takeError());
   }
 
   Error removeObject(ObjHandleT H) {
@@ -531,6 +537,31 @@ private:
   remote::ResourceIdMgr HandleIdMgr;
   std::map<ObjHandleT, typename BaseLayerT::ObjHandleT> BaseLayerHandles;
 };
+
+template <typename RPCEndpoint>
+RemoteObjectClientLayer<RPCEndpoint>::RemoteObjectClientLayer(
+    RPCEndpoint &Remote, std::function<void(Error)> ReportError)
+    : RemoteObjectLayer<RPCEndpoint>(Remote, std::move(ReportError)) {
+  using ThisT = RemoteObjectClientLayer<RPCEndpoint>;
+  Remote.template addHandler<Lookup>(*this, &ThisT::lookup);
+  Remote.template addHandler<LookupInLogicalDylib>(
+      *this, &ThisT::lookupInLogicalDylib);
+}
+
+template <typename BaseLayerT, typename RPCEndpoint>
+RemoteObjectServerLayer<BaseLayerT, RPCEndpoint>::RemoteObjectServerLayer(
+    BaseLayerT &BaseLayer, RPCEndpoint &Remote,
+    std::function<void(Error)> ReportError)
+    : RemoteObjectLayer<RPCEndpoint>(Remote, std::move(ReportError)),
+      BaseLayer(BaseLayer), HandleIdMgr(1) {
+  using ThisT = RemoteObjectServerLayer<BaseLayerT, RPCEndpoint>;
+
+  Remote.template addHandler<AddObject>(*this, &ThisT::addObject);
+  Remote.template addHandler<RemoveObject>(*this, &ThisT::removeObject);
+  Remote.template addHandler<FindSymbol>(*this, &ThisT::findSymbol);
+  Remote.template addHandler<FindSymbolIn>(*this, &ThisT::findSymbolIn);
+  Remote.template addHandler<EmitAndFinalize>(*this, &ThisT::emitAndFinalize);
+}
 
 } // end namespace orc
 } // end namespace llvm

@@ -198,7 +198,7 @@ namespace metashell {
         const data::config& config_,
         const boost::filesystem::path& internal_dir_,
         const boost::filesystem::path& env_filename_,
-        std::function<std::unique_ptr<iface::engine>(const data::config&)>
+        std::function<std::unique_ptr<iface::engine>(const data::shell_config&)>
             engine_builder_,
         std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>
             pragma_handlers_,
@@ -491,7 +491,9 @@ namespace metashell {
       const auto i = _engines.find(name);
       if (i == _engines.end())
       {
-        return *_engines.insert(std::make_pair(name, _engine_builder(_config)))
+        return *_engines
+                    .insert(std::make_pair(
+                        name, _engine_builder(_config.active_shell_config())))
                     .first->second;
       }
       else

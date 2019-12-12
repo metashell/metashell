@@ -1,9 +1,8 @@
 //===-- sanitizer_stacktrace_libcdep.cc -----------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -58,6 +57,8 @@ void StackTrace::Print() const {
 void BufferedStackTrace::Unwind(u32 max_depth, uptr pc, uptr bp, void *context,
                                 uptr stack_top, uptr stack_bottom,
                                 bool request_fast_unwind) {
+  // Ensures all call sites get what they requested.
+  CHECK_EQ(request_fast_unwind, WillUseFastUnwind(request_fast_unwind));
   top_frame_bp = (max_depth > 0) ? bp : 0;
   // Avoid doing any work for small max_depth.
   if (max_depth == 0) {
@@ -72,14 +73,14 @@ void BufferedStackTrace::Unwind(u32 max_depth, uptr pc, uptr bp, void *context,
   if (!WillUseFastUnwind(request_fast_unwind)) {
 #if SANITIZER_CAN_SLOW_UNWIND
     if (context)
-      SlowUnwindStackWithContext(pc, context, max_depth);
+      UnwindSlow(pc, context, max_depth);
     else
-      SlowUnwindStack(pc, max_depth);
+      UnwindSlow(pc, max_depth);
 #else
     UNREACHABLE("slow unwind requested but not available");
 #endif
   } else {
-    FastUnwindStack(pc, bp, stack_top, stack_bottom, max_depth);
+    UnwindFast(pc, bp, stack_top, stack_bottom, max_depth);
   }
 }
 
@@ -114,11 +115,25 @@ void __sanitizer_symbolize_pc(uptr pc, const char *fmt, char *out_buf,
     return;
   }
   InternalScopedString frame_desc(GetPageSizeCached());
-  RenderFrame(&frame_desc, fmt, 0, frame->info,
-              common_flags()->symbolize_vs_style,
-              common_flags()->strip_path_prefix);
-  internal_strncpy(out_buf, frame_desc.data(), out_buf_size);
-  out_buf[out_buf_size - 1] = 0;
+  uptr frame_num = 0;
+  // Reserve one byte for the final 0.
+  char *out_end = out_buf + out_buf_size - 1;
+  for (SymbolizedStack *cur = frame; cur && out_buf < out_end;
+       cur = cur->next) {
+    frame_desc.clear();
+    RenderFrame(&frame_desc, fmt, frame_num++, cur->info,
+                common_flags()->symbolize_vs_style,
+                common_flags()->strip_path_prefix);
+    if (!frame_desc.length())
+      continue;
+    // Reserve one byte for the terminating 0.
+    uptr n = out_end - out_buf - 1;
+    internal_strncpy(out_buf, frame_desc.data(), n);
+    out_buf += __sanitizer::Min<uptr>(n, frame_desc.length());
+    *out_buf++ = 0;
+  }
+  CHECK(out_buf <= out_end);
+  *out_buf = 0;
 }
 
 SANITIZER_INTERFACE_ATTRIBUTE

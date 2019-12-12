@@ -44,35 +44,44 @@ namespace metashell
         }
 
         template <bool UseTemplightHeaders>
-        std::unique_ptr<iface::engine> create_wave_engine(
-            const data::config& config_,
-            const boost::filesystem::path& internal_dir_,
-            const boost::filesystem::path&,
-            const boost::filesystem::path&,
-            const std::map<data::engine_name, core::engine_entry>&,
-            iface::environment_detector& env_detector_,
-            iface::displayer& displayer_,
-            core::logger* logger_)
+        std::unique_ptr<iface::engine>
+        create_wave_engine(const data::shell_config& config_,
+                           const data::executable_path& metashell_binary_,
+                           const boost::filesystem::path& internal_dir_,
+                           iface::environment_detector& env_detector_,
+                           iface::displayer& displayer_,
+                           core::logger* logger_)
         {
           using core::not_supported;
 
           const data::wave_config cfg = parse_config(
-              UseTemplightHeaders, config_.active_shell_config().engine_args,
-              config_.metashell_binary, internal_dir_, env_detector_,
-              displayer_, logger_);
+              UseTemplightHeaders, config_.engine_args, metashell_binary_,
+              internal_dir_, env_detector_, displayer_, logger_);
           return make_engine(
               UseTemplightHeaders ? name_with_templight_headers() : name(),
-              config_.active_shell_config().engine, not_supported(),
-              preprocessor_shell(cfg), not_supported(), header_discoverer(cfg),
-              not_supported(), cpp_validator(cfg), macro_discovery(cfg),
+              config_.engine, not_supported(), preprocessor_shell(cfg),
+              not_supported(), header_discoverer(cfg), not_supported(),
+              cpp_validator(cfg), macro_discovery(cfg),
               preprocessor_tracer(cfg), supported_features());
         }
 
         template <bool UseTemplightHeaders>
-        core::engine_entry get_engine_entry()
+        core::engine_entry
+        get_engine_entry(data::executable_path metashell_binary_)
         {
           return core::engine_entry(
-              &create_wave_engine<UseTemplightHeaders>, "<Wave options>",
+              [metashell_binary_](const data::shell_config& config_,
+                                  const boost::filesystem::path& internal_dir_,
+                                  const boost::filesystem::path&,
+                                  const boost::filesystem::path&,
+                                  iface::environment_detector& env_detector_,
+                                  iface::displayer& displayer_,
+                                  core::logger* logger_) {
+                return create_wave_engine<UseTemplightHeaders>(
+                    config_, metashell_binary_, internal_dir_, env_detector_,
+                    displayer_, logger_);
+              },
+              "<Wave options>",
               data::markdown_string(
                   "Uses [Boost.Wave](http://boost.org/libs/wave), which is a "
                   "preprocessor. Only the preprocessor shell is supported." +
@@ -84,18 +93,25 @@ namespace metashell
         }
       } // anonymous namespace
 
-      data::engine_name name() { return data::engine_name("pure_wave"); }
-
-      core::engine_entry entry() { return get_engine_entry<false>(); }
-
-      data::engine_name name_with_templight_headers()
+      data::real_engine_name name()
       {
-        return data::engine_name("wave");
+        return data::real_engine_name::pure_wave;
       }
 
-      core::engine_entry entry_with_templight_headers()
+      core::engine_entry entry(data::executable_path metashell_binary_)
       {
-        return get_engine_entry<true>();
+        return get_engine_entry<false>(std::move(metashell_binary_));
+      }
+
+      data::real_engine_name name_with_templight_headers()
+      {
+        return data::real_engine_name::wave;
+      }
+
+      core::engine_entry
+      entry_with_templight_headers(data::executable_path metashell_binary_)
+      {
+        return get_engine_entry<true>(std::move(metashell_binary_));
       }
     }
   }

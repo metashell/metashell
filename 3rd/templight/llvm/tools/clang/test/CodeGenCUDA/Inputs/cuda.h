@@ -15,8 +15,20 @@ struct dim3 {
 };
 
 typedef struct cudaStream *cudaStream_t;
-
-int cudaConfigureCall(dim3 gridSize, dim3 blockSize, size_t sharedSize = 0,
-                      cudaStream_t stream = 0);
+typedef enum cudaError {} cudaError_t;
+#ifdef __HIP__
+int hipConfigureCall(dim3 gridSize, dim3 blockSize, size_t sharedSize = 0,
+                     cudaStream_t stream = 0);
+#else
+extern "C" int cudaConfigureCall(dim3 gridSize, dim3 blockSize,
+                                 size_t sharedSize = 0,
+                                 cudaStream_t stream = 0);
+extern "C" int __cudaPushCallConfiguration(dim3 gridSize, dim3 blockSize,
+                                           size_t sharedSize = 0,
+                                           cudaStream_t stream = 0);
+extern "C" cudaError_t cudaLaunchKernel(const void *func, dim3 gridDim,
+                                        dim3 blockDim, void **args,
+                                        size_t sharedMem, cudaStream_t stream);
+#endif
 
 extern "C" __device__ int printf(const char*, ...);

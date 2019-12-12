@@ -1,4 +1,5 @@
 ; RUN: opt -verify-loop-info -irce-print-changed-loops -irce -S < %s 2>&1 | FileCheck %s
+; RUN: opt -verify-loop-info -irce-print-changed-loops -passes='require<branch-prob>,loop(irce)' -S < %s 2>&1 | FileCheck %s
 
 ; CHECK: irce: in function test_01: constrained Loop at depth 1 containing: %loop<header><exiting>,%in.bounds<latch><exiting>
 ; CHECK: irce: in function test_02: constrained Loop at depth 1 containing: %loop<header><exiting>,%in.bounds<latch><exiting>
@@ -57,8 +58,8 @@ define void @test_02(i32* %arr, i32* %a_len_ptr) #0 {
 ; CHECK:        entry:
 ; CHECK-NEXT:     %len = load i32, i32* %a_len_ptr, !range !0
 ; CHECK-NEXT:     [[COND1:%[^ ]+]] = icmp ugt i32 %len, 1
-; CHECK-NEXT:     %umax = select i1 [[COND1]], i32 %len, i32 1
-; CHECK-NEXT:     %exit.preloop.at = add i32 %umax, -1
+; CHECK-NEXT:     [[UMIN:%[^ ]+]] = select i1 [[COND1]], i32 %len, i32 1
+; CHECK-NEXT:     %exit.preloop.at = add nsw i32 [[UMIN]], -1
 ; CHECK-NEXT:     [[COND2:%[^ ]+]] = icmp ugt i32 100, %exit.preloop.at
 ; CHECK-NEXT:     br i1 [[COND2]], label %loop.preloop.preheader, label %preloop.pseudo.exit
 ; CHECK:        mainloop:
@@ -148,8 +149,8 @@ define void @test_04(i32* %arr, i32* %a_len_ptr) #0 {
 ; CHECK:        entry:
 ; CHECK-NEXT:     %len = load i32, i32* %a_len_ptr, !range !0
 ; CHECK-NEXT:     [[COND1:%[^ ]+]] = icmp ugt i32 %len, 1
-; CHECK-NEXT:     %umax = select i1 [[COND1]], i32 %len, i32 1
-; CHECK-NEXT:     %exit.preloop.at = add i32 %umax, -1
+; CHECK-NEXT:     [[UMIN:%[^ ]+]] = select i1 [[COND1]], i32 %len, i32 1
+; CHECK-NEXT:     %exit.preloop.at = add nsw i32 [[UMIN]], -1
 ; CHECK-NEXT:     [[COND2:%[^ ]+]] = icmp ugt i32 -2147483648, %exit.preloop.at
 ; CHECK-NEXT:     br i1 [[COND2]], label %loop.preloop.preheader, label %preloop.pseudo.exit
 ; CHECK:        mainloop:

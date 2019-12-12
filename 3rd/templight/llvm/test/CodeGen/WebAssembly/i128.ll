@@ -1,16 +1,16 @@
-; RUN: llc < %s -asm-verbose=false -disable-wasm-fallthrough-return-opt | FileCheck %s
+; RUN: llc < %s -asm-verbose=false -disable-wasm-fallthrough-return-opt -wasm-keep-registers | FileCheck %s
 
 ; Test that basic 128-bit integer operations assemble as expected.
 
 target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
-target triple = "wasm32-unknown-unknown-wasm"
+target triple = "wasm32-unknown-unknown"
 
 declare i128 @llvm.ctlz.i128(i128, i1)
 declare i128 @llvm.cttz.i128(i128, i1)
 declare i128 @llvm.ctpop.i128(i128)
 
 ; CHECK-LABEL: add128:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
+; CHECK-NEXT: .functype add128 (i32, i64, i64, i64, i64) -> (){{$}}
 ; CHECK-NOT:  .result
 ; CHECK:      i64.add
 ; CHECK:      i64.store
@@ -23,8 +23,7 @@ define i128 @add128(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: sub128:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
-; CHECK-NOT: .result
+; CHECK-NEXT: .functype sub128 (i32, i64, i64, i64, i64) -> (){{$}}
 ; CHECK:      i64.sub
 ; CHECK:      i64.store
 ; CHECK:      i64.sub
@@ -36,9 +35,8 @@ define i128 @sub128(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: mul128:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
-; CHECK-NOT: .result
-; CHECK: call __multi3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK-NEXT: .functype mul128 (i32, i64, i64, i64, i64) -> (){{$}}
+; CHECK: call __multi3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
 ; CHECK: return{{$}}
 define i128 @mul128(i128 %x, i128 %y) {
   %a = mul i128 %x, %y
@@ -46,9 +44,8 @@ define i128 @mul128(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: sdiv128:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
-; CHECK-NOT: .result
-; CHECK: call __divti3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK-NEXT: .functype sdiv128 (i32, i64, i64, i64, i64) -> (){{$}}
+; CHECK: call __divti3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
 ; CHECK: return{{$}}
 define i128 @sdiv128(i128 %x, i128 %y) {
   %a = sdiv i128 %x, %y
@@ -56,9 +53,8 @@ define i128 @sdiv128(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: udiv128:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
-; CHECK-NOT: .result
-; CHECK: call __udivti3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK-NEXT: .functype udiv128 (i32, i64, i64, i64, i64) -> (){{$}}
+; CHECK: call __udivti3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
 ; CHECK: return{{$}}
 define i128 @udiv128(i128 %x, i128 %y) {
   %a = udiv i128 %x, %y
@@ -66,9 +62,8 @@ define i128 @udiv128(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: srem128:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
-; CHECK-NOT: .result
-; CHECK: call __modti3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK-NEXT: .functype srem128 (i32, i64, i64, i64, i64) -> (){{$}}
+; CHECK: call __modti3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
 ; CHECK: return{{$}}
 define i128 @srem128(i128 %x, i128 %y) {
   %a = srem i128 %x, %y
@@ -76,9 +71,8 @@ define i128 @srem128(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: urem128:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
-; CHECK-NOT: .result
-; CHECK: call __umodti3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK-NEXT: .functype urem128 (i32, i64, i64, i64, i64) -> (){{$}}
+; CHECK: call __umodti3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
 ; CHECK: return{{$}}
 define i128 @urem128(i128 %x, i128 %y) {
   %a = urem i128 %x, %y
@@ -86,7 +80,7 @@ define i128 @urem128(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: and128:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
+; CHECK-NEXT: .functype and128 (i32, i64, i64, i64, i64) -> (){{$}}
 ; CHECK-NOT:  .result
 ; CHECK:      i64.and
 ; CHECK:      i64.store
@@ -99,8 +93,7 @@ define i128 @and128(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: or128:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
-; CHECK-NOT: .result
+; CHECK-NEXT: .functype or128 (i32, i64, i64, i64, i64) -> (){{$}}
 ; CHECK:      i64.or
 ; CHECK:      i64.store
 ; CHECK:      i64.or
@@ -112,8 +105,7 @@ define i128 @or128(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: xor128:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
-; CHECK-NOT: .result
+; CHECK-NEXT: .functype xor128 (i32, i64, i64, i64, i64) -> (){{$}}
 ; CHECK:      i64.xor
 ; CHECK:      i64.store
 ; CHECK:      i64.xor
@@ -125,9 +117,8 @@ define i128 @xor128(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: shl128:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
-; CHECK-NOT: .result
-; CHECK: call __ashlti3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK-NEXT: .functype shl128 (i32, i64, i64, i64, i64) -> (){{$}}
+; CHECK: call __ashlti3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
 ; CHECK: return{{$}}
 define i128 @shl128(i128 %x, i128 %y) {
   %a = shl i128 %x, %y
@@ -135,9 +126,8 @@ define i128 @shl128(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: shr128:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
-; CHECK-NOT: .result
-; CHECK: call __lshrti3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK-NEXT: .functype shr128 (i32, i64, i64, i64, i64) -> (){{$}}
+; CHECK: call __lshrti3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
 ; CHECK: return{{$}}
 define i128 @shr128(i128 %x, i128 %y) {
   %a = lshr i128 %x, %y
@@ -145,9 +135,8 @@ define i128 @shr128(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: sar128:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
-; CHECK-NOT: .result
-; CHECK: call __ashrti3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK-NEXT: .functype sar128 (i32, i64, i64, i64, i64) -> (){{$}}
+; CHECK: call __ashrti3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
 ; CHECK: return{{$}}
 define i128 @sar128(i128 %x, i128 %y) {
   %a = ashr i128 %x, %y
@@ -155,7 +144,7 @@ define i128 @sar128(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: clz128:
-; CHECK-NEXT: .param i32, i64, i64{{$}}
+; CHECK-NEXT: .functype clz128 (i32, i64, i64) -> (){{$}}
 ; CHECK-NOT:  .result
 ; CHECK:      i64.clz
 ; CHECK:      i64.clz
@@ -166,8 +155,7 @@ define i128 @clz128(i128 %x) {
 }
 
 ; CHECK-LABEL: clz128_zero_undef:
-; CHECK-NEXT: .param i32, i64, i64{{$}}
-; CHECK-NOT: .result
+; CHECK-NEXT: .functype clz128_zero_undef (i32, i64, i64) -> (){{$}}
 ; CHECK:      i64.clz
 ; CHECK:      i64.clz
 ; CHECK:      return{{$}}
@@ -177,8 +165,7 @@ define i128 @clz128_zero_undef(i128 %x) {
 }
 
 ; CHECK-LABEL: ctz128:
-; CHECK-NEXT: .param i32, i64, i64{{$}}
-; CHECK-NOT: .result
+; CHECK-NEXT: .functype ctz128 (i32, i64, i64) -> (){{$}}
 ; CHECK:      i64.ctz
 ; CHECK:      i64.ctz
 ; CHECK:      return{{$}}
@@ -188,8 +175,7 @@ define i128 @ctz128(i128 %x) {
 }
 
 ; CHECK-LABEL: ctz128_zero_undef:
-; CHECK-NEXT: .param i32, i64, i64{{$}}
-; CHECK-NOT: .result
+; CHECK-NEXT: .functype ctz128_zero_undef (i32, i64, i64) -> (){{$}}
 ; CHECK:      i64.ctz
 ; CHECK:      i64.ctz
 ; CHECK:      return{{$}}
@@ -199,8 +185,7 @@ define i128 @ctz128_zero_undef(i128 %x) {
 }
 
 ; CHECK-LABEL: popcnt128:
-; CHECK-NEXT: .param i32, i64, i64{{$}}
-; CHECK-NOT: .result
+; CHECK-NEXT: .functype popcnt128 (i32, i64, i64) -> (){{$}}
 ; CHECK:      i64.popcnt
 ; CHECK:      i64.popcnt
 ; CHECK:      return{{$}}
@@ -210,8 +195,7 @@ define i128 @popcnt128(i128 %x) {
 }
 
 ; CHECK-LABEL: eqz128:
-; CHECK-NEXT: .param i64, i64{{$}}
-; CHECK-NEXT: .result i32{{$}}
+; CHECK-NEXT: .functype eqz128 (i64, i64) -> (i32){{$}}
 ; CHECK:     i64.or
 ; CHECK:     i64.eqz
 ; CHECK:     return $
@@ -222,10 +206,9 @@ define i32 @eqz128(i128 %x) {
 }
 
 ; CHECK-LABEL: rotl:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
-; CHECK-NOT: .result
-; CHECK: call __ashlti3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
-; CHECK: call __lshrti3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK-NEXT: .functype rotl (i32, i64, i64, i64, i64) -> (){{$}}
+; CHECK: call __ashlti3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK: call __lshrti3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
 ; CHECK: return{{$}}
 define i128 @rotl(i128 %x, i128 %y) {
   %z = sub i128 128, %y
@@ -236,10 +219,9 @@ define i128 @rotl(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: masked_rotl:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
-; CHECK-NOT: .result
-; CHECK: call __ashlti3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
-; CHECK: call __lshrti3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK-NEXT: .functype masked_rotl (i32, i64, i64, i64, i64) -> (){{$}}
+; CHECK: call __ashlti3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK: call __lshrti3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
 ; CHECK: return{{$}}
 define i128 @masked_rotl(i128 %x, i128 %y) {
   %a = and i128 %y, 127
@@ -251,10 +233,9 @@ define i128 @masked_rotl(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: rotr:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
-; CHECK-NOT: .result
-; CHECK: call __lshrti3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
-; CHECK: call __ashlti3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK-NEXT: .functype rotr (i32, i64, i64, i64, i64) -> (){{$}}
+; CHECK: call __lshrti3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK: call __ashlti3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
 ; CHECK: return{{$}}
 define i128 @rotr(i128 %x, i128 %y) {
   %z = sub i128 128, %y
@@ -265,10 +246,9 @@ define i128 @rotr(i128 %x, i128 %y) {
 }
 
 ; CHECK-LABEL: masked_rotr:
-; CHECK-NEXT: .param i32, i64, i64, i64, i64{{$}}
-; CHECK-NOT: .result
-; CHECK: call __lshrti3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
-; CHECK: call __ashlti3@FUNCTION, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK-NEXT: .functype masked_rotr (i32, i64, i64, i64, i64) -> (){{$}}
+; CHECK: call __lshrti3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
+; CHECK: call __ashlti3, ${{.+}}, ${{.+}}, ${{.+}}, ${{.+}}{{$}}
 ; CHECK: return{{$}}
 define i128 @masked_rotr(i128 %x, i128 %y) {
   %a = and i128 %y, 127

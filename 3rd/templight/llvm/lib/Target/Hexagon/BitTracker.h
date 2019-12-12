@@ -1,9 +1,8 @@
 //===- BitTracker.h ---------------------------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -13,6 +12,7 @@
 #include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/SetVector.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/CodeGen/MachineInstr.h"
 #include "llvm/CodeGen/MachineOperand.h"
 #include <cassert>
 #include <cstdint>
@@ -28,7 +28,6 @@ class ConstantInt;
 class MachineRegisterInfo;
 class MachineBasicBlock;
 class MachineFunction;
-class MachineInstr;
 class raw_ostream;
 class TargetRegisterClass;
 class TargetRegisterInfo;
@@ -73,6 +72,8 @@ private:
   // Priority queue of instructions using modified registers, ordered by
   // their relative position in a basic block.
   struct UseQueueType {
+    UseQueueType() : Uses(Dist) {}
+
     unsigned size() const {
       return Uses.size();
     }
@@ -90,12 +91,18 @@ private:
       Set.erase(front());
       Uses.pop();
     }
+    void reset() {
+      Dist.clear();
+    }
   private:
     struct Cmp {
+      Cmp(DenseMap<const MachineInstr*,unsigned> &Map) : Dist(Map) {}
       bool operator()(const MachineInstr *MI, const MachineInstr *MJ) const;
+      DenseMap<const MachineInstr*,unsigned> &Dist;
     };
     std::priority_queue<MachineInstr*, std::vector<MachineInstr*>, Cmp> Uses;
-    DenseSet<MachineInstr*> Set; // Set to avoid adding duplicate entries.
+    DenseSet<const MachineInstr*> Set; // Set to avoid adding duplicate entries.
+    DenseMap<const MachineInstr*,unsigned> Dist;
   };
 
   void reset();

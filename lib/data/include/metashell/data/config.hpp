@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/console_type.hpp>
+#include <metashell/data/executable_path.hpp>
 #include <metashell/data/logging_mode.hpp>
 #include <metashell/data/shell_config.hpp>
 
@@ -31,8 +32,6 @@ namespace metashell
     class config
     {
     public:
-      std::string metashell_binary;
-
       bool verbose = false;
       bool syntax_highlight = true;
       bool indent = true;

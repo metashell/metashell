@@ -7,8 +7,6 @@ This page is a design document for
 a tool similar to :doc:`AddressSanitizer`,
 but based on partial hardware assistance.
 
-The document is a draft, suggestions are welcome.
-
 
 Introduction
 ============
@@ -30,14 +28,39 @@ accuracy guarantees.
 
 Algorithm
 =========
-* Every heap/stack/global memory object is forcibly aligned by `N` bytes
-  (`N` is e.g. 16 or 64). We call `N` the **granularity** of tagging.
-* For every such object a random `K`-bit tag `T` is chosen (`K` is e.g. 4 or 8)
+* Every heap/stack/global memory object is forcibly aligned by `TG` bytes
+  (`TG` is e.g. 16 or 64). We call `TG` the **tagging granularity**.
+* For every such object a random `TS`-bit tag `T` is chosen (`TS`, or tag size, is e.g. 4 or 8)
 * The pointer to the object is tagged with `T`.
-* The memory for the object is also tagged with `T`
-  (using a `N=>1` shadow memory)
+* The memory for the object is also tagged with `T` (using a `TG=>1` shadow memory)
 * Every load and store is instrumented to read the memory tag and compare it
   with the pointer tag, exception is raised on tag mismatch.
+
+For a more detailed discussion of this approach see https://arxiv.org/pdf/1802.09517.pdf
+
+Short granules
+--------------
+
+A short granule is a granule of size between 1 and `TG-1` bytes. The size
+of a short granule is stored at the location in shadow memory where the
+granule's tag is normally stored, while the granule's actual tag is stored
+in the last byte of the granule. This means that in order to verify that a
+pointer tag matches a memory tag, HWASAN must check for two possibilities:
+
+* the pointer tag is equal to the memory tag in shadow memory, or
+* the shadow memory tag is actually a short granule size, the value being loaded
+  is in bounds of the granule and the pointer tag is equal to the last byte of
+  the granule.
+
+Pointer tags between 1 to `TG-1` are possible and are as likely as any other
+tag. This means that these tags in memory have two interpretations: the full
+tag interpretation (where the pointer tag is between 1 and `TG-1` and the
+last byte of the granule is ordinary data) and the short tag interpretation
+(where the pointer tag is stored in the granule).
+
+When HWASAN detects an error near a memory tag between 1 and `TG-1`, it
+will show both the memory tag and the last byte of the granule. Currently,
+it is up to the user to disambiguate the two possibilities.
 
 Instrumentation
 ===============
@@ -47,41 +70,63 @@ Memory Accesses
 All memory accesses are prefixed with an inline instruction sequence that
 verifies the tags. Currently, the following sequence is used:
 
-
-.. code-block:: asm
+.. code-block:: none
 
   // int foo(int *a) { return *a; }
-  // clang -O2 --target=aarch64-linux -fsanitize=hwaddress -c load.c
+  // clang -O2 --target=aarch64-linux -fsanitize=hwaddress -fsanitize-recover=hwaddress -c load.c
   foo:
-       0:	08 dc 44 d3 	ubfx	x8, x0, #4, #52  // shadow address
-       4:	08 01 40 39 	ldrb	w8, [x8]         // load shadow
-       8:	09 fc 78 d3 	lsr	x9, x0, #56      // address tag
-       c:	3f 01 08 6b 	cmp	w9, w8           // compare tags
-      10:	61 00 00 54 	b.ne	#12              // jump on mismatch
-      14:	00 00 40 b9 	ldr	w0, [x0]         // original load
-      18:	c0 03 5f d6 	ret             
-      1c:	40 20 40 d4 	hlt	#0x102           // halt
-      20:	00 00 40 b9 	ldr	w0, [x0]         // original load
-      24:	c0 03 5f d6 	ret
-
+       0:	90000008 	adrp	x8, 0 <__hwasan_shadow>
+       4:	f9400108 	ldr	x8, [x8]         // shadow base (to be resolved by the loader)
+       8:	d344dc09 	ubfx	x9, x0, #4, #52  // shadow offset
+       c:	38696909 	ldrb	w9, [x8, x9]     // load shadow tag
+      10:	d378fc08 	lsr	x8, x0, #56      // extract address tag
+      14:	6b09011f 	cmp	w8, w9           // compare tags
+      18:	54000061 	b.ne	24 <foo+0x24>    // jump to short tag handler on mismatch
+      1c:	b9400000 	ldr	w0, [x0]         // original load
+      20:	d65f03c0 	ret
+      24:	7100413f 	cmp	w9, #0x10        // is this a short tag?
+      28:	54000142 	b.cs	50 <foo+0x50>    // if not, trap
+      2c:	12000c0a 	and	w10, w0, #0xf    // find the address's position in the short granule
+      30:	11000d4a 	add	w10, w10, #0x3   // adjust to the position of the last byte loaded
+      34:	6b09015f 	cmp	w10, w9          // check that position is in bounds
+      38:	540000c2 	b.cs	50 <foo+0x50>    // if not, trap
+      3c:	9240dc09 	and	x9, x0, #0xffffffffffffff
+      40:	b2400d29 	orr	x9, x9, #0xf     // compute address of last byte of granule
+      44:	39400129 	ldrb	w9, [x9]         // load tag from it
+      48:	6b09011f 	cmp	w8, w9           // compare with pointer tag
+      4c:	54fffe80 	b.eq	1c <foo+0x1c>    // if so, continue
+      50:	d4212440 	brk	#0x922           // otherwise trap
+      54:	b9400000 	ldr	w0, [x0]         // tail duplicated original load (to handle recovery)
+      58:	d65f03c0 	ret
 
 Alternatively, memory accesses are prefixed with a function call.
+On AArch64, a function call is used by default in trapping mode. The code size
+and performance overhead of the call is reduced by using a custom calling
+convention that preserves most registers and is specialized to the register
+containing the address and the type and size of the memory access.
 
 Heap
 ----
 
 Tagging the heap memory/pointers is done by `malloc`.
-This can be based on any malloc that forces all objects to be N-aligned.
+This can be based on any malloc that forces all objects to be TG-aligned.
 `free` tags the memory with a different tag.
 
 Stack
 -----
 
-Special compiler instrumentation is required to align the local variables
-by N, tag the memory and the pointers.
+Stack frames are instrumented by aligning all non-promotable allocas
+by `TG` and tagging stack memory in function prologue and epilogue.
+
+Tags for different allocas in one function are **not** generated
+independently; doing that in a function with `M` allocas would require
+maintaining `M` live stack pointers, significantly increasing register
+pressure. Instead we generate a single base tag value in the prologue,
+and build the tag for alloca number `M` as `ReTag(BaseTag, M)`, where
+ReTag can be as simple as exclusive-or with constant `M`.
+
 Stack instrumentation is expected to be a major source of overhead,
 but could be optional.
-TODO: details.
 
 Globals
 -------
@@ -126,15 +171,26 @@ HWASAN:
     https://www.kernel.org/doc/Documentation/arm64/tagged-pointers.txt).
   * **Does not require redzones to detect buffer overflows**,
     but the buffer overflow detection is probabilistic, with roughly
-    `(2**K-1)/(2**K)` probability of catching a bug.
+    `1/(2**TS)` chance of missing a bug (6.25% or 0.39% with 4 and 8-bit TS
+    respectively).
   * **Does not require quarantine to detect heap-use-after-free,
     or stack-use-after-return**.
     The detection is similarly probabilistic.
 
 The memory overhead of HWASAN is expected to be much smaller
 than that of AddressSanitizer:
-`1/N` extra memory for the shadow
-and some overhead due to `N`-aligning all objects.
+`1/TG` extra memory for the shadow
+and some overhead due to `TG`-aligning all objects.
+
+Supported architectures
+=======================
+HWASAN relies on `Address Tagging`_ which is only available on AArch64.
+For other 64-bit architectures it is possible to remove the address tags
+before every load and store by compiler instrumentation, but this variant
+will have limited deployability since not all of the code is
+typically instrumented.
+
+The HWASAN's approach is not applicable to 32-bit architectures.
 
 
 Related Work
@@ -147,7 +203,7 @@ Related Work
 * *TODO: add more "related work" links. Suggestions are welcome.*
 
 
-.. _Watchdog: http://www.cis.upenn.edu/acg/papers/isca12_watchdog.pdf
+.. _Watchdog: https://www.cis.upenn.edu/acg/papers/isca12_watchdog.pdf
 .. _Effective and Efficient Memory Protection Using Dynamic Tainting: https://www.cc.gatech.edu/~orso/papers/clause.doudalis.orso.prvulovic.pdf
 .. _SPARC ADI: https://lazytyped.blogspot.com/2017/09/getting-started-with-adi.html
 .. _AddressSanitizer paper: https://www.usenix.org/system/files/conference/atc12/atc12-final39.pdf

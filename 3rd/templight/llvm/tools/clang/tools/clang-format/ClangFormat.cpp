@@ -1,14 +1,13 @@
 //===-- clang-format/ClangFormat.cpp - Clang format tool ------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// \brief This file implements a clang-format tool that automatically formats
+/// This file implements a clang-format tool that automatically formats
 /// (fragments of) C++ code.
 ///
 //===----------------------------------------------------------------------===//
@@ -22,7 +21,8 @@
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileSystem.h"
-#include "llvm/Support/Signals.h"
+#include "llvm/Support/InitLLVM.h"
+#include "llvm/Support/Process.h"
 
 using namespace llvm;
 using clang::tooling::Replacements;
@@ -59,17 +59,18 @@ LineRanges("lines", cl::desc("<start line>:<end line> - format a range of\n"
                              "Can only be used with one input file."),
            cl::cat(ClangFormatCategory));
 static cl::opt<std::string>
-    Style("style",
-          cl::desc(clang::format::StyleOptionHelpDescription),
-          cl::init("file"), cl::cat(ClangFormatCategory));
+    Style("style", cl::desc(clang::format::StyleOptionHelpDescription),
+          cl::init(clang::format::DefaultFormatStyle),
+          cl::cat(ClangFormatCategory));
 static cl::opt<std::string>
-FallbackStyle("fallback-style",
-              cl::desc("The name of the predefined style used as a\n"
-                       "fallback in case clang-format is invoked with\n"
-                       "-style=file, but can not find the .clang-format\n"
-                       "file to use.\n"
-                       "Use -fallback-style=none to skip formatting."),
-              cl::init("LLVM"), cl::cat(ClangFormatCategory));
+    FallbackStyle("fallback-style",
+                  cl::desc("The name of the predefined style used as a\n"
+                           "fallback in case clang-format is invoked with\n"
+                           "-style=file, but can not find the .clang-format\n"
+                           "file to use.\n"
+                           "Use -fallback-style=none to skip formatting."),
+                  cl::init(clang::format::DefaultFallbackStyle),
+                  cl::cat(ClangFormatCategory));
 
 static cl::opt<std::string>
 AssumeFileName("assume-filename",
@@ -114,7 +115,7 @@ namespace format {
 
 static FileID createInMemoryFile(StringRef FileName, MemoryBuffer *Source,
                                  SourceManager &Sources, FileManager &Files,
-                                 vfs::InMemoryFileSystem *MemFS) {
+                                 llvm::vfs::InMemoryFileSystem *MemFS) {
   MemFS->addFileNoOwn(FileName, 0, Source);
   return Sources.createFileID(Files.getFile(FileName), SourceLocation(),
                               SrcMgr::C_User);
@@ -131,8 +132,8 @@ static bool parseLineRange(StringRef Input, unsigned &FromLine,
 
 static bool fillRanges(MemoryBuffer *Code,
                        std::vector<tooling::Range> &Ranges) {
-  IntrusiveRefCntPtr<vfs::InMemoryFileSystem> InMemoryFileSystem(
-      new vfs::InMemoryFileSystem);
+  IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> InMemoryFileSystem(
+      new llvm::vfs::InMemoryFileSystem);
   FileManager Files(FileSystemOptions(), InMemoryFileSystem);
   DiagnosticsEngine Diagnostics(
       IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs),
@@ -256,6 +257,36 @@ static bool format(StringRef FileName) {
   std::unique_ptr<llvm::MemoryBuffer> Code = std::move(CodeOrErr.get());
   if (Code->getBufferSize() == 0)
     return false; // Empty files are formatted correctly.
+
+  // Check to see if the buffer has a UTF Byte Order Mark (BOM).
+  // We only support UTF-8 with and without a BOM right now.  See
+  // https://en.wikipedia.org/wiki/Byte_order_mark#Byte_order_marks_by_encoding
+  // for more information.
+  StringRef BufStr = Code->getBuffer();
+  const char *InvalidBOM = llvm::StringSwitch<const char *>(BufStr)
+    .StartsWith(llvm::StringLiteral::withInnerNUL("\x00\x00\xFE\xFF"),
+                                                  "UTF-32 (BE)")
+    .StartsWith(llvm::StringLiteral::withInnerNUL("\xFF\xFE\x00\x00"),
+                                                  "UTF-32 (LE)")
+    .StartsWith("\xFE\xFF", "UTF-16 (BE)")
+    .StartsWith("\xFF\xFE", "UTF-16 (LE)")
+    .StartsWith("\x2B\x2F\x76", "UTF-7")
+    .StartsWith("\xF7\x64\x4C", "UTF-1")
+    .StartsWith("\xDD\x73\x66\x73", "UTF-EBCDIC")
+    .StartsWith("\x0E\xFE\xFF", "SCSU")
+    .StartsWith("\xFB\xEE\x28", "BOCU-1")
+    .StartsWith("\x84\x31\x95\x33", "GB-18030")
+    .Default(nullptr);
+
+  if (InvalidBOM) {
+    errs() << "error: encoding with unsupported byte order mark \""
+           << InvalidBOM << "\" detected";
+    if (FileName != "-")
+      errs() << " in file '" << FileName << "'";
+    errs() << ".\n";
+    return true;
+  }
+
   std::vector<tooling::Range> Ranges;
   if (fillRanges(Code.get(), Ranges))
     return true;
@@ -299,8 +330,8 @@ static bool format(StringRef FileName) {
     outputReplacementsXML(Replaces);
     outs() << "</replacements>\n";
   } else {
-    IntrusiveRefCntPtr<vfs::InMemoryFileSystem> InMemoryFileSystem(
-        new vfs::InMemoryFileSystem);
+    IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> InMemoryFileSystem(
+        new llvm::vfs::InMemoryFileSystem);
     FileManager Files(FileSystemOptions(), InMemoryFileSystem);
     DiagnosticsEngine Diagnostics(
         IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs),
@@ -337,14 +368,14 @@ static void PrintVersion(raw_ostream &OS) {
 }
 
 int main(int argc, const char **argv) {
-  llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
+  llvm::InitLLVM X(argc, argv);
 
   cl::HideUnrelatedOptions(ClangFormatCategory);
 
   cl::SetVersionPrinter(PrintVersion);
   cl::ParseCommandLineOptions(
       argc, argv,
-      "A tool to format C/C++/Java/JavaScript/Objective-C/Protobuf code.\n\n"
+      "A tool to format C/C++/Java/JavaScript/Objective-C/Protobuf/C# code.\n\n"
       "If no arguments are specified, it formats the code from standard input\n"
       "and writes the result to the standard output.\n"
       "If <file>s are given, it reformats the files. If -i is specified\n"
@@ -357,10 +388,27 @@ int main(int argc, const char **argv) {
   }
 
   if (DumpConfig) {
+    StringRef FileName;
+    std::unique_ptr<llvm::MemoryBuffer> Code;
+    if (FileNames.empty()) {
+      // We can't read the code to detect the language if there's no
+      // file name, so leave Code empty here.
+      FileName = AssumeFileName;
+    } else {
+      // Read in the code in case the filename alone isn't enough to
+      // detect the language.
+      ErrorOr<std::unique_ptr<MemoryBuffer>> CodeOrErr =
+          MemoryBuffer::getFileOrSTDIN(FileNames[0]);
+      if (std::error_code EC = CodeOrErr.getError()) {
+        llvm::errs() << EC.message() << "\n";
+        return 1;
+      }
+      FileName = (FileNames[0] == "-") ? AssumeFileName : FileNames[0];
+      Code = std::move(CodeOrErr.get());
+    }
     llvm::Expected<clang::format::FormatStyle> FormatStyle =
-        clang::format::getStyle(
-            Style, FileNames.empty() ? AssumeFileName : FileNames[0],
-            FallbackStyle);
+        clang::format::getStyle(Style, FileName, FallbackStyle,
+                                Code ? Code->getBuffer() : "");
     if (!FormatStyle) {
       llvm::errs() << llvm::toString(FormatStyle.takeError()) << "\n";
       return 1;

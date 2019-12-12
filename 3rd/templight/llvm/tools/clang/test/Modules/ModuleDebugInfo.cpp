@@ -48,7 +48,7 @@
 // CHECK: !DICompositeType(tag: DW_TAG_enumeration_type,
 // CHECK-NOT:              name:
 // CHECK-SAME:             )
-// CHECK: !DIEnumerator(name: "e5", value: 5)
+// CHECK: !DIEnumerator(name: "e5", value: 5, isUnsigned: true)
 
 // CHECK: !DIDerivedType(tag: DW_TAG_typedef, name: "B",
 // no mangled name here yet.
@@ -119,8 +119,7 @@
 
 // CHECK: ![[A:.*]] = {{.*}}!DICompositeType(tag: DW_TAG_class_type, name: "A",
 // CHECK-SAME:                               elements:
-// CHECK-SAME:                               vtableHolder: ![[A]],
-// CHECK-SAME:                               identifier: "_ZTS1A")
+// CHECK-SAME:                               vtableHolder: ![[A]])
 
 // CHECK: ![[DERIVED:.*]] = {{.*}}!DICompositeType(tag: DW_TAG_class_type, name: "Derived",
 // CHECK-SAME:                                     identifier: "_ZTS7Derived")

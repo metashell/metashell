@@ -58,10 +58,8 @@ namespace metashell
 
         METASHELL_LOG(_logger, "Generating percompiled header for " + filename);
 
-        std::vector<std::string> args{
-            "-iquote", ".", "-w", "-o", filename + ".pch", filename};
-
-        const data::process_output o = _binary.run(args, "");
+        const data::process_output o = _binary.run(
+            {"-iquote", ".", "-w", "-o", filename + ".pch", filename}, "");
         const std::string err = o.standard_output + o.standard_error;
         if (!err.empty()
             // clang displays this even when "-w" is used. This can be ignored

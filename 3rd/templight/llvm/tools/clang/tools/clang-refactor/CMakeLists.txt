@@ -8,7 +8,7 @@ add_clang_tool(clang-refactor
   TestSupport.cpp
   )
 
-target_link_libraries(clang-refactor
+clang_target_link_libraries(clang-refactor
   PRIVATE
   clangAST
   clangBasic
@@ -16,9 +16,8 @@ target_link_libraries(clang-refactor
   clangFrontend
   clangLex
   clangRewrite
+  clangSerialization
   clangTooling
   clangToolingCore
-  clangToolingRefactor
+  clangToolingRefactoring
   )
-
-install(TARGETS clang-refactor RUNTIME DESTINATION bin)

@@ -30,22 +30,22 @@ namespace metashell
         std::vector<data::feature> supported_features() { return {}; }
       }
 
-      data::engine_name name() { return data::engine_name("null"); }
+      data::real_engine_name name() { return data::real_engine_name::null; }
 
       core::engine_entry entry()
       {
         using core::not_supported;
 
         return core::engine_entry(
-            [](const data::config& config_, const boost::filesystem::path&,
+            [](const data::shell_config& config_,
                const boost::filesystem::path&, const boost::filesystem::path&,
-               const std::map<data::engine_name, core::engine_entry>&,
-               iface::environment_detector&, iface::displayer&, core::logger*) {
-              return core::make_engine(
-                  name(), config_.active_shell_config().engine, not_supported(),
-                  not_supported(), not_supported(), not_supported(),
-                  not_supported(), not_supported(), not_supported(),
-                  not_supported(), supported_features());
+               const boost::filesystem::path&, iface::environment_detector&,
+               iface::displayer&, core::logger*) {
+              return core::make_engine(name(), config_.engine, not_supported(),
+                                       not_supported(), not_supported(),
+                                       not_supported(), not_supported(),
+                                       not_supported(), not_supported(),
+                                       not_supported(), supported_features());
             },
             "",
             data::markdown_string("An engine which does not support anything. "

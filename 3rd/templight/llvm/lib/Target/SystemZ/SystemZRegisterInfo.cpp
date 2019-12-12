@@ -1,9 +1,8 @@
 //===-- SystemZRegisterInfo.cpp - SystemZ register information ------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -54,6 +53,26 @@ static const TargetRegisterClass *getRC32(MachineOperand &MO,
   return RC;
 }
 
+// Pass the registers of RC as hints while making sure that if any of these
+// registers are copy hints (and therefore already in Hints), hint them
+// first.
+static void addHints(ArrayRef<MCPhysReg> Order,
+                     SmallVectorImpl<MCPhysReg> &Hints,
+                     const TargetRegisterClass *RC,
+                     const MachineRegisterInfo *MRI) {
+  SmallSet<unsigned, 4> CopyHints;
+  CopyHints.insert(Hints.begin(), Hints.end());
+  Hints.clear();
+  for (MCPhysReg Reg : Order)
+    if (CopyHints.count(Reg) &&
+        RC->contains(Reg) && !MRI->isReserved(Reg))
+      Hints.push_back(Reg);
+  for (MCPhysReg Reg : Order)
+    if (!CopyHints.count(Reg) &&
+        RC->contains(Reg) && !MRI->isReserved(Reg))
+      Hints.push_back(Reg);
+}
+
 bool
 SystemZRegisterInfo::getRegAllocationHints(unsigned VirtReg,
                                            ArrayRef<MCPhysReg> Order,
@@ -62,7 +81,12 @@ SystemZRegisterInfo::getRegAllocationHints(unsigned VirtReg,
                                            const VirtRegMap *VRM,
                                            const LiveRegMatrix *Matrix) const {
   const MachineRegisterInfo *MRI = &MF.getRegInfo();
-  const TargetRegisterInfo *TRI = MF.getSubtarget().getRegisterInfo();
+  const SystemZSubtarget &Subtarget = MF.getSubtarget<SystemZSubtarget>();
+  const TargetRegisterInfo *TRI = Subtarget.getRegisterInfo();
+
+  bool BaseImplRetVal = TargetRegisterInfo::getRegAllocationHints(
+      VirtReg, Order, Hints, MF, VRM, Matrix);
+
   if (MRI->getRegClass(VirtReg) == &SystemZ::GRX32BitRegClass) {
     SmallVector<unsigned, 8> Worklist;
     SmallSet<unsigned, 4> DoneRegs;
@@ -72,21 +96,23 @@ SystemZRegisterInfo::getRegAllocationHints(unsigned VirtReg,
       if (!DoneRegs.insert(Reg).second)
         continue;
 
-      for (auto &Use : MRI->use_instructions(Reg))
+      for (auto &Use : MRI->reg_instructions(Reg)) {
         // For LOCRMux, see if the other operand is already a high or low
-        // register, and in that case give the correpsonding hints for
+        // register, and in that case give the corresponding hints for
         // VirtReg. LOCR instructions need both operands in either high or
-        // low parts.
-        if (Use.getOpcode() == SystemZ::LOCRMux) {
+        // low parts. Same handling for SELRMux.
+        if (Use.getOpcode() == SystemZ::LOCRMux ||
+            Use.getOpcode() == SystemZ::SELRMux) {
           MachineOperand &TrueMO = Use.getOperand(1);
           MachineOperand &FalseMO = Use.getOperand(2);
           const TargetRegisterClass *RC =
             TRI->getCommonSubClass(getRC32(FalseMO, VRM, MRI),
                                    getRC32(TrueMO, VRM, MRI));
+          if (Use.getOpcode() == SystemZ::SELRMux)
+            RC = TRI->getCommonSubClass(RC,
+                                        getRC32(Use.getOperand(0), VRM, MRI));
           if (RC && RC != &SystemZ::GRX32BitRegClass) {
-            for (MCPhysReg Reg : Order)
-              if (RC->contains(Reg) && !MRI->isReserved(Reg))
-                Hints.push_back(Reg);
+            addHints(Order, Hints, RC, MRI);
             // Return true to make these hints the only regs available to
             // RA. This may mean extra spilling but since the alternative is
             // a jump sequence expansion of the LOCRMux, it is preferred.
@@ -98,16 +124,79 @@ SystemZRegisterInfo::getRegAllocationHints(unsigned VirtReg,
             (TrueMO.getReg() == Reg ? FalseMO.getReg() : TrueMO.getReg());
           if (MRI->getRegClass(OtherReg) == &SystemZ::GRX32BitRegClass)
             Worklist.push_back(OtherReg);
-        }
+        } // end LOCRMux
+        else if (Use.getOpcode() == SystemZ::CHIMux ||
+                 Use.getOpcode() == SystemZ::CFIMux) {
+          if (Use.getOperand(1).getImm() == 0) {
+            bool OnlyLMuxes = true;
+            for (MachineInstr &DefMI : MRI->def_instructions(VirtReg))
+              if (DefMI.getOpcode() != SystemZ::LMux)
+                OnlyLMuxes = false;
+            if (OnlyLMuxes) {
+              addHints(Order, Hints, &SystemZ::GR32BitRegClass, MRI);
+              // Return false to make these hints preferred but not obligatory.
+              return false;
+            }
+          }
+        } // end CHIMux / CFIMux
+      }
     }
   }
 
-  return TargetRegisterInfo::getRegAllocationHints(VirtReg, Order, Hints, MF,
-                                                   VRM, Matrix);
+  if (VRM == nullptr)
+    return BaseImplRetVal;
+
+  // Add any two address hints after any copy hints.
+  SmallSet<unsigned, 4> TwoAddrHints;
+  for (auto &Use : MRI->reg_nodbg_instructions(VirtReg))
+    if (SystemZ::getTwoOperandOpcode(Use.getOpcode()) != -1) {
+      const MachineOperand *VRRegMO = nullptr;
+      const MachineOperand *OtherMO = nullptr;
+      const MachineOperand *CommuMO = nullptr;
+      if (VirtReg == Use.getOperand(0).getReg()) {
+        VRRegMO = &Use.getOperand(0);
+        OtherMO = &Use.getOperand(1);
+        if (Use.isCommutable())
+          CommuMO = &Use.getOperand(2);
+      } else if (VirtReg == Use.getOperand(1).getReg()) {
+        VRRegMO = &Use.getOperand(1);
+        OtherMO = &Use.getOperand(0);
+      } else if (VirtReg == Use.getOperand(2).getReg() && Use.isCommutable()) {
+        VRRegMO = &Use.getOperand(2);
+        OtherMO = &Use.getOperand(0);
+      } else
+        continue;
+
+      auto tryAddHint = [&](const MachineOperand *MO) -> void {
+        Register Reg = MO->getReg();
+        Register PhysReg = isPhysicalRegister(Reg) ? Reg : VRM->getPhys(Reg);
+        if (PhysReg) {
+          if (MO->getSubReg())
+            PhysReg = getSubReg(PhysReg, MO->getSubReg());
+          if (VRRegMO->getSubReg())
+            PhysReg = getMatchingSuperReg(PhysReg, VRRegMO->getSubReg(),
+                                          MRI->getRegClass(VirtReg));
+          if (!MRI->isReserved(PhysReg) && !is_contained(Hints, PhysReg))
+            TwoAddrHints.insert(PhysReg);
+        }
+      };
+      tryAddHint(OtherMO);
+      if (CommuMO)
+        tryAddHint(CommuMO);
+    }
+  for (MCPhysReg OrderReg : Order)
+    if (TwoAddrHints.count(OrderReg))
+      Hints.push_back(OrderReg);
+
+  return BaseImplRetVal;
 }
 
 const MCPhysReg *
 SystemZRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
+  const SystemZSubtarget &Subtarget = MF->getSubtarget<SystemZSubtarget>();
+  if (MF->getFunction().getCallingConv() == CallingConv::AnyReg)
+    return Subtarget.hasVector()? CSR_SystemZ_AllRegs_Vector_SaveList
+                                : CSR_SystemZ_AllRegs_SaveList;
   if (MF->getSubtarget().getTargetLowering()->supportSwiftError() &&
       MF->getFunction().getAttributes().hasAttrSomewhere(
           Attribute::SwiftError))
@@ -118,6 +207,10 @@ SystemZRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
 const uint32_t *
 SystemZRegisterInfo::getCallPreservedMask(const MachineFunction &MF,
                                           CallingConv::ID CC) const {
+  const SystemZSubtarget &Subtarget = MF.getSubtarget<SystemZSubtarget>();
+  if (CC == CallingConv::AnyReg)
+    return Subtarget.hasVector()? CSR_SystemZ_AllRegs_Vector_RegMask
+                                : CSR_SystemZ_AllRegs_RegMask;
   if (MF.getSubtarget().getTargetLowering()->supportSwiftError() &&
       MF.getFunction().getAttributes().hasAttrSomewhere(
           Attribute::SwiftError))
@@ -147,6 +240,9 @@ SystemZRegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   // A0 and A1 hold the thread pointer.
   Reserved.set(SystemZ::A0);
   Reserved.set(SystemZ::A1);
+
+  // FPC is the floating-point control register.
+  Reserved.set(SystemZ::FPC);
 
   return Reserved;
 }
@@ -262,25 +358,30 @@ bool SystemZRegisterInfo::shouldCoalesce(MachineInstr *MI,
 
   // Check that the two virtual registers are local to MBB.
   MachineBasicBlock *MBB = MI->getParent();
-  if (LIS.isLiveInToMBB(IntGR128, MBB) || LIS.isLiveOutOfMBB(IntGR128, MBB) ||
-      LIS.isLiveInToMBB(IntGRNar, MBB) || LIS.isLiveOutOfMBB(IntGRNar, MBB))
+  MachineInstr *FirstMI_GR128 =
+    LIS.getInstructionFromIndex(IntGR128.beginIndex());
+  MachineInstr *FirstMI_GRNar =
+    LIS.getInstructionFromIndex(IntGRNar.beginIndex());
+  MachineInstr *LastMI_GR128 = LIS.getInstructionFromIndex(IntGR128.endIndex());
+  MachineInstr *LastMI_GRNar = LIS.getInstructionFromIndex(IntGRNar.endIndex());
+  if ((!FirstMI_GR128 || FirstMI_GR128->getParent() != MBB) ||
+      (!FirstMI_GRNar || FirstMI_GRNar->getParent() != MBB) ||
+      (!LastMI_GR128 || LastMI_GR128->getParent() != MBB) ||
+      (!LastMI_GRNar || LastMI_GRNar->getParent() != MBB))
     return false;
 
-  // Find the first and last MIs of the registers.
-  MachineInstr *FirstMI = nullptr, *LastMI = nullptr;
+  MachineBasicBlock::iterator MII = nullptr, MEE = nullptr;
   if (WideOpNo == 1) {
-    FirstMI = LIS.getInstructionFromIndex(IntGR128.beginIndex());
-    LastMI  = LIS.getInstructionFromIndex(IntGRNar.endIndex());
+    MII = FirstMI_GR128;
+    MEE = LastMI_GRNar;
   } else {
-    FirstMI = LIS.getInstructionFromIndex(IntGRNar.beginIndex());
-    LastMI  = LIS.getInstructionFromIndex(IntGR128.endIndex());
+    MII = FirstMI_GRNar;
+    MEE = LastMI_GR128;
   }
-  assert (FirstMI && LastMI && "No instruction from index?");
 
   // Check if coalescing seems safe by finding the set of clobbered physreg
   // pairs in the region.
   BitVector PhysClobbered(getNumRegs());
-  MachineBasicBlock::iterator MII = FirstMI, MEE = LastMI;
   MEE++;
   for (; MII != MEE; ++MII) {
     for (const MachineOperand &MO : MII->operands())
@@ -302,8 +403,16 @@ bool SystemZRegisterInfo::shouldCoalesce(MachineInstr *MI,
   return true;
 }
 
-unsigned
+Register
 SystemZRegisterInfo::getFrameRegister(const MachineFunction &MF) const {
   const SystemZFrameLowering *TFI = getFrameLowering(MF);
   return TFI->hasFP(MF) ? SystemZ::R11D : SystemZ::R15D;
 }
+
+const TargetRegisterClass *
+SystemZRegisterInfo::getCrossCopyRegClass(const TargetRegisterClass *RC) const {
+  if (RC == &SystemZ::CCRRegClass)
+    return &SystemZ::GR32BitRegClass;
+  return RC;
+}
+

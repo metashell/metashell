@@ -1,9 +1,8 @@
 //===-- TargetInstrInfo.cpp - Target Instruction Information --------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -86,11 +85,13 @@ static bool isAsmComment(const char *Str, const MCAsmInfo &MAI) {
 /// simple--i.e. not a logical or arithmetic expression--size values without
 /// the optional fill value. This is primarily used for creating arbitrary
 /// sized inline asm blocks for testing purposes.
-unsigned TargetInstrInfo::getInlineAsmLength(const char *Str,
-                                             const MCAsmInfo &MAI) const {
+unsigned TargetInstrInfo::getInlineAsmLength(
+  const char *Str,
+  const MCAsmInfo &MAI, const TargetSubtargetInfo *STI) const {
   // Count the number of instructions in the asm.
   bool AtInsnStart = true;
   unsigned Length = 0;
+  const unsigned MaxInstLength = MAI.getMaxInstLength(STI);
   for (; *Str; ++Str) {
     if (*Str == '\n' || strncmp(Str, MAI.getSeparatorString(),
                                 strlen(MAI.getSeparatorString())) == 0) {
@@ -102,7 +103,7 @@ unsigned TargetInstrInfo::getInlineAsmLength(const char *Str,
     }
 
     if (AtInsnStart && !std::isspace(static_cast<unsigned char>(*Str))) {
-      unsigned AddLength = MAI.getMaxInstLength();
+      unsigned AddLength = MaxInstLength;
       if (strncmp(Str, ".space", 6) == 0) {
         char *EStr;
         int SpaceSize;
@@ -136,8 +137,14 @@ TargetInstrInfo::ReplaceTailWithBranchTo(MachineBasicBlock::iterator Tail,
   // Save off the debug loc before erasing the instruction.
   DebugLoc DL = Tail->getDebugLoc();
 
-  // Remove all the dead instructions from the end of MBB.
-  MBB->erase(Tail, MBB->end());
+  // Update call site info and remove all the dead instructions
+  // from the end of MBB.
+  while (Tail != MBB->end()) {
+    auto MI = Tail++;
+    if (MI->isCall())
+      MBB->getParent()->updateCallSiteInfo(&*MI);
+    MBB->erase(MI);
+  }
 
   // If MBB isn't immediately before MBB, insert a branch to it.
   if (++MachineFunction::iterator(MBB) != MachineFunction::iterator(NewDest))
@@ -162,9 +169,9 @@ MachineInstr *TargetInstrInfo::commuteInstructionImpl(MachineInstr &MI,
   assert(MI.getOperand(Idx1).isReg() && MI.getOperand(Idx2).isReg() &&
          "This only knows how to commute register operands so far");
 
-  unsigned Reg0 = HasDef ? MI.getOperand(0).getReg() : 0;
-  unsigned Reg1 = MI.getOperand(Idx1).getReg();
-  unsigned Reg2 = MI.getOperand(Idx2).getReg();
+  Register Reg0 = HasDef ? MI.getOperand(0).getReg() : Register();
+  Register Reg1 = MI.getOperand(Idx1).getReg();
+  Register Reg2 = MI.getOperand(Idx2).getReg();
   unsigned SubReg0 = HasDef ? MI.getOperand(0).getSubReg() : 0;
   unsigned SubReg1 = MI.getOperand(Idx1).getSubReg();
   unsigned SubReg2 = MI.getOperand(Idx2).getSubReg();
@@ -174,6 +181,14 @@ MachineInstr *TargetInstrInfo::commuteInstructionImpl(MachineInstr &MI,
   bool Reg2IsUndef = MI.getOperand(Idx2).isUndef();
   bool Reg1IsInternal = MI.getOperand(Idx1).isInternalRead();
   bool Reg2IsInternal = MI.getOperand(Idx2).isInternalRead();
+  // Avoid calling isRenamable for virtual registers since we assert that
+  // renamable property is only queried/set for physical registers.
+  bool Reg1IsRenamable = TargetRegisterInfo::isPhysicalRegister(Reg1)
+                             ? MI.getOperand(Idx1).isRenamable()
+                             : false;
+  bool Reg2IsRenamable = TargetRegisterInfo::isPhysicalRegister(Reg2)
+                             ? MI.getOperand(Idx2).isRenamable()
+                             : false;
   // If destination is tied to either of the commuted source register, then
   // it must be updated.
   if (HasDef && Reg0 == Reg1 &&
@@ -211,6 +226,12 @@ MachineInstr *TargetInstrInfo::commuteInstructionImpl(MachineInstr &MI,
   CommutedMI->getOperand(Idx1).setIsUndef(Reg2IsUndef);
   CommutedMI->getOperand(Idx2).setIsInternalRead(Reg1IsInternal);
   CommutedMI->getOperand(Idx1).setIsInternalRead(Reg2IsInternal);
+  // Avoid calling setIsRenamable for virtual registers since we assert that
+  // renamable property is only queried/set for physical registers.
+  if (TargetRegisterInfo::isPhysicalRegister(Reg1))
+    CommutedMI->getOperand(Idx2).setIsRenamable(Reg1IsRenamable);
+  if (TargetRegisterInfo::isPhysicalRegister(Reg2))
+    CommutedMI->getOperand(Idx1).setIsRenamable(Reg2IsRenamable);
   return CommutedMI;
 }
 
@@ -325,42 +346,32 @@ bool TargetInstrInfo::PredicateInstruction(
   return MadeChange;
 }
 
-bool TargetInstrInfo::hasLoadFromStackSlot(const MachineInstr &MI,
-                                           const MachineMemOperand *&MMO,
-                                           int &FrameIndex) const {
+bool TargetInstrInfo::hasLoadFromStackSlot(
+    const MachineInstr &MI,
+    SmallVectorImpl<const MachineMemOperand *> &Accesses) const {
+  size_t StartSize = Accesses.size();
   for (MachineInstr::mmo_iterator o = MI.memoperands_begin(),
                                   oe = MI.memoperands_end();
        o != oe; ++o) {
-    if ((*o)->isLoad()) {
-      if (const FixedStackPseudoSourceValue *Value =
-          dyn_cast_or_null<FixedStackPseudoSourceValue>(
-              (*o)->getPseudoValue())) {
-        FrameIndex = Value->getFrameIndex();
-        MMO = *o;
-        return true;
-      }
-    }
+    if ((*o)->isLoad() &&
+        dyn_cast_or_null<FixedStackPseudoSourceValue>((*o)->getPseudoValue()))
+      Accesses.push_back(*o);
   }
-  return false;
+  return Accesses.size() != StartSize;
 }
 
-bool TargetInstrInfo::hasStoreToStackSlot(const MachineInstr &MI,
-                                          const MachineMemOperand *&MMO,
-                                          int &FrameIndex) const {
+bool TargetInstrInfo::hasStoreToStackSlot(
+    const MachineInstr &MI,
+    SmallVectorImpl<const MachineMemOperand *> &Accesses) const {
+  size_t StartSize = Accesses.size();
   for (MachineInstr::mmo_iterator o = MI.memoperands_begin(),
                                   oe = MI.memoperands_end();
        o != oe; ++o) {
-    if ((*o)->isStore()) {
-      if (const FixedStackPseudoSourceValue *Value =
-          dyn_cast_or_null<FixedStackPseudoSourceValue>(
-              (*o)->getPseudoValue())) {
-        FrameIndex = Value->getFrameIndex();
-        MMO = *o;
-        return true;
-      }
-    }
+    if ((*o)->isStore() &&
+        dyn_cast_or_null<FixedStackPseudoSourceValue>((*o)->getPseudoValue()))
+      Accesses.push_back(*o);
   }
-  return false;
+  return Accesses.size() != StartSize;
 }
 
 bool TargetInstrInfo::getStackSlotRange(const TargetRegisterClass *RC,
@@ -374,8 +385,7 @@ bool TargetInstrInfo::getStackSlotRange(const TargetRegisterClass *RC,
     return true;
   }
   unsigned BitSize = TRI->getSubRegIdxSize(SubIdx);
-  // Convert bit size to byte size to be consistent with
-  // MCRegisterClass::getSize().
+  // Convert bit size to byte size.
   if (BitSize % 8)
     return false;
 
@@ -520,7 +530,8 @@ static MachineInstr *foldPatchpoint(MachineFunction &MF, MachineInstr &MI,
 
 MachineInstr *TargetInstrInfo::foldMemoryOperand(MachineInstr &MI,
                                                  ArrayRef<unsigned> Ops, int FI,
-                                                 LiveIntervals *LIS) const {
+                                                 LiveIntervals *LIS,
+                                                 VirtRegMap *VRM) const {
   auto Flags = MachineMemOperand::MONone;
   for (unsigned OpIdx : Ops)
     Flags |= MI.getOperand(OpIdx).isDef() ? MachineMemOperand::MOStore
@@ -566,11 +577,11 @@ MachineInstr *TargetInstrInfo::foldMemoryOperand(MachineInstr &MI,
       MBB->insert(MI, NewMI);
   } else {
     // Ask the target to do the actual folding.
-    NewMI = foldMemoryOperandImpl(MF, MI, Ops, MI, FI, LIS);
+    NewMI = foldMemoryOperandImpl(MF, MI, Ops, MI, FI, LIS, VRM);
   }
 
   if (NewMI) {
-    NewMI->setMemRefs(MI.memoperands_begin(), MI.memoperands_end());
+    NewMI->setMemRefs(MF, MI.memoperands());
     // Add a memory operand, foldMemoryOperandImpl doesn't do that.
     assert((!(Flags & MachineMemOperand::MOStore) ||
             NewMI->mayStore()) &&
@@ -640,10 +651,10 @@ MachineInstr *TargetInstrInfo::foldMemoryOperand(MachineInstr &MI,
 
   // Copy the memoperands from the load to the folded instruction.
   if (MI.memoperands_empty()) {
-    NewMI->setMemRefs(LoadMI.memoperands_begin(), LoadMI.memoperands_end());
+    NewMI->setMemRefs(MF, LoadMI.memoperands());
   } else {
     // Handle the rare case of folding multiple loads.
-    NewMI->setMemRefs(MI.memoperands_begin(), MI.memoperands_end());
+    NewMI->setMemRefs(MF, MI.memoperands());
     for (MachineInstr::mmo_iterator I = LoadMI.memoperands_begin(),
                                     E = LoadMI.memoperands_end();
          I != E; ++I) {
@@ -895,7 +906,8 @@ bool TargetInstrInfo::isReallyTriviallyReMaterializableGeneric(
     return true;
 
   // Avoid instructions obviously unsafe for remat.
-  if (MI.isNotDuplicable() || MI.mayStore() || MI.hasUnmodeledSideEffects())
+  if (MI.isNotDuplicable() || MI.mayStore() || MI.mayRaiseFPException() ||
+      MI.hasUnmodeledSideEffects())
     return false;
 
   // Don't remat inline asm. We have no idea how expensive it is
@@ -1007,7 +1019,7 @@ ScheduleHazardRecognizer *TargetInstrInfo::
 CreateTargetMIHazardRecognizer(const InstrItineraryData *II,
                                const ScheduleDAG *DAG) const {
   return (ScheduleHazardRecognizer *)
-    new ScoreboardHazardRecognizer(II, DAG, "misched");
+    new ScoreboardHazardRecognizer(II, DAG, "machine-scheduler");
 }
 
 // Default implementation of CreateTargetPostRAHazardRecognizer.

@@ -16,7 +16,7 @@ typedef __INTPTR_TYPE__ intptr_t;
 
 // CHECK-DAG: [[IDENT_T_TY:%.+]] = type { i32, i32, i32, i32, i8* }
 // CHECK-DAG: [[STR:@.+]] = private unnamed_addr constant [23 x i8] c";unknown;unknown;0;0;;\00"
-// CHECK-DAG: [[DEF_LOC_2:@.+]] = private unnamed_addr constant [[IDENT_T_TY]] { i32 0, i32 2, i32 0, i32 0, i8* getelementptr inbounds ([23 x i8], [23 x i8]* [[STR]], i32 0, i32 0) }
+// CHECK-DAG: [[DEF_LOC_2:@.+]] = private unnamed_addr global [[IDENT_T_TY]] { i32 0, i32 2, i32 0, i32 0, i8* getelementptr inbounds ([23 x i8], [23 x i8]* [[STR]], i32 0, i32 0) }
 
 void foo();
 
@@ -62,7 +62,7 @@ int main() {
 // CHECK: [[GTID_REF:%.+]] = load i32*, i32** [[GTID_ADDR]],
 // CHECK: [[GTID_VAL:%.+]] = load i32, i32* [[GTID_REF]],
 // CHECK: call {{.*}}void @__kmpc_push_proc_bind([[IDENT_T_TY]]* [[DEF_LOC_2]], i32 [[GTID_VAL]], i32 4)
-// CHECK: call {{.*}}void (%ident_t*, i32, void (i32*, i32*, ...)*, ...) @__kmpc_fork_call(
+// CHECK: call {{.*}}void (%struct.ident_t*, i32, void (i32*, i32*, ...)*, ...) @__kmpc_fork_call(
 // CHECK: ret void
 
 // CHECK: define{{.+}} [[OFFL2]]()
@@ -74,7 +74,7 @@ int main() {
 // CHECK: [[GTID_REF:%.+]] = load i32*, i32** [[GTID_ADDR]],
 // CHECK: [[GTID_VAL:%.+]] = load i32, i32* [[GTID_REF]],
 // CHECK: call {{.*}}void @__kmpc_push_proc_bind([[IDENT_T_TY]]* [[DEF_LOC_2]], i32 [[GTID_VAL]], i32 3)
-// CHECK: call {{.*}}void (%ident_t*, i32, void (i32*, i32*, ...)*, ...) @__kmpc_fork_call(
+// CHECK: call {{.*}}void (%struct.ident_t*, i32, void (i32*, i32*, ...)*, ...) @__kmpc_fork_call(
 // CHECK: ret void
 
 // CHECK: define{{.+}} [[TMAIN]]()
@@ -90,6 +90,6 @@ int main() {
 // CHECK: [[GTID_REF:%.+]] = load i32*, i32** [[GTID_ADDR]],
 // CHECK: [[GTID_VAL:%.+]] = load i32, i32* [[GTID_REF]],
 // CHECK: call {{.*}}void @__kmpc_push_proc_bind([[IDENT_T_TY]]* [[DEF_LOC_2]], i32 [[GTID_VAL]], i32 2)
-// CHECK: call {{.*}}void (%ident_t*, i32, void (i32*, i32*, ...)*, ...) @__kmpc_fork_call(
+// CHECK: call {{.*}}void (%struct.ident_t*, i32, void (i32*, i32*, ...)*, ...) @__kmpc_fork_call(
 // CHECK: ret void
 #endif

@@ -1,34 +1,35 @@
-// RUN: %clang_cc1 -verify -fopenmp -fnoopenmp-use-tls -x c++ -triple %itanium_abi_triple -emit-llvm %s -o - | FileCheck %s
-// RUN: %clang_cc1 -fopenmp -fnoopenmp-use-tls -x c++ -std=c++11 -triple %itanium_abi_triple -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fnoopenmp-use-tls -x c++ -triple %itanium_abi_triple -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s
-// RUN: %clang_cc1 -verify -fopenmp -fnoopenmp-use-tls -x c++ -std=c++11 -DLAMBDA -triple %itanium_abi_triple -emit-llvm %s -o - | FileCheck -check-prefix=LAMBDA %s
-// RUN: %clang_cc1 -verify -fopenmp -fnoopenmp-use-tls -x c++ -fblocks -DBLOCKS -triple %itanium_abi_triple -emit-llvm %s -o - | FileCheck -check-prefix=BLOCKS %s
+// RUN: %clang_cc1 -verify -fopenmp -fnoopenmp-use-tls -x c++ -triple x86_64-linux -emit-llvm %s -o - | FileCheck %s
+// RUN: %clang_cc1 -fopenmp -fnoopenmp-use-tls -x c++ -std=c++11 -triple x86_64-linux -emit-pch -o %t %s
+// RUN: %clang_cc1 -fopenmp -fnoopenmp-use-tls -x c++ -triple x86_64-linux -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s
+// RUN: %clang_cc1 -verify -fopenmp -fnoopenmp-use-tls -x c++ -std=c++11 -DLAMBDA -triple x86_64-linux -emit-llvm %s -o - | FileCheck -check-prefix=LAMBDA %s
+// RUN: %clang_cc1 -verify -fopenmp -fnoopenmp-use-tls -x c++ -fblocks -DBLOCKS -triple x86_64-linux -emit-llvm %s -o - | FileCheck -check-prefix=BLOCKS %s
 // RUN: %clang_cc1 -verify -fopenmp -fnoopenmp-use-tls -x c++ -std=c++11 -DARRAY -triple x86_64-apple-darwin10 -emit-llvm %s -o - | FileCheck -check-prefix=ARRAY %s
 
-// RUN: %clang_cc1 -verify -fopenmp-simd -fnoopenmp-use-tls -x c++ -triple %itanium_abi_triple -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY0 %s
-// RUN: %clang_cc1 -fopenmp-simd -fnoopenmp-use-tls -x c++ -std=c++11 -triple %itanium_abi_triple -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fnoopenmp-use-tls -x c++ -triple %itanium_abi_triple -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY0 %s
-// RUN: %clang_cc1 -verify -fopenmp-simd -fnoopenmp-use-tls -x c++ -std=c++11 -DLAMBDA -triple %itanium_abi_triple -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY0 %s
-// RUN: %clang_cc1 -verify -fopenmp-simd -fnoopenmp-use-tls -x c++ -fblocks -DBLOCKS -triple %itanium_abi_triple -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY0 %s
+// RUN: %clang_cc1 -verify -fopenmp-simd -fnoopenmp-use-tls -x c++ -triple x86_64-linux -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY0 %s
+// RUN: %clang_cc1 -fopenmp-simd -fnoopenmp-use-tls -x c++ -std=c++11 -triple x86_64-linux -emit-pch -o %t %s
+// RUN: %clang_cc1 -fopenmp-simd -fnoopenmp-use-tls -x c++ -triple x86_64-linux -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY0 %s
+// RUN: %clang_cc1 -verify -fopenmp-simd -fnoopenmp-use-tls -x c++ -std=c++11 -DLAMBDA -triple x86_64-linux -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY0 %s
+// RUN: %clang_cc1 -verify -fopenmp-simd -fnoopenmp-use-tls -x c++ -fblocks -DBLOCKS -triple x86_64-linux -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY0 %s
 // RUN: %clang_cc1 -verify -fopenmp-simd -fnoopenmp-use-tls -x c++ -std=c++11 -DARRAY -triple x86_64-apple-darwin10 -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY0 %s
 // SIMD-ONLY0-NOT: {{__kmpc|__tgt}}
 
-// RUN: %clang_cc1 -verify -fopenmp -x c++ -triple %itanium_abi_triple -emit-llvm %s -o - | FileCheck %s -check-prefix=TLS-CHECK
-// RUN: %clang_cc1 -fopenmp -x c++ -std=c++11 -triple %itanium_abi_triple -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -x c++ -triple %itanium_abi_triple -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s -check-prefix=TLS-CHECK
-// RUN: %clang_cc1 -verify -fopenmp -x c++ -std=c++11 -DLAMBDA -triple %itanium_abi_triple -emit-llvm %s -o - | FileCheck -check-prefix=TLS-LAMBDA %s
-// RUN: %clang_cc1 -verify -fopenmp -x c++ -fblocks -DBLOCKS -triple %itanium_abi_triple -emit-llvm %s -o - | FileCheck -check-prefix=TLS-BLOCKS %s
+// RUN: %clang_cc1 -verify -fopenmp -x c++ -triple x86_64-linux -emit-llvm %s -o - | FileCheck %s -check-prefix=TLS-CHECK
+// RUN: %clang_cc1 -fopenmp -x c++ -std=c++11 -triple x86_64-linux -emit-pch -o %t %s
+// RUN: %clang_cc1 -fopenmp -x c++ -triple x86_64-linux -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s -check-prefix=TLS-CHECK
+// RUN: %clang_cc1 -verify -fopenmp -x c++ -std=c++11 -DLAMBDA -triple x86_64-linux -emit-llvm %s -o - | FileCheck -check-prefix=TLS-LAMBDA %s
+// RUN: %clang_cc1 -verify -fopenmp -x c++ -fblocks -DBLOCKS -triple x86_64-linux -emit-llvm %s -o - | FileCheck -check-prefix=TLS-BLOCKS %s
 // RUN: %clang_cc1 -verify -fopenmp -x c++ -std=c++11 -DARRAY -triple x86_64-linux-gnu -emit-llvm %s -o - | FileCheck -check-prefix=TLS-ARRAY %s
+// RUN: %clang_cc1 -verify -fopenmp -x c++ -DNESTED -triple x86_64-linux -emit-llvm %s -o - | FileCheck %s -check-prefix=NESTED
 
-// RUN: %clang_cc1 -verify -fopenmp-simd -x c++ -triple %itanium_abi_triple -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY1 %s
-// RUN: %clang_cc1 -fopenmp-simd -x c++ -std=c++11 -triple %itanium_abi_triple -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -x c++ -triple %itanium_abi_triple -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY1 %s
-// RUN: %clang_cc1 -verify -fopenmp-simd -x c++ -std=c++11 -DLAMBDA -triple %itanium_abi_triple -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY1 %s
-// RUN: %clang_cc1 -verify -fopenmp-simd -x c++ -fblocks -DBLOCKS -triple %itanium_abi_triple -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY1 %s
+// RUN: %clang_cc1 -verify -fopenmp-simd -x c++ -triple x86_64-linux -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY1 %s
+// RUN: %clang_cc1 -fopenmp-simd -x c++ -std=c++11 -triple x86_64-linux -emit-pch -o %t %s
+// RUN: %clang_cc1 -fopenmp-simd -x c++ -triple x86_64-linux -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY1 %s
+// RUN: %clang_cc1 -verify -fopenmp-simd -x c++ -std=c++11 -DLAMBDA -triple x86_64-linux -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY1 %s
+// RUN: %clang_cc1 -verify -fopenmp-simd -x c++ -fblocks -DBLOCKS -triple x86_64-linux -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY1 %s
 // RUN: %clang_cc1 -verify -fopenmp-simd -x c++ -std=c++11 -DARRAY -triple x86_64-linux-gnu -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY1 %s
 // SIMD-ONLY1-NOT: {{__kmpc|__tgt}}
 // expected-no-diagnostics
-#ifndef ARRAY
+#if !defined(ARRAY) && !defined(NESTED)
 #ifndef HEADER
 #define HEADER
 
@@ -47,27 +48,27 @@ struct S {
 
 // CHECK-DAG: [[S_FLOAT_TY:%.+]] = type { float }
 // CHECK-DAG: [[S_INT_TY:%.+]] = type { i{{[0-9]+}} }
-// CHECK-DAG: [[IMPLICIT_BARRIER_LOC:@.+]] = private unnamed_addr constant %{{.+}} { i32 0, i32 66, i32 0, i32 0, i8*
+// CHECK-DAG: [[IMPLICIT_BARRIER_LOC:@.+]] = private unnamed_addr global %{{.+}} { i32 0, i32 66, i32 0, i32 0, i8*
 // TLS-CHECK-DAG: [[S_FLOAT_TY:%.+]] = type { float }
 // TLS-CHECK-DAG: [[S_INT_TY:%.+]] = type { i{{[0-9]+}} }
-// TLS-CHECK-DAG: [[IMPLICIT_BARRIER_LOC:@.+]] = private unnamed_addr constant %{{.+}} { i32 0, i32 66, i32 0, i32 0, i8*
+// TLS-CHECK-DAG: [[IMPLICIT_BARRIER_LOC:@.+]] = private unnamed_addr global %{{.+}} { i32 0, i32 66, i32 0, i32 0, i8*
 
 // CHECK-DAG: [[T_VAR:@.+]] = internal global i{{[0-9]+}} 1122,
 // CHECK-DAG: [[VEC:@.+]] = internal global [2 x i{{[0-9]+}}] [i{{[0-9]+}} 1, i{{[0-9]+}} 2],
 // CHECK-DAG: [[S_ARR:@.+]] = internal global [2 x [[S_FLOAT_TY]]] zeroinitializer,
 // CHECK-DAG: [[VAR:@.+]] = internal global [[S_FLOAT_TY]] zeroinitializer,
-// CHECK-DAG: [[TMAIN_T_VAR:@.+]] = linkonce_odr global i{{[0-9]+}} 333,
-// CHECK-DAG: [[TMAIN_VEC:@.+]] = linkonce_odr global [2 x i{{[0-9]+}}] [i{{[0-9]+}} 3, i{{[0-9]+}} 3],
-// CHECK-DAG: [[TMAIN_S_ARR:@.+]] = linkonce_odr global [2 x [[S_INT_TY]]] zeroinitializer,
-// CHECK-DAG: [[TMAIN_VAR:@.+]] = linkonce_odr global [[S_INT_TY]] zeroinitializer,
+// CHECK-DAG: [[TMAIN_T_VAR:@.+]] = linkonce_odr {{(dso_local )?}}global i{{[0-9]+}} 333,
+// CHECK-DAG: [[TMAIN_VEC:@.+]] = linkonce_odr {{(dso_local )?}}global [2 x i{{[0-9]+}}] [i{{[0-9]+}} 3, i{{[0-9]+}} 3],
+// CHECK-DAG: [[TMAIN_S_ARR:@.+]] = linkonce_odr {{(dso_local )?}}global [2 x [[S_INT_TY]]] zeroinitializer,
+// CHECK-DAG: [[TMAIN_VAR:@.+]] = linkonce_odr {{(dso_local )?}}global [[S_INT_TY]] zeroinitializer,
 // TLS-CHECK-DAG: [[T_VAR:@.+]] = internal thread_local global i{{[0-9]+}} 1122,
 // TLS-CHECK-DAG: [[VEC:@.+]] = internal thread_local global [2 x i{{[0-9]+}}] [i{{[0-9]+}} 1, i{{[0-9]+}} 2],
 // TLS-CHECK-DAG: [[S_ARR:@.+]] = internal thread_local global [2 x [[S_FLOAT_TY]]] zeroinitializer,
 // TLS-CHECK-DAG: [[VAR:@.+]] = internal thread_local global [[S_FLOAT_TY]] zeroinitializer,
-// TLS-CHECK-DAG: [[TMAIN_T_VAR:@.+]] = linkonce_odr thread_local global i{{[0-9]+}} 333,
-// TLS-CHECK-DAG: [[TMAIN_VEC:@.+]] = linkonce_odr thread_local global [2 x i{{[0-9]+}}] [i{{[0-9]+}} 3, i{{[0-9]+}} 3],
-// TLS-CHECK-DAG: [[TMAIN_S_ARR:@.+]] = linkonce_odr thread_local global [2 x [[S_INT_TY]]] zeroinitializer,
-// TLS-CHECK-DAG: [[TMAIN_VAR:@.+]] = linkonce_odr thread_local global [[S_INT_TY]] zeroinitializer,
+// TLS-CHECK-DAG: [[TMAIN_T_VAR:@.+]] = linkonce_odr {{(dso_local )?}}thread_local global i{{[0-9]+}} 333,
+// TLS-CHECK-DAG: [[TMAIN_VEC:@.+]] = linkonce_odr {{(dso_local )?}}thread_local global [2 x i{{[0-9]+}}] [i{{[0-9]+}} 3, i{{[0-9]+}} 3],
+// TLS-CHECK-DAG: [[TMAIN_S_ARR:@.+]] = linkonce_odr {{(dso_local )?}}thread_local global [2 x [[S_INT_TY]]] zeroinitializer,
+// TLS-CHECK-DAG: [[TMAIN_VAR:@.+]] = linkonce_odr {{(dso_local )?}}thread_local global [[S_INT_TY]] zeroinitializer,
 
 template <typename T>
 T tmain() {
@@ -90,7 +91,7 @@ T tmain() {
 
 int main() {
 #ifdef LAMBDA
-  // LAMBDA: [[G:@.+]] = global i{{[0-9]+}} 1212,
+  // LAMBDA: [[G:@.+]] = {{(dso_local )?}}global i{{[0-9]+}} 1212,
   // LAMBDA-LABEL: @main
   // LAMBDA: call{{.*}} void [[OUTER_LAMBDA:@.+]](
   // TLS-LAMBDA: [[G:@.+]] = {{.*}}thread_local {{.*}}global i{{[0-9]+}} 1212,
@@ -152,7 +153,7 @@ int main() {
   }();
   return 0;
 #elif defined(BLOCKS)
-  // BLOCKS: [[G:@.+]] = global i{{[0-9]+}} 1212,
+  // BLOCKS: [[G:@.+]] = {{(dso_local )?}}global i{{[0-9]+}} 1212,
   // BLOCKS-LABEL: @main
   // BLOCKS: call {{.*}}void {{%.+}}(i8
 
@@ -239,8 +240,8 @@ int main() {
     vec[0] = t_var;
     s_arr[0] = var;
   }
-#pragma omp parallel copyin(t_var)
-  {}
+#pragma omp parallel copyin(t_var) default(none)
+  ++t_var;
   return tmain<int>();
 #endif
 }
@@ -294,10 +295,10 @@ int main() {
 
 // threadprivate_vec = vec;
 // CHECK: call {{.*}}i8* @__kmpc_threadprivate_cached({{.+}} [[VEC]]
-// CHECK: call void @llvm.memcpy{{.*}}(i8* %{{.+}}, i8* bitcast ([2 x i{{[0-9]+}}]* [[VEC]] to i8*),
+// CHECK: call void @llvm.memcpy{{.*}}(i8* align {{[0-9]+}}  %{{.+}}, i8* align {{[0-9]+}} bitcast ([2 x i{{[0-9]+}}]* [[VEC]] to i8*),
 
 // TLS-CHECK: [[MASTER_CAST:%.+]] = bitcast [2 x i32]* [[MASTER_REF2]] to i8*
-// TLS-CHECK: call void @llvm.memcpy{{.*}}(i8* bitcast ([2 x i{{[0-9]+}}]* [[VEC]] to i8*), i8* [[MASTER_CAST]]
+// TLS-CHECK: call void @llvm.memcpy{{.*}}(i8* align {{[0-9]+}} bitcast ([2 x i{{[0-9]+}}]* [[VEC]] to i8*), i8* align {{[0-9]+}} [[MASTER_CAST]]
 
 // threadprivate_s_arr = s_arr;
 // CHECK: call {{.*}}i8* @__kmpc_threadprivate_cached({{.+}} [[S_ARR]]
@@ -363,6 +364,7 @@ int main() {
 // TLS-CHECK: [[DONE]]
 
 // CHECK: call {{.*}}void @__kmpc_barrier(%{{.+}}* [[IMPLICIT_BARRIER_LOC]], i32 [[GTID]])
+// CHECK: add nsw i32 %{{.+}}, 1
 // CHECK: ret void
 
 // TLS-CHECK: [[GTID_ADDR:%.+]] = load i32*, i32** [[GTID_ADDR_ADDR]],
@@ -415,10 +417,10 @@ int main() {
 
 // threadprivate_vec = vec;
 // CHECK: call {{.*}}i8* @__kmpc_threadprivate_cached({{.+}} [[TMAIN_VEC]]
-// CHECK: call {{.*}}void @llvm.memcpy{{.*}}(i8* %{{.+}}, i8* bitcast ([2 x i{{[0-9]+}}]* [[TMAIN_VEC]] to i8*),
+// CHECK: call {{.*}}void @llvm.memcpy{{.*}}(i8* align {{[0-9]+}} %{{.+}}, i8* align {{[0-9]+}} bitcast ([2 x i{{[0-9]+}}]* [[TMAIN_VEC]] to i8*),
 
 // TLS-CHECK: [[MASTER_CAST:%.+]] = bitcast [2 x i32]* [[MASTER_REF1]] to i8*
-// TLS-CHECK: call void @llvm.memcpy{{.*}}(i8* bitcast ([2 x i{{[0-9]+}}]* [[TMAIN_VEC]] to i8*), i8* [[MASTER_CAST]]
+// TLS-CHECK: call void @llvm.memcpy{{.*}}(i8* align {{[0-9]+}} bitcast ([2 x i{{[0-9]+}}]* [[TMAIN_VEC]] to i8*), i8* align {{[0-9]+}} [[MASTER_CAST]]
 
 // threadprivate_s_arr = s_arr;
 // CHECK: call {{.*}}i8* @__kmpc_threadprivate_cached({{.+}} [[TMAIN_S_ARR]]
@@ -492,7 +494,7 @@ int main() {
 // TLS-CHECK: ret void
 
 #endif
-#else
+#elif defined(ARRAY)
 // ARRAY-LABEL: array_func
 // TLS-ARRAY-LABEL: array_func
 
@@ -508,19 +510,37 @@ void array_func() {
   static St s[2];
 // ARRAY: @__kmpc_fork_call(
 // ARRAY: call i8* @__kmpc_threadprivate_cached(
-// ARRAY: call void @llvm.memcpy.p0i8.p0i8.i64(i8* %{{.+}}, i8* bitcast ([2 x i32]* @{{.+}} to i8*), i64 8, i32 4, i1 false)
+// ARRAY: call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 4 %{{.+}}, i8* align 4 bitcast ([2 x i32]* @{{.+}} to i8*), i64 8, i1 false)
 // ARRAY: call dereferenceable(8) %struct.St* @{{.+}}(%struct.St* %{{.+}}, %struct.St* dereferenceable(8) %{{.+}})
 
 // TLS-ARRAY: @__kmpc_fork_call(
 // TLS-ARRAY: [[REFT:%.+]] = load [2 x i32]*, [2 x i32]** [[ADDR:%.+]],
 // TLS-ARRAY: [[REF:%.+]] = bitcast [2 x i32]* [[REFT]] to i8*
-// TLS-ARRAY: call void @llvm.memcpy.p0i8.p0i8.i64(i8* bitcast ([2 x i32]* @{{.+}} to i8*), i8* [[REF]], i64 8, i32 4, i1 false)
+// TLS-ARRAY: call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 4 bitcast ([2 x i32]* @{{.+}} to i8*), i8* align 4 [[REF]], i64 8, i1 false)
 // TLS-ARRAY: call dereferenceable(8) %struct.St* @{{.+}}(%struct.St* %{{.+}}, %struct.St* dereferenceable(8) %{{.+}})
 
 #pragma omp threadprivate(a, s)
 #pragma omp parallel copyin(a, s)
   ;
 }
-#endif
+#elif defined(NESTED)
+int t;
+#pragma omp threadprivate(t)
+// NESTED: foo
+void foo() {
+  // NESTED: call void (%struct.ident_t*, i32, void (i32*, i32*, ...)*, ...) @__kmpc_fork_call(%struct.ident_t* @{{.+}}, i32 0, void (i32*, i32*, ...)* bitcast (void (i32*, i32*)* [[OUTLINED:@.+]] to void (i32*, i32*, ...)*))
+#pragma omp parallel
+#pragma omp parallel copyin(t)
+  ++t;
+}
+// NESTED: define {{.*}}void [[OUTLINED]](
+// NESTED: [[T:%.+]] = call i32* [[THRP_T:@.+]]()
+// NESTED:  call void (%struct.ident_t*, i32, void (i32*, i32*, ...)*, ...) @__kmpc_fork_call(%struct.ident_t* @{{.+}}, i32 1, void (i32*, i32*, ...)* bitcast (void (i32*, i32*, i32*)* [[OUTLINED1:@.+]] to void (i32*, i32*, ...)*), i32* [[T]])
 
+// NESTED: define {{.*}}void [[OUTLINED1]](
+// NESTED: [[T_MASTER:%.+]] = load i32*, i32** %
+// NESTED: [[T:%.+]] = call i32* [[THRP_T]]()
+// NESTED: [[T_MASTER_VAL:%.+]] = load i32, i32* [[T_MASTER]],
+// NESTED: store i32 [[T_MASTER_VAL]], i32* [[T]],
+#endif // NESTED
 

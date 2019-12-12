@@ -1,8 +1,8 @@
-# RUN: llvm-mc %s -arch=mips -mcpu=mips32 | \
+# RUN: llvm-mc %s -triple mips-unknown-linux-gnu | \
 # RUN:   FileCheck %s -check-prefix=CHECK-ASM
 #
-# RUN: llvm-mc %s -arch=mips -mcpu=mips32 -filetype=obj -o - | \
-# RUN:   llvm-readobj -sections -section-data -section-relocations - | \
+# RUN: llvm-mc %s -triple mips-unknown-linux-gnu -filetype=obj -o - | \
+# RUN:   llvm-readobj --sections --section-data --section-relocations - | \
 # RUN:     FileCheck %s -check-prefix=CHECK-OBJ
 
 # CHECK-ASM: .module fp=32

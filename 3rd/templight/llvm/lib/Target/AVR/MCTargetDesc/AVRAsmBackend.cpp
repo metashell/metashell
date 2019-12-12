@@ -1,9 +1,8 @@
 //===-- AVRAsmBackend.cpp - AVR Asm Backend  ------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -352,15 +351,16 @@ void AVRAsmBackend::adjustFixupValue(const MCFixup &Fixup,
   }
 }
 
-std::unique_ptr<MCObjectWriter>
-AVRAsmBackend::createObjectWriter(raw_pwrite_stream &OS) const {
-  return createAVRELFObjectWriter(OS,
-                                  MCELFObjectTargetWriter::getOSABI(OSType));
+std::unique_ptr<MCObjectTargetWriter>
+AVRAsmBackend::createObjectTargetWriter() const {
+  return createAVRELFObjectWriter(MCELFObjectTargetWriter::getOSABI(OSType));
 }
 
 void AVRAsmBackend::applyFixup(const MCAssembler &Asm, const MCFixup &Fixup,
-                               const MCValue &Target, MutableArrayRef<char> Data,
-                               uint64_t Value, bool IsPCRel) const {
+                               const MCValue &Target,
+                               MutableArrayRef<char> Data, uint64_t Value,
+                               bool IsResolved,
+                               const MCSubtargetInfo *STI) const {
   adjustFixupValue(Fixup, Target, Value, &Asm.getContext());
   if (Value == 0)
     return; // Doesn't change encoding.
@@ -453,13 +453,13 @@ MCFixupKindInfo const &AVRAsmBackend::getFixupKindInfo(MCFixupKind Kind) const {
   return Infos[Kind - FirstTargetFixupKind];
 }
 
-bool AVRAsmBackend::writeNopData(uint64_t Count, MCObjectWriter *OW) const {
+bool AVRAsmBackend::writeNopData(raw_ostream &OS, uint64_t Count) const {
   // If the count is not 2-byte aligned, we must be writing data into the text
   // section (otherwise we have unaligned instructions, and thus have far
   // bigger problems), so just write zeros instead.
   assert((Count % 2) == 0 && "NOP instructions must be 2 bytes");
 
-  OW->WriteZeros(Count);
+  OS.write_zeros(Count);
   return true;
 }
 

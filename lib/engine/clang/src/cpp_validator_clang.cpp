@@ -46,15 +46,14 @@ namespace metashell
         try
         {
           const data::cpp_code src = env_.get_appended(src_);
-          std::vector<std::string> clang_args{"-fsyntax-only"};
+          data::command_line_argument_list clang_args{"-fsyntax-only"};
           if (use_precompiled_headers_)
           {
-            clang_args.push_back("-include");
-            clang_args.push_back(_env_path.string());
+            clang_args.push_back("-include", _env_path);
           }
 
           const data::process_output output =
-              run_clang(_binary, clang_args, src);
+              run_clang(_binary, std::move(clang_args), src);
 
           const bool accept = output.exit_code == data::exit_code_t(0) &&
                               output.standard_error.empty();

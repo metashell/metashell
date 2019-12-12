@@ -1,9 +1,8 @@
 //===-- StringRef.cpp - Lightweight String References ---------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -389,7 +388,7 @@ static unsigned GetAutoSenseRadix(StringRef &Str) {
     Str = Str.substr(2);
     return 16;
   }
-  
+
   if (Str.startswith("0b") || Str.startswith("0B")) {
     Str = Str.substr(2);
     return 2;

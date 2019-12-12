@@ -1,9 +1,8 @@
 //===-- asan_interceptors.cc ----------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -14,6 +13,8 @@
 
 #include "asan_allocator.h"
 #include "asan_internal.h"
+#include "asan_malloc_local.h"
+#include "asan_report.h"
 #include "asan_stack.h"
 
 #include "interception/interception.h"
@@ -24,7 +25,7 @@
 // anyway by passing extra -export flags to the linker, which is exactly that
 // dllexport would normally do. We need to export them in order to make the
 // VS2015 dynamic CRT (MD) work.
-#if SANITIZER_WINDOWS
+#if SANITIZER_WINDOWS && defined(_MSC_VER)
 #define CXX_OPERATOR_ATTRIBUTE
 #define COMMENT_EXPORT(sym) __pragma(comment(linker, "/export:" sym))
 #ifdef _WIN64
@@ -67,16 +68,22 @@ struct nothrow_t {};
 enum class align_val_t: size_t {};
 }  // namespace std
 
-// TODO(alekseys): throw std::bad_alloc instead of dying on OOM.
-#define OPERATOR_NEW_BODY(type, nothrow) \
-  GET_STACK_TRACE_MALLOC;\
-  void *res = asan_memalign(0, size, &stack, type);\
-  if (!nothrow && UNLIKELY(!res)) DieOnFailure::OnOOM();\
+// TODO(alekseyshl): throw std::bad_alloc instead of dying on OOM.
+// For local pool allocation, align to SHADOW_GRANULARITY to match asan
+// allocator behavior.
+#define OPERATOR_NEW_BODY(type, nothrow)            \
+  MAYBE_ALLOCATE_FROM_LOCAL_POOL(nothrow);          \
+  GET_STACK_TRACE_MALLOC;                           \
+  void *res = asan_memalign(0, size, &stack, type); \
+  if (!nothrow && UNLIKELY(!res))                   \
+    ReportOutOfMemory(size, &stack);                \
   return res;
-#define OPERATOR_NEW_BODY_ALIGN(type, nothrow) \
-  GET_STACK_TRACE_MALLOC;\
-  void *res = asan_memalign((uptr)align, size, &stack, type);\
-  if (!nothrow && UNLIKELY(!res)) DieOnFailure::OnOOM();\
+#define OPERATOR_NEW_BODY_ALIGN(type, nothrow)                \
+  MAYBE_ALLOCATE_FROM_LOCAL_POOL(nothrow);                    \
+  GET_STACK_TRACE_MALLOC;                                     \
+  void *res = asan_memalign((uptr)align, size, &stack, type); \
+  if (!nothrow && UNLIKELY(!res))                             \
+    ReportOutOfMemory(size, &stack);                          \
   return res;
 
 // On OS X it's not enough to just provide our own 'operator new' and
@@ -128,18 +135,22 @@ INTERCEPTOR(void *, _ZnamRKSt9nothrow_t, size_t size, std::nothrow_t const&) {
 #endif  // !SANITIZER_MAC
 
 #define OPERATOR_DELETE_BODY(type) \
+  if (IS_FROM_LOCAL_POOL(ptr)) return;\
   GET_STACK_TRACE_FREE;\
   asan_delete(ptr, 0, 0, &stack, type);
 
 #define OPERATOR_DELETE_BODY_SIZE(type) \
+  if (IS_FROM_LOCAL_POOL(ptr)) return;\
   GET_STACK_TRACE_FREE;\
   asan_delete(ptr, size, 0, &stack, type);
 
 #define OPERATOR_DELETE_BODY_ALIGN(type) \
+  if (IS_FROM_LOCAL_POOL(ptr)) return;\
   GET_STACK_TRACE_FREE;\
   asan_delete(ptr, 0, static_cast<uptr>(align), &stack, type);
 
 #define OPERATOR_DELETE_BODY_SIZE_ALIGN(type) \
+  if (IS_FROM_LOCAL_POOL(ptr)) return;\
   GET_STACK_TRACE_FREE;\
   asan_delete(ptr, size, static_cast<uptr>(align), &stack, type);
 

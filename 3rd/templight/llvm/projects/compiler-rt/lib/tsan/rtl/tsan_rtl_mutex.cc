@@ -1,9 +1,8 @@
 //===-- tsan_rtl_mutex.cc -------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -104,7 +103,7 @@ void MutexDestroy(ThreadState *thr, uptr pc, uptr addr, u32 flagz) {
     unlock_locked = true;
   }
   u64 mid = s->GetId();
-  u32 last_lock = s->last_lock;
+  u64 last_lock = s->last_lock;
   if (!unlock_locked)
     s->Reset(thr->proc());  // must not reset it before the report is printed
   s->mtx.Unlock();
@@ -114,7 +113,7 @@ void MutexDestroy(ThreadState *thr, uptr pc, uptr addr, u32 flagz) {
     rep.AddMutex(mid);
     VarSizeStackTrace trace;
     ObtainCurrentStack(thr, pc, &trace);
-    rep.AddStack(trace);
+    rep.AddStack(trace, true);
     FastState last(last_lock);
     RestoreStack(last.tid(), last.epoch(), &trace, 0);
     rep.AddStack(trace, true);
@@ -361,7 +360,7 @@ void MutexReadOrWriteUnlock(ThreadState *thr, uptr pc, uptr addr) {
     if (s->recursion == 0) {
       StatInc(thr, StatMutexUnlock);
       s->owner_tid = SyncVar::kInvalidTid;
-      ReleaseImpl(thr, pc, &s->clock);
+      ReleaseStoreImpl(thr, pc, &s->clock);
     } else {
       StatInc(thr, StatMutexRecUnlock);
     }

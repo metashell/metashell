@@ -66,13 +66,13 @@ namespace metashell
         }
       }
 
-      std::function<std::unique_ptr<iface::engine>(const data::config&)>
+      std::function<std::unique_ptr<iface::engine>(const data::shell_config&)>
       create_failing()
       {
-        return [](const data::config&) {
+        return [](const data::shell_config&) {
           const data::result result(false, "", "Using failing engine", "");
           const std::vector<boost::filesystem::path> empty;
-          const data::engine_name name("failing");
+          const data::real_engine_name name = data::real_engine_name::null;
 
           return core::make_engine(
               name, name, type_shell(result), preprocessor_shell(result),
@@ -82,13 +82,13 @@ namespace metashell
         };
       }
 
-      std::function<std::unique_ptr<iface::engine>(const data::config&)>
+      std::function<std::unique_ptr<iface::engine>(const data::shell_config&)>
       create_returning_type(const std::string& type_)
       {
-        return [type_](const data::config&) {
+        return [type_](const data::shell_config&) {
           const data::result result(true, type_, "", "");
           const std::vector<boost::filesystem::path> empty;
-          const data::engine_name name("type_returning");
+          const data::real_engine_name name = data::real_engine_name::null;
 
           return core::make_engine(
               name, name, type_shell(result), preprocessor_shell(result),
@@ -98,13 +98,13 @@ namespace metashell
         };
       }
 
-      std::function<std::unique_ptr<iface::engine>(const data::config&)>
+      std::function<std::unique_ptr<iface::engine>(const data::shell_config&)>
       create_with_include_path(data::include_type type_,
                                std::vector<boost::filesystem::path> path_)
       {
-        return [type_, path_](const data::config&) {
+        return [type_, path_](const data::shell_config&) {
           const data::result result(true, "int", "", "");
-          const data::engine_name name("engine_with_include_path");
+          const data::real_engine_name name = data::real_engine_name::null;
 
           return core::make_engine(
               name, name, type_shell(result), preprocessor_shell(result),

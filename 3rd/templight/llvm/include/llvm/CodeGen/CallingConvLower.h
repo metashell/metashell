@@ -1,9 +1,8 @@
 //===- llvm/CallingConvLower.h - Calling Conventions ------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -146,7 +145,7 @@ public:
 
   bool needsCustom() const { return isCustom; }
 
-  unsigned getLocReg() const { assert(isRegLoc()); return Loc; }
+  Register getLocReg() const { assert(isRegLoc()); return Loc; }
   unsigned getLocMemOffset() const { assert(isMemLoc()); return Loc; }
   unsigned getExtraInfo() const { return Loc; }
   MVT getLocVT() const { return LocVT; }
@@ -304,7 +303,7 @@ public:
   /// CheckReturn - Analyze the return values of a function, returning
   /// true if the return can be performed without sret-demotion, and
   /// false otherwise.
-  bool CheckReturn(const SmallVectorImpl<ISD::OutputArg> &ArgsFlags,
+  bool CheckReturn(const SmallVectorImpl<ISD::OutputArg> &Outs,
                    CCAssignFn Fn);
 
   /// AnalyzeCallOperands - Analyze the outgoing arguments to a call,
@@ -557,7 +556,7 @@ public:
 
     // Sort the locations of the arguments according to their original position.
     SmallVector<CCValAssign, 16> TmpArgLocs;
-    std::swap(TmpArgLocs, Locs);
+    TmpArgLocs.swap(Locs);
     auto B = TmpArgLocs.begin(), E = TmpArgLocs.end();
     std::merge(B, B + NumFirstPassLocs, B + NumFirstPassLocs, E,
                std::back_inserter(Locs),

@@ -45,6 +45,26 @@ namespace metashell
 
         return json_string(buff.GetString());
       }
+
+      const char* c_str(const std::string& s_) { return s_.c_str(); }
+
+      template <class Container>
+      json_string container_to_json(const Container& container_)
+      {
+        rapidjson::StringBuffer buff;
+        rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+        w.StartArray();
+
+        for (const auto& s : container_)
+        {
+          w.String(c_str(s));
+        }
+
+        w.EndArray();
+
+        return json_string(buff.GetString());
+      }
     }
 
     json_string command(const std::string& cmd_)
@@ -69,19 +89,12 @@ namespace metashell
 
     json_string to_json(const std::vector<std::string>& strings_)
     {
-      rapidjson::StringBuffer buff;
-      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+      return container_to_json(strings_);
+    }
 
-      w.StartArray();
-
-      for (const auto& s : strings_)
-      {
-        w.String(s.c_str());
-      }
-
-      w.EndArray();
-
-      return json_string(buff.GetString());
+    json_string to_json(const data::command_line_argument_list& args_)
+    {
+      return container_to_json(args_);
     }
   }
 }

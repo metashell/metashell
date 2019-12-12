@@ -1,9 +1,8 @@
 //===- ARCInstrInfo.cpp - ARC Instruction Information -----------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -28,6 +27,19 @@ using namespace llvm;
 #include "ARCGenInstrInfo.inc"
 
 #define DEBUG_TYPE "arc-inst-info"
+
+enum AddrIncType {
+    NoAddInc = 0,
+    PreInc   = 1,
+    PostInc  = 2,
+    Scaled   = 3
+};
+
+enum TSFlagsConstants {
+    TSF_AddrModeOff = 0,
+    TSF_AddModeMask = 3
+};
+
 // Pin the vtable to this file.
 void ARCInstrInfo::anchor() {}
 
@@ -103,6 +115,10 @@ static ARCCC::CondCode GetOppositeBranchCondition(ARCCC::CondCode CC) {
     return ARCCC::LE;
   case ARCCC::GE:
     return ARCCC::LT;
+  case ARCCC::VS:
+    return ARCCC::VC;
+  case ARCCC::VC:
+    return ARCCC::VS;
   case ARCCC::LT:
     return ARCCC::GE;
   case ARCCC::LE:
@@ -169,7 +185,7 @@ bool ARCInstrInfo::analyzeBranch(MachineBasicBlock &MBB,
     bool CantAnalyze = false;
 
     // Skip over DEBUG values and predicated nonterminators.
-    while (I->isDebugValue() || !I->isTerminator()) {
+    while (I->isDebugInstr() || !I->isTerminator()) {
       if (I == MBB.begin())
         return false;
       --I;
@@ -294,8 +310,8 @@ void ARCInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
          "Only support 4-byte stores to stack now.");
   assert(ARC::GPR32RegClass.hasSubClassEq(RC) &&
          "Only support GPR32 stores to stack now.");
-  DEBUG(dbgs() << "Created store reg=" << printReg(SrcReg, TRI)
-               << " to FrameIndex=" << FrameIndex << "\n");
+  LLVM_DEBUG(dbgs() << "Created store reg=" << printReg(SrcReg, TRI)
+                    << " to FrameIndex=" << FrameIndex << "\n");
   BuildMI(MBB, I, dl, get(ARC::ST_rs9))
       .addReg(SrcReg, getKillRegState(isKill))
       .addFrameIndex(FrameIndex)
@@ -321,8 +337,8 @@ void ARCInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
          "Only support 4-byte loads from stack now.");
   assert(ARC::GPR32RegClass.hasSubClassEq(RC) &&
          "Only support GPR32 stores to stack now.");
-  DEBUG(dbgs() << "Created load reg=" << printReg(DestReg, TRI)
-               << " from FrameIndex=" << FrameIndex << "\n");
+  LLVM_DEBUG(dbgs() << "Created load reg=" << printReg(DestReg, TRI)
+                    << " from FrameIndex=" << FrameIndex << "\n");
   BuildMI(MBB, I, dl, get(ARC::LD_rs9))
       .addReg(DestReg, RegState::Define)
       .addFrameIndex(FrameIndex)
@@ -385,10 +401,42 @@ unsigned ARCInstrInfo::insertBranch(MachineBasicBlock &MBB,
 }
 
 unsigned ARCInstrInfo::getInstSizeInBytes(const MachineInstr &MI) const {
-  if (MI.getOpcode() == TargetOpcode::INLINEASM) {
+  if (MI.isInlineAsm()) {
     const MachineFunction *MF = MI.getParent()->getParent();
     const char *AsmStr = MI.getOperand(0).getSymbolName();
     return getInlineAsmLength(AsmStr, *MF->getTarget().getMCAsmInfo());
   }
   return MI.getDesc().getSize();
+}
+
+bool ARCInstrInfo::isPostIncrement(const MachineInstr &MI) const {
+  const MCInstrDesc &MID = MI.getDesc();
+  const uint64_t F = MID.TSFlags;
+  return ((F >> TSF_AddrModeOff) & TSF_AddModeMask) == PostInc;
+}
+
+bool ARCInstrInfo::isPreIncrement(const MachineInstr &MI) const {
+  const MCInstrDesc &MID = MI.getDesc();
+  const uint64_t F = MID.TSFlags;
+  return ((F >> TSF_AddrModeOff) & TSF_AddModeMask) == PreInc;
+}
+
+bool ARCInstrInfo::getBaseAndOffsetPosition(const MachineInstr &MI,
+                                        unsigned &BasePos,
+                                        unsigned &OffsetPos) const {
+  if (!MI.mayLoad() && !MI.mayStore())
+    return false;
+
+  BasePos = 1;
+  OffsetPos = 2;
+
+  if (isPostIncrement(MI) || isPreIncrement(MI)) {
+    BasePos++;
+    OffsetPos++;
+  }
+
+  if (!MI.getOperand(BasePos).isReg() || !MI.getOperand(OffsetPos).isImm())
+    return false;
+
+  return true;
 }

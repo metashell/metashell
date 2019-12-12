@@ -67,19 +67,15 @@ define <4 x i64> @combine_v4i64_abs_abs(<4 x i64> %a) {
 ; AVX2-LABEL: combine_v4i64_abs_abs:
 ; AVX2:       # %bb.0:
 ; AVX2-NEXT:    vpxor %xmm1, %xmm1, %xmm1
-; AVX2-NEXT:    vpcmpgtq %ymm0, %ymm1, %ymm2
-; AVX2-NEXT:    vpaddq %ymm2, %ymm0, %ymm0
-; AVX2-NEXT:    vpxor %ymm2, %ymm0, %ymm0
-; AVX2-NEXT:    vpcmpgtq %ymm0, %ymm1, %ymm1
-; AVX2-NEXT:    vpaddq %ymm1, %ymm0, %ymm0
-; AVX2-NEXT:    vpxor %ymm1, %ymm0, %ymm0
+; AVX2-NEXT:    vpsubq %ymm0, %ymm1, %ymm1
+; AVX2-NEXT:    vblendvpd %ymm0, %ymm1, %ymm0, %ymm0
 ; AVX2-NEXT:    retq
 ;
 ; AVX512F-LABEL: combine_v4i64_abs_abs:
 ; AVX512F:       # %bb.0:
-; AVX512F-NEXT:    # kill: def %ymm0 killed %ymm0 def %zmm0
+; AVX512F-NEXT:    # kill: def $ymm0 killed $ymm0 def $zmm0
 ; AVX512F-NEXT:    vpabsq %zmm0, %zmm0
-; AVX512F-NEXT:    # kill: def %ymm0 killed %ymm0 killed %zmm0
+; AVX512F-NEXT:    # kill: def $ymm0 killed $ymm0 killed $zmm0
 ; AVX512F-NEXT:    retq
 ;
 ; AVX512VL-LABEL: combine_v4i64_abs_abs:
@@ -97,20 +93,10 @@ define <4 x i64> @combine_v4i64_abs_abs(<4 x i64> %a) {
 
 ; fold (abs x) -> x iff not-negative
 define <16 x i8> @combine_v16i8_abs_constant(<16 x i8> %a) {
-; AVX2-LABEL: combine_v16i8_abs_constant:
-; AVX2:       # %bb.0:
-; AVX2-NEXT:    vandps {{.*}}(%rip), %xmm0, %xmm0
-; AVX2-NEXT:    retq
-;
-; AVX512F-LABEL: combine_v16i8_abs_constant:
-; AVX512F:       # %bb.0:
-; AVX512F-NEXT:    vandps {{.*}}(%rip), %xmm0, %xmm0
-; AVX512F-NEXT:    retq
-;
-; AVX512VL-LABEL: combine_v16i8_abs_constant:
-; AVX512VL:       # %bb.0:
-; AVX512VL-NEXT:    vpand {{.*}}(%rip), %xmm0, %xmm0
-; AVX512VL-NEXT:    retq
+; CHECK-LABEL: combine_v16i8_abs_constant:
+; CHECK:       # %bb.0:
+; CHECK-NEXT:    vandps {{.*}}(%rip), %xmm0, %xmm0
+; CHECK-NEXT:    retq
   %1 = insertelement <16 x i8> undef, i8 15, i32 0
   %2 = shufflevector <16 x i8> %1, <16 x i8> undef, <16 x i32> zeroinitializer
   %3 = and <16 x i8> %a, %2

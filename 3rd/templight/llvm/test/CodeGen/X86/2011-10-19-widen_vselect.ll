@@ -8,8 +8,7 @@
 define void @simple_widen(<2 x float> %a, <2 x float> %b) {
 ; X32-LABEL: simple_widen:
 ; X32:       # %bb.0: # %entry
-; X32-NEXT:    extractps $1, %xmm1, (%eax)
-; X32-NEXT:    movss %xmm1, (%eax)
+; X32-NEXT:    movlps %xmm1, (%eax)
 ; X32-NEXT:    retl
 ;
 ; X64-LABEL: simple_widen:
@@ -22,25 +21,26 @@ entry:
   ret void
 }
 
-define void @complex_inreg_work(<2 x float> %a, <2 x float> %b) {
+define void @complex_inreg_work(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 ; X32-LABEL: complex_inreg_work:
 ; X32:       # %bb.0: # %entry
-; X32-NEXT:    movaps %xmm0, %xmm2
-; X32-NEXT:    cmpordps %xmm0, %xmm0
-; X32-NEXT:    blendvps %xmm0, %xmm2, %xmm1
-; X32-NEXT:    extractps $1, %xmm1, (%eax)
-; X32-NEXT:    movss %xmm1, (%eax)
+; X32-NEXT:    movaps %xmm0, %xmm3
+; X32-NEXT:    cmpordps %xmm2, %xmm2
+; X32-NEXT:    movaps %xmm2, %xmm0
+; X32-NEXT:    blendvps %xmm0, %xmm3, %xmm1
+; X32-NEXT:    movlps %xmm1, (%eax)
 ; X32-NEXT:    retl
 ;
 ; X64-LABEL: complex_inreg_work:
 ; X64:       # %bb.0: # %entry
-; X64-NEXT:    movaps %xmm0, %xmm2
-; X64-NEXT:    cmpordps %xmm0, %xmm0
-; X64-NEXT:    blendvps %xmm0, %xmm2, %xmm1
+; X64-NEXT:    movaps %xmm0, %xmm3
+; X64-NEXT:    cmpordps %xmm2, %xmm2
+; X64-NEXT:    movaps %xmm2, %xmm0
+; X64-NEXT:    blendvps %xmm0, %xmm3, %xmm1
 ; X64-NEXT:    movlps %xmm1, (%rax)
 ; X64-NEXT:    retq
 entry:
-  %0 = fcmp oeq <2 x float> undef, undef
+  %0 = fcmp oeq <2 x float> %c, %c
   %1 = select <2 x i1> %0, <2 x float> %a, <2 x float> %b
   store <2 x float> %1, <2 x float>* undef
   ret void
@@ -50,8 +50,7 @@ define void @zero_test() {
 ; X32-LABEL: zero_test:
 ; X32:       # %bb.0: # %entry
 ; X32-NEXT:    xorps %xmm0, %xmm0
-; X32-NEXT:    extractps $1, %xmm0, (%eax)
-; X32-NEXT:    movss %xmm0, (%eax)
+; X32-NEXT:    movlps %xmm0, (%eax)
 ; X32-NEXT:    retl
 ;
 ; X64-LABEL: zero_test:
@@ -75,19 +74,17 @@ define void @full_test() {
 ; X32-NEXT:    cvtdq2ps %xmm0, %xmm1
 ; X32-NEXT:    xorps %xmm0, %xmm0
 ; X32-NEXT:    cmpltps %xmm2, %xmm0
-; X32-NEXT:    movaps {{.*#+}} xmm3 = <1,1,u,u>
+; X32-NEXT:    movaps {{.*#+}} xmm3 = <1.0E+0,1.0E+0,u,u>
 ; X32-NEXT:    addps %xmm1, %xmm3
 ; X32-NEXT:    movaps %xmm1, %xmm4
 ; X32-NEXT:    blendvps %xmm0, %xmm3, %xmm4
 ; X32-NEXT:    cmpeqps %xmm2, %xmm1
 ; X32-NEXT:    movaps %xmm1, %xmm0
 ; X32-NEXT:    blendvps %xmm0, %xmm2, %xmm4
-; X32-NEXT:    movss %xmm4, {{[0-9]+}}(%esp)
-; X32-NEXT:    movshdup {{.*#+}} xmm0 = xmm4[1,1,3,3]
-; X32-NEXT:    movss %xmm0, {{[0-9]+}}(%esp)
-; X32-NEXT:    movss %xmm4, {{[0-9]+}}(%esp)
-; X32-NEXT:    movss %xmm0, {{[0-9]+}}(%esp)
+; X32-NEXT:    movlps %xmm4, {{[0-9]+}}(%esp)
+; X32-NEXT:    movlps %xmm4, {{[0-9]+}}(%esp)
 ; X32-NEXT:    addl $60, %esp
+; X32-NEXT:    .cfi_def_cfa_offset 4
 ; X32-NEXT:    retl
 ;
 ; X64-LABEL: full_test:
@@ -97,7 +94,7 @@ define void @full_test() {
 ; X64-NEXT:    cvtdq2ps %xmm0, %xmm1
 ; X64-NEXT:    xorps %xmm0, %xmm0
 ; X64-NEXT:    cmpltps %xmm2, %xmm0
-; X64-NEXT:    movaps {{.*#+}} xmm3 = <1,1,u,u>
+; X64-NEXT:    movaps {{.*#+}} xmm3 = <1.0E+0,1.0E+0,u,u>
 ; X64-NEXT:    addps %xmm1, %xmm3
 ; X64-NEXT:    movaps %xmm1, %xmm4
 ; X64-NEXT:    blendvps %xmm0, %xmm3, %xmm4

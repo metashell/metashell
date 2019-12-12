@@ -1,9 +1,8 @@
 //===-- scudo_tsd_exclusive.cpp ---------------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 ///
@@ -50,7 +49,7 @@ static void teardownThread(void *Ptr) {
 static void initOnce() {
   CHECK_EQ(pthread_key_create(&PThreadKey, teardownThread), 0);
   initScudo();
-  FallbackTSD.init(/*Shared=*/true);
+  FallbackTSD.init();
 }
 
 void initThread(bool MinimalInit) {
@@ -59,7 +58,7 @@ void initThread(bool MinimalInit) {
     return;
   CHECK_EQ(pthread_setspecific(PThreadKey, reinterpret_cast<void *>(
       GetPthreadDestructorIterations())), 0);
-  TSD.init(/*Shared=*/false);
+  TSD.init();
   ScudoThreadState = ThreadInitialized;
 }
 

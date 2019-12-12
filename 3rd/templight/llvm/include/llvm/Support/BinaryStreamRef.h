@@ -1,9 +1,8 @@
 //===- BinaryStreamRef.h - A copyable reference to a stream -----*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -147,7 +146,7 @@ protected:
   Optional<uint32_t> Length;
 };
 
-/// \brief BinaryStreamRef is to BinaryStream what ArrayRef is to an Array.  It
+/// BinaryStreamRef is to BinaryStream what ArrayRef is to an Array.  It
 /// provides copy-semantics and read only access to a "window" of the underlying
 /// BinaryStream. Note that BinaryStreamRef is *not* a BinaryStream.  That is to
 /// say, it does not inherit and override the methods of BinaryStream.  In
@@ -266,7 +265,7 @@ public:
   /// Conver this WritableBinaryStreamRef to a read-only BinaryStreamRef.
   operator BinaryStreamRef() const;
 
-  /// \brief For buffered streams, commits changes to the backing store.
+  /// For buffered streams, commits changes to the backing store.
   Error commit();
 };
 

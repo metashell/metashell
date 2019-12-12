@@ -1,9 +1,8 @@
 //===-- sanitizer_tls_get_addr.cc -----------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -142,7 +141,8 @@ bool DTLSInDestruction(DTLS *dtls) {
 
 #else
 void DTLS_on_libc_memalign(void *ptr, uptr size) {}
-DTLS::DTV *DTLS_on_tls_get_addr(void *arg, void *res) { return 0; }
+DTLS::DTV *DTLS_on_tls_get_addr(void *arg, void *res,
+  unsigned long, unsigned long) { return 0; }
 DTLS *DTLS_Get() { return 0; }
 void DTLS_Destroy() {}
 bool DTLSInDestruction(DTLS *dtls) {

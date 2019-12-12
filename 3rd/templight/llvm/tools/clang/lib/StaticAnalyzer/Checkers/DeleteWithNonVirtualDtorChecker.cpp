@@ -1,9 +1,8 @@
 //===-- DeleteWithNonVirtualDtorChecker.cpp -----------------------*- C++ -*--//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -21,7 +20,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "ClangSACheckers.h"
+#include "clang/StaticAnalyzer/Checkers/BuiltinCheckerRegistration.h"
 #include "clang/StaticAnalyzer/Core/BugReporter/BugReporter.h"
 #include "clang/StaticAnalyzer/Core/BugReporter/BugType.h"
 #include "clang/StaticAnalyzer/Core/Checker.h"
@@ -39,7 +38,7 @@ class DeleteWithNonVirtualDtorChecker
     : public Checker<check::PreStmt<CXXDeleteExpr>> {
   mutable std::unique_ptr<BugType> BT;
 
-  class DeleteBugVisitor : public BugReporterVisitorImpl<DeleteBugVisitor> {
+  class DeleteBugVisitor : public BugReporterVisitor {
   public:
     DeleteBugVisitor() : Satisfied(false) {}
     void Profile(llvm::FoldingSetNodeID &ID) const override {
@@ -47,7 +46,6 @@ class DeleteWithNonVirtualDtorChecker
       ID.AddPointer(&X);
     }
     std::shared_ptr<PathDiagnosticPiece> VisitNode(const ExplodedNode *N,
-                                                   const ExplodedNode *PrevN,
                                                    BugReporterContext &BRC,
                                                    BugReport &BR) override;
 
@@ -104,14 +102,12 @@ void DeleteWithNonVirtualDtorChecker::checkPreStmt(const CXXDeleteExpr *DE,
 
 std::shared_ptr<PathDiagnosticPiece>
 DeleteWithNonVirtualDtorChecker::DeleteBugVisitor::VisitNode(
-    const ExplodedNode *N, const ExplodedNode *PrevN, BugReporterContext &BRC,
+    const ExplodedNode *N, BugReporterContext &BRC,
     BugReport &BR) {
   // Stop traversal after the first conversion was found on a path.
   if (Satisfied)
     return nullptr;
 
-  ProgramStateRef State = N->getState();
-  const LocationContext *LC = N->getLocationContext();
   const Stmt *S = PathDiagnosticLocation::getStmt(N);
   if (!S)
     return nullptr;
@@ -128,7 +124,7 @@ DeleteWithNonVirtualDtorChecker::DeleteBugVisitor::VisitNode(
   }
 
   // Region associated with the current cast expression.
-  const MemRegion *M = State->getSVal(CastE, LC).getAsRegion();
+  const MemRegion *M = N->getSVal(CastE).getAsRegion();
   if (!M)
     return nullptr;
 
@@ -150,4 +146,9 @@ DeleteWithNonVirtualDtorChecker::DeleteBugVisitor::VisitNode(
 
 void ento::registerDeleteWithNonVirtualDtorChecker(CheckerManager &mgr) {
   mgr.registerChecker<DeleteWithNonVirtualDtorChecker>();
+}
+
+bool ento::shouldRegisterDeleteWithNonVirtualDtorChecker(
+                                                        const LangOptions &LO) {
+  return true;
 }

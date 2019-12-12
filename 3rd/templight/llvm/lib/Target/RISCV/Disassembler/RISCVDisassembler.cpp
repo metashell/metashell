@@ -1,9 +1,8 @@
 //===-- RISCVDisassembler.cpp - Disassembler for RISCV --------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -12,6 +11,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "MCTargetDesc/RISCVMCTargetDesc.h"
+#include "TargetInfo/RISCVTargetInfo.h"
+#include "Utils/RISCVBaseInfo.h"
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCDisassembler/MCDisassembler.h"
 #include "llvm/MC/MCFixedLenDisassembler.h"
@@ -69,7 +70,13 @@ static const unsigned GPRDecoderTable[] = {
 static DecodeStatus DecodeGPRRegisterClass(MCInst &Inst, uint64_t RegNo,
                                            uint64_t Address,
                                            const void *Decoder) {
-  if (RegNo > sizeof(GPRDecoderTable))
+  const FeatureBitset &FeatureBits =
+      static_cast<const MCDisassembler *>(Decoder)
+          ->getSubtargetInfo()
+          .getFeatureBits();
+  bool IsRV32E = FeatureBits[RISCV::FeatureRV32E];
+
+  if (RegNo > array_lengthof(GPRDecoderTable) || (IsRV32E && RegNo > 15))
     return MCDisassembler::Fail;
 
   // We must define our own mapping from RegNo to register identifier.
@@ -94,7 +101,7 @@ static const unsigned FPR32DecoderTable[] = {
 static DecodeStatus DecodeFPR32RegisterClass(MCInst &Inst, uint64_t RegNo,
                                              uint64_t Address,
                                              const void *Decoder) {
-  if (RegNo > sizeof(FPR32DecoderTable))
+  if (RegNo > array_lengthof(FPR32DecoderTable))
     return MCDisassembler::Fail;
 
   // We must define our own mapping from RegNo to register identifier.
@@ -130,7 +137,7 @@ static const unsigned FPR64DecoderTable[] = {
 static DecodeStatus DecodeFPR64RegisterClass(MCInst &Inst, uint64_t RegNo,
                                              uint64_t Address,
                                              const void *Decoder) {
-  if (RegNo > sizeof(FPR64DecoderTable))
+  if (RegNo > array_lengthof(FPR64DecoderTable))
     return MCDisassembler::Fail;
 
   // We must define our own mapping from RegNo to register identifier.
@@ -211,6 +218,15 @@ static DecodeStatus decodeUImmOperand(MCInst &Inst, uint64_t Imm,
 }
 
 template <unsigned N>
+static DecodeStatus decodeUImmNonZeroOperand(MCInst &Inst, uint64_t Imm,
+                                             int64_t Address,
+                                             const void *Decoder) {
+  if (Imm == 0)
+    return MCDisassembler::Fail;
+  return decodeUImmOperand<N>(Inst, Imm, Address, Decoder);
+}
+
+template <unsigned N>
 static DecodeStatus decodeSImmOperand(MCInst &Inst, uint64_t Imm,
                                       int64_t Address, const void *Decoder) {
   assert(isUInt<N>(Imm) && "Invalid immediate");
@@ -218,6 +234,15 @@ static DecodeStatus decodeSImmOperand(MCInst &Inst, uint64_t Imm,
   // Sign-extend the number in the bottom N bits of Imm
   Inst.addOperand(MCOperand::createImm(SignExtend64<N>(Imm)));
   return MCDisassembler::Success;
+}
+
+template <unsigned N>
+static DecodeStatus decodeSImmNonZeroOperand(MCInst &Inst, uint64_t Imm,
+                                             int64_t Address,
+                                             const void *Decoder) {
+  if (Imm == 0)
+    return MCDisassembler::Fail;
+  return decodeSImmOperand<N>(Inst, Imm, Address, Decoder);
 }
 
 template <unsigned N>
@@ -229,6 +254,28 @@ static DecodeStatus decodeSImmOperandAndLsl1(MCInst &Inst, uint64_t Imm,
   // the fact that the N bit immediate is stored in N-1 bits (the LSB is
   // always zero)
   Inst.addOperand(MCOperand::createImm(SignExtend64<N>(Imm << 1)));
+  return MCDisassembler::Success;
+}
+
+static DecodeStatus decodeCLUIImmOperand(MCInst &Inst, uint64_t Imm,
+                                         int64_t Address,
+                                         const void *Decoder) {
+  assert(isUInt<6>(Imm) && "Invalid immediate");
+  if (Imm > 31) {
+    Imm = (SignExtend64<6>(Imm) & 0xfffff);
+  }
+  Inst.addOperand(MCOperand::createImm(Imm));
+  return MCDisassembler::Success;
+}
+
+static DecodeStatus decodeFRMArg(MCInst &Inst, uint64_t Imm,
+                                 int64_t Address,
+                                 const void *Decoder) {
+  assert(isUInt<3>(Imm) && "Invalid immediate");
+  if (!llvm::RISCVFPRndMode::isValidRoundingMode(Imm))
+    return MCDisassembler::Fail;
+
+  Inst.addOperand(MCOperand::createImm(Imm));
   return MCDisassembler::Success;
 }
 
@@ -246,15 +293,24 @@ DecodeStatus RISCVDisassembler::getInstruction(MCInst &MI, uint64_t &Size,
 
   // It's a 32 bit instruction if bit 0 and 1 are 1.
   if ((Bytes[0] & 0x3) == 0x3) {
+    if (Bytes.size() < 4) {
+      Size = 0;
+      return MCDisassembler::Fail;
+    }
     Insn = support::endian::read32le(Bytes.data());
-    DEBUG(dbgs() << "Trying RISCV32 table :\n");
+    LLVM_DEBUG(dbgs() << "Trying RISCV32 table :\n");
     Result = decodeInstruction(DecoderTable32, MI, Insn, Address, this, STI);
     Size = 4;
   } else {
+    if (Bytes.size() < 2) {
+      Size = 0;
+      return MCDisassembler::Fail;
+    }
     Insn = support::endian::read16le(Bytes.data());
 
     if (!STI.getFeatureBits()[RISCV::Feature64Bit]) {
-      DEBUG(dbgs() << "Trying RISCV32Only_16 table (16-bit Instruction):\n");
+      LLVM_DEBUG(
+          dbgs() << "Trying RISCV32Only_16 table (16-bit Instruction):\n");
       // Calling the auto-generated decoder function.
       Result = decodeInstruction(DecoderTableRISCV32Only_16, MI, Insn, Address,
                                  this, STI);
@@ -264,7 +320,7 @@ DecodeStatus RISCVDisassembler::getInstruction(MCInst &MI, uint64_t &Size,
       }
     }
 
-    DEBUG(dbgs() << "Trying RISCV_C table (16-bit Instruction):\n");
+    LLVM_DEBUG(dbgs() << "Trying RISCV_C table (16-bit Instruction):\n");
     // Calling the auto-generated decoder function.
     Result = decodeInstruction(DecoderTable16, MI, Insn, Address, this, STI);
     Size = 2;

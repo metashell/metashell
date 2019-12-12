@@ -3,7 +3,7 @@
 // RUN: %run %t 2>&1 | FileCheck %s
 
 // REQUIRES: cxxabi
-// UNSUPPORTED: win32
+// UNSUPPORTED: windows-msvc
 
 #include <stdio.h>
 #include <string.h>
@@ -32,12 +32,14 @@ void A::f() {}
 int main(int argc, char *argv[]) {
   void *p = create_B();
   // CHECK: runtime error: control flow integrity check for type 'A' failed during cast to unrelated type
-  // CHECK: invalid vtable in module {{.*}}libtarget_uninstrumented.cpp.dynamic.so
+  // CHECK: invalid vtable
+  // CHECK: check failed in {{.*}}, vtable located in {{.*}}libtarget_uninstrumented.cpp.dynamic.so
   A *a = (A *)p;
   memset(p, 0, sizeof(A));
+
   // CHECK: runtime error: control flow integrity check for type 'A' failed during cast to unrelated type
-  // CHECK-NOT: invalid vtable in module
   // CHECK: invalid vtable
+  // CHECK: check failed in {{.*}}, vtable located in (unknown)
   a = (A *)p;
   // CHECK: done
   fprintf(stderr, "done %p\n", a);

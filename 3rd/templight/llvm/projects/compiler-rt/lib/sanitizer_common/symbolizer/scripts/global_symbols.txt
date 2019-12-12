@@ -15,6 +15,14 @@ __divdi3 U
 __dso_handle U
 __errno_location U
 __interceptor_pread w
+__interceptor_pthread_cond_broadcast w
+__interceptor_pthread_cond_wait w
+__interceptor_pthread_getspecific w
+__interceptor_pthread_key_create w
+__interceptor_pthread_mutex_lock w
+__interceptor_pthread_mutex_unlock w
+__interceptor_pthread_once w
+__interceptor_pthread_setspecific w
 __interceptor_read w
 __interceptor_realpath w
 __moddi3 U
@@ -28,6 +36,7 @@ __umoddi3 U
 _exit U
 abort U
 access U
+bcmp U
 calloc U
 catclose U
 catgets U
@@ -41,6 +50,7 @@ dup U
 dup2 U
 environ U
 execv U
+execve U
 exit U
 fclose U
 fflush U
@@ -57,10 +67,12 @@ getcwd U
 getenv U
 getpagesize U
 getpid U
+getrlimit U
 gettimeofday U
 ioctl U
 isalpha U
 isatty U
+islower U
 isprint U
 isupper U
 isxdigit U
@@ -92,6 +104,7 @@ rand U
 readlink U
 realloc U
 remove U
+setrlimit U
 setvbuf U
 sigfillset U
 sigprocmask U
@@ -116,10 +129,12 @@ strrchr U
 strsep U
 strtod_l U
 strtof_l U
+strtok_r U
 strtol U
 strtold_l U
 strtoll_l U
 strtoull_l U
+syscall U
 tcgetattr U
 uname U
 ungetc U

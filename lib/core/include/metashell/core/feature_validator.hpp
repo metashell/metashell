@@ -17,8 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/engine_name.hpp>
 #include <metashell/data/feature.hpp>
+#include <metashell/data/real_engine_name.hpp>
 
 #include <metashell/core/not_supported.hpp>
 
@@ -32,7 +32,7 @@ namespace metashell
     class feature_validator
     {
     public:
-      feature_validator(data::engine_name engine_,
+      feature_validator(data::real_engine_name engine_,
                         std::vector<data::feature> supported_features_);
 
       template <class FeatureUsed>
@@ -46,7 +46,7 @@ namespace metashell
       void all_checked();
 
     private:
-      data::engine_name _engine;
+      data::real_engine_name _engine;
       std::vector<data::feature> _supported_features;
       bool _all_checked;
 

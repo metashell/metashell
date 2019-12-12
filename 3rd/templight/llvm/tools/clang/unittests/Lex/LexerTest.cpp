@@ -1,9 +1,8 @@
 //===- unittests/Lex/LexerTest.cpp ------ Lexer tests ---------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -12,7 +11,6 @@
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/LangOptions.h"
-#include "clang/Basic/MemoryBufferCache.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/TargetInfo.h"
 #include "clang/Basic/TargetOptions.h"
@@ -49,12 +47,11 @@ protected:
         llvm::MemoryBuffer::getMemBuffer(Source);
     SourceMgr.setMainFileID(SourceMgr.createFileID(std::move(Buf)));
 
-    MemoryBufferCache PCMCache;
     HeaderSearch HeaderInfo(std::make_shared<HeaderSearchOptions>(), SourceMgr,
                             Diags, LangOpts, Target.get());
     std::unique_ptr<Preprocessor> PP = llvm::make_unique<Preprocessor>(
         std::make_shared<PreprocessorOptions>(), Diags, LangOpts, SourceMgr,
-        PCMCache, HeaderInfo, ModLoader,
+        HeaderInfo, ModLoader,
         /*IILookup =*/nullptr,
         /*OwnsHeaderSearch =*/false);
     PP->Initialize(*Target);
@@ -286,9 +283,7 @@ TEST_F(LexerTest, LexAPI) {
   SourceLocation lsqrLoc = toks[0].getLocation();
   SourceLocation idLoc = toks[1].getLocation();
   SourceLocation rsqrLoc = toks[2].getLocation();
-  std::pair<SourceLocation,SourceLocation>
-    macroPair = SourceMgr.getExpansionRange(lsqrLoc);
-  SourceRange macroRange = SourceRange(macroPair.first, macroPair.second);
+  CharSourceRange macroRange = SourceMgr.getExpansionRange(lsqrLoc);
 
   SourceLocation Loc;
   EXPECT_TRUE(Lexer::isAtStartOfMacroExpansion(lsqrLoc, SourceMgr, LangOpts, &Loc));
@@ -297,6 +292,7 @@ TEST_F(LexerTest, LexAPI) {
   EXPECT_FALSE(Lexer::isAtEndOfMacroExpansion(idLoc, SourceMgr, LangOpts));
   EXPECT_TRUE(Lexer::isAtEndOfMacroExpansion(rsqrLoc, SourceMgr, LangOpts, &Loc));
   EXPECT_EQ(Loc, macroRange.getEnd());
+  EXPECT_TRUE(macroRange.isTokenRange());
 
   CharSourceRange range = Lexer::makeFileCharRange(
            CharSourceRange::getTokenRange(lsqrLoc, idLoc), SourceMgr, LangOpts);
@@ -334,11 +330,11 @@ TEST_F(LexerTest, LexAPI) {
   EXPECT_EQ(SourceRange(fileIdLoc, fileRsqrLoc.getLocWithOffset(1)),
             range.getAsRange());
 
-  macroPair = SourceMgr.getExpansionRange(macroLsqrLoc);
+  macroRange = SourceMgr.getExpansionRange(macroLsqrLoc);
   range = Lexer::makeFileCharRange(
                      CharSourceRange::getTokenRange(macroLsqrLoc, macroRsqrLoc),
                      SourceMgr, LangOpts);
-  EXPECT_EQ(SourceRange(macroPair.first, macroPair.second.getLocWithOffset(1)),
+  EXPECT_EQ(SourceRange(macroRange.getBegin(), macroRange.getEnd().getLocWithOffset(1)),
             range.getAsRange());
 
   text = Lexer::getSourceText(
@@ -474,8 +470,7 @@ TEST_F(LexerTest, GetBeginningOfTokenWithEscapedNewLine) {
 }
 
 TEST_F(LexerTest, AvoidPastEndOfStringDereference) {
-  std::vector<Token> LexedTokens = Lex("  //  \\\n");
-  EXPECT_TRUE(LexedTokens.empty());
+  EXPECT_TRUE(Lex("  //  \\\n").empty());
   EXPECT_TRUE(Lex("#include <\\\\").empty());
   EXPECT_TRUE(Lex("#include <\\\\\n").empty());
 }
@@ -516,6 +511,25 @@ TEST_F(LexerTest, StringizingRasString) {
   EXPECT_EQ(String4, R"(\\\n    \\n\n    \\\\n\n    \\\\)");
   EXPECT_EQ(String5, R"(a\\\n\n\n    \\\\b)");
   EXPECT_EQ(String6, R"(a\\\n\n\n    \\\\b)");
+}
+
+TEST_F(LexerTest, CharRangeOffByOne) {
+  std::vector<Token> toks = Lex(R"(#define MOO 1
+    void foo() { MOO; })");
+  const Token &moo = toks[5];
+
+  EXPECT_EQ(getSourceText(moo, moo), "MOO");
+
+  SourceRange R{moo.getLocation(), moo.getLocation()};
+
+  EXPECT_TRUE(
+      Lexer::isAtStartOfMacroExpansion(R.getBegin(), SourceMgr, LangOpts));
+  EXPECT_TRUE(
+      Lexer::isAtEndOfMacroExpansion(R.getEnd(), SourceMgr, LangOpts));
+
+  CharSourceRange CR = Lexer::getAsCharRange(R, SourceMgr, LangOpts);
+
+  EXPECT_EQ(Lexer::getSourceText(CR, SourceMgr, LangOpts), "MOO"); // Was "MO".
 }
 
 } // anonymous namespace

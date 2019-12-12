@@ -1,9 +1,8 @@
 //===-- asan_win_dll_thunk.cc ---------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -48,6 +47,7 @@ INTERCEPT_WRAP_W_WWW(_recalloc)
 INTERCEPT_WRAP_W_WWW(_recalloc_base)
 
 INTERCEPT_WRAP_W_W(_msize)
+INTERCEPT_WRAP_W_W(_msize_base)
 INTERCEPT_WRAP_W_W(_expand)
 INTERCEPT_WRAP_W_W(_expand_dbg)
 
@@ -99,7 +99,7 @@ INTERCEPTOR(int, _except_handler4, void *a, void *b, void *c, void *d) {
 }
 #endif
 
-// Window specific functions not included in asan_interface.inc.
+// Windows specific functions not included in asan_interface.inc.
 INTERCEPT_WRAP_W_V(__asan_should_detect_stack_use_after_return)
 INTERCEPT_WRAP_W_V(__asan_get_shadow_memory_dynamic_address)
 INTERCEPT_WRAP_W_W(__asan_unhandled_exception_filter)

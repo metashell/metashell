@@ -1,9 +1,8 @@
 //===-- asan_noinst_test.cc -----------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -153,6 +152,7 @@ TEST(AddressSanitizer, QuarantineTest) {
   EXPECT_LT(i, max_i);
 }
 
+#if !defined(__NetBSD__)
 void *ThreadedQuarantineTestWorker(void *unused) {
   (void)unused;
   u32 seed = my_rand();
@@ -187,6 +187,7 @@ TEST(AddressSanitizer, ThreadedQuarantineTest) {
     EXPECT_LT(mmaped2 - mmaped1, 320U * (1 << 20));
   }
 }
+#endif
 
 void *ThreadedOneSizeMallocStress(void *unused) {
   (void)unused;

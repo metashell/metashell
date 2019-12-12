@@ -643,7 +643,7 @@
 # CHECK-LE: xscmpexpqp 6, 31, 27               # encoding: [0x48,0xd9,0x1f,0xff]
             xscmpexpqp 6, 31, 27
 
-# Compare ==, >=, >, !=
+# Compare ==, >=, >
 # CHECK-BE: xscmpeqdp 7, 63, 27                # encoding: [0xf0,0xff,0xd8,0x1c]
 # CHECK-LE: xscmpeqdp 7, 63, 27                # encoding: [0x1c,0xd8,0xff,0xf0]
             xscmpeqdp 7, 63, 27
@@ -653,23 +653,6 @@
 # CHECK-BE: xscmpgtdp 7, 63, 27                # encoding: [0xf0,0xff,0xd8,0x5c]
 # CHECK-LE: xscmpgtdp 7, 63, 27                # encoding: [0x5c,0xd8,0xff,0xf0]
             xscmpgtdp 7, 63, 27
-# CHECK-BE: xscmpnedp 7, 63, 27                # encoding: [0xf0,0xff,0xd8,0xdc]
-# CHECK-LE: xscmpnedp 7, 63, 27                # encoding: [0xdc,0xd8,0xff,0xf0]
-            xscmpnedp 7, 63, 27
-
-# Vector Compare Not Equal
-# CHECK-BE: xvcmpnedp 7, 63, 27                # encoding: [0xf0,0xff,0xdb,0xdc]
-# CHECK-LE: xvcmpnedp 7, 63, 27                # encoding: [0xdc,0xdb,0xff,0xf0]
-            xvcmpnedp 7, 63, 27
-# CHECK-BE: xvcmpnedp. 7, 63, 27               # encoding: [0xf0,0xff,0xdf,0xdc]
-# CHECK-LE: xvcmpnedp. 7, 63, 27               # encoding: [0xdc,0xdf,0xff,0xf0]
-            xvcmpnedp. 7, 63, 27
-# CHECK-BE: xvcmpnesp 7, 63, 27                # encoding: [0xf0,0xff,0xda,0xdc]
-# CHECK-LE: xvcmpnesp 7, 63, 27                # encoding: [0xdc,0xda,0xff,0xf0]
-            xvcmpnesp 7, 63, 27
-# CHECK-BE: xvcmpnesp. 7, 63, 27               # encoding: [0xf0,0xff,0xde,0xdc]
-# CHECK-LE: xvcmpnesp. 7, 63, 27               # encoding: [0xdc,0xde,0xff,0xf0]
-            xvcmpnesp. 7, 63, 27
 
 # Convert DP -> QP
 # CHECK-BE: xscvdpqp 7, 27                     # encoding: [0xfc,0xf6,0xde,0x88]
@@ -965,3 +948,10 @@
 # CHECK-BE: mfvsrld 3, 34                      # encoding: [0x7c,0x43,0x02,0x67]
 # CHECK-LE: mfvsrld 3, 34                      # encoding: [0x67,0x02,0x43,0x7c]
             mfvsrld 3, 34
+
+# CHECK-BE: xvtstdcdp 63, 63, 65               # encoding: [0xf3,0xe1,0xff,0xeb]
+# CHECK-LE: xvtstdcdp 63, 63, 65               # encoding: [0xeb,0xff,0xe1,0xf3]
+            xvtstdcdp 63, 63, 65
+# CHECK-BE: xvtstdcsp 63, 63, 34               # encoding: [0xf3,0xe2,0xfe,0xaf]
+# CHECK-LE: xvtstdcsp 63, 63, 34               # encoding: [0xaf,0xfe,0xe2,0xf3]
+            xvtstdcsp 63, 63, 34

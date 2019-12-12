@@ -1,8 +1,8 @@
-// RUN: %clang_cc1 -verify -fopenmp -ferror-limit 200 %s
-// RUN: %clang_cc1 -DCCODE -verify -fopenmp -ferror-limit 200 -x c %s
+// RUN: %clang_cc1 -verify -fopenmp -ferror-limit 200 %s -Wno-openmp-target -Wuninitialized
+// RUN: %clang_cc1 -DCCODE -verify -fopenmp -ferror-limit 200 -x c %s -Wno-openmp-target -Wuninitialized
 
-// RUN: %clang_cc1 -verify -fopenmp-simd -ferror-limit 200 %s
-// RUN: %clang_cc1 -DCCODE -verify -fopenmp-simd -ferror-limit 200 -x c %s
+// RUN: %clang_cc1 -verify -fopenmp-simd -ferror-limit 200 %s -Wno-openmp-target -Wuninitialized
+// RUN: %clang_cc1 -DCCODE -verify -fopenmp-simd -ferror-limit 200 -x c %s -Wno-openmp-target -Wuninitialized
 #ifdef CCODE
 void foo(int arg) {
   const int n = 0;
@@ -19,6 +19,13 @@ void foo(int arg) {
   {}
 }
 #else
+
+struct SREF {
+  int &a;
+  int b;
+  SREF(int &a) : a(a) {}
+};
+
 template <typename T, int I>
 struct SA {
   static int ss;
@@ -31,13 +38,14 @@ struct SA {
   T *f;
   int bf : 20;
   void func(int arg) {
+    SREF sref(arg);
     #pragma omp target
     {
       a = 0.0;
       func(arg);
       bf = 20;
     }
-    #pragma omp target map(arg,a,d)
+    #pragma omp target map(arg,a,d,sref.b)
     {}
     #pragma omp target map(arg[2:2],a,d) // expected-error {{subscripted value is not an array or pointer}}
     {}
@@ -65,7 +73,11 @@ struct SA {
     {}
     #pragma omp target map(b[:-1]) // expected-error {{section length is evaluated to a negative value -1}}
     {}
+    #pragma omp target map(b[true:true])
+    {}
 
+    #pragma omp target map(: c,f) // expected-error {{missing map type}}
+    {}
     #pragma omp target map(always, tofrom: c,f)
     {}
     #pragma omp target map(always, tofrom: c[1:2],f)
@@ -77,6 +89,42 @@ struct SA {
     #pragma omp target map(always, tofrom: c,f[:])   // expected-error {{section length is unspecified and cannot be inferred because subscripted value is not an array}}
     {}
     #pragma omp target map(always)   // expected-error {{use of undeclared identifier 'always'}}
+    {}
+    #pragma omp target map(close, tofrom: c,f)
+    {}
+    #pragma omp target map(close, tofrom: c[1:2],f)
+    {}
+    #pragma omp target map(close, tofrom: c,f[1:2])
+    {}
+    #pragma omp target map(close, tofrom: c[:],f)   // expected-error {{section length is unspecified and cannot be inferred because subscripted value is not an array}}
+    {}
+    #pragma omp target map(close, tofrom: c,f[:])   // expected-error {{section length is unspecified and cannot be inferred because subscripted value is not an array}}
+    {}
+    #pragma omp target map(close)   // expected-error {{use of undeclared identifier 'close'}}
+    {}
+    #pragma omp target map(close, close, tofrom: a)   // expected-error {{same map type modifier has been specified more than once}}
+    {}
+    #pragma omp target map(always, close, always, close, tofrom: a)   // expected-error {{same map type modifier has been specified more than once}} expected-error {{same map type modifier has been specified more than once}}
+    {}
+    #pragma omp target map( , tofrom: a)   // expected-error {{missing map type modifier}}
+    {}
+    #pragma omp target map( , , tofrom: a)   // expected-error {{missing map type modifier}} expected-error {{missing map type modifier}}
+    {}
+    #pragma omp target map( , , : a)   // expected-error {{missing map type modifier}} expected-error {{missing map type modifier}} expected-error {{missing map type}}
+    {}
+    #pragma omp target map( d, f, bf: a)   // expected-error {{incorrect map type modifier, expected 'always', 'close', or 'mapper'}} expected-error {{incorrect map type modifier, expected 'always', 'close', or 'mapper'}} expected-error {{incorrect map type, expected one of 'to', 'from', 'tofrom', 'alloc', 'release', or 'delete'}}
+    {}
+    #pragma omp target map( , f, : a)   // expected-error {{missing map type modifier}} expected-error {{incorrect map type modifier, expected 'always', 'close', or 'mapper'}} expected-error {{missing map type}}
+    {}
+    #pragma omp target map(always close: a)   // expected-error {{missing map type}}
+    {}
+    #pragma omp target map(always close bf: a)   // expected-error {{incorrect map type, expected one of 'to', 'from', 'tofrom', 'alloc', 'release', or 'delete'}}
+    {}
+    #pragma omp target map(always tofrom close: a)   // expected-error {{incorrect map type modifier, expected 'always', 'close', or 'mapper'}} expected-error {{missing map type}}
+    {}
+    #pragma omp target map(tofrom from: a)   // expected-error {{incorrect map type modifier, expected 'always', 'close', or 'mapper'}}
+    {}
+    #pragma omp target map(close bf: a)   // expected-error {{incorrect map type, expected one of 'to', 'from', 'tofrom', 'alloc', 'release', or 'delete'}}
     {}
     return;
   }
@@ -235,9 +283,17 @@ void SAclient(int arg) {
   {}
   #pragma omp target map(r.ArrS[0].A, t.ArrS[1].A)
   {}
-  #pragma omp target map(r.PtrS[0], r.PtrS->B) // expected-error {{same pointer derreferenced in multiple different ways in map clause expressions}} expected-note {{used here}}
+  #pragma omp target map(r.PtrS[0], r.PtrS->B) // expected-error {{same pointer dereferenced in multiple different ways in map clause expressions}} expected-note {{used here}}
   {}
-  #pragma omp target map(r.RPtrS[0], r.RPtrS->B) // expected-error {{same pointer derreferenced in multiple different ways in map clause expressions}} expected-note {{used here}}
+  #pragma omp target map(r.PtrS, r.PtrS->B) // expected-error {{pointer cannot be mapped along with a section derived from itself}} expected-note {{used here}}
+  {}
+  #pragma omp target map(r.PtrS->A, r.PtrS->B)
+  {}
+  #pragma omp target map(r.RPtrS[0], r.RPtrS->B) // expected-error {{same pointer dereferenced in multiple different ways in map clause expressions}} expected-note {{used here}}
+  {}
+  #pragma omp target map(r.RPtrS, r.RPtrS->B) // expected-error {{pointer cannot be mapped along with a section derived from itself}} expected-note {{used here}}
+  {}
+  #pragma omp target map(r.RPtrS->A, r.RPtrS->B)
   {}
   #pragma omp target map(r.S.Arr[:12])
   {}
@@ -389,7 +445,7 @@ T tmain(T argc) {
   T *k = &j;
   T x;
   T y;
-  T to, tofrom, always;
+  T to, tofrom, always, close;
   const T (&l)[5] = da;
 #pragma omp target map // expected-error {{expected '(' after 'map'}}
   {}
@@ -462,9 +518,15 @@ T tmain(T argc) {
 
 #pragma omp target data map(always, tofrom: x)
 #pragma omp target data map(always: x) // expected-error {{missing map type}}
-#pragma omp target data map(tofrom, always: x) // expected-error {{incorrect map type modifier, expected 'always'}} expected-error {{incorrect map type, expected one of 'to', 'from', 'tofrom', 'alloc', 'release', or 'delete'}}
+#pragma omp target data map(tofrom, always: x) // expected-error {{incorrect map type modifier, expected 'always', 'close', or 'mapper'}} expected-error {{missing map type}}
 #pragma omp target data map(always, tofrom: always, tofrom, x)
 #pragma omp target map(tofrom j) // expected-error {{expected ',' or ')' in 'map' clause}}
+  foo();
+
+#pragma omp target data map(close, tofrom: x)
+#pragma omp target data map(close: x) // expected-error {{missing map type}}
+#pragma omp target data map(tofrom, close: x) // expected-error {{incorrect map type modifier, expected 'always', 'close', or 'mapper'}} expected-error {{missing map type}}
+#pragma omp target data map(close, tofrom: close, tofrom, x)
   foo();
   return 0;
 }
@@ -499,7 +561,7 @@ int main(int argc, char **argv) {
   S6<int> m;
   int x;
   int y;
-  int to, tofrom, always;
+  int to, tofrom, always, close;
   const int (&l)[5] = da;
   SC1 s;
   SC1 *p;
@@ -553,9 +615,13 @@ int main(int argc, char **argv) {
 
 #pragma omp target data map(always, tofrom: x)
 #pragma omp target data map(always: x) // expected-error {{missing map type}}
-#pragma omp target data map(tofrom, always: x) // expected-error {{incorrect map type modifier, expected 'always'}} expected-error {{incorrect map type, expected one of 'to', 'from', 'tofrom', 'alloc', 'release', or 'delete'}}
+#pragma omp target data map(tofrom, always: x) // expected-error {{incorrect map type modifier, expected 'always', 'close', or 'mapper'}} expected-error {{missing map type}}
 #pragma omp target data map(always, tofrom: always, tofrom, x)
 #pragma omp target map(tofrom j) // expected-error {{expected ',' or ')' in 'map' clause}}
+  foo();
+#pragma omp target data map(close, tofrom: x)
+#pragma omp target data map(close: x) // expected-error {{missing map type}}
+#pragma omp target data map(tofrom, close: x) // expected-error {{incorrect map type modifier, expected 'always', 'close', or 'mapper'}} expected-error {{missing map type}}
   foo();
 #pragma omp target private(j) map(j) // expected-error {{private variable cannot be in a map clause in '#pragma omp target' directive}}  expected-note {{defined as private}}
   {}
@@ -575,9 +641,7 @@ int main(int argc, char **argv) {
 #pragma omp target map(s.b[:5])
 // expected-error@+1 {{variable already marked as mapped in current construct}}
   { s.a++; }
-// expected-note@+1 {{used here}}
 #pragma omp target map(s.p[:5])
-// expected-error@+1 {{variable already marked as mapped in current construct}}
   { s.a++; }
 // expected-note@+1 {{used here}}
 #pragma omp target map(s.s.sa[3].a)

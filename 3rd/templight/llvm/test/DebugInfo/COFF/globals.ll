@@ -1,5 +1,6 @@
 ; RUN: llc < %s | FileCheck %s --check-prefix=ASM
-; RUN: llc < %s -filetype=obj | llvm-readobj - -codeview | FileCheck %s --check-prefix=OBJ
+; RUN: llc < %s -filetype=obj | llvm-readobj - --codeview | FileCheck %s --check-prefix=OBJ
+; RUN: llc < %s | llvm-mc -filetype=obj --triple=x86_64-windows | llvm-readobj - --codeview | FileCheck %s --check-prefix=OBJ
 ; RUN: llc < %s -filetype=obj | obj2yaml | FileCheck %s --check-prefix=YAML
 
 ; C++ source to regenerate:
@@ -59,7 +60,6 @@
 ; OBJ:   Pointer (0x1001) {
 ; OBJ:     TypeLeafKind: LF_POINTER (0x1002)
 ; OBJ:     PointeeType: const int (0x1000)
-; OBJ:     PointerAttributes: 0x1000C
 ; OBJ:     PtrType: Near64 (0xC)
 ; OBJ:     PtrMode: Pointer (0x0)
 ; OBJ:     IsFlat: 0

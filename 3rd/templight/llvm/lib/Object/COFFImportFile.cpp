@@ -1,9 +1,8 @@
 //===- COFFImportFile.cpp - COFF short import file implementation ---------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -91,7 +90,15 @@ static void writeStringTable(std::vector<uint8_t> &B,
 }
 
 static ImportNameType getNameType(StringRef Sym, StringRef ExtName,
-                                  MachineTypes Machine) {
+                                  MachineTypes Machine, bool MinGW) {
+  // A decorated stdcall function in MSVC is exported with the
+  // type IMPORT_NAME, and the exported function name includes the
+  // the leading underscore. In MinGW on the other hand, a decorated
+  // stdcall function still omits the underscore (IMPORT_NAME_NOPREFIX).
+  // See the comment in isDecorated in COFFModuleDefinition.cpp for more
+  // details.
+  if (ExtName.startswith("_") && ExtName.contains('@') && !MinGW)
+    return IMPORT_NAME;
   if (Sym != ExtName)
     return IMPORT_NAME_UNDECORATE;
   if (Machine == IMAGE_FILE_MACHINE_I386 && Sym.startswith("_"))
@@ -488,7 +495,7 @@ NewArchiveMember ObjectFactory::createWeakExternal(StringRef Sym,
 
   // COFF Header
   coff_file_header Header{
-      u16(0),
+      u16(Machine),
       u16(NumberOfSections),
       u32(0),
       u32(sizeof(Header) + (NumberOfSections * sizeof(coff_section))),
@@ -538,7 +545,12 @@ NewArchiveMember ObjectFactory::createWeakExternal(StringRef Sym,
        u16(0),
        IMAGE_SYM_CLASS_WEAK_EXTERNAL,
        1},
-      {{{2, 0, 0, 0, 3, 0, 0, 0}}, u32(0), u16(0), u16(0), uint8_t(0), 0},
+      {{{2, 0, 0, 0, IMAGE_WEAK_EXTERN_SEARCH_ALIAS, 0, 0, 0}},
+       u32(0),
+       u16(0),
+       u16(0),
+       IMAGE_SYM_CLASS_NULL,
+       0},
   };
   SymbolTable[2].Name.Offset.Offset = sizeof(uint32_t);
 
@@ -558,7 +570,7 @@ NewArchiveMember ObjectFactory::createWeakExternal(StringRef Sym,
 
 Error writeImportLibrary(StringRef ImportName, StringRef Path,
                          ArrayRef<COFFShortExport> Exports,
-                         MachineTypes Machine, bool MakeWeakAliases) {
+                         MachineTypes Machine, bool MinGW) {
 
   std::vector<NewArchiveMember> Members;
   ObjectFactory OF(llvm::sys::path::filename(ImportName), Machine);
@@ -576,12 +588,6 @@ Error writeImportLibrary(StringRef ImportName, StringRef Path,
     if (E.Private)
       continue;
 
-    if (E.isWeak() && MakeWeakAliases) {
-      Members.push_back(OF.createWeakExternal(E.Name, E.ExtName, false));
-      Members.push_back(OF.createWeakExternal(E.Name, E.ExtName, true));
-      continue;
-    }
-
     ImportType ImportType = IMPORT_CODE;
     if (E.Data)
       ImportType = IMPORT_DATA;
@@ -589,13 +595,22 @@ Error writeImportLibrary(StringRef ImportName, StringRef Path,
       ImportType = IMPORT_CONST;
 
     StringRef SymbolName = E.SymbolName.empty() ? E.Name : E.SymbolName;
-    ImportNameType NameType = getNameType(SymbolName, E.Name, Machine);
+    ImportNameType NameType = E.Noname
+                                  ? IMPORT_ORDINAL
+                                  : getNameType(SymbolName, E.Name,
+                                                Machine, MinGW);
     Expected<std::string> Name = E.ExtName.empty()
                                      ? SymbolName
                                      : replace(SymbolName, E.Name, E.ExtName);
 
     if (!Name)
       return Name.takeError();
+
+    if (!E.AliasTarget.empty() && *Name != E.AliasTarget) {
+      Members.push_back(OF.createWeakExternal(E.AliasTarget, *Name, false));
+      Members.push_back(OF.createWeakExternal(E.AliasTarget, *Name, true));
+      continue;
+    }
 
     Members.push_back(
         OF.createShortImport(*Name, E.Ordinal, ImportType, NameType));

@@ -1,9 +1,8 @@
 //===- Target.td - Target Independent TableGen interface ---*- tablegen -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -122,6 +121,10 @@ class ComposedSubRegIndex<SubRegIndex A, SubRegIndex B>
 // this register class when printing.
 class RegAltNameIndex {
   string Namespace = "";
+
+  // A set to be used if the name for a register is not defined in this set.
+  // This allows creating name sets with only a few alternative names.
+  RegAltNameIndex FallbackRegAltNameIndex = ?;
 }
 def NoRegAltName : RegAltNameIndex;
 
@@ -175,6 +178,8 @@ class Register<string n, list<string> altNames = []> {
 
   // HWEncoding - The target specific hardware encoding for this register.
   bits<16> HWEncoding = 0;
+
+  bit isArtificial = 0;
 }
 
 // RegisterWithSubRegs - This can be used to define instances of Register which
@@ -382,17 +387,60 @@ class DwarfRegAlias<Register reg> {
 }
 
 //===----------------------------------------------------------------------===//
+// Pull in the common support for MCPredicate (portable scheduling predicates).
+//
+include "llvm/Target/TargetInstrPredicate.td"
+
+//===----------------------------------------------------------------------===//
 // Pull in the common support for scheduling
 //
 include "llvm/Target/TargetSchedule.td"
 
 class Predicate; // Forward def
 
+class InstructionEncoding {
+  // Size of encoded instruction.
+  int Size;
+
+  // The "namespace" in which this instruction exists, on targets like ARM
+  // which multiple ISA namespaces exist.
+  string DecoderNamespace = "";
+
+  // List of predicates which will be turned into isel matching code.
+  list<Predicate> Predicates = [];
+
+  string DecoderMethod = "";
+
+  // Is the instruction decoder method able to completely determine if the
+  // given instruction is valid or not. If the TableGen definition of the
+  // instruction specifies bitpattern A??B where A and B are static bits, the
+  // hasCompleteDecoder flag says whether the decoder method fully handles the
+  // ?? space, i.e. if it is a final arbiter for the instruction validity.
+  // If not then the decoder attempts to continue decoding when the decoder
+  // method fails.
+  //
+  // This allows to handle situations where the encoding is not fully
+  // orthogonal. Example:
+  // * InstA with bitpattern 0b0000????,
+  // * InstB with bitpattern 0b000000?? but the associated decoder method
+  //   DecodeInstB() returns Fail when ?? is 0b00 or 0b11.
+  //
+  // The decoder tries to decode a bitpattern that matches both InstA and
+  // InstB bitpatterns first as InstB (because it is the most specific
+  // encoding). In the default case (hasCompleteDecoder = 1), when
+  // DecodeInstB() returns Fail the bitpattern gets rejected. By setting
+  // hasCompleteDecoder = 0 in InstB, the decoder is informed that
+  // DecodeInstB() is not able to determine if all possible values of ?? are
+  // valid or not. If DecodeInstB() returns Fail the decoder will attempt to
+  // decode the bitpattern as InstA too.
+  bit hasCompleteDecoder = 1;
+}
+
 //===----------------------------------------------------------------------===//
 // Instruction set description - These classes correspond to the C++ classes in
 // the Target/TargetInstrInfo.h file.
 //
-class Instruction {
+class Instruction : InstructionEncoding {
   string Namespace = "";
 
   dag OutOperandList;       // An dag containing the MI def operand list.
@@ -417,10 +465,6 @@ class Instruction {
   // from the opcode.
   int Size = 0;
 
-  // DecoderNamespace - The "namespace" in which this instruction exists, on
-  // targets like ARM which multiple ISA namespaces exist.
-  string DecoderNamespace = "";
-
   // Code size, for instruction selection.
   // FIXME: What does this actually mean?
   int CodeSize = 0;
@@ -432,22 +476,30 @@ class Instruction {
   // instruction.
   bit isReturn     = 0;     // Is this instruction a return instruction?
   bit isBranch     = 0;     // Is this instruction a branch instruction?
+  bit isEHScopeReturn = 0;  // Does this instruction end an EH scope?
   bit isIndirectBranch = 0; // Is this instruction an indirect branch?
   bit isCompare    = 0;     // Is this instruction a comparison instruction?
   bit isMoveImm    = 0;     // Is this instruction a move immediate instruction?
+  bit isMoveReg    = 0;     // Is this instruction a move register instruction?
   bit isBitcast    = 0;     // Is this instruction a bitcast instruction?
   bit isSelect     = 0;     // Is this instruction a select instruction?
   bit isBarrier    = 0;     // Can control flow fall through this instruction?
   bit isCall       = 0;     // Is this instruction a call instruction?
   bit isAdd        = 0;     // Is this instruction an add instruction?
+  bit isTrap       = 0;     // Is this instruction a trap instruction?
   bit canFoldAsLoad = 0;    // Can this be folded as a simple memory operand?
   bit mayLoad      = ?;     // Is it possible for this inst to read memory?
   bit mayStore     = ?;     // Is it possible for this inst to write memory?
+  bit mayRaiseFPException = 0; // Can this raise a floating-point exception?
   bit isConvertibleToThreeAddress = 0;  // Can this 2-addr instruction promote?
   bit isCommutable = 0;     // Is this 3 operand instruction commutable?
   bit isTerminator = 0;     // Is this part of the terminator for a basic block?
   bit isReMaterializable = 0; // Is this instruction re-materializable?
-  bit isPredicable = 0;     // Is this instruction predicable?
+  bit isPredicable = 0;     // 1 means this instruction is predicable
+                            // even if it does not have any operand
+                            // tablegen can identify as a predicate
+  bit isUnpredicable = 0;   // 1 means this instruction is not predicable
+                            // even if it _does_ have a predicate operand
   bit hasDelaySlot = 0;     // Does this instruction have an delay slot?
   bit usesCustomInserter = 0; // Pseudo instr needing special help.
   bit hasPostISelHook = 0;  // To be *adjusted* after isel by target hook.
@@ -469,6 +521,7 @@ class Instruction {
   bit isInsertSubreg = 0;   // Is this instruction a kind of insert subreg?
                             // If so, make sure to override
                             // TargetInstrInfo::getInsertSubregLikeInputs.
+  bit variadicOpsAreDefs = 0; // Are variadic operands definitions?
 
   // Does the instruction have side effects that are not captured by any
   // operands of the instruction or other flags?
@@ -513,31 +566,6 @@ class Instruction {
   string DisableEncoding = "";
 
   string PostEncoderMethod = "";
-  string DecoderMethod = "";
-
-  // Is the instruction decoder method able to completely determine if the
-  // given instruction is valid or not. If the TableGen definition of the
-  // instruction specifies bitpattern A??B where A and B are static bits, the
-  // hasCompleteDecoder flag says whether the decoder method fully handles the
-  // ?? space, i.e. if it is a final arbiter for the instruction validity.
-  // If not then the decoder attempts to continue decoding when the decoder
-  // method fails.
-  //
-  // This allows to handle situations where the encoding is not fully
-  // orthogonal. Example:
-  // * InstA with bitpattern 0b0000????,
-  // * InstB with bitpattern 0b000000?? but the associated decoder method
-  //   DecodeInstB() returns Fail when ?? is 0b00 or 0b11.
-  //
-  // The decoder tries to decode a bitpattern that matches both InstA and
-  // InstB bitpatterns first as InstB (because it is the most specific
-  // encoding). In the default case (hasCompleteDecoder = 1), when
-  // DecodeInstB() returns Fail the bitpattern gets rejected. By setting
-  // hasCompleteDecoder = 0 in InstB, the decoder is informed that
-  // DecodeInstB() is not able to determine if all possible values of ?? are
-  // valid or not. If DecodeInstB() returns Fail the decoder will attempt to
-  // decode the bitpattern as InstA too.
-  bit hasCompleteDecoder = 1;
 
   /// Target-specific flags. This becomes the TSFlags field in TargetInstrDesc.
   bits<64> TSFlags = 0;
@@ -566,6 +594,19 @@ class Instruction {
   /// can be queried via the getNamedOperandIdx() function which is generated
   /// by TableGen.
   bit UseNamedOperandTable = 0;
+
+  /// Should FastISel ignore this instruction. For certain ISAs, they have
+  /// instructions which map to the same ISD Opcode, value type operands and
+  /// instruction selection predicates. FastISel cannot handle such cases, but
+  /// SelectionDAG can.
+  bit FastISelShouldIgnore = 0;
+}
+
+/// Defines an additional encoding that disassembles to the given instruction
+/// Like Instruction, the Inst and SoftFail fields are omitted to allow targets
+// to specify their size.
+class AdditionalEncoding<Instruction I> : InstructionEncoding {
+  Instruction AliasOf = I;
 }
 
 /// PseudoInstExpansion - Expansion information for a pseudo-instruction.
@@ -892,7 +933,7 @@ class InstrInfo {
 }
 
 // Standard Pseudo Instructions.
-// This list must match TargetOpcodes.h and CodeGenTarget.cpp.
+// This list must match TargetOpcodes.def.
 // Only these instructions are allowed in the TargetOpcode namespace.
 // Ensure mayLoad and mayStore have a default value, so as not to break
 // targets that set guessInstructionProperties=0. Any local definition of
@@ -916,6 +957,15 @@ def INLINEASM : StandardPseudoInstruction {
   let InOperandList = (ins variable_ops);
   let AsmString = "";
   let hasSideEffects = 0;  // Note side effect is encoded in an operand.
+}
+def INLINEASM_BR : StandardPseudoInstruction {
+  let OutOperandList = (outs);
+  let InOperandList = (ins variable_ops);
+  let AsmString = "";
+  let hasSideEffects = 0;  // Note side effect is encoded in an operand.
+  let isTerminator = 1;
+  let isBranch = 1;
+  let isIndirectBranch = 1;
 }
 def CFI_INSTRUCTION : StandardPseudoInstruction {
   let OutOperandList = (outs);
@@ -995,6 +1045,12 @@ def DBG_VALUE : StandardPseudoInstruction {
   let AsmString = "DBG_VALUE";
   let hasSideEffects = 0;
 }
+def DBG_LABEL : StandardPseudoInstruction {
+  let OutOperandList = (outs);
+  let InOperandList = (ins unknown:$label);
+  let AsmString = "DBG_LABEL";
+  let hasSideEffects = 0;
+}
 def REG_SEQUENCE : StandardPseudoInstruction {
   let OutOperandList = (outs unknown:$dst);
   let InOperandList = (ins unknown:$supersrc, variable_ops);
@@ -1014,7 +1070,7 @@ def BUNDLE : StandardPseudoInstruction {
   let OutOperandList = (outs);
   let InOperandList = (ins variable_ops);
   let AsmString = "BUNDLE";
-  let hasSideEffects = 1;
+  let hasSideEffects = 0;
 }
 def LIFETIME_START : StandardPseudoInstruction {
   let OutOperandList = (outs);
@@ -1082,7 +1138,7 @@ def FAULTING_OP : StandardPseudoInstruction {
   let isBranch = 1;
 }
 def PATCHABLE_OP : StandardPseudoInstruction {
-  let OutOperandList = (outs unknown:$dst);
+  let OutOperandList = (outs);
   let InOperandList = (ins variable_ops);
   let usesCustomInserter = 1;
   let mayLoad = 1;
@@ -1097,7 +1153,7 @@ def PATCHABLE_FUNCTION_ENTER : StandardPseudoInstruction {
   let hasSideEffects = 0;
 }
 def PATCHABLE_RET : StandardPseudoInstruction {
-  let OutOperandList = (outs unknown:$dst);
+  let OutOperandList = (outs);
   let InOperandList = (ins variable_ops);
   let AsmString = "# XRay Function Patchable RET.";
   let usesCustomInserter = 1;
@@ -1114,7 +1170,7 @@ def PATCHABLE_FUNCTION_EXIT : StandardPseudoInstruction {
   let isReturn = 0; // Original return instruction will follow
 }
 def PATCHABLE_TAIL_CALL : StandardPseudoInstruction {
-  let OutOperandList = (outs unknown:$dst);
+  let OutOperandList = (outs);
   let InOperandList = (ins variable_ops);
   let AsmString = "# XRay Tail Call Exit.";
   let usesCustomInserter = 1;
@@ -1131,13 +1187,29 @@ def PATCHABLE_EVENT_CALL : StandardPseudoInstruction {
   let mayStore = 1;
   let hasSideEffects = 1;
 }
+def PATCHABLE_TYPED_EVENT_CALL : StandardPseudoInstruction {
+  let OutOperandList = (outs);
+  let InOperandList = (ins i16imm:$type, ptr_rc:$event, i32imm:$size);
+  let AsmString = "# XRay Typed Event Log.";
+  let usesCustomInserter = 1;
+  let isCall = 1;
+  let mayLoad = 1;
+  let mayStore = 1;
+  let hasSideEffects = 1;
+}
 def FENTRY_CALL : StandardPseudoInstruction {
-  let OutOperandList = (outs unknown:$dst);
-  let InOperandList = (ins variable_ops);
+  let OutOperandList = (outs);
+  let InOperandList = (ins);
   let AsmString = "# FEntry call";
   let usesCustomInserter = 1;
   let mayLoad = 1;
   let mayStore = 1;
+  let hasSideEffects = 1;
+}
+def ICALL_BRANCH_FUNNEL : StandardPseudoInstruction {
+  let OutOperandList = (outs);
+  let InOperandList = (ins variable_ops);
+  let AsmString = "";
   let hasSideEffects = 1;
 }
 
@@ -1290,7 +1362,7 @@ class MnemonicAlias<string From, string To, string VariantName = ""> {
 /// InstAlias - This defines an alternate assembly syntax that is allowed to
 /// match an instruction that has a different (more canonical) assembly
 /// representation.
-class InstAlias<string Asm, dag Result, int Emit = 1> {
+class InstAlias<string Asm, dag Result, int Emit = 1, string VariantName = ""> {
   string AsmString = Asm;      // The .s format to match the instruction with.
   dag ResultInst = Result;     // The MCInst to generate.
 
@@ -1314,7 +1386,7 @@ class InstAlias<string Asm, dag Result, int Emit = 1> {
 
   // Assembler variant name to use for this alias. If not specified then
   // assembler variants will be determined based on AsmString
-  string AsmVariantName = "";
+  string AsmVariantName = VariantName;
 }
 
 //===----------------------------------------------------------------------===//
@@ -1362,6 +1434,12 @@ class Target {
 
   // AssemblyWriters - The AsmWriter instances available for this target.
   list<AsmWriter> AssemblyWriters = [DefaultAsmWriter];
+
+  // AllowRegisterRenaming - Controls whether this target allows
+  // post-register-allocation renaming of registers.  This is done by
+  // setting hasExtraDefRegAllocReq and hasExtraSrcRegAllocReq to 1
+  // for all opcodes if this flag is set to 0.
+  int AllowRegisterRenaming = 0;
 }
 
 //===----------------------------------------------------------------------===//
@@ -1511,3 +1589,8 @@ include "llvm/Target/GlobalISel/Target.td"
 // Pull in the common support for the Global ISel DAG-based selector generation.
 //
 include "llvm/Target/GlobalISel/SelectionDAGCompat.td"
+
+//===----------------------------------------------------------------------===//
+// Pull in the common support for Pfm Counters generation.
+//
+include "llvm/Target/TargetPfmCounters.td"

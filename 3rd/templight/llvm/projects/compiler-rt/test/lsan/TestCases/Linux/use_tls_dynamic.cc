@@ -1,11 +1,16 @@
 // Test that dynamically allocated TLS space is included in the root set.
+
+// This is known to be broken with glibc-2.27+
+// https://bugs.llvm.org/show_bug.cgi?id=37804
+// XFAIL: glibc-2.27
+
 // RUN: LSAN_BASE="report_objects=1:use_stacks=0:use_registers=0:use_ld_allocations=0"
 // RUN: %clangxx %s -DBUILD_DSO -fPIC -shared -o %t-so.so
 // RUN: %clangxx_lsan %s -o %t
 // RUN: %env_lsan_opts=$LSAN_BASE:"use_tls=0" not %run %t 2>&1 | FileCheck %s
 // RUN: %env_lsan_opts=$LSAN_BASE:"use_tls=1" %run %t 2>&1
 // RUN: %env_lsan_opts="" %run %t 2>&1
-// UNSUPPORTED: i386-linux,arm
+// UNSUPPORTED: i386-linux,arm,powerpc
 
 #ifndef BUILD_DSO
 #include <assert.h>

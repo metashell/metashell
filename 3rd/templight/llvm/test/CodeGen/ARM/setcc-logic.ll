@@ -20,12 +20,12 @@ define zeroext i1 @ne_neg1_and_ne_zero(i32 %x) nounwind {
 define zeroext i1 @and_eq(i32 %a, i32 %b, i32 %c, i32 %d) nounwind {
 ; CHECK-LABEL: and_eq:
 ; CHECK:       @ %bb.0:
-; CHECK-NEXT:    eor r2, r2, r3
-; CHECK-NEXT:    eor r0, r0, r1
-; CHECK-NEXT:    orrs r0, r0, r2
-; CHECK-NEXT:    mov r0, #0
-; CHECK-NEXT:    movweq r0, #1
-; CHECK-NEXT:    bx lr
+; CHECK: eor     r2, r2, r3
+; CHECK: eor     r0, r0, r1
+; CHECK: orr     r0, r0, r2
+; CHECK: clz     r0, r0
+; CHECK: lsr     r0, r0, #5
+; CHECK: bx      lr
   %cmp1 = icmp eq i32 %a, %b
   %cmp2 = icmp eq i32 %c, %d
   %and = and i1 %cmp1, %cmp2
@@ -61,9 +61,8 @@ define <4 x i1> @and_eq_vec(<4 x i32> %a, <4 x i32> %b, <4 x i32> %c, <4 x i32> 
 ; CHECK-NEXT:    vceq.i32 q8, q9, q8
 ; CHECK-NEXT:    vld1.64 {d22, d23}, [r0]
 ; CHECK-NEXT:    vceq.i32 q9, q11, q10
+; CHECK-NEXT:    vand q8, q8, q9
 ; CHECK-NEXT:    vmovn.i32 d16, q8
-; CHECK-NEXT:    vmovn.i32 d17, q9
-; CHECK-NEXT:    vand d16, d16, d17
 ; CHECK-NEXT:    vmov r0, r1, d16
 ; CHECK-NEXT:    pop {r11, pc}
   %cmp1 = icmp eq <4 x i32> %a, %b

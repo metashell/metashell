@@ -35,14 +35,14 @@ bb8:                                              ; preds = %bb8, %bb7
   %5 = fmul float %4, %0                          ; <float> [#uses=1]
   %6 = fsub float %3, %5                          ; <float> [#uses=1]
   %7 = fmul float %4, %1                          ; <float> [#uses=1]
-  %8 = fadd float undef, %7                       ; <float> [#uses=2]
+  %8 = fadd float %7, %7
   %9 = load float, float* %fi.1, align 4                 ; <float> [#uses=2]
   %10 = fsub float %9, %8                         ; <float> [#uses=1]
   %11 = fadd float %9, %8                         ; <float> [#uses=1]
   %12 = fsub float 0.000000e+00, %6               ; <float> [#uses=1]
-  %13 = fsub float 0.000000e+00, undef            ; <float> [#uses=2]
-  %14 = fmul float undef, %0                      ; <float> [#uses=1]
-  %15 = fadd float %14, undef                     ; <float> [#uses=2]
+  %13 = fsub float 0.000000e+00, %12
+  %14 = fmul float %0, %0
+  %15 = fadd float %14, %14
   %16 = load float, float* %scevgep81, align 4           ; <float> [#uses=2]
   %17 = fsub float %16, %15                       ; <float> [#uses=1]
   %18 = fadd float %16, %15                       ; <float> [#uses=2]
@@ -64,10 +64,10 @@ bb8:                                              ; preds = %bb8, %bb7
   %32 = fsub float %30, %31                       ; <float> [#uses=1]
   %33 = fsub float %10, %32                       ; <float> [#uses=1]
   store float %33, float* undef, align 4
-  %34 = icmp slt i32 undef, undef                 ; <i1> [#uses=1]
+  %34 = icmp slt i32 %tmp54, %tmp80               ; <i1> [#uses=1]
   br i1 %34, label %bb8, label %bb9
 
 bb9:                                              ; preds = %bb8
-  %35 = fadd float 0.000000e+00, undef            ; <float> [#uses=1]
+  %35 = fadd float 0.000000e+00, %33
   br label %bb7
 }

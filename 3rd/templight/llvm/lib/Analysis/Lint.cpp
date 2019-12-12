@@ -1,9 +1,8 @@
 //===-- Lint.cpp - Check for common errors in LLVM IR ---------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -165,13 +164,13 @@ namespace {
       }
     }
 
-    /// \brief A check failed, so printout out the condition and the message.
+    /// A check failed, so printout out the condition and the message.
     ///
     /// This provides a nice place to put a breakpoint if you want to see why
     /// something is not correct.
     void CheckFailed(const Twine &Message) { MessagesStr << Message << '\n'; }
 
-    /// \brief A check failed (with values to print).
+    /// A check failed (with values to print).
     ///
     /// This calls the Message-only version so that the above is easier to set
     /// a breakpoint on.
@@ -268,10 +267,14 @@ void Lint::visitCallSite(CallSite CS) {
         if (Formal->hasNoAliasAttr() && Actual->getType()->isPointerTy()) {
           AttributeList PAL = CS.getAttributes();
           unsigned ArgNo = 0;
-          for (CallSite::arg_iterator BI = CS.arg_begin(); BI != AE; ++BI) {
+          for (CallSite::arg_iterator BI = CS.arg_begin(); BI != AE;
+               ++BI, ++ArgNo) {
             // Skip ByVal arguments since they will be memcpy'd to the callee's
             // stack so we're not really passing the pointer anyway.
-            if (PAL.hasParamAttribute(ArgNo++, Attribute::ByVal))
+            if (PAL.hasParamAttribute(ArgNo, Attribute::ByVal))
+              continue;
+            // If both arguments are readonly, they have no dependence.
+            if (Formal->onlyReadsMemory() && CS.onlyReadsMemory(ArgNo))
               continue;
             if (AI != BI && (*BI)->getType()->isPointerTy()) {
               AliasResult Result = AA->alias(*AI, *BI);
@@ -323,19 +326,19 @@ void Lint::visitCallSite(CallSite CS) {
       MemCpyInst *MCI = cast<MemCpyInst>(&I);
       // TODO: If the size is known, use it.
       visitMemoryReference(I, MCI->getDest(), MemoryLocation::UnknownSize,
-                           MCI->getAlignment(), nullptr, MemRef::Write);
+                           MCI->getDestAlignment(), nullptr, MemRef::Write);
       visitMemoryReference(I, MCI->getSource(), MemoryLocation::UnknownSize,
-                           MCI->getAlignment(), nullptr, MemRef::Read);
+                           MCI->getSourceAlignment(), nullptr, MemRef::Read);
 
       // Check that the memcpy arguments don't overlap. The AliasAnalysis API
       // isn't expressive enough for what we really want to do. Known partial
       // overlap is not distinguished from the case where nothing is known.
-      uint64_t Size = 0;
+      auto Size = LocationSize::unknown();
       if (const ConstantInt *Len =
               dyn_cast<ConstantInt>(findValue(MCI->getLength(),
                                               /*OffsetOk=*/false)))
         if (Len->getValue().isIntN(32))
-          Size = Len->getValue().getZExtValue();
+          Size = LocationSize::precise(Len->getValue().getZExtValue());
       Assert(AA->alias(MCI->getSource(), Size, MCI->getDest(), Size) !=
                  MustAlias,
              "Undefined behavior: memcpy source and destination overlap", &I);
@@ -345,16 +348,16 @@ void Lint::visitCallSite(CallSite CS) {
       MemMoveInst *MMI = cast<MemMoveInst>(&I);
       // TODO: If the size is known, use it.
       visitMemoryReference(I, MMI->getDest(), MemoryLocation::UnknownSize,
-                           MMI->getAlignment(), nullptr, MemRef::Write);
+                           MMI->getDestAlignment(), nullptr, MemRef::Write);
       visitMemoryReference(I, MMI->getSource(), MemoryLocation::UnknownSize,
-                           MMI->getAlignment(), nullptr, MemRef::Read);
+                           MMI->getSourceAlignment(), nullptr, MemRef::Read);
       break;
     }
     case Intrinsic::memset: {
       MemSetInst *MSI = cast<MemSetInst>(&I);
       // TODO: If the size is known, use it.
       visitMemoryReference(I, MSI->getDest(), MemoryLocation::UnknownSize,
-                           MSI->getAlignment(), nullptr, MemRef::Write);
+                           MSI->getDestAlignment(), nullptr, MemRef::Write);
       break;
     }
 

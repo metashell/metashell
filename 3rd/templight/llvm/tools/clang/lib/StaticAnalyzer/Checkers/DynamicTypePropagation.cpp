@@ -1,9 +1,8 @@
 //===- DynamicTypePropagation.cpp ------------------------------*- C++ -*--===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -21,7 +20,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "ClangSACheckers.h"
+#include "clang/StaticAnalyzer/Checkers/BuiltinCheckerRegistration.h"
 #include "clang/AST/ParentMap.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Basic/Builtins.h"
@@ -59,7 +58,7 @@ class DynamicTypePropagation:
   const ObjCObjectType *getObjectTypeForAllocAndNew(const ObjCMessageExpr *MsgE,
                                                     CheckerContext &C) const;
 
-  /// \brief Return a better dynamic type if one can be derived from the cast.
+  /// Return a better dynamic type if one can be derived from the cast.
   const ObjCObjectPointerType *getBetterObjCType(const Expr *CastE,
                                                  CheckerContext &C) const;
 
@@ -74,7 +73,7 @@ class DynamicTypePropagation:
           new BugType(this, "Generics", categories::CoreFoundationObjectiveC));
   }
 
-  class GenericsBugVisitor : public BugReporterVisitorImpl<GenericsBugVisitor> {
+  class GenericsBugVisitor : public BugReporterVisitor {
   public:
     GenericsBugVisitor(SymbolRef S) : Sym(S) {}
 
@@ -85,7 +84,6 @@ class DynamicTypePropagation:
     }
 
     std::shared_ptr<PathDiagnosticPiece> VisitNode(const ExplodedNode *N,
-                                                   const ExplodedNode *PrevN,
                                                    BugReporterContext &BRC,
                                                    BugReport &BR) override;
 
@@ -116,17 +114,12 @@ public:
 void DynamicTypePropagation::checkDeadSymbols(SymbolReaper &SR,
                                               CheckerContext &C) const {
   ProgramStateRef State = C.getState();
-  DynamicTypeMapImpl TypeMap = State->get<DynamicTypeMap>();
-  for (DynamicTypeMapImpl::iterator I = TypeMap.begin(), E = TypeMap.end();
+  DynamicTypeMapTy TypeMap = State->get<DynamicTypeMap>();
+  for (DynamicTypeMapTy::iterator I = TypeMap.begin(), E = TypeMap.end();
        I != E; ++I) {
     if (!SR.isLiveRegion(I->first)) {
       State = State->remove<DynamicTypeMap>(I->first);
     }
-  }
-
-  if (!SR.hasDeadSymbols()) {
-    C.addTransition(State);
-    return;
   }
 
   MostSpecializedTypeArgsMapTy TyArgMap =
@@ -151,7 +144,7 @@ static void recordFixedType(const MemRegion *Region, const CXXMethodDecl *MD,
   QualType Ty = Ctx.getPointerType(Ctx.getRecordType(MD->getParent()));
 
   ProgramStateRef State = C.getState();
-  State = setDynamicTypeInfo(State, Region, Ty, /*CanBeSubclass=*/false);
+  State = setDynamicTypeInfo(State, Region, Ty, /*CanBeSubClassed=*/false);
   C.addTransition(State);
 }
 
@@ -314,7 +307,7 @@ void DynamicTypePropagation::checkPostStmt(const CXXNewExpr *NewE,
     return;
 
   C.addTransition(setDynamicTypeInfo(C.getState(), MR, NewE->getType(),
-                                     /*CanBeSubclass=*/false));
+                                     /*CanBeSubClassed=*/false));
 }
 
 const ObjCObjectType *
@@ -562,7 +555,7 @@ void DynamicTypePropagation::checkPostStmt(const CastExpr *CE,
       DestObjectPtrType->isUnspecialized())
     return;
 
-  SymbolRef Sym = State->getSVal(CE, C.getLocationContext()).getAsSymbol();
+  SymbolRef Sym = C.getSVal(CE).getAsSymbol();
   if (!Sym)
     return;
 
@@ -631,7 +624,7 @@ static const Expr *stripCastsAndSugar(const Expr *E) {
 }
 
 static bool isObjCTypeParamDependent(QualType Type) {
-  // It is illegal to typedef parameterized types inside an interface. Therfore
+  // It is illegal to typedef parameterized types inside an interface. Therefore
   // an Objective-C type can only be dependent on a type parameter when the type
   // parameter structurally present in the type itself.
   class IsObjCTypeParamDependentTypeVisitor
@@ -894,7 +887,7 @@ void DynamicTypePropagation::checkPostObjCMessage(const ObjCMethodCall &M,
     // MostSpecializedTypeArgsMap. We should only store anything in the later if
     // the stored data differs from the one stored in the former.
     State = setDynamicTypeInfo(State, RetRegion, ResultType,
-                               /*CanBeSubclass=*/true);
+                               /*CanBeSubClassed=*/true);
     Pred = C.addTransition(State);
   }
 
@@ -937,11 +930,10 @@ void DynamicTypePropagation::reportGenericsBug(
 
 std::shared_ptr<PathDiagnosticPiece>
 DynamicTypePropagation::GenericsBugVisitor::VisitNode(const ExplodedNode *N,
-                                                      const ExplodedNode *PrevN,
                                                       BugReporterContext &BRC,
                                                       BugReport &BR) {
   ProgramStateRef state = N->getState();
-  ProgramStateRef statePrev = PrevN->getState();
+  ProgramStateRef statePrev = N->getFirstPred()->getState();
 
   const ObjCObjectPointerType *const *TrackedType =
       state->get<MostSpecializedTypeArgsMap>(Sym);
@@ -995,11 +987,18 @@ DynamicTypePropagation::GenericsBugVisitor::VisitNode(const ExplodedNode *N,
 
 /// Register checkers.
 void ento::registerObjCGenericsChecker(CheckerManager &mgr) {
-  DynamicTypePropagation *checker =
-      mgr.registerChecker<DynamicTypePropagation>();
+  DynamicTypePropagation *checker = mgr.getChecker<DynamicTypePropagation>();
   checker->CheckGenerics = true;
+}
+
+bool ento::shouldRegisterObjCGenericsChecker(const LangOptions &LO) {
+  return true;
 }
 
 void ento::registerDynamicTypePropagation(CheckerManager &mgr) {
   mgr.registerChecker<DynamicTypePropagation>();
+}
+
+bool ento::shouldRegisterDynamicTypePropagation(const LangOptions &LO) {
+  return true;
 }

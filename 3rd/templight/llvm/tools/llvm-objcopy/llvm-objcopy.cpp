@@ -1,345 +1,329 @@
 //===- llvm-objcopy.cpp ---------------------------------------------------===//
 //
-//                      The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
 #include "llvm-objcopy.h"
-#include "Object.h"
+#include "Buffer.h"
+#include "CopyConfig.h"
+#include "ELF/ELFObjcopy.h"
+#include "COFF/COFFObjcopy.h"
+#include "MachO/MachOObjcopy.h"
+
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
-#include "llvm/BinaryFormat/ELF.h"
+#include "llvm/Object/Archive.h"
+#include "llvm/Object/ArchiveWriter.h"
 #include "llvm/Object/Binary.h"
+#include "llvm/Object/COFF.h"
 #include "llvm/Object/ELFObjectFile.h"
 #include "llvm/Object/ELFTypes.h"
 #include "llvm/Object/Error.h"
+#include "llvm/Object/MachO.h"
+#include "llvm/Option/Arg.h"
+#include "llvm/Option/ArgList.h"
+#include "llvm/Option/Option.h"
 #include "llvm/Support/Casting.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/Compiler.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/ErrorOr.h"
-#include "llvm/Support/FileOutputBuffer.h"
-#include "llvm/Support/ManagedStatic.h"
-#include "llvm/Support/PrettyStackTrace.h"
-#include "llvm/Support/Signals.h"
+#include "llvm/Support/InitLLVM.h"
+#include "llvm/Support/Memory.h"
+#include "llvm/Support/Path.h"
+#include "llvm/Support/Process.h"
+#include "llvm/Support/WithColor.h"
 #include "llvm/Support/raw_ostream.h"
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
-#include <functional>
-#include <iterator>
 #include <memory>
 #include <string>
 #include <system_error>
 #include <utility>
 
-using namespace llvm;
-using namespace object;
-using namespace ELF;
+namespace llvm {
+namespace objcopy {
 
 // The name this program was invoked as.
-static StringRef ToolName;
-
-namespace llvm {
+StringRef ToolName;
 
 LLVM_ATTRIBUTE_NORETURN void error(Twine Message) {
-  errs() << ToolName << ": " << Message << ".\n";
-  errs().flush();
+  WithColor::error(errs(), ToolName) << Message << "\n";
+  exit(1);
+}
+
+LLVM_ATTRIBUTE_NORETURN void error(Error E) {
+  assert(E);
+  std::string Buf;
+  raw_string_ostream OS(Buf);
+  logAllUnhandledErrors(std::move(E), OS);
+  OS.flush();
+  WithColor::error(errs(), ToolName) << Buf;
   exit(1);
 }
 
 LLVM_ATTRIBUTE_NORETURN void reportError(StringRef File, std::error_code EC) {
   assert(EC);
-  errs() << ToolName << ": '" << File << "': " << EC.message() << ".\n";
-  exit(1);
+  error(createFileError(File, EC));
 }
 
 LLVM_ATTRIBUTE_NORETURN void reportError(StringRef File, Error E) {
   assert(E);
   std::string Buf;
   raw_string_ostream OS(Buf);
-  logAllUnhandledErrors(std::move(E), OS, "");
+  logAllUnhandledErrors(std::move(E), OS);
   OS.flush();
-  errs() << ToolName << ": '" << File << "': " << Buf;
+  WithColor::error(errs(), ToolName) << "'" << File << "': " << Buf;
   exit(1);
 }
 
+ErrorSuccess reportWarning(Error E) {
+  assert(E);
+  WithColor::warning(errs(), ToolName) << toString(std::move(E));
+  return Error::success();
+}
+
+} // end namespace objcopy
 } // end namespace llvm
 
-static cl::opt<std::string> InputFilename(cl::Positional, cl::desc("<input>"));
-static cl::opt<std::string> OutputFilename(cl::Positional, cl::desc("<output>"),
-                                           cl::init("-"));
-static cl::opt<std::string>
-    OutputFormat("O", cl::desc("Set output format to one of the following:"
-                               "\n\tbinary"));
-static cl::list<std::string> ToRemove("remove-section",
-                                      cl::desc("Remove <section>"),
-                                      cl::value_desc("section"));
-static cl::alias ToRemoveA("R", cl::desc("Alias for remove-section"),
-                           cl::aliasopt(ToRemove));
-static cl::opt<bool> StripAll(
-    "strip-all",
-    cl::desc(
-        "Removes non-allocated sections other than .gnu.warning* sections"));
-static cl::opt<bool>
-    StripAllGNU("strip-all-gnu",
-                cl::desc("Removes symbol, relocation, and debug information"));
-static cl::list<std::string> Keep("keep", cl::desc("Keep <section>"),
-                                  cl::value_desc("section"));
-static cl::list<std::string> OnlyKeep("only-keep",
-                                      cl::desc("Remove all but <section>"),
-                                      cl::value_desc("section"));
-static cl::alias OnlyKeepA("j", cl::desc("Alias for only-keep"),
-                           cl::aliasopt(OnlyKeep));
-static cl::opt<bool> StripDebug("strip-debug",
-                                cl::desc("Removes all debug information"));
-static cl::opt<bool> StripSections("strip-sections",
-                                   cl::desc("Remove all section headers"));
-static cl::opt<bool>
-    StripNonAlloc("strip-non-alloc",
-                  cl::desc("Remove all non-allocated sections"));
-static cl::opt<bool>
-    StripDWO("strip-dwo", cl::desc("Remove all DWARF .dwo sections from file"));
-static cl::opt<bool> ExtractDWO(
-    "extract-dwo",
-    cl::desc("Remove all sections that are not DWARF .dwo sections from file"));
-static cl::opt<std::string>
-    SplitDWO("split-dwo",
-             cl::desc("Equivalent to extract-dwo on the input file to "
-                      "<dwo-file>, then strip-dwo on the input file"),
-             cl::value_desc("dwo-file"));
-static cl::list<std::string> AddSection(
-    "add-section",
-    cl::desc("Make a section named <section> with the contents of <file>."),
-    cl::value_desc("section=file"));
+using namespace llvm;
+using namespace llvm::object;
+using namespace llvm::objcopy;
 
-using SectionPred = std::function<bool(const SectionBase &Sec)>;
+// For regular archives this function simply calls llvm::writeArchive,
+// For thin archives it writes the archive file itself as well as its members.
+static Error deepWriteArchive(StringRef ArcName,
+                              ArrayRef<NewArchiveMember> NewMembers,
+                              bool WriteSymtab, object::Archive::Kind Kind,
+                              bool Deterministic, bool Thin) {
+  if (Error E = writeArchive(ArcName, NewMembers, WriteSymtab, Kind,
+                             Deterministic, Thin))
+    return createFileError(ArcName, std::move(E));
 
-bool IsDWOSection(const SectionBase &Sec) { return Sec.Name.endswith(".dwo"); }
+  if (!Thin)
+    return Error::success();
 
-template <class ELFT>
-bool OnlyKeepDWOPred(const Object<ELFT> &Obj, const SectionBase &Sec) {
-  // We can't remove the section header string table.
-  if (&Sec == Obj.getSectionHeaderStrTab())
-    return false;
-  // Short of keeping the string table we want to keep everything that is a DWO
-  // section and remove everything else.
-  return !IsDWOSection(Sec);
+  for (const NewArchiveMember &Member : NewMembers) {
+    // Internally, FileBuffer will use the buffer created by
+    // FileOutputBuffer::create, for regular files (that is the case for
+    // deepWriteArchive) FileOutputBuffer::create will return OnDiskBuffer.
+    // OnDiskBuffer uses a temporary file and then renames it. So in reality
+    // there is no inefficiency / duplicated in-memory buffers in this case. For
+    // now in-memory buffers can not be completely avoided since
+    // NewArchiveMember still requires them even though writeArchive does not
+    // write them on disk.
+    FileBuffer FB(Member.MemberName);
+    if (Error E = FB.allocate(Member.Buf->getBufferSize()))
+      return E;
+    std::copy(Member.Buf->getBufferStart(), Member.Buf->getBufferEnd(),
+              FB.getBufferStart());
+    if (Error E = FB.commit())
+      return E;
+  }
+  return Error::success();
 }
 
-template <class ELFT>
-void WriteObjectFile(const Object<ELFT> &Obj, StringRef File) {
-  std::unique_ptr<FileOutputBuffer> Buffer;
-  Expected<std::unique_ptr<FileOutputBuffer>> BufferOrErr =
-      FileOutputBuffer::create(File, Obj.totalSize(),
-                               FileOutputBuffer::F_executable);
-  handleAllErrors(BufferOrErr.takeError(), [](const ErrorInfoBase &) {
-    error("failed to open " + OutputFilename);
-  });
-  Buffer = std::move(*BufferOrErr);
-
-  Obj.write(*Buffer);
-  if (auto E = Buffer->commit())
-    reportError(File, errorToErrorCode(std::move(E)));
+/// The function executeObjcopyOnIHex does the dispatch based on the format
+/// of the output specified by the command line options.
+static Error executeObjcopyOnIHex(const CopyConfig &Config, MemoryBuffer &In,
+                                  Buffer &Out) {
+  // TODO: support output formats other than ELF.
+  return elf::executeObjcopyOnIHex(Config, In, Out);
 }
 
-template <class ELFT>
-void SplitDWOToFile(const ELFObjectFile<ELFT> &ObjFile, StringRef File) {
-  // Construct a second output file for the DWO sections.
-  ELFObject<ELFT> DWOFile(ObjFile);
+/// The function executeObjcopyOnRawBinary does the dispatch based on the format
+/// of the output specified by the command line options.
+static Error executeObjcopyOnRawBinary(const CopyConfig &Config,
+                                       MemoryBuffer &In, Buffer &Out) {
+  switch (Config.OutputFormat) {
+  case FileFormat::ELF:
+  // FIXME: Currently, we call elf::executeObjcopyOnRawBinary even if the
+  // output format is binary/ihex or it's not given. This behavior differs from
+  // GNU objcopy. See https://bugs.llvm.org/show_bug.cgi?id=42171 for details.
+  case FileFormat::Binary:
+  case FileFormat::IHex:
+  case FileFormat::Unspecified:
+    return elf::executeObjcopyOnRawBinary(Config, In, Out);
+  }
 
-  DWOFile.removeSections([&](const SectionBase &Sec) {
-    return OnlyKeepDWOPred<ELFT>(DWOFile, Sec);
-  });
-  DWOFile.finalize();
-  WriteObjectFile(DWOFile, File);
+  llvm_unreachable("unsupported output format");
 }
 
-// This function handles the high level operations of GNU objcopy including
-// handling command line options. It's important to outline certain properties
-// we expect to hold of the command line operations. Any operation that "keeps"
-// should keep regardless of a remove. Additionally any removal should respect
-// any previous removals. Lastly whether or not something is removed shouldn't
-// depend a) on the order the options occur in or b) on some opaque priority
-// system. The only priority is that keeps/copies overrule removes.
-template <class ELFT> void CopyBinary(const ELFObjectFile<ELFT> &ObjFile) {
-  std::unique_ptr<Object<ELFT>> Obj;
-
-  if (!OutputFormat.empty() && OutputFormat != "binary")
-    error("invalid output format '" + OutputFormat + "'");
-  if (!OutputFormat.empty() && OutputFormat == "binary")
-    Obj = llvm::make_unique<BinaryObject<ELFT>>(ObjFile);
+/// The function executeObjcopyOnBinary does the dispatch based on the format
+/// of the input binary (ELF, MachO or COFF).
+static Error executeObjcopyOnBinary(const CopyConfig &Config,
+                                    object::Binary &In, Buffer &Out) {
+  if (auto *ELFBinary = dyn_cast<object::ELFObjectFileBase>(&In))
+    return elf::executeObjcopyOnBinary(Config, *ELFBinary, Out);
+  else if (auto *COFFBinary = dyn_cast<object::COFFObjectFile>(&In))
+    return coff::executeObjcopyOnBinary(Config, *COFFBinary, Out);
+  else if (auto *MachOBinary = dyn_cast<object::MachOObjectFile>(&In))
+    return macho::executeObjcopyOnBinary(Config, *MachOBinary, Out);
   else
-    Obj = llvm::make_unique<ELFObject<ELFT>>(ObjFile);
+    return createStringError(object_error::invalid_file_type,
+                             "unsupported object file format");
+}
 
-  if (!SplitDWO.empty())
-    SplitDWOToFile<ELFT>(ObjFile, SplitDWO.getValue());
+static Error executeObjcopyOnArchive(const CopyConfig &Config,
+                                     const Archive &Ar) {
+  std::vector<NewArchiveMember> NewArchiveMembers;
+  Error Err = Error::success();
+  for (const Archive::Child &Child : Ar.children(Err)) {
+    Expected<StringRef> ChildNameOrErr = Child.getName();
+    if (!ChildNameOrErr)
+      return createFileError(Ar.getFileName(), ChildNameOrErr.takeError());
 
-  SectionPred RemovePred = [](const SectionBase &) { return false; };
+    Expected<std::unique_ptr<Binary>> ChildOrErr = Child.getAsBinary();
+    if (!ChildOrErr)
+      return createFileError(Ar.getFileName() + "(" + *ChildNameOrErr + ")",
+                             ChildOrErr.takeError());
 
-  // Removes:
+    MemBuffer MB(ChildNameOrErr.get());
+    if (Error E = executeObjcopyOnBinary(Config, *ChildOrErr->get(), MB))
+      return E;
 
-  if (!ToRemove.empty()) {
-    RemovePred = [&](const SectionBase &Sec) {
-      return std::find(std::begin(ToRemove), std::end(ToRemove), Sec.Name) !=
-             std::end(ToRemove);
-    };
+    Expected<NewArchiveMember> Member =
+        NewArchiveMember::getOldMember(Child, Config.DeterministicArchives);
+    if (!Member)
+      return createFileError(Ar.getFileName(), Member.takeError());
+    Member->Buf = MB.releaseMemoryBuffer();
+    Member->MemberName = Member->Buf->getBufferIdentifier();
+    NewArchiveMembers.push_back(std::move(*Member));
+  }
+  if (Err)
+    return createFileError(Config.InputFilename, std::move(Err));
+
+  return deepWriteArchive(Config.OutputFilename, NewArchiveMembers,
+                          Ar.hasSymbolTable(), Ar.kind(),
+                          Config.DeterministicArchives, Ar.isThin());
+}
+
+static Error restoreStatOnFile(StringRef Filename,
+                               const sys::fs::file_status &Stat,
+                               bool PreserveDates) {
+  int FD;
+
+  // Writing to stdout should not be treated as an error here, just
+  // do not set access/modification times or permissions.
+  if (Filename == "-")
+    return Error::success();
+
+  if (auto EC =
+          sys::fs::openFileForWrite(Filename, FD, sys::fs::CD_OpenExisting))
+    return createFileError(Filename, EC);
+
+  if (PreserveDates)
+    if (auto EC = sys::fs::setLastAccessAndModificationTime(
+            FD, Stat.getLastAccessedTime(), Stat.getLastModificationTime()))
+      return createFileError(Filename, EC);
+
+  sys::fs::file_status OStat;
+  if (std::error_code EC = sys::fs::status(FD, OStat))
+    return createFileError(Filename, EC);
+  if (OStat.type() == sys::fs::file_type::regular_file)
+#ifdef _WIN32
+    if (auto EC = sys::fs::setPermissions(
+            Filename, static_cast<sys::fs::perms>(Stat.permissions() &
+                                                  ~sys::fs::getUmask())))
+#else
+    if (auto EC = sys::fs::setPermissions(
+            FD, static_cast<sys::fs::perms>(Stat.permissions() &
+                                            ~sys::fs::getUmask())))
+#endif
+      return createFileError(Filename, EC);
+
+  if (auto EC = sys::Process::SafelyCloseFileDescriptor(FD))
+    return createFileError(Filename, EC);
+
+  return Error::success();
+}
+
+/// The function executeObjcopy does the higher level dispatch based on the type
+/// of input (raw binary, archive or single object file) and takes care of the
+/// format-agnostic modifications, i.e. preserving dates.
+static Error executeObjcopy(const CopyConfig &Config) {
+  sys::fs::file_status Stat;
+  if (Config.InputFilename != "-") {
+    if (auto EC = sys::fs::status(Config.InputFilename, Stat))
+      return createFileError(Config.InputFilename, EC);
+  } else {
+    Stat.permissions(static_cast<sys::fs::perms>(0777));
   }
 
-  if (StripDWO || !SplitDWO.empty())
-    RemovePred = [RemovePred](const SectionBase &Sec) {
-      return IsDWOSection(Sec) || RemovePred(Sec);
-    };
-
-  if (ExtractDWO)
-    RemovePred = [RemovePred, &Obj](const SectionBase &Sec) {
-      return OnlyKeepDWOPred(*Obj, Sec) || RemovePred(Sec);
-    };
-
-  if (StripAllGNU)
-    RemovePred = [RemovePred, &Obj](const SectionBase &Sec) {
-      if (RemovePred(Sec))
-        return true;
-      if ((Sec.Flags & SHF_ALLOC) != 0)
-        return false;
-      if (&Sec == Obj->getSectionHeaderStrTab())
-        return false;
-      switch (Sec.Type) {
-      case SHT_SYMTAB:
-      case SHT_REL:
-      case SHT_RELA:
-      case SHT_STRTAB:
-        return true;
-      }
-      return Sec.Name.startswith(".debug");
-    };
-
-  if (StripSections) {
-    RemovePred = [RemovePred](const SectionBase &Sec) {
-      return RemovePred(Sec) || (Sec.Flags & SHF_ALLOC) == 0;
-    };
-    Obj->WriteSectionHeaders = false;
+  typedef Error (*ProcessRawFn)(const CopyConfig &, MemoryBuffer &, Buffer &);
+  ProcessRawFn ProcessRaw;
+  switch (Config.InputFormat) {
+  case FileFormat::Binary:
+    ProcessRaw = executeObjcopyOnRawBinary;
+    break;
+  case FileFormat::IHex:
+    ProcessRaw = executeObjcopyOnIHex;
+    break;
+  default:
+    ProcessRaw = nullptr;
   }
 
-  if (StripDebug) {
-    RemovePred = [RemovePred](const SectionBase &Sec) {
-      return RemovePred(Sec) || Sec.Name.startswith(".debug");
-    };
-  }
+  if (ProcessRaw) {
+    auto BufOrErr = MemoryBuffer::getFileOrSTDIN(Config.InputFilename);
+    if (!BufOrErr)
+      return createFileError(Config.InputFilename, BufOrErr.getError());
+    FileBuffer FB(Config.OutputFilename);
+    if (Error E = ProcessRaw(Config, *BufOrErr->get(), FB))
+      return E;
+  } else {
+    Expected<OwningBinary<llvm::object::Binary>> BinaryOrErr =
+        createBinary(Config.InputFilename);
+    if (!BinaryOrErr)
+      return createFileError(Config.InputFilename, BinaryOrErr.takeError());
 
-  if (StripNonAlloc)
-    RemovePred = [RemovePred, &Obj](const SectionBase &Sec) {
-      if (RemovePred(Sec))
-        return true;
-      if (&Sec == Obj->getSectionHeaderStrTab())
-        return false;
-      return (Sec.Flags & SHF_ALLOC) == 0;
-    };
-
-  if (StripAll)
-    RemovePred = [RemovePred, &Obj](const SectionBase &Sec) {
-      if (RemovePred(Sec))
-        return true;
-      if (&Sec == Obj->getSectionHeaderStrTab())
-        return false;
-      if (Sec.Name.startswith(".gnu.warning"))
-        return false;
-      return (Sec.Flags & SHF_ALLOC) == 0;
-    };
-
-  // Explicit copies:
-
-  if (!OnlyKeep.empty()) {
-    RemovePred = [RemovePred, &Obj](const SectionBase &Sec) {
-      // Explicitly keep these sections regardless of previous removes.
-      if (std::find(std::begin(OnlyKeep), std::end(OnlyKeep), Sec.Name) !=
-          std::end(OnlyKeep))
-        return false;
-
-      // Allow all implicit removes.
-      if (RemovePred(Sec)) {
-        return true;
-      }
-
-      // Keep special sections.
-      if (Obj->getSectionHeaderStrTab() == &Sec) {
-        return false;
-      }
-      if (Obj->getSymTab() == &Sec || Obj->getSymTab()->getStrTab() == &Sec) {
-        return false;
-      }
-      // Remove everything else.
-      return true;
-    };
-  }
-
-  if (!Keep.empty()) {
-    RemovePred = [RemovePred](const SectionBase &Sec) {
-      // Explicitly keep these sections regardless of previous removes.
-      if (std::find(std::begin(Keep), std::end(Keep), Sec.Name) !=
-          std::end(Keep))
-        return false;
-      // Otherwise defer to RemovePred.
-      return RemovePred(Sec);
-    };
-  }
-
-  Obj->removeSections(RemovePred);
-
-  if (!AddSection.empty()) {
-    for (const auto &Flag : AddSection) {
-      auto SecPair = StringRef(Flag).split("=");
-      auto SecName = SecPair.first;
-      auto File = SecPair.second;
-      auto BufOrErr = MemoryBuffer::getFile(File);
-      if (!BufOrErr)
-        reportError(File, BufOrErr.getError());
-      auto Buf = std::move(*BufOrErr);
-      auto BufPtr = reinterpret_cast<const uint8_t *>(Buf->getBufferStart());
-      auto BufSize = Buf->getBufferSize();
-      Obj->addSection(SecName, ArrayRef<uint8_t>(BufPtr, BufSize));
+    if (Archive *Ar = dyn_cast<Archive>(BinaryOrErr.get().getBinary())) {
+      if (Error E = executeObjcopyOnArchive(Config, *Ar))
+        return E;
+    } else {
+      FileBuffer FB(Config.OutputFilename);
+      if (Error E = executeObjcopyOnBinary(Config,
+                                           *BinaryOrErr.get().getBinary(), FB))
+        return E;
     }
   }
 
-  Obj->finalize();
-  WriteObjectFile(*Obj, OutputFilename.getValue());
+  if (Error E =
+          restoreStatOnFile(Config.OutputFilename, Stat, Config.PreserveDates))
+    return E;
+
+  if (!Config.SplitDWO.empty()) {
+    Stat.permissions(static_cast<sys::fs::perms>(0666));
+    if (Error E =
+            restoreStatOnFile(Config.SplitDWO, Stat, Config.PreserveDates))
+      return E;
+  }
+
+  return Error::success();
 }
 
 int main(int argc, char **argv) {
-  // Print a stack trace if we signal out.
-  sys::PrintStackTraceOnErrorSignal(argv[0]);
-  PrettyStackTraceProgram X(argc, argv);
-  llvm_shutdown_obj Y; // Call llvm_shutdown() on exit.
-  cl::ParseCommandLineOptions(argc, argv, "llvm objcopy utility\n");
+  InitLLVM X(argc, argv);
   ToolName = argv[0];
-  if (InputFilename.empty()) {
-    cl::PrintHelpMessage();
-    return 2;
+  bool IsStrip = sys::path::stem(ToolName).contains("strip");
+  Expected<DriverConfig> DriverConfig =
+      IsStrip ? parseStripOptions(makeArrayRef(argv + 1, argc), reportWarning)
+              : parseObjcopyOptions(makeArrayRef(argv + 1, argc));
+  if (!DriverConfig) {
+    logAllUnhandledErrors(DriverConfig.takeError(),
+                          WithColor::error(errs(), ToolName));
+    return 1;
   }
-  Expected<OwningBinary<Binary>> BinaryOrErr = createBinary(InputFilename);
-  if (!BinaryOrErr)
-    reportError(InputFilename, BinaryOrErr.takeError());
-  Binary &Binary = *BinaryOrErr.get().getBinary();
-  if (auto *o = dyn_cast<ELFObjectFile<ELF64LE>>(&Binary)) {
-    CopyBinary(*o);
-    return 0;
+  for (const CopyConfig &CopyConfig : DriverConfig->CopyConfigs) {
+    if (Error E = executeObjcopy(CopyConfig)) {
+      logAllUnhandledErrors(std::move(E), WithColor::error(errs(), ToolName));
+      return 1;
+    }
   }
-  if (auto *o = dyn_cast<ELFObjectFile<ELF32LE>>(&Binary)) {
-    CopyBinary(*o);
-    return 0;
-  }
-  if (auto *o = dyn_cast<ELFObjectFile<ELF64BE>>(&Binary)) {
-    CopyBinary(*o);
-    return 0;
-  }
-  if (auto *o = dyn_cast<ELFObjectFile<ELF32BE>>(&Binary)) {
-    CopyBinary(*o);
-    return 0;
-  }
-  reportError(InputFilename, object_error::invalid_file_type);
+
+  return 0;
 }

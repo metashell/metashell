@@ -1,11 +1,15 @@
 set(LLVM_LINK_COMPONENTS
-  ${LLVM_TARGETS_TO_BUILD}
+  AllTargetsAsmParsers
+  AllTargetsCodeGens
+  AllTargetsDescs
+  AllTargetsInfos
   Analysis
   BitWriter
   CodeGen
   Core
   IPO
   IRReader
+  AggressiveInstCombine
   InstCombine
   Instrumentation
   Linker

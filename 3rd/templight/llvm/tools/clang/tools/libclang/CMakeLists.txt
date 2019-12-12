@@ -36,10 +36,12 @@ set(SOURCES
 set(LIBS
   clangAST
   clangBasic
+  clangDriver
   clangFrontend
   clangIndex
   clangLex
   clangSema
+  clangSerialization
   clangTooling
 )
 
@@ -67,13 +69,13 @@ option(LIBCLANG_BUILD_STATIC
 set(LLVM_EXPORTED_SYMBOL_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libclang.exports)
 
 if(MSVC)
-  # Avoid LNK4197 not to spceify libclang.def here.
+  # Avoid LNK4197 by not specifying libclang.exports here.
   # Each functions is exported as "dllexport" in include/clang-c.
   # KB835326
   set(LLVM_EXPORTED_SYMBOL_FILE)
 endif()
 
-if( LLVM_ENABLE_PIC )
+if(LLVM_ENABLE_PIC OR WIN32)
   set(ENABLE_SHARED SHARED)
 endif()
 
@@ -87,10 +89,15 @@ else()
   set(output_name "clang")
 endif()
 
-add_clang_library(libclang ${ENABLE_SHARED} ${ENABLE_STATIC}
+# libclang requires headers which need _ALL_SOURCE to build on AIX
+if (UNIX AND ${CMAKE_SYSTEM_NAME} MATCHES "AIX")
+    remove_definitions("-D_XOPEN_SOURCE=700")
+endif()
+
+add_clang_library(libclang ${ENABLE_SHARED} ${ENABLE_STATIC} INSTALL_WITH_TOOLCHAIN
   OUTPUT_NAME ${output_name}
   ${SOURCES}
-  DEPENDS clang-headers
+  DEPENDS clang-resource-headers
 
   LINK_LIBS
   ${LIBS}
@@ -147,7 +154,26 @@ install(DIRECTORY ../../include/clang-c
 add_custom_target(libclang-headers)
 set_target_properties(libclang-headers PROPERTIES FOLDER "Misc")
 
-if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
+if (NOT LLVM_ENABLE_IDE)
   add_llvm_install_targets(install-libclang-headers
                            COMPONENT libclang-headers)
 endif()
+
+# Create a target to install the python bindings to make them easier to
+# distribute.  Since the bindings are over libclang, which is installed
+# unbundled to the clang version, follow suit.
+foreach(PythonVersion ${CLANG_PYTHON_BINDINGS_VERSIONS})
+  install(DIRECTORY
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../bindings/python/clang
+          COMPONENT
+            libclang-python-bindings
+          DESTINATION
+            "lib${LLVM_LIBDIR_SUFFIX}/python${PythonVersion}/site-packages")
+endforeach()
+if(NOT LLVM_ENABLE_IDE)
+  add_custom_target(libclang-python-bindings)
+  add_llvm_install_targets(install-libclang-python-bindings
+                           COMPONENT
+                             libclang-python-bindings)
+endif()
+

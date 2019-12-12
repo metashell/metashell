@@ -1,4 +1,4 @@
-; RUN: llc -mtriple=aarch64-linux-gnu -verify-machineinstrs -o - %s | FileCheck %s
+; RUN: llc -mtriple=aarch64-linux-gnu -verify-machineinstrs -disable-block-placement -o - %s | FileCheck %s
 ; LSR used to pick a sub-optimal solution due to the target responding
 ; conservatively to isLegalAddImmediate for negative values.
 
@@ -7,8 +7,8 @@ declare void @foo(i32)
 define void @test(i32 %px) {
 ; CHECK_LABEL: test:
 ; CHECK_LABEL: %entry
-; CHECK: subs
-; CHECK-NEXT: csel
+; CHECK: subs [[REG0:w[0-9]+]],
+; CHECK: csel {{w[0-9]+}}, wzr, [[REG0]]
 entry:
   %sub = add nsw i32 %px, -1
   %cmp = icmp slt i32 %px, 1

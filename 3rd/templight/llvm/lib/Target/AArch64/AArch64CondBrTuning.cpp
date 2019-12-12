@@ -1,9 +1,8 @@
 //===-- AArch64CondBrTuning.cpp --- Conditional branch tuning for AArch64 -===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 /// \file
@@ -201,10 +200,10 @@ bool AArch64CondBrTuning::tryToTuneBranch(MachineInstr &MI,
             I->readsRegister(AArch64::NZCV, TRI))
           return false;
       }
-      DEBUG(dbgs() << "  Replacing instructions:\n    ");
-      DEBUG(DefMI.print(dbgs()));
-      DEBUG(dbgs() << "    ");
-      DEBUG(MI.print(dbgs()));
+      LLVM_DEBUG(dbgs() << "  Replacing instructions:\n    ");
+      LLVM_DEBUG(DefMI.print(dbgs()));
+      LLVM_DEBUG(dbgs() << "    ");
+      LLVM_DEBUG(MI.print(dbgs()));
 
       NewCmp = convertToFlagSetting(DefMI, IsFlagSetting);
       NewBr = convertToCondBr(MI);
@@ -260,10 +259,10 @@ bool AArch64CondBrTuning::tryToTuneBranch(MachineInstr &MI,
             I->readsRegister(AArch64::NZCV, TRI))
           return false;
       }
-      DEBUG(dbgs() << "  Replacing instructions:\n    ");
-      DEBUG(DefMI.print(dbgs()));
-      DEBUG(dbgs() << "    ");
-      DEBUG(MI.print(dbgs()));
+      LLVM_DEBUG(dbgs() << "  Replacing instructions:\n    ");
+      LLVM_DEBUG(DefMI.print(dbgs()));
+      LLVM_DEBUG(dbgs() << "    ");
+      LLVM_DEBUG(MI.print(dbgs()));
 
       NewCmp = convertToFlagSetting(DefMI, IsFlagSetting);
       NewBr = convertToCondBr(MI);
@@ -275,10 +274,10 @@ bool AArch64CondBrTuning::tryToTuneBranch(MachineInstr &MI,
   (void)NewCmp; (void)NewBr;
   assert(NewCmp && NewBr && "Expected new instructions.");
 
-  DEBUG(dbgs() << "  with instruction:\n    ");
-  DEBUG(NewCmp->print(dbgs()));
-  DEBUG(dbgs() << "    ");
-  DEBUG(NewBr->print(dbgs()));
+  LLVM_DEBUG(dbgs() << "  with instruction:\n    ");
+  LLVM_DEBUG(NewCmp->print(dbgs()));
+  LLVM_DEBUG(dbgs() << "    ");
+  LLVM_DEBUG(NewBr->print(dbgs()));
 
   // If this was a flag setting version of the instruction, we use the original
   // instruction by just clearing the dead marked on the implicit-def of NCZV.
@@ -293,8 +292,9 @@ bool AArch64CondBrTuning::runOnMachineFunction(MachineFunction &MF) {
   if (skipFunction(MF.getFunction()))
     return false;
 
-  DEBUG(dbgs() << "********** AArch64 Conditional Branch Tuning  **********\n"
-               << "********** Function: " << MF.getName() << '\n');
+  LLVM_DEBUG(
+      dbgs() << "********** AArch64 Conditional Branch Tuning  **********\n"
+             << "********** Function: " << MF.getName() << '\n');
 
   TII = static_cast<const AArch64InstrInfo *>(MF.getSubtarget().getInstrInfo());
   TRI = MF.getSubtarget().getRegisterInfo();

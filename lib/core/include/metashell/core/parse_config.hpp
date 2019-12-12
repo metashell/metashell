@@ -18,11 +18,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/config.hpp>
-#include <metashell/data/engine_name.hpp>
+#include <metashell/data/real_engine_name.hpp>
 
 #include <metashell/core/engine_entry.hpp>
 
 #include <metashell/iface/environment_detector.hpp>
+
+#include <variant.hpp>
 
 #include <iosfwd>
 #include <map>
@@ -31,35 +33,20 @@ namespace metashell
 {
   namespace core
   {
-    struct parse_config_result
+    struct exit
     {
-      enum class action_t
-      {
-        run_shell,
-        exit_with_error,
-        exit_without_error
-      };
-
-      action_t action;
-      data::config cfg;
-
-      bool should_run_shell() const;
-      bool should_error_at_exit() const;
-
-      static parse_config_result exit(bool with_error_);
-      static parse_config_result start_shell(const data::config& cfg_);
+      bool with_error;
     };
+
+    using parse_config_result = mpark::variant<data::config, exit>;
 
     parse_config_result
     parse_config(int argc_,
                  const char* argv_[],
-                 const std::map<data::engine_name, engine_entry>& engines_,
+                 const std::map<data::real_engine_name, engine_entry>& engines_,
                  iface::environment_detector& env_detector_,
                  std::ostream* out_ = 0,
                  std::ostream* err_ = 0);
-
-    std::ostream& operator<<(std::ostream& out_,
-                             parse_config_result::action_t a_);
   }
 }
 

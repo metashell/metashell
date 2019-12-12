@@ -7,19 +7,19 @@
 ///
 
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK1 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK1 --check-prefix CK1-64
+// RUN: %clang_cc1 -DCK1 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK1 --check-prefix CK1-64
 // RUN: %clang_cc1 -DCK1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK1 --check-prefix CK1-64
-// RUN: %clang_cc1 -DCK1 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK1 --check-prefix CK1-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK1 --check-prefix CK1-64
+// RUN: %clang_cc1 -DCK1 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK1 --check-prefix CK1-32
 // RUN: %clang_cc1 -DCK1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK1 --check-prefix CK1-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK1 --check-prefix CK1-32
 
-// RUN: %clang_cc1 -DCK1 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY0 %s
+// RUN: %clang_cc1 -DCK1 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY0 %s
 // RUN: %clang_cc1 -DCK1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY0 %s
-// RUN: %clang_cc1 -DCK1 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY0 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY0 %s
+// RUN: %clang_cc1 -DCK1 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY0 %s
 // RUN: %clang_cc1 -DCK1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY0 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY0 %s
 // SIMD-ONLY0-NOT: {{__kmpc|__tgt}}
 #ifdef CK1
 
@@ -39,11 +39,13 @@ public:
 };
 double B::VAR = 1.0;
 
-// CK1-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i[[sz:64|32]]] [i{{64|32}} 4]
-// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_IS_FIRST = 288
-// CK1-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 288]
+// CK1-LABEL: @.__omp_offloading_{{.*}}implicit_maps_integer{{.*}}_l68.region_id = weak constant i8 0
 
-// CK1-LABEL: implicit_maps_integer
+// CK1-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i64] [i64 4]
+// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 800
+// CK1-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 800]
+
+// CK1-LABEL: implicit_maps_integer{{.*}}(
 void implicit_maps_integer (int a){
   // CK1: call void{{.*}}modify
   B::modify(a);
@@ -54,7 +56,7 @@ void implicit_maps_integer (int a){
   // CK1-DAG: [[PGEP]] = getelementptr inbounds {{.+}}[[PS:%[^,]+]], i32 0, i32 0
   // CK1-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
   // CK1-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
-  // CK1-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz]]*
+  // CK1-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz:64|32]]*
   // CK1-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[sz]]*
   // CK1-DAG: store i[[sz]] [[VAL:%[^,]+]], i[[sz]]* [[CBP1]]
   // CK1-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP1]]
@@ -77,31 +79,36 @@ void implicit_maps_integer (int a){
 // CK1-32: {{.+}} = load i32, i32* [[ADDR]],
 
 #endif
-///==========================================================================///
-// RUN: %clang_cc1 -DCK2 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK2 --check-prefix CK2-64
-// RUN: %clang_cc1 -DCK2 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK2 --check-prefix CK2-64
-// RUN: %clang_cc1 -DCK2 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK2 --check-prefix CK2-32
-// RUN: %clang_cc1 -DCK2 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK2 --check-prefix CK2-32
 
-// RUN: %clang_cc1 -DCK2 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY1 %s
+
+///==========================================================================///
+// RUN: %clang_cc1 -DCK2 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK2 --check-prefix CK2-64
+// RUN: %clang_cc1 -DCK2 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK2 --check-prefix CK2-64
+// RUN: %clang_cc1 -DCK2 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK2 --check-prefix CK2-32
+// RUN: %clang_cc1 -DCK2 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK2 --check-prefix CK2-32
+
+// RUN: %clang_cc1 -DCK2 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY1 %s
 // RUN: %clang_cc1 -DCK2 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY1 %s
-// RUN: %clang_cc1 -DCK2 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY1 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY1 %s
+// RUN: %clang_cc1 -DCK2 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY1 %s
 // RUN: %clang_cc1 -DCK2 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY1 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY1 %s
 // SIMD-ONLY1-NOT: {{__kmpc|__tgt}}
 #ifdef CK2
 
-// CK2: [[SIZES:@.+]] = {{.+}}constant [1 x i[[sz:64|32]]] [i{{64|32}} 4]
-// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_IS_FIRST = 288
-// CK2: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 288]
-// CK2: [[SIZES2:@.+]] = {{.+}}constant [1 x i[[sz]]] zeroinitializer
-// Map types: OMP_MAP_IS_PTR = 32
-// CK2: [[TYPES2:@.+]] = {{.+}}constant [1 x i64] [i64 32]
+// CK2-LABEL: @.__omp_offloading_{{.*}}implicit_maps_reference{{.*}}_l128.region_id = weak constant i8 0
 
-// CK2-LABEL: implicit_maps_reference
+// CK2: [[SIZES:@.+]] = {{.+}}constant [1 x i64] [i64 4]
+// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 800
+// CK2: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 800]
+// CK2-LABEL: @.__omp_offloading_{{.*}}implicit_maps_reference{{.*}}_l147.region_id = weak constant i8 0
+// CK2: [[SIZES2:@.+]] = {{.+}}constant [1 x i64] zeroinitializer
+// Map types: OMP_MAP_IS_PTR | OMP_MAP_IMPLICIT = 544
+// CK2: [[TYPES2:@.+]] = {{.+}}constant [1 x i64] [i64 544]
+
+// CK2-LABEL: implicit_maps_reference{{.*}}(
 void implicit_maps_reference (int a, int *b){
   int &i = a;
   // CK2-DAG: call i32 @__tgt_target(i64 {{.+}}, i8* {{.+}}, i32 1, i8** [[BPGEP:%[0-9]+]], i8** [[PGEP:%[0-9]+]], {{.+}}[[SIZES]]{{.+}}, {{.+}}[[TYPES]]{{.+}})
@@ -109,7 +116,7 @@ void implicit_maps_reference (int a, int *b){
   // CK2-DAG: [[PGEP]] = getelementptr inbounds {{.+}}[[PS:%[^,]+]], i32 0, i32 0
   // CK2-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
   // CK2-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
-  // CK2-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz]]*
+  // CK2-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz:64|32]]*
   // CK2-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[sz]]*
   // CK2-DAG: store i[[sz]] [[VAL:%[^,]+]], i[[sz]]* [[CBP1]]
   // CK2-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP1]]
@@ -165,27 +172,29 @@ void implicit_maps_reference (int a, int *b){
 // CK2: getelementptr inbounds i32, i32* [[TT]], i32 1
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK3 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK3 --check-prefix CK3-64
+// RUN: %clang_cc1 -DCK3 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK3 --check-prefix CK3-64
 // RUN: %clang_cc1 -DCK3 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK3 --check-prefix CK3-64
-// RUN: %clang_cc1 -DCK3 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK3 --check-prefix CK3-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK3 --check-prefix CK3-64
+// RUN: %clang_cc1 -DCK3 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK3 --check-prefix CK3-32
 // RUN: %clang_cc1 -DCK3 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK3 --check-prefix CK3-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK3 --check-prefix CK3-32
 
-// RUN: %clang_cc1 -DCK3 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY2 %s
+// RUN: %clang_cc1 -DCK3 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY2 %s
 // RUN: %clang_cc1 -DCK3 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY2 %s
-// RUN: %clang_cc1 -DCK3 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY2 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY2 %s
+// RUN: %clang_cc1 -DCK3 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY2 %s
 // RUN: %clang_cc1 -DCK3 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY2 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY2 %s
 // SIMD-ONLY2-NOT: {{__kmpc|__tgt}}
 #ifdef CK3
 
-// CK3-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i[[sz:64|32]]] [i{{64|32}} 4]
-// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_IS_FIRST = 288
-// CK3-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 288]
+// CK3-LABEL: @.__omp_offloading_{{.*}}implicit_maps_parameter{{.*}}_l214.region_id = weak constant i8 0
 
-// CK3-LABEL: implicit_maps_parameter
+// CK3-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i64] [i64 4]
+// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 800
+// CK3-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 800]
+
+// CK3-LABEL: implicit_maps_parameter{{.*}}(
 void implicit_maps_parameter (int a){
 
   // CK3-DAG: call i32 @__tgt_target(i64 {{.+}}, i8* {{.+}}, i32 1, i8** [[BPGEP:%[0-9]+]], i8** [[PGEP:%[0-9]+]], {{.+}}[[SIZES]]{{.+}}, {{.+}}[[TYPES]]{{.+}})
@@ -193,7 +202,7 @@ void implicit_maps_parameter (int a){
   // CK3-DAG: [[PGEP]] = getelementptr inbounds {{.+}}[[PS:%[^,]+]], i32 0, i32 0
   // CK3-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
   // CK3-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
-  // CK3-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz]]*
+  // CK3-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz:64|32]]*
   // CK3-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[sz]]*
   // CK3-DAG: store i[[sz]] [[VAL:%[^,]+]], i[[sz]]* [[CBP1]]
   // CK3-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP1]]
@@ -217,27 +226,29 @@ void implicit_maps_parameter (int a){
 
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK4 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK4 --check-prefix CK4-64
+// RUN: %clang_cc1 -DCK4 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK4 --check-prefix CK4-64
 // RUN: %clang_cc1 -DCK4 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK4 --check-prefix CK4-64
-// RUN: %clang_cc1 -DCK4 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK4 --check-prefix CK4-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK4 --check-prefix CK4-64
+// RUN: %clang_cc1 -DCK4 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK4 --check-prefix CK4-32
 // RUN: %clang_cc1 -DCK4 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK4 --check-prefix CK4-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK4 --check-prefix CK4-32
 
-// RUN: %clang_cc1 -DCK4 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY3 %s
+// RUN: %clang_cc1 -DCK4 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY3 %s
 // RUN: %clang_cc1 -DCK4 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY3 %s
-// RUN: %clang_cc1 -DCK4 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY3 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY3 %s
+// RUN: %clang_cc1 -DCK4 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY3 %s
 // RUN: %clang_cc1 -DCK4 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY3 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY3 %s
 // SIMD-ONLY3-NOT: {{__kmpc|__tgt}}
 #ifdef CK4
 
-// CK4-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i[[sz:64|32]]] [i{{64|32}} 4]
-// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_IS_FIRST = 288
-// CK4-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 288]
+// CK4-LABEL: @.__omp_offloading_{{.*}}implicit_maps_nested_integer{{.*}}_l276.region_id = weak constant i8 0
 
-// CK4-LABEL: implicit_maps_nested_integer
+// CK4-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i64] [i64 4]
+// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 800
+// CK4-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 800]
+
+// CK4-LABEL: implicit_maps_nested_integer{{.*}}(
 void implicit_maps_nested_integer (int a){
   int i = a;
 
@@ -248,12 +259,12 @@ void implicit_maps_nested_integer (int a){
   // CK4: define internal void [[KERNELP1]](i32* {{[^,]+}}, i32* {{[^,]+}}, i32* {{[^,]+}})
   #pragma omp parallel
   {
-    // CK4-DAG: call i32 @__tgt_target(i64 {{.+}}, i8* {{.+}}, i32 1, i8** [[BPGEP:%[0-9]+]], i8** [[PGEP:%[0-9]+]], {{.+}}[[SIZES]]{{.+}}, {{.+}}[[TYPES]]{{.+}})
+    // CK4-DAG: call i32 @__tgt_target_teams(i64 {{.+}}, i8* {{.+}}, i32 1, i8** [[BPGEP:%[0-9]+]], i8** [[PGEP:%[0-9]+]], {{.+}}[[SIZES]]{{.+}}, {{.+}}[[TYPES]]{{.+}}, i32 1, i32 0)
     // CK4-DAG: [[BPGEP]] = getelementptr inbounds {{.+}}[[BPS:%[^,]+]], i32 0, i32 0
     // CK4-DAG: [[PGEP]] = getelementptr inbounds {{.+}}[[PS:%[^,]+]], i32 0, i32 0
     // CK4-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
     // CK4-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
-    // CK4-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz]]*
+    // CK4-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz:64|32]]*
     // CK4-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[sz]]*
     // CK4-DAG: store i[[sz]] [[VAL:%[^,]+]], i[[sz]]* [[CBP1]]
     // CK4-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP1]]
@@ -281,27 +292,29 @@ void implicit_maps_nested_integer (int a){
 // CK4: define internal void [[KERNELP2]](i32* {{[^,]+}}, i32* {{[^,]+}}, i32* {{[^,]+}})
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK5 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK5 --check-prefix CK5-64
+// RUN: %clang_cc1 -DCK5 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK5 --check-prefix CK5-64
 // RUN: %clang_cc1 -DCK5 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK5 --check-prefix CK5-64
-// RUN: %clang_cc1 -DCK5 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK5 --check-prefix CK5-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK5 --check-prefix CK5-64
+// RUN: %clang_cc1 -DCK5 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK5 --check-prefix CK5-32
 // RUN: %clang_cc1 -DCK5 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK5 --check-prefix CK5-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK5 --check-prefix CK5-32
 
-// RUN: %clang_cc1 -DCK5 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY4 %s
+// RUN: %clang_cc1 -DCK5 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY4 %s
 // RUN: %clang_cc1 -DCK5 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY4 %s
-// RUN: %clang_cc1 -DCK5 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY4 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY4 %s
+// RUN: %clang_cc1 -DCK5 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY4 %s
 // RUN: %clang_cc1 -DCK5 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY4 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY4 %s
 // SIMD-ONLY4-NOT: {{__kmpc|__tgt}}
 #ifdef CK5
 
-// CK5-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i[[sz:64|32]]] [i{{64|32}} 4]
-// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_IS_FIRST = 288
-// CK5-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 288]
+// CK5-LABEL: @.__omp_offloading_{{.*}}implicit_maps_nested_integer_and_enum{{.*}}_l340.region_id = weak constant i8 0
 
-// CK5-LABEL: implicit_maps_nested_integer_and_enum
+// CK5-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i64] [i64 4]
+// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 800
+// CK5-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 800]
+
+// CK5-LABEL: implicit_maps_nested_integer_and_enum{{.*}}(
 void implicit_maps_nested_integer_and_enum (int a){
   enum Bla {
     SomeEnum = 0x09
@@ -315,7 +328,7 @@ void implicit_maps_nested_integer_and_enum (int a){
   // CK5-DAG: [[PGEP]] = getelementptr inbounds {{.+}}[[PS:%[^,]+]], i32 0, i32 0
   // CK5-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
   // CK5-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
-  // CK5-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz]]*
+  // CK5-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz:64|32]]*
   // CK5-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[sz]]*
   // CK5-DAG: store i[[sz]] [[VAL:%[^,]+]], i[[sz]]* [[CBP1]]
   // CK5-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP1]]
@@ -340,27 +353,29 @@ void implicit_maps_nested_integer_and_enum (int a){
 
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK6 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK6 --check-prefix CK6-64
+// RUN: %clang_cc1 -DCK6 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK6 --check-prefix CK6-64
 // RUN: %clang_cc1 -DCK6 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK6 --check-prefix CK6-64
-// RUN: %clang_cc1 -DCK6 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK6 --check-prefix CK6-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK6 --check-prefix CK6-64
+// RUN: %clang_cc1 -DCK6 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK6 --check-prefix CK6-32
 // RUN: %clang_cc1 -DCK6 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK6 --check-prefix CK6-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK6 --check-prefix CK6-32
 
-// RUN: %clang_cc1 -DCK6 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY5 %s
+// RUN: %clang_cc1 -DCK6 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY5 %s
 // RUN: %clang_cc1 -DCK6 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY5 %s
-// RUN: %clang_cc1 -DCK6 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY5 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY5 %s
+// RUN: %clang_cc1 -DCK6 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY5 %s
 // RUN: %clang_cc1 -DCK6 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY5 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY5 %s
 // SIMD-ONLY5-NOT: {{__kmpc|__tgt}}
 #ifdef CK6
-// CK6-DAG: [[GBL:@Gi]] = global i32 0
-// CK6-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i[[sz:64|32]]] [i{{64|32}} 4]
-// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_IS_FIRST = 288
-// CK6-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 288]
+// CK6-LABEL: @.__omp_offloading_{{.*}}implicit_maps_host_global{{.*}}_l397.region_id = weak constant i8 0
 
-// CK6-LABEL: implicit_maps_host_global
+// CK6-DAG: [[GBL:@Gi]] = global i32 0
+// CK6-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i64] [i64 4]
+// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 800
+// CK6-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 800]
+
+// CK6-LABEL: implicit_maps_host_global{{.*}}(
 int Gi;
 void implicit_maps_host_global (int a){
   // CK6-DAG: call i32 @__tgt_target(i64 {{.+}}, i8* {{.+}}, i32 1, i8** [[BPGEP:%[0-9]+]], i8** [[PGEP:%[0-9]+]], {{.+}}[[SIZES]]{{.+}}, {{.+}}[[TYPES]]{{.+}})
@@ -368,7 +383,7 @@ void implicit_maps_host_global (int a){
   // CK6-DAG: [[PGEP]] = getelementptr inbounds {{.+}}[[PS:%[^,]+]], i32 0, i32 0
   // CK6-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
   // CK6-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
-  // CK6-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz]]*
+  // CK6-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz:64|32]]*
   // CK6-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[sz]]*
   // CK6-DAG: store i[[sz]] [[VAL:%[^,]+]], i[[sz]]* [[CBP1]]
   // CK6-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP1]]
@@ -394,32 +409,34 @@ void implicit_maps_host_global (int a){
 
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK7 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK7 --check-prefix CK7-64
+// RUN: %clang_cc1 -DCK7 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK7 --check-prefix CK7-64
 // RUN: %clang_cc1 -DCK7 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK7  --check-prefix CK7-64
-// RUN: %clang_cc1 -DCK7 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK7  --check-prefix CK7-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK7  --check-prefix CK7-64
+// RUN: %clang_cc1 -DCK7 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK7  --check-prefix CK7-32
 // RUN: %clang_cc1 -DCK7 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK7  --check-prefix CK7-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK7  --check-prefix CK7-32
 
-// RUN: %clang_cc1 -DCK7 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY6 %s
+// RUN: %clang_cc1 -DCK7 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY6 %s
 // RUN: %clang_cc1 -DCK7 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY6 %s
-// RUN: %clang_cc1 -DCK7 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY6 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY6 %s
+// RUN: %clang_cc1 -DCK7 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY6 %s
 // RUN: %clang_cc1 -DCK7 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY6 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY6 %s
 // SIMD-ONLY6-NOT: {{__kmpc|__tgt}}
 #ifdef CK7
 
 // For a 32-bit targets, the value doesn't fit the size of the pointer,
 // therefore it is passed by reference with a map 'to' specification.
 
-// CK7-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i[[sz:64|32]]] [i{{64|32}} 8]
-// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_IS_FIRST = 288
-// CK7-64-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 288]
-// Map types: OMP_MAP_TO  | OMP_MAP_PRIVATE_PTR | OMP_MAP_FIRST_REF = 161
-// CK7-32-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 161]
+// CK7-LABEL: @.__omp_offloading_{{.*}}implicit_maps_double{{.*}}_l464.region_id = weak constant i8 0
 
-// CK7-LABEL: implicit_maps_double
+// CK7-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i64] [i64 8]
+// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 800
+// CK7-64-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 800]
+// Map types: OMP_MAP_TO  | OMP_MAP_PRIVATE | OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 673
+// CK7-32-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 673]
+
+// CK7-LABEL: implicit_maps_double{{.*}}(
 void implicit_maps_double (int a){
   double d = (double)a;
 
@@ -429,7 +446,7 @@ void implicit_maps_double (int a){
   // CK7-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
   // CK7-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
 
-  // CK7-64-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz]]*
+  // CK7-64-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz:64|32]]*
   // CK7-64-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[sz]]*
   // CK7-64-DAG: store i[[sz]] [[VAL:%[^,]+]], i[[sz]]* [[CBP1]]
   // CK7-64-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP1]]
@@ -464,27 +481,29 @@ void implicit_maps_double (int a){
 
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK8 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK8
+// RUN: %clang_cc1 -DCK8 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK8
 // RUN: %clang_cc1 -DCK8 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK8
-// RUN: %clang_cc1 -DCK8 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK8
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK8
+// RUN: %clang_cc1 -DCK8 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK8
 // RUN: %clang_cc1 -DCK8 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK8
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK8
 
-// RUN: %clang_cc1 -DCK8 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY7 %s
+// RUN: %clang_cc1 -DCK8 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY7 %s
 // RUN: %clang_cc1 -DCK8 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY7 %s
-// RUN: %clang_cc1 -DCK8 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY7 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY7 %s
+// RUN: %clang_cc1 -DCK8 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY7 %s
 // RUN: %clang_cc1 -DCK8 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY7 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY7 %s
 // SIMD-ONLY7-NOT: {{__kmpc|__tgt}}
 #ifdef CK8
 
-// CK8-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i[[sz:64|32]]] [i{{64|32}} 4]
-// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_IS_FIRST = 288
-// CK8-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 288]
+// CK8-LABEL: @.__omp_offloading_{{.*}}implicit_maps_float{{.*}}_l524.region_id = weak constant i8 0
 
-// CK8-LABEL: implicit_maps_float
+// CK8-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i64] [i64 4]
+// Map types: OMP_MAP_PRIVATE_VAL | OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 800
+// CK8-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 800]
+
+// CK8-LABEL: implicit_maps_float{{.*}}(
 void implicit_maps_float (int a){
   float f = (float)a;
 
@@ -493,7 +512,7 @@ void implicit_maps_float (int a){
   // CK8-DAG: [[PGEP]] = getelementptr inbounds {{.+}}[[PS:%[^,]+]], i32 0, i32 0
   // CK8-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
   // CK8-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
-  // CK8-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz]]*
+  // CK8-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz:64|32]]*
   // CK8-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[sz]]*
   // CK8-DAG: store i[[sz]] [[VAL:%[^,]+]], i[[sz]]* [[CBP1]]
   // CK8-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP1]]
@@ -516,27 +535,29 @@ void implicit_maps_float (int a){
 
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK9 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK9
+// RUN: %clang_cc1 -DCK9 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK9
 // RUN: %clang_cc1 -DCK9 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK9
-// RUN: %clang_cc1 -DCK9 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK9
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK9
+// RUN: %clang_cc1 -DCK9 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK9
 // RUN: %clang_cc1 -DCK9 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK9
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK9
 
-// RUN: %clang_cc1 -DCK9 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY8 %s
+// RUN: %clang_cc1 -DCK9 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY8 %s
 // RUN: %clang_cc1 -DCK9 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY8 %s
-// RUN: %clang_cc1 -DCK9 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY8 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY8 %s
+// RUN: %clang_cc1 -DCK9 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY8 %s
 // RUN: %clang_cc1 -DCK9 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY8 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY8 %s
 // SIMD-ONLY8-NOT: {{__kmpc|__tgt}}
 #ifdef CK9
 
-// CK9-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i[[sz:64|32]]] [i{{64|32}} 16]
-// Map types: OMP_MAP_TO + OMP_MAP_FROM + OMP_MAP_IS_FIRST + OMP_MAP_IMPLICIT = 547
+// CK9-LABEL: @.__omp_offloading_{{.*}}implicit_maps_array{{.*}}_l575.region_id = weak constant i8 0
+
+// CK9-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i64] [i64 16]
+// Map types: OMP_MAP_TO + OMP_MAP_FROM + OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 547
 // CK9-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 547]
 
-// CK9-LABEL: implicit_maps_array
+// CK9-LABEL: implicit_maps_array{{.*}}(
 void implicit_maps_array (int a){
   double darr[2] = {(double)a, (double)a};
 
@@ -562,30 +583,32 @@ void implicit_maps_array (int a){
 // CK9: [[ADDR:%.+]] = alloca [2 x double]*,
 // CK9: store [2 x double]* [[ARG]], [2 x double]** [[ADDR]],
 // CK9: [[REF:%.+]] = load [2 x double]*, [2 x double]** [[ADDR]],
-// CK9: {{.+}} = getelementptr inbounds [2 x double], [2 x double]* [[REF]], i[[sz]] 0, i[[sz]] 0
+// CK9: {{.+}} = getelementptr inbounds [2 x double], [2 x double]* [[REF]], i{{64|32}} 0, i{{64|32}} 0
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK10 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK10
+// RUN: %clang_cc1 -DCK10 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK10
 // RUN: %clang_cc1 -DCK10 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK10
-// RUN: %clang_cc1 -DCK10 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK10
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK10
+// RUN: %clang_cc1 -DCK10 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK10
 // RUN: %clang_cc1 -DCK10 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK10
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK10
 
-// RUN: %clang_cc1 -DCK10 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY9 %s
+// RUN: %clang_cc1 -DCK10 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY9 %s
 // RUN: %clang_cc1 -DCK10 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY9 %s
-// RUN: %clang_cc1 -DCK10 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY9 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY9 %s
+// RUN: %clang_cc1 -DCK10 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY9 %s
 // RUN: %clang_cc1 -DCK10 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY9 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY9 %s
 // SIMD-ONLY9-NOT: {{__kmpc|__tgt}}
 #ifdef CK10
 
-// CK10-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i[[sz:64|32]]] zeroinitializer
-// Map types: OMP_MAP_IS_FIRST = 32
-// CK10-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 32]
+// CK10-LABEL: @.__omp_offloading_{{.*}}implicit_maps_pointer{{.*}}_l626.region_id = weak constant i8 0
 
-// CK10-LABEL: implicit_maps_pointer
+// CK10-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i64] zeroinitializer
+// Map types: OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 544
+// CK10-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 544]
+
+// CK10-LABEL: implicit_maps_pointer{{.*}}(
 void implicit_maps_pointer (){
   double *ddyn;
 
@@ -611,31 +634,33 @@ void implicit_maps_pointer (){
 // CK10: [[ADDR:%.+]] = alloca double*,
 // CK10: store double* [[ARG]], double** [[ADDR]],
 // CK10: [[REF:%.+]] = load double*, double** [[ADDR]],
-// CK10: {{.+}} = getelementptr inbounds double, double* [[REF]], i[[sz]] 0
+// CK10: {{.+}} = getelementptr inbounds double, double* [[REF]], i{{64|32}} 0
 
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK11 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK11
+// RUN: %clang_cc1 -DCK11 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK11
 // RUN: %clang_cc1 -DCK11 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK11
-// RUN: %clang_cc1 -DCK11 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK11
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK11
+// RUN: %clang_cc1 -DCK11 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK11
 // RUN: %clang_cc1 -DCK11 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK11
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK11
 
-// RUN: %clang_cc1 -DCK11 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY10 %s
+// RUN: %clang_cc1 -DCK11 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY10 %s
 // RUN: %clang_cc1 -DCK11 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY10 %s
-// RUN: %clang_cc1 -DCK11 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY10 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY10 %s
+// RUN: %clang_cc1 -DCK11 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY10 %s
 // RUN: %clang_cc1 -DCK11 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY10 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY10 %s
 // SIMD-ONLY10-NOT: {{__kmpc|__tgt}}
 #ifdef CK11
 
-// CK11-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i[[sz:64|32]]] [i{{64|32}} 16]
-// Map types: OMP_MAP_TO + OMP_MAP_FROM + OMP_MAP_IS_FIRST + OMP_MAP_IMPLICIT = 547
+// CK11-LABEL: @.__omp_offloading_{{.*}}implicit_maps_double_complex{{.*}}_l678.region_id = weak constant i8 0
+
+// CK11-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i64] [i64 16]
+// Map types: OMP_MAP_TO  | OMP_MAP_FROM | OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 547
 // CK11-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 547]
 
-// CK11-LABEL: implicit_maps_double_complex
+// CK11-LABEL: implicit_maps_double_complex{{.*}}(
 void implicit_maps_double_complex (int a){
   double _Complex dc = (double)a;
 
@@ -663,32 +688,34 @@ void implicit_maps_double_complex (int a){
 // CK11: {{.+}} = getelementptr inbounds { double, double }, { double, double }* [[REF]], i32 0, i32 0
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK12 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK12 --check-prefix CK12-64
+// RUN: %clang_cc1 -DCK12 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK12 --check-prefix CK12-64
 // RUN: %clang_cc1 -DCK12 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK12 --check-prefix CK12-64
-// RUN: %clang_cc1 -DCK12 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK12 --check-prefix CK12-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK12 --check-prefix CK12-64
+// RUN: %clang_cc1 -DCK12 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK12 --check-prefix CK12-32
 // RUN: %clang_cc1 -DCK12 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK12 --check-prefix CK12-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK12 --check-prefix CK12-32
 
-// RUN: %clang_cc1 -DCK12 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY11 %s
+// RUN: %clang_cc1 -DCK12 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY11 %s
 // RUN: %clang_cc1 -DCK12 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY11 %s
-// RUN: %clang_cc1 -DCK12 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY11 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY11 %s
+// RUN: %clang_cc1 -DCK12 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY11 %s
 // RUN: %clang_cc1 -DCK12 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY11 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY11 %s
 // SIMD-ONLY11-NOT: {{__kmpc|__tgt}}
 #ifdef CK12
 
 // For a 32-bit targets, the value doesn't fit the size of the pointer,
 // therefore it is passed by reference with a map 'to' specification.
 
-// CK12-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i[[sz:64|32]]] [i{{64|32}} 8]
-// Map types: OMP_MAP_PRIVATE_VAL + OMP_MAP_IS_FIRST = 288
-// CK12-64-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 288]
-// Map types: OMP_MAP_TO  | OMP_MAP_PRIVATE_PTR | OMP_MAP_FIRST_REF = 161
-// CK12-32-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 161]
+// CK12-LABEL: @.__omp_offloading_{{.*}}implicit_maps_float_complex{{.*}}_l743.region_id = weak constant i8 0
 
-// CK12-LABEL: implicit_maps_float_complex
+// CK12-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i64] [i64 8]
+// Map types: OMP_MAP_PRIVATE_VAL + OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 800
+// CK12-64-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 800]
+// Map types: OMP_MAP_TO  | OMP_MAP_PRIVATE | OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 673
+// CK12-32-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 673]
+
+// CK12-LABEL: implicit_maps_float_complex{{.*}}(
 void implicit_maps_float_complex (int a){
   float _Complex fc = (float)a;
 
@@ -698,7 +725,7 @@ void implicit_maps_float_complex (int a){
   // CK12-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
   // CK12-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
 
-  // CK12-64-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz]]*
+  // CK12-64-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz:64|32]]*
   // CK12-64-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[sz]]*
   // CK12-64-DAG: store i[[sz]] [[VAL:%[^,]+]], i[[sz]]* [[CBP1]]
   // CK12-64-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP1]]
@@ -732,34 +759,36 @@ void implicit_maps_float_complex (int a){
 // CK12-32: {{.+}} = getelementptr inbounds { float, float }, { float, float }* [[REF]], i32 0, i32 0
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK13 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK13
+// RUN: %clang_cc1 -DCK13 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK13
 // RUN: %clang_cc1 -DCK13 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK13
-// RUN: %clang_cc1 -DCK13 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK13
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK13
+// RUN: %clang_cc1 -DCK13 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK13
 // RUN: %clang_cc1 -DCK13 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK13
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK13
 
-// RUN: %clang_cc1 -DCK13 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY12 %s
+// RUN: %clang_cc1 -DCK13 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY12 %s
 // RUN: %clang_cc1 -DCK13 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY12 %s
-// RUN: %clang_cc1 -DCK13 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY12 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY12 %s
+// RUN: %clang_cc1 -DCK13 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY12 %s
 // RUN: %clang_cc1 -DCK13 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY12 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY12 %s
 // SIMD-ONLY12-NOT: {{__kmpc|__tgt}}
 #ifdef CK13
 
+// CK13-LABEL: @.__omp_offloading_{{.*}}implicit_maps_variable_length_array{{.*}}_l825.region_id = weak constant i8 0
+
 // We don't have a constant map size for VLAs.
 // Map types:
-//  - OMP_MAP_PRIVATE_VAL + OMP_MAP_IS_FIRST = 288 (vla size)
-//  - OMP_MAP_PRIVATE_VAL + OMP_MAP_IS_FIRST = 288 (vla size)
-//  - OMP_MAP_TO + OMP_MAP_FROM + OMP_MAP_IS_FIRST + OMP_IMPICIT_MAP = 547
-// CK13-DAG: [[TYPES:@.+]] = {{.+}}constant [3 x i64] [i64 288, i64 288, i64 547]
+//  - OMP_MAP_PRIVATE_VAL + OMP_MAP_TARGET_PARAM + OMP_MAP_IMPLICIT = 800 (vla size)
+//  - OMP_MAP_PRIVATE_VAL + OMP_MAP_TARGET_PARAM + OMP_MAP_IMPLICIT = 800 (vla size)
+//  - OMP_MAP_TO + OMP_MAP_FROM + OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 547
+// CK13-DAG: [[TYPES:@.+]] = {{.+}}constant [3 x i64] [i64 800, i64 800, i64 547]
 
-// CK13-LABEL: implicit_maps_variable_length_array
+// CK13-LABEL: implicit_maps_variable_length_array{{.*}}(
 void implicit_maps_variable_length_array (int a){
   double vla[2][a];
 
-  // CK13-DAG: call i32 @__tgt_target(i64 {{.+}}, i8* {{.+}}, i32 3, i8** [[BPGEP:%[0-9]+]], i8** [[PGEP:%[0-9]+]], i[[sz:64|32]]* [[SGEP:%[^,]+]], {{.+}}[[TYPES]]{{.+}})
+  // CK13-DAG: call i32 @__tgt_target(i64 {{.+}}, i8* {{.+}}, i32 3, i8** [[BPGEP:%[0-9]+]], i8** [[PGEP:%[0-9]+]], i64* [[SGEP:%[^,]+]], {{.+}}[[TYPES]]{{.+}})
   // CK13-DAG: [[BPGEP]] = getelementptr inbounds {{.+}}[[BPS:%[^,]+]], i32 0, i32 0
   // CK13-DAG: [[PGEP]] = getelementptr inbounds {{.+}}[[PS:%[^,]+]], i32 0, i32 0
   // CK13-DAG: [[SGEP]] = getelementptr inbounds {{.+}}[[SS:%[^,]+]], i32 0, i32 0
@@ -767,11 +796,11 @@ void implicit_maps_variable_length_array (int a){
   // CK13-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
   // CK13-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
   // CK13-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[SS]], i32 0, i32 0
-  // CK13-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to i[[sz]]*
+  // CK13-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to i[[sz:64|32]]*
   // CK13-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i[[sz]]*
   // CK13-DAG: store i[[sz]] 2, i[[sz]]* [[CBP0]]
   // CK13-DAG: store i[[sz]] 2, i[[sz]]* [[CP0]]
-  // CK13-DAG: store i[[sz]] {{8|4}}, i[[sz]]* [[S0]],
+  // CK13-DAG: store i64 {{8|4}}, i64* [[S0]],
 
   // CK13-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 1
   // CK13-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 1
@@ -780,7 +809,7 @@ void implicit_maps_variable_length_array (int a){
   // CK13-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[sz]]*
   // CK13-DAG: store i[[sz]] [[VAL:%.+]], i[[sz]]* [[CBP1]]
   // CK13-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP1]]
-  // CK13-DAG: store i[[sz]] {{8|4}}, i[[sz]]* [[S1]],
+  // CK13-DAG: store i64 {{8|4}}, i64* [[S1]],
 
   // CK13-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 2
   // CK13-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 2
@@ -789,8 +818,8 @@ void implicit_maps_variable_length_array (int a){
   // CK13-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to double**
   // CK13-DAG: store double* [[DECL:%.+]], double** [[CBP2]]
   // CK13-DAG: store double* [[DECL]], double** [[CP2]]
-  // CK13-DAG: store i[[sz]] [[VALS2:%.+]], i[[sz]]* [[S2]],
-  // CK13-DAG: [[VALS2]] = mul nuw i[[sz]] %{{.+}}, 8
+  // CK13-DAG: store i64 [[VALS2:%.+]], i64* [[S2]],
+  // CK13-DAG: [[VALS2]] = {{mul nuw i64 %.+, 8|sext i32 %.+ to i64}}
 
   // CK13: call void [[KERNEL:@.+]](i[[sz]] {{.+}}, i[[sz]] {{.+}}, double* [[DECL]])
   #pragma omp target
@@ -812,29 +841,32 @@ void implicit_maps_variable_length_array (int a){
 // CK13: {{.+}} = getelementptr inbounds double, double* [[REF]], i[[sz]] %{{.+}}
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK14 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK14 --check-prefix CK14-64
+// RUN: %clang_cc1 -DCK14 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK14 --check-prefix CK14-64
 // RUN: %clang_cc1 -DCK14 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK14 --check-prefix CK14-64
-// RUN: %clang_cc1 -DCK14 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK14 --check-prefix CK14-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK14 --check-prefix CK14-64
+// RUN: %clang_cc1 -DCK14 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK14 --check-prefix CK14-32
 // RUN: %clang_cc1 -DCK14 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK14 --check-prefix CK14-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK14 --check-prefix CK14-32
 
-// RUN: %clang_cc1 -DCK14 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY13 %s
+// RUN: %clang_cc1 -DCK14 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY13 %s
 // RUN: %clang_cc1 -DCK14 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY13 %s
-// RUN: %clang_cc1 -DCK14 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY13 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY13 %s
+// RUN: %clang_cc1 -DCK14 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY13 %s
 // RUN: %clang_cc1 -DCK14 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY13 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY13 %s
 // SIMD-ONLY13-NOT: {{__kmpc|__tgt}}
 #ifdef CK14
 
 // CK14-DAG: [[ST:%.+]] = type { i32, double }
-// CK14-DAG: [[SIZES:@.+]] = {{.+}}constant [3 x i[[sz:64|32]]] [i{{64|32}} 4, i{{64|32}} 8, i{{64|32}} 4]
+
+// CK14-LABEL: @.__omp_offloading_{{.*}}foo{{.*}}_l877.region_id = weak constant i8 0
+
+
 // Map types:
-// - OMP_MAP_TO + OMP_MAP_FROM + OMP_MAP_IS_FIRST + OMP_IMPLICIT_MAP = 547
-// - OMP_MAP_TO + OMP_MAP_FROM + OMP_IMPLICIT_MAP = 515
-// - OMP_MAP_PRIVATE_VAL + OMP_MAP_IS_FIRST = 288
-// CK14-DAG: [[TYPES:@.+]] = {{.+}}constant [3 x i64] [i64 547, i64 515, i64 288]
+// - OMP_MAP_TARGET_PARAM = 32
+// - OMP_MAP_TO + OMP_MAP_FROM | OMP_MAP_IMPLICIT | OMP_MAP_MEMBER_OF = 281474976711171
+// - OMP_MAP_PRIVATE_VAL + OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 800
+// CK14-DAG: [[TYPES:@.+]] = {{.+}}constant [4 x i64] [i64 32, i64 281474976711171, i64 281474976711171, i64 800]
 
 class SSS {
 public:
@@ -852,35 +884,51 @@ public:
   SSS(int a, double b) : a(a), b(b) {}
 };
 
-// CK14-LABEL: implicit_maps_class
+// CK14-LABEL: implicit_maps_class{{.*}}(
 void implicit_maps_class (int a){
   SSS sss(a, (double)a);
 
   // CK14: define {{.*}}void @{{.+}}foo{{.+}}([[ST]]* {{[^,]+}}, i32 {{[^,]+}})
-  // CK14-DAG: call i32 @__tgt_target(i64 {{.+}}, i8* {{.+}}, i32 3, i8** [[BPGEP:%[0-9]+]], i8** [[PGEP:%[0-9]+]], {{.+}}[[SIZES]]{{.+}}, {{.+}}[[TYPES]]{{.+}})
+  // CK14-DAG: call i32 @__tgt_target(i64 {{.+}}, i8* {{.+}}, i32 4, i8** [[BPGEP:%[0-9]+]], i8** [[PGEP:%[0-9]+]], i64* [[SIZES:%[^,]+]], {{.+}}[[TYPES]]{{.+}})
   // CK14-DAG: [[BPGEP]] = getelementptr inbounds {{.+}}[[BPS:%[^,]+]], i32 0, i32 0
   // CK14-DAG: [[PGEP]] = getelementptr inbounds {{.+}}[[PS:%[^,]+]], i32 0, i32 0
+  // CK14-DAG: [[SIZES]] = getelementptr inbounds {{.+}}[[S:%[^,]+]], i32 0, i32 0
 
   // CK14-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
   // CK14-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
+  // CK14-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i32 0, i32 0
   // CK14-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[ST]]**
   // CK14-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i32**
   // CK14-DAG: store [[ST]]* [[DECL:%.+]], [[ST]]** [[CBP0]]
-  // CK14-DAG: store i32* %{{.+}}, i32** [[CP0]]
+  // CK14-DAG: store i32* [[A:%.+]], i32** [[CP0]]
+  // CK14-DAG: store i64 %{{.+}}, i64* [[S0]]
 
   // CK14-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 1
   // CK14-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 1
+  // CK14-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i32 0, i32 1
   // CK14-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[ST]]**
-  // CK14-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to double**
+  // CK14-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i32**
   // CK14-DAG: store [[ST]]* [[DECL]], [[ST]]** [[CBP1]]
-  // CK14-DAG: store double* %{{.+}}, double** [[CP1]]
+  // CK14-DAG: store i32* [[A]], i32** [[CP1]]
+  // CK14-DAG: store i64 4, i64* [[S1]]
 
-  // CK14-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 2
-  // CK14-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 2
-  // CK14-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz]]*
-  // CK14-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[sz]]*
-  // CK14-DAG: store i[[sz]] [[VAL:%.+]], i[[sz]]* [[CBP1]]
-  // CK14-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP1]]
+  // CK14-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 2
+  // CK14-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 2
+  // CK14-DAG: [[S2:%.+]] = getelementptr inbounds {{.+}}[[S]], i32 0, i32 2
+  // CK14-DAG: [[CBP2:%.+]] = bitcast i8** [[BP2]] to [[ST]]**
+  // CK14-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to double**
+  // CK14-DAG: store [[ST]]* [[DECL]], [[ST]]** [[CBP2]]
+  // CK14-DAG: store double* %{{.+}}, double** [[CP2]]
+  // CK14-DAG: store i64 8, i64* [[S2]]
+
+  // CK14-DAG: [[BP3:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 3
+  // CK14-DAG: [[P3:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 3
+  // CK14-DAG: [[S3:%.+]] = getelementptr inbounds {{.+}}[[S]], i32 0, i32 3
+  // CK14-DAG: [[CBP3:%.+]] = bitcast i8** [[BP3]] to i[[sz:64|32]]*
+  // CK14-DAG: [[CP3:%.+]] = bitcast i8** [[P3]] to i[[sz]]*
+  // CK14-DAG: store i[[sz]] [[VAL:%.+]], i[[sz]]* [[CBP3]]
+  // CK14-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP3]]
+  // CK14-DAG: store i64 4, i64* [[S3]]
   // CK14-DAG: [[VAL]] = load i[[sz]], i[[sz]]* [[ADDR:%.+]],
   // CK14-64-DAG: [[CADDR:%.+]] = bitcast i[[sz]]* [[ADDR]] to i32*
   // CK14-64-DAG: store i32 {{.+}}, i32* [[CADDR]],
@@ -902,48 +950,46 @@ void implicit_maps_class (int a){
 
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK15 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK15 --check-prefix CK15-64
+// RUN: %clang_cc1 -DCK15 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK15 --check-prefix CK15-64
 // RUN: %clang_cc1 -DCK15 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK15 --check-prefix CK15-64
-// RUN: %clang_cc1 -DCK15 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK15 --check-prefix CK15-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK15 --check-prefix CK15-64
+// RUN: %clang_cc1 -DCK15 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK15 --check-prefix CK15-32
 // RUN: %clang_cc1 -DCK15 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK15 --check-prefix CK15-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK15 --check-prefix CK15-32
 
-// RUN: %clang_cc1 -DCK15 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY14 %s
+// RUN: %clang_cc1 -DCK15 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY14 %s
 // RUN: %clang_cc1 -DCK15 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY14 %s
-// RUN: %clang_cc1 -DCK15 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY14 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY14 %s
+// RUN: %clang_cc1 -DCK15 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY14 %s
 // RUN: %clang_cc1 -DCK15 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY14 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY14 %s
 // SIMD-ONLY14-NOT: {{__kmpc|__tgt}}
 #ifdef CK15
 
-// CK15: [[ST:%.+]] = type { i32, double, i32* }
-// CK15: [[SIZES:@.+]] = {{.+}}constant [5 x i[[sz:64|32]]] [i{{64|32}} 4, i{{64|32}} 8, i{{64|32}} {{8|4}}, i{{64|32}} 4, i{{64|32}} 4]
+// CK15: [[ST:%.+]] = type { i32, double }
 // Map types:
-// - OMP_MAP_TO + OMP_MAP_FROM + OMP_MAP_IS_FIRST + OMP_MAP_IMPLICIT = 547
-// - OMP_MAP_PRIVATE_VAL + OMP_MAP_IS_FIRST = 288
-// CK15: [[TYPES:@.+]] = {{.+}}constant [5 x i64] [i64 547, i64 515, i64 512, i64 531, i64 288]
+// - OMP_MAP_TARGET_PARAM = 32
+// - OMP_MAP_TO + OMP_MAP_FROM | OMP_MAP_IMPLICIT | OMP_MAP_MEMBER_OF = 281474976711171
+// - OMP_MAP_PRIVATE_VAL + OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 800
+// CK15: [[TYPES:@.+]] = {{.+}}constant [4 x i64] [i64 32, i64 281474976711171, i64 281474976711171, i64 800]
 
-// CK15: [[SIZES2:@.+]] = {{.+}}constant [5 x i[[sz]]] [i{{64|32}} 4, i{{64|32}} 8, i{{64|32}} {{8|4}}, i{{64|32}} 4, i{{64|32}} 4]
 // Map types:
-// - OMP_MAP_TO + OMP_MAP_FROM + OMP_MAP_IS_FIRST = 35
-// - OMP_MAP_PRIVATE_VAL + OMP_MAP_IS_FIRST = 288
-// CK15: [[TYPES2:@.+]] = {{.+}}constant [5 x i64] [i64 547, i64 515, i64 512, i64 531, i64 288]
+// - OMP_MAP_TARGET_PARAM = 32
+// - OMP_MAP_TO + OMP_MAP_FROM | OMP_MAP_IMPLICIT | OMP_MAP_MEMBER_OF = 281474976711171
+// - OMP_MAP_PRIVATE_VAL + OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 800
+// CK15: [[TYPES2:@.+]] = {{.+}}constant [4 x i64] [i64 32, i64 281474976711171, i64 281474976711171, i64 800]
 
 template<int x>
 class SSST {
 public:
   int a;
   double b;
-  int &r;
 
   void foo(int c) {
     #pragma omp target
     {
       a += c + x;
       b += (double)(c + x);
-      r += x;
     }
   }
   template<int y>
@@ -952,56 +998,57 @@ public:
     {
       a += c + x + y;
       b += (double)(c + x + y);
-      r += x + y;
     }
   }
 
-  SSST(int a, double b, int &r) : a(a), b(b), r(r) {}
+  SSST(int a, double b) : a(a), b(b) {}
 };
 
-// CK15-LABEL: implicit_maps_templated_class
+// CK15-LABEL: implicit_maps_templated_class{{.*}}(
 void implicit_maps_templated_class (int a){
-  SSST<123> ssst(a, (double)a, a);
+  SSST<123> ssst(a, (double)a);
 
   // CK15: define {{.*}}void @{{.+}}foo{{.+}}([[ST]]* {{[^,]+}}, i32 {{[^,]+}})
-  // CK15-DAG: call i32 @__tgt_target(i64 {{.+}}, i8* {{.+}}, i32 5, i8** [[BPGEP:%[0-9]+]], i8** [[PGEP:%[0-9]+]], {{.+}}[[SIZES]]{{.+}}, {{.+}}[[TYPES]]{{.+}})
+  // CK15-DAG: call i32 @__tgt_target(i64 {{.+}}, i8* {{.+}}, i32 4, i8** [[BPGEP:%[0-9]+]], i8** [[PGEP:%[0-9]+]], i64* [[SIZES:%[^,]+]], {{.+}}[[TYPES]]{{.+}})
   // CK15-DAG: [[BPGEP]] = getelementptr inbounds {{.+}}[[BPS:%[^,]+]], i32 0, i32 0
   // CK15-DAG: [[PGEP]] = getelementptr inbounds {{.+}}[[PS:%[^,]+]], i32 0, i32 0
+  // CK15-DAG: [[SIZES]] = getelementptr inbounds {{.+}}[[S:%[^,]+]], i32 0, i32 0
 
   // CK15-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
   // CK15-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
+  // CK15-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i32 0, i32 0
   // CK15-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[ST]]**
   // CK15-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i32**
   // CK15-DAG: store [[ST]]* [[DECL:%.+]], [[ST]]** [[CBP0]]
-  // CK15-DAG: store i32* %{{.+}}, i32** [[CP0]]
+  // CK15-DAG: store i32* [[A:%.+]], i32** [[CP0]]
+  // CK15-DAG: store i64 %{{.+}}, i64* [[S0]]
 
   // CK15-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 1
   // CK15-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 1
+  // CK15-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i32 0, i32 1
   // CK15-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[ST]]**
-  // CK15-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to double**
+  // CK15-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i32**
   // CK15-DAG: store [[ST]]* [[DECL]], [[ST]]** [[CBP1]]
-  // CK15-DAG: store double* %{{.+}}, double** [[CP1]]
+  // CK15-DAG: store i32* [[A]], i32** [[CP1]]
+  // CK15-DAG: store i64 4, i64* [[S1]]
 
   // CK15-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 2
   // CK15-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 2
+  // CK15-DAG: [[S2:%.+]] = getelementptr inbounds {{.+}}[[S]], i32 0, i32 2
   // CK15-DAG: [[CBP2:%.+]] = bitcast i8** [[BP2]] to [[ST]]**
-  // CK15-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to i32***
+  // CK15-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to double**
   // CK15-DAG: store [[ST]]* [[DECL]], [[ST]]** [[CBP2]]
-  // CK15-DAG: store i32** %{{.+}}, i32*** [[CP2]]
+  // CK15-DAG: store double* %{{.+}}, double** [[CP2]]
+  // CK15-DAG: store i64 8, i64* [[S2]]
 
   // CK15-DAG: [[BP3:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 3
   // CK15-DAG: [[P3:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 3
-  // CK15-DAG: [[CBP3:%.+]] = bitcast i8** [[BP3]] to i32***
-  // CK15-DAG: [[CP3:%.+]] = bitcast i8** [[P3]] to i32**
-  // CK15-DAG: store i32** %{{.+}}, i32*** [[CBP3]]
-  // CK15-DAG: store i32* %{{.+}}, i32** [[CP3]]
-
-  // CK15-DAG: [[BP4:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 4
-  // CK15-DAG: [[P4:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 4
-  // CK15-DAG: [[CBP4:%.+]] = bitcast i8** [[BP4]] to i[[sz]]*
-  // CK15-DAG: [[CP4:%.+]] = bitcast i8** [[P4]] to i[[sz]]*
-  // CK15-DAG: store i[[sz]] [[VAL:%.+]], i[[sz]]* [[CBP4]]
-  // CK15-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP4]]
+  // CK15-DAG: [[S3:%.+]] = getelementptr inbounds {{.+}}[[S]], i32 0, i32 3
+  // CK15-DAG: [[CBP3:%.+]] = bitcast i8** [[BP3]] to i[[sz:64|32]]*
+  // CK15-DAG: [[CP3:%.+]] = bitcast i8** [[P3]] to i[[sz]]*
+  // CK15-DAG: store i[[sz]] [[VAL:%.+]], i[[sz]]* [[CBP3]]
+  // CK15-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP3]]
+  // CK15-DAG: store i64 4, i64* [[S3]]
   // CK15-DAG: [[VAL]] = load i[[sz]], i[[sz]]* [[ADDR:%.+]],
   // CK15-64-DAG: [[CADDR:%.+]] = bitcast i[[sz]]* [[ADDR]] to i32*
   // CK15-64-DAG: store i32 {{.+}}, i32* [[CADDR]],
@@ -1010,44 +1057,46 @@ void implicit_maps_templated_class (int a){
   ssst.foo(456);
 
   // CK15: define {{.*}}void @{{.+}}bar{{.+}}([[ST]]* {{[^,]+}}, i32 {{[^,]+}})
-  // CK15-DAG: call i32 @__tgt_target(i64 {{.+}}, i8* {{.+}}, i32 5, i8** [[BPGEP:%[0-9]+]], i8** [[PGEP:%[0-9]+]], {{.+}}[[SIZES2]]{{.+}}, {{.+}}[[TYPES2]]{{.+}})
+  // CK15-DAG: call i32 @__tgt_target(i64 {{.+}}, i8* {{.+}}, i32 4, i8** [[BPGEP:%[0-9]+]], i8** [[PGEP:%[0-9]+]], i64* [[SIZES:[^,]+]], {{.+}}[[TYPES2]]{{.+}})
   // CK15-DAG: [[BPGEP]] = getelementptr inbounds {{.+}}[[BPS:%[^,]+]], i32 0, i32 0
   // CK15-DAG: [[PGEP]] = getelementptr inbounds {{.+}}[[PS:%[^,]+]], i32 0, i32 0
+  // CK15-DAG: [[SIZES]] = getelementptr inbounds {{.+}}[[S:%[^,]+]], i32 0, i32 0
 
   // CK15-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
   // CK15-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
+  // CK15-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i32 0, i32 0
   // CK15-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[ST]]**
   // CK15-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i32**
-  // CK15-DAG: store [[ST]]* [[DECL]], [[ST]]** [[CBP0]]
-  // CK15-DAG: store i32* %{{.+}}, i32** [[CP0]]
+  // CK15-DAG: store [[ST]]* [[DECL:%.+]], [[ST]]** [[CBP0]]
+  // CK15-DAG: store i32* [[A:%.+]], i32** [[CP0]]
+  // CK15-DAG: store i64 %{{.+}}, i64* [[S0]]
 
   // CK15-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 1
   // CK15-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 1
+  // CK15-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i32 0, i32 1
   // CK15-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[ST]]**
-  // CK15-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to double**
+  // CK15-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i32**
   // CK15-DAG: store [[ST]]* [[DECL]], [[ST]]** [[CBP1]]
-  // CK15-DAG: store double* %{{.+}}, double** [[CP1]]
+  // CK15-DAG: store i32* [[A]], i32** [[CP1]]
+  // CK15-DAG: store i64 4, i64* [[S1]]
 
   // CK15-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 2
   // CK15-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 2
+  // CK15-DAG: [[S2:%.+]] = getelementptr inbounds {{.+}}[[S]], i32 0, i32 2
   // CK15-DAG: [[CBP2:%.+]] = bitcast i8** [[BP2]] to [[ST]]**
-  // CK15-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to i32***
+  // CK15-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to double**
   // CK15-DAG: store [[ST]]* [[DECL]], [[ST]]** [[CBP2]]
-  // CK15-DAG: store i32** %{{.+}}, i32*** [[CP2]]
+  // CK15-DAG: store double* %{{.+}}, double** [[CP2]]
+  // CK15-DAG: store i64 8, i64* [[S2]]
 
   // CK15-DAG: [[BP3:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 3
   // CK15-DAG: [[P3:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 3
-  // CK15-DAG: [[CBP3:%.+]] = bitcast i8** [[BP3]] to i32***
-  // CK15-DAG: [[CP3:%.+]] = bitcast i8** [[P3]] to i32**
-  // CK15-DAG: store i32** %{{.+}}, i32*** [[CBP3]]
-  // CK15-DAG: store i32* %{{.+}}, i32** [[CP3]]
-
-  // CK15-DAG: [[BP4:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 4
-  // CK15-DAG: [[P4:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 4
-  // CK15-DAG: [[CBP4:%.+]] = bitcast i8** [[BP4]] to i[[sz]]*
-  // CK15-DAG: [[CP4:%.+]] = bitcast i8** [[P4]] to i[[sz]]*
-  // CK15-DAG: store i[[sz]] [[VAL:%.+]], i[[sz]]* [[CBP4]]
-  // CK15-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP4]]
+  // CK15-DAG: [[S3:%.+]] = getelementptr inbounds {{.+}}[[S]], i32 0, i32 3
+  // CK15-DAG: [[CBP3:%.+]] = bitcast i8** [[BP3]] to i[[sz]]*
+  // CK15-DAG: [[CP3:%.+]] = bitcast i8** [[P3]] to i[[sz]]*
+  // CK15-DAG: store i[[sz]] [[VAL:%.+]], i[[sz]]* [[CBP3]]
+  // CK15-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP3]]
+  // CK15-DAG: store i64 4, i64* [[S3]]
   // CK15-DAG: [[VAL]] = load i[[sz]], i[[sz]]* [[ADDR:%.+]],
   // CK15-64-DAG: [[CADDR:%.+]] = bitcast i[[sz]]* [[ADDR]] to i32*
   // CK15-64-DAG: store i32 {{.+}}, i32* [[CADDR]],
@@ -1080,26 +1129,26 @@ void implicit_maps_templated_class (int a){
 
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK16 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK16 --check-prefix CK16-64
+// RUN: %clang_cc1 -DCK16 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK16 --check-prefix CK16-64
 // RUN: %clang_cc1 -DCK16 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK16 --check-prefix CK16-64
-// RUN: %clang_cc1 -DCK16 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK16 --check-prefix CK16-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK16 --check-prefix CK16-64
+// RUN: %clang_cc1 -DCK16 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK16 --check-prefix CK16-32
 // RUN: %clang_cc1 -DCK16 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK16 --check-prefix CK16-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK16 --check-prefix CK16-32
 
-// RUN: %clang_cc1 -DCK16 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY15 %s
+// RUN: %clang_cc1 -DCK16 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY15 %s
 // RUN: %clang_cc1 -DCK16 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY15 %s
-// RUN: %clang_cc1 -DCK16 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY15 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY15 %s
+// RUN: %clang_cc1 -DCK16 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY15 %s
 // RUN: %clang_cc1 -DCK16 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY15 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY15 %s
 // SIMD-ONLY15-NOT: {{__kmpc|__tgt}}
 #ifdef CK16
 
-// CK16-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i[[sz:64|32]]] [i{{64|32}} 4]
+// CK16-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i64] [i64 4]
 // Map types:
-// - OMP_MAP_PRIVATE_VAL + OMP_MAP_IS_FIRST = 288
-// CK16-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 288]
+// - OMP_MAP_PRIVATE_VAL + OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 800
+// CK16-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 800]
 
 template<int y>
 int foo(int d) {
@@ -1110,7 +1159,7 @@ int foo(int d) {
   }
   return res;
 }
-// CK16-LABEL: implicit_maps_templated_function
+// CK16-LABEL: implicit_maps_templated_function{{.*}}(
 void implicit_maps_templated_function (int a){
   int i = a;
 
@@ -1121,7 +1170,7 @@ void implicit_maps_templated_function (int a){
 
   // CK16-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
   // CK16-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
-  // CK16-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz]]*
+  // CK16-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz:64|32]]*
   // CK16-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[sz]]*
   // CK16-DAG: store i[[sz]] [[VAL:%.+]], i[[sz]]* [[CBP1]]
   // CK16-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP1]]
@@ -1141,25 +1190,26 @@ void implicit_maps_templated_function (int a){
 
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK17 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK17
+// RUN: %clang_cc1 -DCK17 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK17
 // RUN: %clang_cc1 -DCK17 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK17
-// RUN: %clang_cc1 -DCK17 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK17
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK17
+// RUN: %clang_cc1 -DCK17 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK17
 // RUN: %clang_cc1 -DCK17 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK17
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK17
 
-// RUN: %clang_cc1 -DCK17 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY16 %s
+// RUN: %clang_cc1 -DCK17 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY16 %s
 // RUN: %clang_cc1 -DCK17 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY16 %s
-// RUN: %clang_cc1 -DCK17 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY16 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY16 %s
+// RUN: %clang_cc1 -DCK17 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY16 %s
 // RUN: %clang_cc1 -DCK17 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY16 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY16 %s
 // SIMD-ONLY16-NOT: {{__kmpc|__tgt}}
 #ifdef CK17
 
 // CK17-DAG: [[ST:%.+]] = type { i32, double }
-// CK17-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i[[sz:64|32]]] [i{{64|32}} {{16|12}}]
-// Map types: OMP_MAP_TO + OMP_MAP_FROM + OMP_MAP_IS_FIRST + OMP_MAP_IMPLICIT = 547
+// CK17-LABEL: @.__omp_offloading_{{.*}}implicit_maps_struct{{.*}}_l1236.region_id = weak constant i8 0
+// CK17-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i64] [i64 {{16|12}}]
+// Map types: OMP_MAP_TO + OMP_MAP_FROM + OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 547
 // CK17-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 547]
 
 class SSS {
@@ -1168,7 +1218,7 @@ public:
   double b;
 };
 
-// CK17-LABEL: implicit_maps_struct
+// CK17-LABEL: implicit_maps_struct{{.*}}(
 void implicit_maps_struct (int a){
   SSS s = {a, (double)a};
 
@@ -1197,26 +1247,26 @@ void implicit_maps_struct (int a){
 // CK17: {{.+}} = getelementptr inbounds [[ST]], [[ST]]* [[REF]], i32 0, i32 0
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK18 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK18 --check-prefix CK18-64
+// RUN: %clang_cc1 -DCK18 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK18 --check-prefix CK18-64
 // RUN: %clang_cc1 -DCK18 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK18 --check-prefix CK18-64
-// RUN: %clang_cc1 -DCK18 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK18 --check-prefix CK18-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK18 --check-prefix CK18-64
+// RUN: %clang_cc1 -DCK18 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK18 --check-prefix CK18-32
 // RUN: %clang_cc1 -DCK18 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK18 --check-prefix CK18-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK18 --check-prefix CK18-32
 
-// RUN: %clang_cc1 -DCK18 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY17 %s
+// RUN: %clang_cc1 -DCK18 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY17 %s
 // RUN: %clang_cc1 -DCK18 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY17 %s
-// RUN: %clang_cc1 -DCK18 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY17 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY17 %s
+// RUN: %clang_cc1 -DCK18 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY17 %s
 // RUN: %clang_cc1 -DCK18 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY17 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY17 %s
 // SIMD-ONLY17-NOT: {{__kmpc|__tgt}}
 #ifdef CK18
 
-// CK18-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i[[sz:64|32]]] [i{{64|32}} 4]
+// CK18-DAG: [[SIZES:@.+]] = {{.+}}constant [1 x i64] [i64 4]
 // Map types:
-// - OMP_MAP_PRIVATE_VAL + OMP_MAP_IS_FIRST = 288
-// CK18-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 288]
+// - OMP_MAP_PRIVATE_VAL + OMP_MAP_TARGET_PARAM | OMP_MAP_IMPLICIT = 800
+// CK18-DAG: [[TYPES:@.+]] = {{.+}}constant [1 x i64] [i64 800]
 
 template<typename T>
 int foo(T d) {
@@ -1226,7 +1276,7 @@ int foo(T d) {
   }
   return d;
 }
-// CK18-LABEL: implicit_maps_template_type_capture
+// CK18-LABEL: implicit_maps_template_type_capture{{.*}}(
 void implicit_maps_template_type_capture (int a){
   int i = a;
 
@@ -1237,7 +1287,7 @@ void implicit_maps_template_type_capture (int a){
 
   // CK18-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
   // CK18-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
-  // CK18-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz]]*
+  // CK18-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[sz:64|32]]*
   // CK18-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[sz]]*
   // CK18-DAG: store i[[sz]] [[VAL:%.+]], i[[sz]]* [[CBP1]]
   // CK18-DAG: store i[[sz]] [[VAL]], i[[sz]]* [[CP1]]
@@ -1257,144 +1307,189 @@ void implicit_maps_template_type_capture (int a){
 
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK19 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK19 --check-prefix CK19-64
+// RUN: %clang_cc1 -DCK19 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK19 --check-prefix CK19-64
 // RUN: %clang_cc1 -DCK19 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK19 --check-prefix CK19-64
-// RUN: %clang_cc1 -DCK19 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK19 --check-prefix CK19-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK19 --check-prefix CK19-64
+// RUN: %clang_cc1 -DCK19 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK19 --check-prefix CK19-32
 // RUN: %clang_cc1 -DCK19 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK19 --check-prefix CK19-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK19 --check-prefix CK19-32
 
-// RUN: %clang_cc1 -DCK19 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY18 %s
+// RUN: %clang_cc1 -DCK19 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY18 %s
 // RUN: %clang_cc1 -DCK19 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY18 %s
-// RUN: %clang_cc1 -DCK19 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY18 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY18 %s
+// RUN: %clang_cc1 -DCK19 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY18 %s
 // RUN: %clang_cc1 -DCK19 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY18 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY18 %s
 // SIMD-ONLY18-NOT: {{__kmpc|__tgt}}
 #ifdef CK19
 
-// CK19: [[SIZE00:@.+]] = private {{.*}}constant [1 x i[[Z:64|32]]] [i[[Z:64|32]] 4]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1510.region_id = weak constant i8 0
+// CK19: [[SIZE00:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK19: [[MTYPE00:@.+]] = private {{.*}}constant [1 x i64] [i64 32]
 
-// CK19: [[SIZE00n:@.+]] = private {{.*}}constant [1 x i[[Z:64|32]]] [i[[Z:64|32]] 4]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1531.region_id = weak constant i8 0
+// CK19: [[SIZE00n:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK19: [[MTYPE00n:@.+]] = private {{.*}}constant [1 x i64] [i64 32]
 
-// CK19: [[SIZE01:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 400]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1553.region_id = weak constant i8 0
+// CK19: [[SIZE01:@.+]] = private {{.*}}constant [1 x i64] [i64 400]
 // CK19: [[MTYPE01:@.+]] = private {{.*}}constant [1 x i64] [i64 33]
 
-// CK19: [[SIZE02:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 240]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1572.region_id = weak constant i8 0
+// CK19: [[SIZE02:@.+]] = private {{.*}}constant [1 x i64] [i64 240]
 // CK19: [[MTYPE02:@.+]] = private {{.*}}constant [1 x i64] [i64 34]
 
-// CK19: [[SIZE03:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 240]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1591.region_id = weak constant i8 0
+// CK19: [[SIZE03:@.+]] = private {{.*}}constant [1 x i64] [i64 240]
 // CK19: [[MTYPE03:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK19: [[SIZE04:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 400]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1610.region_id = weak constant i8 0
+// CK19: [[SIZE04:@.+]] = private {{.*}}constant [1 x i64] [i64 400]
 // CK19: [[MTYPE04:@.+]] = private {{.*}}constant [1 x i64] [i64 32]
 
-// CK19: [[SIZE05:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1629.region_id = weak constant i8 0
+// CK19: [[SIZE05:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK19: [[MTYPE05:@.+]] = private {{.*}}constant [1 x i64] [i64 33]
 
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1652.region_id = weak constant i8 0
 // CK19: [[MTYPE06:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1675.region_id = weak constant i8 0
 // CK19: [[MTYPE07:@.+]] = private {{.*}}constant [1 x i64] [i64 32]
 
-// CK19: [[SIZE08:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1694.region_id = weak constant i8 0
+// CK19: [[SIZE08:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK19: [[MTYPE08:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK19: [[SIZE09:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] {{8|4}}]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1715.region_id = weak constant i8 0
+// CK19: [[SIZE09:@.+]] = private {{.*}}constant [1 x i64] [i64 {{8|4}}]
 // CK19: [[MTYPE09:@.+]] = private {{.*}}constant [1 x i64] [i64 34]
 
-// CK19: [[SIZE10:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 240]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1736.region_id = weak constant i8 0
+// CK19: [[SIZE10:@.+]] = private {{.*}}constant [1 x i64] [i64 240]
 // CK19: [[MTYPE10:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK19: [[SIZE11:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 240]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1757.region_id = weak constant i8 0
+// CK19: [[SIZE11:@.+]] = private {{.*}}constant [1 x i64] [i64 240]
 // CK19: [[MTYPE11:@.+]] = private {{.*}}constant [1 x i64] [i64 32]
 
-// CK19: [[SIZE12:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1778.region_id = weak constant i8 0
+// CK19: [[SIZE12:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK19: [[MTYPE12:@.+]] = private {{.*}}constant [1 x i64] [i64 33]
 
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1803.region_id = weak constant i8 0
 // CK19: [[MTYPE13:@.+]] = private {{.*}}constant [1 x i64] [i64 32]
 
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1828.region_id = weak constant i8 0
 // CK19: [[MTYPE14:@.+]] = private {{.*}}constant [1 x i64] [i64 33]
 
-// CK19: [[SIZE15:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1849.region_id = weak constant i8 0
+// CK19: [[SIZE15:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK19: [[MTYPE15:@.+]] = private {{.*}}constant [1 x i64] [i64 34]
 
-// CK19: [[MTYPE16:@.+]] = private {{.*}}constant [2 x i64] [i64 288, i64 33]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1883.region_id = weak constant i8 0
+// CK19: [[MTYPE16:@.+]] = private {{.*}}constant [2 x i64] [i64 800, i64 33]
 
-// CK19: [[SIZE17:@.+]] = private {{.*}}constant [2 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] 240]
-// CK19: [[MTYPE17:@.+]] = private {{.*}}constant [2 x i64] [i64 288, i64 34]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1909.region_id = weak constant i8 0
+// CK19: [[SIZE17:@.+]] = private {{.*}}constant [2 x i64] [i64 {{8|4}}, i64 240]
+// CK19: [[MTYPE17:@.+]] = private {{.*}}constant [2 x i64] [i64 800, i64 34]
 
-// CK19: [[SIZE18:@.+]] = private {{.*}}constant [2 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] 240]
-// CK19: [[MTYPE18:@.+]] = private {{.*}}constant [2 x i64] [i64 288, i64 35]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1935.region_id = weak constant i8 0
+// CK19: [[SIZE18:@.+]] = private {{.*}}constant [2 x i64] [i64 {{8|4}}, i64 240]
+// CK19: [[MTYPE18:@.+]] = private {{.*}}constant [2 x i64] [i64 800, i64 35]
 
-// CK19: [[MTYPE19:@.+]] = private {{.*}}constant [2 x i64] [i64 288, i64 32]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1967.region_id = weak constant i8 0
+// CK19: [[MTYPE19:@.+]] = private {{.*}}constant [2 x i64] [i64 800, i64 32]
 
-// CK19: [[SIZE20:@.+]] = private {{.*}}constant [2 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] 4]
-// CK19: [[MTYPE20:@.+]] = private {{.*}}constant [2 x i64] [i64 288, i64 33]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l1993.region_id = weak constant i8 0
+// CK19: [[SIZE20:@.+]] = private {{.*}}constant [2 x i64] [i64 {{8|4}}, i64 4]
+// CK19: [[MTYPE20:@.+]] = private {{.*}}constant [2 x i64] [i64 800, i64 33]
 
-// CK19: [[MTYPE21:@.+]] = private {{.*}}constant [2 x i64] [i64 288, i64 35]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2025.region_id = weak constant i8 0
+// CK19: [[MTYPE21:@.+]] = private {{.*}}constant [2 x i64] [i64 800, i64 35]
 
-// CK19: [[SIZE22:@.+]] = private {{.*}}constant [2 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] 4]
-// CK19: [[MTYPE22:@.+]] = private {{.*}}constant [2 x i64] [i64 288, i64 35]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2051.region_id = weak constant i8 0
+// CK19: [[SIZE22:@.+]] = private {{.*}}constant [2 x i64] [i64 {{8|4}}, i64 4]
+// CK19: [[MTYPE22:@.+]] = private {{.*}}constant [2 x i64] [i64 800, i64 35]
 
-// CK19: [[SIZE23:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2070.region_id = weak constant i8 0
+// CK19: [[SIZE23:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK19: [[MTYPE23:@.+]] = private {{.*}}constant [1 x i64] [i64 39]
 
-// CK19: [[SIZE24:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 480]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2092.region_id = weak constant i8 0
+// CK19: [[SIZE24:@.+]] = private {{.*}}constant [1 x i64] [i64 480]
 // CK19: [[MTYPE24:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK19: [[SIZE25:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 16]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2113.region_id = weak constant i8 0
+// CK19: [[SIZE25:@.+]] = private {{.*}}constant [1 x i64] [i64 16]
 // CK19: [[MTYPE25:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK19: [[SIZE26:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 24]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2134.region_id = weak constant i8 0
+// CK19: [[SIZE26:@.+]] = private {{.*}}constant [1 x i64] [i64 24]
 // CK19: [[MTYPE26:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK19: [[SIZE27:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2155.region_id = weak constant i8 0
+// CK19: [[SIZE27:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK19: [[MTYPE27:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK19: [[SIZE28:@.+]] = private {{.*}}constant [3 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] {{8|4}}, i[[Z]] 16]
-// CK19: [[MTYPE28:@.+]] = private {{.*}}constant [3 x i64] [i64 35, i64 19, i64 19]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2200.region_id = weak constant i8 0
+// CK19: [[SIZE28:@.+]] = private {{.*}}constant [3 x i64] [i64 {{8|4}}, i64 {{8|4}}, i64 16]
+// CK19: [[MTYPE28:@.+]] = private {{.*}}constant [3 x i64] [i64 35, i64 16, i64 19]
 
-// CK19: [[SIZE29:@.+]] = private {{.*}}constant [3 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] {{8|4}}, i[[Z]] 4]
-// CK19: [[MTYPE29:@.+]] = private {{.*}}constant [3 x i64] [i64 35, i64 19, i64 19]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2245.region_id = weak constant i8 0
+// CK19: [[SIZE29:@.+]] = private {{.*}}constant [3 x i64] [i64 {{8|4}}, i64 {{8|4}}, i64 4]
+// CK19: [[MTYPE29:@.+]] = private {{.*}}constant [3 x i64] [i64 35, i64 16, i64 19]
 
-// CK19: [[MTYPE30:@.+]] = private {{.*}}constant [4 x i64] [i64 288, i64 288, i64 288, i64 35]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2301.region_id = weak constant i8 0
+// CK19: [[MTYPE30:@.+]] = private {{.*}}constant [4 x i64] [i64 800, i64 800, i64 800, i64 35]
 
-// CK19: [[SIZE31:@.+]] = private {{.*}}constant [4 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] {{8|4}}, i[[Z]] {{8|4}}, i[[Z]] 40]
-// CK19: [[MTYPE31:@.+]] = private {{.*}}constant [4 x i64] [i64 288, i64 288, i64 288, i64 35]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2345.region_id = weak constant i8 0
+// CK19: [[SIZE31:@.+]] = private {{.*}}constant [4 x i64] [i64 {{8|4}}, i64 {{8|4}}, i64 {{8|4}}, i64 40]
+// CK19: [[MTYPE31:@.+]] = private {{.*}}constant [4 x i64] [i64 800, i64 800, i64 800, i64 35]
 
-// CK19: [[SIZE32:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 13728]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2368.region_id = weak constant i8 0
+// CK19: [[SIZE32:@.+]] = private {{.*}}constant [1 x i64] [i64 13728]
 // CK19: [[MTYPE32:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK19: [[SIZE33:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 13728]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2387.region_id = weak constant i8 0
+// CK19: [[SIZE33:@.+]] = private {{.*}}constant [1 x i64] [i64 13728]
 // CK19: [[MTYPE33:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK19: [[SIZE34:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 13728]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2406.region_id = weak constant i8 0
+// CK19: [[SIZE34:@.+]] = private {{.*}}constant [1 x i64] [i64 13728]
 // CK19: [[MTYPE34:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2431.region_id = weak constant i8 0
 // CK19: [[MTYPE35:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK19: [[SIZE36:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 208]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2452.region_id = weak constant i8 0
+// CK19: [[SIZE36:@.+]] = private {{.*}}constant [1 x i64] [i64 208]
 // CK19: [[MTYPE36:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK19: [[MTYPE37:@.+]] = private {{.*}}constant [3 x i64] [i64 288, i64 288, i64 35]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2492.region_id = weak constant i8 0
+// CK19: [[MTYPE37:@.+]] = private {{.*}}constant [3 x i64] [i64 800, i64 800, i64 35]
 
-// CK19: [[MTYPE38:@.+]] = private {{.*}}constant [3 x i64] [i64 288, i64 288, i64 35]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2534.region_id = weak constant i8 0
+// CK19: [[MTYPE38:@.+]] = private {{.*}}constant [3 x i64] [i64 800, i64 800, i64 35]
 
-// CK19: [[MTYPE39:@.+]] = private {{.*}}constant [3 x i64] [i64 288, i64 288, i64 35]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2576.region_id = weak constant i8 0
+// CK19: [[MTYPE39:@.+]] = private {{.*}}constant [3 x i64] [i64 800, i64 800, i64 35]
 
-// CK19: [[MTYPE40:@.+]] = private {{.*}}constant [3 x i64] [i64 288, i64 288, i64 35]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2618.region_id = weak constant i8 0
+// CK19: [[MTYPE40:@.+]] = private {{.*}}constant [3 x i64] [i64 800, i64 800, i64 35]
 
-// CK19: [[SIZE41:@.+]] = private {{.*}}constant [3 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] {{8|4}}, i[[Z]] 208]
-// CK19: [[MTYPE41:@.+]] = private {{.*}}constant [3 x i64] [i64 288, i64 288, i64 35]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2653.region_id = weak constant i8 0
+// CK19: [[SIZE41:@.+]] = private {{.*}}constant [3 x i64] [i64 {{8|4}}, i64 {{8|4}}, i64 208]
+// CK19: [[MTYPE41:@.+]] = private {{.*}}constant [3 x i64] [i64 800, i64 800, i64 35]
 
-// CK19: [[SIZE42:@.+]] = private {{.*}}constant [3 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] {{8|4}}, i[[Z]] 104]
-// CK19: [[MTYPE42:@.+]] = private {{.*}}constant [3 x i64] [i64 35, i64 19, i64 19]
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2698.region_id = weak constant i8 0
+// CK19: [[SIZE42:@.+]] = private {{.*}}constant [3 x i64] [i64 {{8|4}}, i64 {{8|4}}, i64 104]
+// CK19: [[MTYPE42:@.+]] = private {{.*}}constant [3 x i64] [i64 35, i64 16, i64 19]
 
+// CK19-LABEL: @.__omp_offloading_{{.*}}explicit_maps_single{{.*}}_l2723.region_id = weak constant i8 0
 // CK19: [[MTYPE43:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK19-LABEL: explicit_maps_single
+// CK19-LABEL: explicit_maps_single{{.*}}(
 void explicit_maps_single (int ii){
   // Map of a scalar.
   int a = ii;
@@ -1421,7 +1516,7 @@ void explicit_maps_single (int ii){
   int b = a;
 
   // Region 00n
-  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE00n]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE00n]]{{.+}})
+  // CK19-DAG: call i32 @__tgt_target_teams(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE00n]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE00n]]{{.+}}, i32 1, i32 0)
   // CK19-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
   // CK19-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
 
@@ -1537,7 +1632,7 @@ void explicit_maps_single (int ii){
   }
 
   // Region 06
-  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[Z]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE06]]{{.+}})
+  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE06]]{{.+}})
   // CK19-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
   // CK19-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
   // CK19-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
@@ -1550,7 +1645,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: store [100 x i32]* [[VAR0:%.+]], [100 x i32]** [[CBP0]]
   // CK19-DAG: store i32* [[SEC0:%[^,]+]], i32** [[CP0]]
   // CK19-DAG: store i{{.+}} [[CSVAL0:%[^,]+]], i{{.+}}* [[S0]]
-  // CK19-DAG: [[CSVAL0]] = mul nuw i{{.+}} %{{.*}}, 4
+  // CK19-DAG: [[CSVAL0]] = {{mul nuw i.+ %.*, 4|sext i32 .+ to i64}}
   // CK19-DAG: [[SEC0]] = getelementptr {{.*}}[100 x i32]* [[VAR0]], i{{.+}} 0, i{{.+}} %{{.*}}
 
   // CK19: call void [[CALL06:@.+]]([100 x i32]* {{[^,]+}})
@@ -1560,7 +1655,7 @@ void explicit_maps_single (int ii){
   }
 
   // Region 07
-  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[Z]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE07]]{{.+}})
+  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE07]]{{.+}})
   // CK19-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
   // CK19-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
   // CK19-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
@@ -1573,7 +1668,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: store [100 x i32]* [[VAR0:%.+]], [100 x i32]** [[CBP0]]
   // CK19-DAG: store i32* [[SEC0:%[^,]+]], i32** [[CP0]]
   // CK19-DAG: store i{{.+}} [[CSVAL0:%[^,]+]], i{{.+}}* [[S0]]
-  // CK19-DAG: [[CSVAL0]] = mul nuw i{{.+}} %{{.*}}, 4
+  // CK19-DAG: [[CSVAL0]] = {{mul nuw i.+ %.*, 4|sext i32 .+ to i64}}
   // CK19-DAG: [[SEC0]] = getelementptr {{.*}}[100 x i32]* [[VAR0]], i{{.+}} 0, i{{.+}} 0
 
   // CK19: call void [[CALL07:@.+]]([100 x i32]* {{[^,]+}})
@@ -1686,7 +1781,7 @@ void explicit_maps_single (int ii){
   }
 
   // Region 13
-  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[Z]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE13]]{{.+}})
+  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE13]]{{.+}})
   // CK19-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
   // CK19-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
   // CK19-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
@@ -1699,7 +1794,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: store i32* [[RVAR0:%.+]], i32** [[CBP0]]
   // CK19-DAG: store i32* [[SEC0:%.+]], i32** [[CP0]]
   // CK19-DAG: store i{{.+}} [[CSVAL0:%[^,]+]], i{{.+}}* [[S0]]
-  // CK19-DAG: [[CSVAL0]] = mul nuw i{{.+}} %{{.*}}, 4
+  // CK19-DAG: [[CSVAL0]] = {{mul nuw i64 %.*, 4|sext i32 .+ to i64}}
   // CK19-DAG: [[RVAR0]] = load i32*, i32** [[VAR0:%[^,]+]]
   // CK19-DAG: [[SEC0]] = getelementptr {{.*}}i32* [[RVAR00:%.+]], i{{.+}} %{{.*}}
   // CK19-DAG: [[RVAR00]] = load i32*, i32** [[VAR0]]
@@ -1711,7 +1806,7 @@ void explicit_maps_single (int ii){
   }
 
   // Region 14
-  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[Z]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE14]]{{.+}})
+  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE14]]{{.+}})
   // CK19-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
   // CK19-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
   // CK19-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
@@ -1724,7 +1819,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: store i32* [[RVAR0:%.+]], i32** [[CBP0]]
   // CK19-DAG: store i32* [[SEC0:%.+]], i32** [[CP0]]
   // CK19-DAG: store i{{.+}} [[CSVAL0:%[^,]+]], i{{.+}}* [[S0]]
-  // CK19-DAG: [[CSVAL0]] = mul nuw i{{.+}} %{{.*}}, 4
+  // CK19-DAG: [[CSVAL0]] = {{mul nuw i64 %.*, 4|sext i32 .+ to i64}}
   // CK19-DAG: [[RVAR0]] = load i32*, i32** [[VAR0:%[^,]+]]
   // CK19-DAG: [[SEC0]] = getelementptr {{.*}}i32* [[RVAR00:%.+]], i{{.+}} 0
   // CK19-DAG: [[RVAR00]] = load i32*, i32** [[VAR0]]
@@ -1760,7 +1855,7 @@ void explicit_maps_single (int ii){
   int va[ii];
 
   // Region 16
-  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[Z]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE16]]{{.+}})
+  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE16]]{{.+}})
   // CK19-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
   // CK19-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
   // CK19-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
@@ -1768,7 +1863,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
   // CK19-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
   // CK19-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
-  // CK19-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to i[[Z]]*
+  // CK19-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to i[[Z:64|32]]*
   // CK19-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i[[Z]]*
   // CK19-DAG: store i[[Z]] {{%.+}}, i[[Z]]* [[CBP0]]
   // CK19-DAG: store i[[Z]] {{%.+}}, i[[Z]]* [[CP0]]
@@ -1782,7 +1877,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: store i32* [[VAR1:%.+]], i32** [[CBP1]]
   // CK19-DAG: store i32* [[VAR1]], i32** [[CP1]]
   // CK19-DAG: store i{{.+}} [[CSVAL1:%[^,]+]], i{{.+}}* [[S1]]
-  // CK19-DAG: [[CSVAL1]] = mul nuw i{{.+}} %{{.*}}, 4
+  // CK19-DAG: [[CSVAL1]] = {{mul nuw i64 %.*, 4|sext i32 .+ to i64}}
 
   // CK19: call void [[CALL16:@.+]](i{{.+}} {{[^,]+}}, i32* {{[^,]+}})
   #pragma omp target map(to:va)
@@ -1843,7 +1938,7 @@ void explicit_maps_single (int ii){
   }
 
   // Region 19
-  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[Z]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE19]]{{.+}})
+  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE19]]{{.+}})
   // CK19-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
   // CK19-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
   // CK19-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
@@ -1865,7 +1960,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: store i32* [[VAR1:%.+]], i32** [[CBP1]]
   // CK19-DAG: store i32* [[SEC1:%.+]], i32** [[CP1]]
   // CK19-DAG: store i{{.+}} [[CSVAL1:%[^,]+]], i{{.+}}* [[S1]]
-  // CK19-DAG: [[CSVAL1]] = mul nuw i{{.+}} %{{.*}}, 4
+  // CK19-DAG: [[CSVAL1]] = {{mul nuw i64 %.*, 4|sext i32 .+ to i64}}
   // CK19-DAG: [[SEC1]] = getelementptr {{.*}}i32* [[VAR1]], i{{.+}} 0
 
   // CK19: call void [[CALL19:@.+]](i{{.+}} {{[^,]+}}, i32* {{[^,]+}})
@@ -1901,7 +1996,7 @@ void explicit_maps_single (int ii){
   }
 
   // Region 21
-  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[Z]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE21]]{{.+}})
+  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE21]]{{.+}})
   // CK19-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
   // CK19-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
   // CK19-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
@@ -1923,7 +2018,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: store i32* [[VAR1:%.+]], i32** [[CBP1]]
   // CK19-DAG: store i32* [[SEC1:%.+]], i32** [[CP1]]
   // CK19-DAG: store i{{.+}} [[CSVAL1:%[^,]+]], i{{.+}}* [[S1]]
-  // CK19-DAG: [[CSVAL1]] = mul nuw i{{.+}} %{{.*}}, 4
+  // CK19-DAG: [[CSVAL1]] = {{mul nuw i64 %.*, 4|sext i32 .+ to i64}}
   // CK19-DAG: [[SEC1]] = getelementptr {{.*}}i32* [[VAR1]], i{{.+}} %{{.+}}
 
   // CK19: call void [[CALL21:@.+]](i{{.+}} {{[^,]+}}, i32* {{[^,]+}})
@@ -2156,7 +2251,7 @@ void explicit_maps_single (int ii){
   double mva[23][ii][ii+5];
 
   // Region 30
-  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 4, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[Z]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[4 x i{{.+}}]* [[MTYPE30]]{{.+}})
+  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 4, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[4 x i{{.+}}]* [[MTYPE30]]{{.+}})
   // CK19-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
   // CK19-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
   // CK19-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
@@ -2168,7 +2263,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i[[Z]]*
   // CK19-DAG: store i[[Z]] 23, i[[Z]]* [[CBP0]]
   // CK19-DAG: store i[[Z]] 23, i[[Z]]* [[CP0]]
-  // CK19-DAG: store i[[Z]] {{8|4}}, i[[Z]]* [[S0]]
+  // CK19-DAG: store i64 {{8|4}}, i64* [[S0]]
   //
   // CK19-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
   // CK19-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
@@ -2177,7 +2272,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[Z]]*
   // CK19-DAG: store i[[Z]] [[VAR1:%.+]], i[[Z]]* [[CBP1]]
   // CK19-DAG: store i[[Z]] [[VAR11:%.+]], i[[Z]]* [[CP1]]
-  // CK19-DAG: store i[[Z]] {{8|4}}, i[[Z]]* [[S1]]
+  // CK19-DAG: store i64 {{8|4}}, i64* [[S1]]
   // CK19-64-DAG: [[VAR1]] = zext i32 %{{[^,]+}} to i64
   // CK19-64-DAG: [[VAR11]] = zext i32 %{{[^,]+}} to i64
   //
@@ -2188,7 +2283,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to i[[Z]]*
   // CK19-DAG: store i[[Z]] [[VAR2:%.+]], i[[Z]]* [[CBP2]]
   // CK19-DAG: store i[[Z]] [[VAR22:%.+]], i[[Z]]* [[CP2]]
-  // CK19-DAG: store i[[Z]] {{8|4}}, i[[Z]]* [[S2]]
+  // CK19-DAG: store i64 {{8|4}}, i64* [[S2]]
   // CK19-64-DAG: [[VAR2]] = zext i32 %{{[^,]+}} to i64
   // CK19-64-DAG: [[VAR22]] = zext i32 %{{[^,]+}} to i64
   //
@@ -2199,8 +2294,8 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP3:%.+]] = bitcast i8** [[P3]] to double**
   // CK19-DAG: store double* [[VAR3:%.+]], double** [[CBP3]]
   // CK19-DAG: store double* [[VAR3]], double** [[CP3]]
-  // CK19-DAG: store i[[Z]] [[CSVAL3:%[^,]+]], i[[Z]]* [[S3]]
-  // CK19-DAG: [[CSVAL3]] = mul nuw i[[Z]] %{{[^,]+}}, {{8|4}}
+  // CK19-DAG: store i64 [[CSVAL3:%[^,]+]], i64* [[S3]]
+  // CK19-DAG: [[CSVAL3]] = {{mul nuw i64 %[^,]+, 8|sext i32 .+ to i64}}
 
   // CK19: call void [[CALL30:@.+]](i[[Z]] 23, i[[Z]] %{{[^,]+}}, i[[Z]] %{{[^,]+}}, double* %{{[^,]+}})
   #pragma omp target map(tofrom: mva)
@@ -2314,7 +2409,7 @@ void explicit_maps_single (int ii){
   }
 
   // Region 35
-  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[Z]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE35]]{{.+}})
+  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE35]]{{.+}})
   // CK19-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
   // CK19-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
   // CK19-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
@@ -2327,10 +2422,10 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to [13 x double]**
   // CK19-DAG: store [11 x [12 x [13 x double]]]* [[VAR0:%.+]], [11 x [12 x [13 x double]]]** [[CBP0]]
   // CK19-DAG: store [13 x double]* [[SEC0:%.+]], [13 x double]** [[CP0]]
-  // CK19-DAG: store i[[Z]] [[CSVAL0:%[^,]+]], i[[Z]]* [[S0]]
+  // CK19-DAG: store i64 [[CSVAL0:%[^,]+]], i64* [[S0]]
   // CK19-DAG: [[SEC0]] = getelementptr {{.+}}[12 x [13 x double]]* [[SEC00:%[^,]+]], i[[Z]] 0, i[[Z]] 0
   // CK19-DAG: [[SEC00]] = getelementptr {{.+}}[11 x [12 x [13 x double]]]* [[VAR0]], i[[Z]] 0, i[[Z]] 1
-  // CK19-DAG: [[CSVAL0]] = mul nuw i[[Z]] %{{[^,]+}}, 104
+  // CK19-DAG: [[CSVAL0]] = {{mul nuw i64 %[^,]+, 104|sext i32 .+ to i64}}
 
   // CK19: call void [[CALL35:@.+]]([11 x [12 x [13 x double]]]* {{[^,]+}})
   #pragma omp target map(marras[1][:ii][:])
@@ -2360,7 +2455,7 @@ void explicit_maps_single (int ii){
   }
 
   // Region 37
-  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 3, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[Z]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[3 x i{{.+}}]* [[MTYPE37]]{{.+}})
+  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 3, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[3 x i{{.+}}]* [[MTYPE37]]{{.+}})
   // CK19-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
   // CK19-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
   // CK19-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
@@ -2372,7 +2467,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i[[Z]]*
   // CK19-DAG: store i[[Z]] 11, i[[Z]]* [[CBP0]]
   // CK19-DAG: store i[[Z]] 11, i[[Z]]* [[CP0]]
-  // CK19-DAG: store i[[Z]] {{8|4}}, i[[Z]]* [[S0]]
+  // CK19-DAG: store i64 {{8|4}}, i64* [[S0]]
   //
   // CK19-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
   // CK19-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
@@ -2381,7 +2476,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[Z]]*
   // CK19-DAG: store i[[Z]] [[VAR1:%.+]], i[[Z]]* [[CBP1]]
   // CK19-DAG: store i[[Z]] [[VAR11:%.+]], i[[Z]]* [[CP1]]
-  // CK19-DAG: store i[[Z]] {{8|4}}, i[[Z]]* [[S1]]
+  // CK19-DAG: store i64 {{8|4}}, i64* [[S1]]
   //
   // CK19-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 2
   // CK19-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 2
@@ -2390,8 +2485,8 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to [13 x double]**
   // CK19-DAG: store [13 x double]* [[VAR2:%.+]], [13 x double]** [[CBP2]]
   // CK19-DAG: store [13 x double]* [[VAR2]], [13 x double]** [[CP2]]
-  // CK19-DAG: store i[[Z]] [[CSVAL2:%[^,]+]], i[[Z]]* [[S2]]
-  // CK19-DAG: [[CSVAL2]] = mul nuw i[[Z]] %{{[^,]+}}, 104
+  // CK19-DAG: store i64 [[CSVAL2:%[^,]+]], i64* [[S2]]
+  // CK19-DAG: [[CSVAL2]] = {{mul nuw i64 %[^,]+, 104|sext i32 .+ to i64}}
 
   // CK19: call void [[CALL37:@.+]](i[[Z]] 11, i[[Z]] %{{[^,]+}}, [13 x double]* %{{[^,]+}})
   #pragma omp target map(mvlaas)
@@ -2400,7 +2495,7 @@ void explicit_maps_single (int ii){
   }
 
   // Region 38
-  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 3, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[Z]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[3 x i{{.+}}]* [[MTYPE38]]{{.+}})
+  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 3, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[3 x i{{.+}}]* [[MTYPE38]]{{.+}})
   // CK19-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
   // CK19-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
   // CK19-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
@@ -2412,7 +2507,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i[[Z]]*
   // CK19-DAG: store i[[Z]] 11, i[[Z]]* [[CBP0]]
   // CK19-DAG: store i[[Z]] 11, i[[Z]]* [[CP0]]
-  // CK19-DAG: store i[[Z]] {{8|4}}, i[[Z]]* [[S0]]
+  // CK19-DAG: store i64 {{8|4}}, i64* [[S0]]
   //
   // CK19-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
   // CK19-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
@@ -2421,7 +2516,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[Z]]*
   // CK19-DAG: store i[[Z]] [[VAR1:%.+]], i[[Z]]* [[CBP1]]
   // CK19-DAG: store i[[Z]] [[VAR11:%.+]], i[[Z]]* [[CP1]]
-  // CK19-DAG: store i[[Z]] {{8|4}}, i[[Z]]* [[S1]]
+  // CK19-DAG: store i64 {{8|4}}, i64* [[S1]]
   //
   // CK19-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 2
   // CK19-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 2
@@ -2430,10 +2525,10 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to [13 x double]**
   // CK19-DAG: store [13 x double]* [[VAR2:%.+]], [13 x double]** [[CBP2]]
   // CK19-DAG: store [13 x double]* [[SEC2:%.+]], [13 x double]** [[CP2]]
-  // CK19-DAG: store i[[Z]] [[CSVAL2:%[^,]+]], i[[Z]]* [[S2]]
+  // CK19-DAG: store i64 [[CSVAL2:%[^,]+]], i64* [[S2]]
   // CK19-DAG: [[SEC2]] = getelementptr {{.+}}[13 x double]* [[VAR2]], i[[Z]] [[SEC22:%[^,]+]]
   // CK19-DAG: [[SEC22]] = mul nsw i[[Z]] 0, %{{[^,]+}}
-  // CK19-DAG: [[CSVAL2]] = mul nuw i[[Z]] %{{[^,]+}}, 104
+  // CK19-DAG: [[CSVAL2]] = {{mul nuw i64 %[^,]+, 104|sext i32 .+ to i64}}
 
   // CK19: call void [[CALL38:@.+]](i[[Z]] 11, i[[Z]] %{{[^,]+}}, [13 x double]* %{{[^,]+}})
   #pragma omp target map(mvlaas[:])
@@ -2442,7 +2537,7 @@ void explicit_maps_single (int ii){
   }
 
   // Region 39
-  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 3, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[Z]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[3 x i{{.+}}]* [[MTYPE39]]{{.+}})
+  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 3, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[3 x i{{.+}}]* [[MTYPE39]]{{.+}})
   // CK19-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
   // CK19-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
   // CK19-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
@@ -2454,7 +2549,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i[[Z]]*
   // CK19-DAG: store i[[Z]] 11, i[[Z]]* [[CBP0]]
   // CK19-DAG: store i[[Z]] 11, i[[Z]]* [[CP0]]
-  // CK19-DAG: store i[[Z]] {{8|4}}, i[[Z]]* [[S0]]
+  // CK19-DAG: store i64 {{8|4}}, i64* [[S0]]
   //
   // CK19-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
   // CK19-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
@@ -2463,7 +2558,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[Z]]*
   // CK19-DAG: store i[[Z]] [[VAR1:%.+]], i[[Z]]* [[CBP1]]
   // CK19-DAG: store i[[Z]] [[VAR11:%.+]], i[[Z]]* [[CP1]]
-  // CK19-DAG: store i[[Z]] {{8|4}}, i[[Z]]* [[S1]]
+  // CK19-DAG: store i64 {{8|4}}, i64* [[S1]]
   //
   // CK19-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 2
   // CK19-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 2
@@ -2472,10 +2567,10 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to [13 x double]**
   // CK19-DAG: store [13 x double]* [[VAR2:%.+]], [13 x double]** [[CBP2]]
   // CK19-DAG: store [13 x double]* [[SEC2:%.+]], [13 x double]** [[CP2]]
-  // CK19-DAG: store i[[Z]] [[CSVAL2:%[^,]+]], i[[Z]]* [[S2]]
+  // CK19-DAG: store i64 [[CSVAL2:%[^,]+]], i64* [[S2]]
   // CK19-DAG: [[SEC2]] = getelementptr {{.+}}[13 x double]* [[VAR2]], i[[Z]] [[SEC22:%[^,]+]]
   // CK19-DAG: [[SEC22]] = mul nsw i[[Z]] 0, %{{[^,]+}}
-  // CK19-DAG: [[CSVAL2]] = mul nuw i[[Z]] %{{[^,]+}}, 104
+  // CK19-DAG: [[CSVAL2]] = {{mul nuw i64 %[^,]+, 104|sext i32 .+ to i64}}
 
   // CK19: call void [[CALL39:@.+]](i[[Z]] 11, i[[Z]] %{{[^,]+}}, [13 x double]* %{{[^,]+}})
   #pragma omp target map(mvlaas[:][:][:])
@@ -2484,7 +2579,7 @@ void explicit_maps_single (int ii){
   }
 
   // Region 40
-  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 3, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[Z]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[3 x i{{.+}}]* [[MTYPE40]]{{.+}})
+  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 3, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[3 x i{{.+}}]* [[MTYPE40]]{{.+}})
   // CK19-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
   // CK19-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
   // CK19-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
@@ -2496,7 +2591,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i[[Z]]*
   // CK19-DAG: store i[[Z]] 11, i[[Z]]* [[CBP0]]
   // CK19-DAG: store i[[Z]] 11, i[[Z]]* [[CP0]]
-  // CK19-DAG: store i[[Z]] {{8|4}}, i[[Z]]* [[S0]]
+  // CK19-DAG: store i64 {{8|4}}, i64* [[S0]]
   //
   // CK19-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
   // CK19-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
@@ -2505,7 +2600,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[Z]]*
   // CK19-DAG: store i[[Z]] [[VAR1:%.+]], i[[Z]]* [[CBP1]]
   // CK19-DAG: store i[[Z]] [[VAR11:%.+]], i[[Z]]* [[CP1]]
-  // CK19-DAG: store i[[Z]] {{8|4}}, i[[Z]]* [[S1]]
+  // CK19-DAG: store i64 {{8|4}}, i64* [[S1]]
   //
   // CK19-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 2
   // CK19-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 2
@@ -2514,7 +2609,7 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to [13 x double]**
   // CK19-DAG: store [13 x double]* [[VAR2:%.+]], [13 x double]** [[CBP2]]
   // CK19-DAG: store [13 x double]* [[SEC2:%.+]], [13 x double]** [[CP2]]
-  // CK19-DAG: store i[[Z]] [[CSVAL2:%[^,]+]], i[[Z]]* [[S2]]
+  // CK19-DAG: store i64 [[CSVAL2:%[^,]+]], i64* [[S2]]
   // CK19-DAG: [[SEC2]] = getelementptr {{.+}}[13 x double]* [[SEC22:%[^,]+]], i[[Z]] 0
   // CK19-DAG: [[SEC22]] = getelementptr {{.+}}[13 x double]* [[VAR2]], i[[Z]] [[SEC222:%[^,]+]]
   // CK19-DAG: [[SEC222]] = mul nsw i[[Z]] 1, %{{[^,]+}}
@@ -2606,7 +2701,7 @@ void explicit_maps_single (int ii){
   }
 
   // Region 43 - the memory is not contiguous for this map - will map the whole last dimension.
-  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[Z]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE43]]{{.+}})
+  // CK19-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE43]]{{.+}})
   // CK19-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
   // CK19-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
   // CK19-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
@@ -2619,10 +2714,10 @@ void explicit_maps_single (int ii){
   // CK19-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to [13 x double]**
   // CK19-DAG: store [11 x [12 x [13 x double]]]* [[VAR0:%.+]], [11 x [12 x [13 x double]]]** [[CBP0]]
   // CK19-DAG: store [13 x double]* [[SEC0:%.+]], [13 x double]** [[CP0]]
-  // CK19-DAG: store i[[Z]] [[CSVAL0:%[^,]+]], i[[Z]]* [[S0]]
+  // CK19-DAG: store i64 [[CSVAL0:%[^,]+]], i64* [[S0]]
   // CK19-DAG: [[SEC0]] = getelementptr {{.+}}[12 x [13 x double]]* [[SEC00:%[^,]+]], i[[Z]] 0, i[[Z]] 0
   // CK19-DAG: [[SEC00]] = getelementptr {{.+}}[11 x [12 x [13 x double]]]* [[VAR0]], i[[Z]] 0, i[[Z]] 1
-  // CK19-DAG: [[CSVAL0]] = mul nuw i[[Z]] %{{[^,]+}}, 104
+  // CK19-DAG: [[CSVAL0]] = {{mul nuw i64 %[^,]+, 104|sext i32 .+ to i64}}
 
   // CK19: call void [[CALL43:@.+]]([11 x [12 x [13 x double]]]* {{[^,]+}})
   #pragma omp target map(marras[1][:ii][1:])
@@ -2633,7 +2728,6 @@ void explicit_maps_single (int ii){
 }
 
 // CK19: define {{.+}}[[CALL00]]
-// CK19: define {{.+}}[[CALL00n]]
 // CK19: define {{.+}}[[CALL01]]
 // CK19: define {{.+}}[[CALL02]]
 // CK19: define {{.+}}[[CALL03]]
@@ -2680,35 +2774,39 @@ void explicit_maps_single (int ii){
 
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK20 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK20 --check-prefix CK20-64
+// RUN: %clang_cc1 -DCK20 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK20 --check-prefix CK20-64
 // RUN: %clang_cc1 -DCK20 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK20 --check-prefix CK20-64
-// RUN: %clang_cc1 -DCK20 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK20 --check-prefix CK20-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK20 --check-prefix CK20-64
+// RUN: %clang_cc1 -DCK20 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK20 --check-prefix CK20-32
 // RUN: %clang_cc1 -DCK20 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK20 --check-prefix CK20-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK20 --check-prefix CK20-32
 
-// RUN: %clang_cc1 -DCK20 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY19 %s
+// RUN: %clang_cc1 -DCK20 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY19 %s
 // RUN: %clang_cc1 -DCK20 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY19 %s
-// RUN: %clang_cc1 -DCK20 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY19 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY19 %s
+// RUN: %clang_cc1 -DCK20 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY19 %s
 // RUN: %clang_cc1 -DCK20 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY19 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY19 %s
 // SIMD-ONLY19-NOT: {{__kmpc|__tgt}}
 #ifdef CK20
 
-// CK20: [[SIZE00:@.+]] = private {{.*}}constant [1 x i[[Z:64|32]]] [i[[Z:64|32]] 4]
+// CK20-LABEL: @.__omp_offloading_{{.*}}explicit_maps_references_and_function_args{{.*}}_l2832.region_id = weak constant i8 0
+// CK20: [[SIZE00:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK20: [[MTYPE00:@.+]] = private {{.*}}constant [1 x i64] [i64 33]
 
-// CK20: [[SIZE01:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 20]
+// CK20-LABEL: @.__omp_offloading_{{.*}}explicit_maps_references_and_function_args{{.*}}_l2853.region_id = weak constant i8 0
+// CK20: [[SIZE01:@.+]] = private {{.*}}constant [1 x i64] [i64 20]
 // CK20: [[MTYPE01:@.+]] = private {{.*}}constant [1 x i64] [i64 33]
 
-// CK20: [[SIZE02:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
+// CK20-LABEL: @.__omp_offloading_{{.*}}explicit_maps_references_and_function_args{{.*}}_l2871.region_id = weak constant i8 0
+// CK20: [[SIZE02:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK20: [[MTYPE02:@.+]] = private {{.*}}constant [1 x i64] [i64 34]
 
-// CK20: [[SIZE03:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 12]
+// CK20-LABEL: @.__omp_offloading_{{.*}}explicit_maps_references_and_function_args{{.*}}_l2892.region_id = weak constant i8 0
+// CK20: [[SIZE03:@.+]] = private {{.*}}constant [1 x i64] [i64 12]
 // CK20: [[MTYPE03:@.+]] = private {{.*}}constant [1 x i64] [i64 34]
 
-// CK20-LABEL: explicit_maps_references_and_function_args
+// CK20-LABEL: explicit_maps_references_and_function_args{{.*}}(
 void explicit_maps_references_and_function_args (int a, float b, int (&c)[10], float *d){
 
   int &aa = a;
@@ -2804,42 +2902,45 @@ void explicit_maps_references_and_function_args (int a, float b, int (&c)[10], f
 
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK21 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK21 --check-prefix CK21-64
+// RUN: %clang_cc1 -DCK21 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK21 --check-prefix CK21-64
 // RUN: %clang_cc1 -DCK21 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK21 --check-prefix CK21-64
-// RUN: %clang_cc1 -DCK21 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK21 --check-prefix CK21-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK21 --check-prefix CK21-64
+// RUN: %clang_cc1 -DCK21 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK21 --check-prefix CK21-32
 // RUN: %clang_cc1 -DCK21 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK21 --check-prefix CK21-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK21 --check-prefix CK21-32
 
-// RUN: %clang_cc1 -DCK21 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY20 %s
+// RUN: %clang_cc1 -DCK21 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY20 %s
 // RUN: %clang_cc1 -DCK21 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY20 %s
-// RUN: %clang_cc1 -DCK21 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY20 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY20 %s
+// RUN: %clang_cc1 -DCK21 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY20 %s
 // RUN: %clang_cc1 -DCK21 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY20 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY20 %s
 // SIMD-ONLY20-NOT: {{__kmpc|__tgt}}
 #ifdef CK21
 // CK21: [[ST:%.+]] = type { i32, i32, float* }
 
-// CK21: [[SIZE00:@.+]] = private {{.*}}constant [1 x i[[Z:64|32]]] [i[[Z:64|32]] 4]
-// CK21: [[MTYPE00:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
+// CK21-LABEL: @.__omp_offloading_{{.*}}foo{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK21: [[MTYPE00:@.+]] = private {{.*}}constant [2 x i64] [i64 32, i64 281474976710659]
 
-// CK21: [[SIZE01:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 492]
+// CK21-LABEL: @.__omp_offloading_{{.*}}foo{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK21: [[SIZE01:@.+]] = private {{.*}}constant [1 x i64] [i64 492]
 // CK21: [[MTYPE01:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK21: [[SIZE02:@.+]] = private {{.*}}constant [2 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] 500]
-// CK21: [[MTYPE02:@.+]] = private {{.*}}constant [2 x i64] [i64 34, i64 18]
+// CK21-LABEL: @.__omp_offloading_{{.*}}foo{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK21: [[MTYPE02:@.+]] = private {{.*}}constant [2 x i64] [i64 32, i64 281474976710674]
 
-// CK21: [[SIZE03:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 492]
+// CK21-LABEL: @.__omp_offloading_{{.*}}foo{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK21: [[SIZE03:@.+]] = private {{.*}}constant [1 x i64] [i64 492]
 // CK21: [[MTYPE03:@.+]] = private {{.*}}constant [1 x i64] [i64 34]
 
-// CK21: [[SIZE04:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
+// CK21-LABEL: @.__omp_offloading_{{.*}}foo{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK21: [[SIZE04:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK21: [[MTYPE04:@.+]] = private {{.*}}constant [1 x i64] [i64 34]
 
-// CK21: [[SIZE05:@.+]] = private {{.*}}constant [2 x i[[Z]]] [i[[Z]] 4, i[[Z]] 4]
-// CK21: [[MTYPE05:@.+]] = private {{.*}}constant [2 x i64] [i64 35, i64 3]
+// CK21-LABEL: @.__omp_offloading_{{.*}}foo{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK21: [[MTYPE05:@.+]] = private {{.*}}constant [3 x i64] [i64 32, i64 281474976710659, i64 281474976710659]
 
-// CK21-LABEL: explicit_maps_template_args_and_members
+// CK21-LABEL: explicit_maps_template_args_and_members{{.*}}(
 
 template <int X, typename T>
 struct CC {
@@ -2852,24 +2953,37 @@ struct CC {
     T *lb;
 
     // Region 00
-    // CK21-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE00]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE00]]{{.+}})
+    // CK21-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE00]]{{.+}})
     // CK21-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
     // CK21-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+    // CK21-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
     // CK21-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
     // CK21-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+    // CK21-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
     // CK21-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[ST]]**
     // CK21-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i32**
     // CK21-DAG: store [[ST]]* [[VAR0:%.+]], [[ST]]** [[CBP0]]
     // CK21-DAG: store i32* [[SEC0:%.+]], i32** [[CP0]]
+    // CK21-DAG: store i64 {{%.+}}, i64* [[S0]]
     // CK21-DAG: [[SEC0]] = getelementptr {{.*}}[[ST]]* [[VAR0:%.+]], i{{.+}} 0, i{{.+}} 0
+
+    // CK21-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
+    // CK21-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
+    // CK21-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
+    // CK21-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[ST]]**
+    // CK21-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i32**
+    // CK21-DAG: store [[ST]]* [[VAR1:%.+]], [[ST]]** [[CBP1]]
+    // CK21-DAG: store i32* [[SEC1:%.+]], i32** [[CP1]]
+    // CK21-DAG: store i64 {{.+}}, i64* [[S1]]
+    // CK21-DAG: [[SEC1]] = getelementptr {{.*}}[[ST]]* [[VAR1:%.+]], i{{.+}} 0, i{{.+}} 0
 
     // CK21: call void [[CALL00:@.+]]([[ST]]* {{[^,]+}})
     #pragma omp target map(A)
     {
       A += 1;
     }
-    
+
     // Region 01
     // CK21-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE01]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE01]]{{.+}})
     // CK21-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -2890,26 +3004,31 @@ struct CC {
     {
       lb[4] += 1;
     }
-    
+
     // Region 02
-    // CK21-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[SIZE02]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE02]]{{.+}})
+    // CK21-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE02]]{{.+}})
     // CK21-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
     // CK21-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+    // CK21-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
     // CK21-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
     // CK21-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+    // CK21-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
     // CK21-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[ST]]**
     // CK21-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to float***
     // CK21-DAG: store [[ST]]* [[VAR0:%.+]], [[ST]]** [[CBP0]]
     // CK21-DAG: store float** [[SEC0:%.+]], float*** [[CP0]]
+    // CK21-DAG: store i64 {{%.+}}, i64* [[S0]]
     // CK21-DAG: [[SEC0]] = getelementptr {{.*}}[[ST]]* [[VAR0]], i{{.+}} 0, i{{.+}} 2
-    
+
     // CK21-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
     // CK21-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
+    // CK21-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
     // CK21-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to float***
     // CK21-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to float**
     // CK21-DAG: store float** [[SEC0]], float*** [[CBP1]]
     // CK21-DAG: store float* [[SEC1:%.+]], float** [[CP1]]
+    // CK21-DAG: store i64 {{.+}}, i64* [[S1]]
     // CK21-DAG: [[SEC1]] = getelementptr {{.*}}float* [[RVAR1:%[^,]+]], i{{.+}} 123
     // CK21-DAG: [[RVAR1]] = load float*, float** [[SEC1_:%[^,]+]]
     // CK21-DAG: [[SEC1_]] = getelementptr {{.*}}[[ST]]* [[VAR0]], i{{.+}} 0, i{{.+}} 2
@@ -2919,7 +3038,7 @@ struct CC {
     {
       B[2] += 1.0f;
     }
-    
+
     // Region 03
     // CK21-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE03]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE03]]{{.+}})
     // CK21-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -2937,7 +3056,7 @@ struct CC {
     {
       la[3] += 1.0f;
     }
-    
+
     // Region 04
     // CK21-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE04]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE04]]{{.+}})
     // CK21-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -2955,28 +3074,42 @@ struct CC {
     {
       arg +=1;
     }
-    
+
     // Make sure the extra flag is passed to the second map.
     // Region 05
-    // CK21-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[SIZE05]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE05]]{{.+}})
+    // CK21-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 3, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[3 x i{{.+}}]* [[MTYPE05]]{{.+}})
     // CK21-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
     // CK21-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+    // CK21-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
     // CK21-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
     // CK21-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+    // CK21-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
     // CK21-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[ST]]**
     // CK21-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i32**
     // CK21-DAG: store [[ST]]* [[VAR0:%.+]], [[ST]]** [[CBP0]]
     // CK21-DAG: store i32* [[SEC0:%.+]], i32** [[CP0]]
+    // CK21-DAG: store i64 {{%.+}}, i64* [[S0]]
     // CK21-DAG: [[SEC0]] = getelementptr {{.*}}[[ST]]* [[VAR0]], i{{.+}} 0, i{{.+}} 0
 
     // CK21-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
     // CK21-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
+    // CK21-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
     // CK21-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[ST]]**
     // CK21-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i32**
-    // CK21-DAG: store [[ST]]* [[VAR1:%.+]], [[ST]]** [[CBP1]]
-    // CK21-DAG: store i32* [[SEC1:%.+]], i32** [[CP1]]
-    // CK21-DAG: [[SEC1]] = getelementptr {{.*}}[[ST]]* [[VAR0]], i{{.+}} 0, i{{.+}} 1
+    // CK21-DAG: store [[ST]]* [[VAR0]], [[ST]]** [[CBP1]]
+    // CK21-DAG: store i32* [[SEC0]], i32** [[CP1]]
+    // CK21-DAG: store i64 {{.+}}, i64* [[S1]]
+
+    // CK21-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 2
+    // CK21-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 2
+    // CK21-DAG: [[S2:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 2
+    // CK21-DAG: [[CBP2:%.+]] = bitcast i8** [[BP2]] to [[ST]]**
+    // CK21-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to i32**
+    // CK21-DAG: store [[ST]]* [[VAR2:%.+]], [[ST]]** [[CBP2]]
+    // CK21-DAG: store i32* [[SEC2:%.+]], i32** [[CP2]]
+    // CK21-DAG: store i64 {{.+}}, i64* [[S2]]
+    // CK21-DAG: [[SEC2]] = getelementptr {{.*}}[[ST]]* [[VAR2]], i{{.+}} 0, i{{.+}} 1
 
     // CK21: call void [[CALL05:@.+]]([[ST]]* {{[^,]+}})
     #pragma omp target map(A, A2)
@@ -3001,68 +3134,83 @@ int explicit_maps_template_args_and_members(int a){
 // CK21: define {{.+}}[[CALL05]]
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK22 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK22 --check-prefix CK22-64
+// RUN: %clang_cc1 -DCK22 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK22 --check-prefix CK22-64
 // RUN: %clang_cc1 -DCK22 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK22 --check-prefix CK22-64
-// RUN: %clang_cc1 -DCK22 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK22 --check-prefix CK22-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK22 --check-prefix CK22-64
+// RUN: %clang_cc1 -DCK22 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK22 --check-prefix CK22-32
 // RUN: %clang_cc1 -DCK22 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK22 --check-prefix CK22-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK22 --check-prefix CK22-32
 
-// RUN: %clang_cc1 -DCK22 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY21 %s
+// RUN: %clang_cc1 -DCK22 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY21 %s
 // RUN: %clang_cc1 -DCK22 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY21 %s
-// RUN: %clang_cc1 -DCK22 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY21 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY21 %s
+// RUN: %clang_cc1 -DCK22 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY21 %s
 // RUN: %clang_cc1 -DCK22 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY21 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY21 %s
 // SIMD-ONLY21-NOT: {{__kmpc|__tgt}}
 #ifdef CK22
 
 // CK22-DAG: [[ST:%.+]] = type { float }
 // CK22-DAG: [[STT:%.+]] = type { i32 }
 
-// CK22: [[SIZE00:@.+]] = private {{.*}}constant [1 x i[[Z:64|32]]] [i[[Z:64|32]] 4]
+// CK22-LABEL: @.__omp_offloading_{{.*}}explicit_maps_globals{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK22: [[SIZE00:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK22: [[MTYPE00:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK22: [[SIZE01:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 400]
+// CK22-LABEL: @.__omp_offloading_{{.*}}explicit_maps_globals{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK22: [[SIZE01:@.+]] = private {{.*}}constant [1 x i64] [i64 400]
 // CK22: [[MTYPE01:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK22: [[SIZE02:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] {{8|4}}]
+// CK22-LABEL: @.__omp_offloading_{{.*}}explicit_maps_globals{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK22: [[SIZE02:@.+]] = private {{.*}}constant [1 x i64] [i64 {{8|4}}]
 // CK22: [[MTYPE02:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK22: [[SIZE03:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 16]
+// CK22-LABEL: @.__omp_offloading_{{.*}}explicit_maps_globals{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK22: [[SIZE03:@.+]] = private {{.*}}constant [1 x i64] [i64 16]
 // CK22: [[MTYPE03:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK22: [[SIZE04:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 20]
+// CK22-LABEL: @.__omp_offloading_{{.*}}explicit_maps_globals{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK22: [[SIZE04:@.+]] = private {{.*}}constant [1 x i64] [i64 20]
 // CK22: [[MTYPE04:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK22: [[SIZE05:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
+// CK22-LABEL: @.__omp_offloading_{{.*}}explicit_maps_globals{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK22: [[SIZE05:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK22: [[MTYPE05:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK22: [[SIZE06:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 400]
+// CK22-LABEL: @.__omp_offloading_{{.*}}explicit_maps_globals{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK22: [[SIZE06:@.+]] = private {{.*}}constant [1 x i64] [i64 400]
 // CK22: [[MTYPE06:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK22: [[SIZE07:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] {{8|4}}]
+// CK22-LABEL: @.__omp_offloading_{{.*}}explicit_maps_globals{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK22: [[SIZE07:@.+]] = private {{.*}}constant [1 x i64] [i64 {{8|4}}]
 // CK22: [[MTYPE07:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK22: [[SIZE08:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 16]
+// CK22-LABEL: @.__omp_offloading_{{.*}}explicit_maps_globals{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK22: [[SIZE08:@.+]] = private {{.*}}constant [1 x i64] [i64 16]
 // CK22: [[MTYPE08:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK22: [[SIZE09:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 20]
+// CK22-LABEL: @.__omp_offloading_{{.*}}explicit_maps_globals{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK22: [[SIZE09:@.+]] = private {{.*}}constant [1 x i64] [i64 20]
 // CK22: [[MTYPE09:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK22: [[SIZE10:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
+// CK22-LABEL: @.__omp_offloading_{{.*}}explicit_maps_globals{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK22: [[SIZE10:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK22: [[MTYPE10:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK22: [[SIZE11:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 400]
+// CK22-LABEL: @.__omp_offloading_{{.*}}explicit_maps_globals{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK22: [[SIZE11:@.+]] = private {{.*}}constant [1 x i64] [i64 400]
 // CK22: [[MTYPE11:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK22: [[SIZE12:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] {{8|4}}]
+// CK22-LABEL: @.__omp_offloading_{{.*}}explicit_maps_globals{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK22: [[SIZE12:@.+]] = private {{.*}}constant [1 x i64] [i64 {{8|4}}]
 // CK22: [[MTYPE12:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK22: [[SIZE13:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 16]
+// CK22-LABEL: @.__omp_offloading_{{.*}}explicit_maps_globals{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK22: [[SIZE13:@.+]] = private {{.*}}constant [1 x i64] [i64 16]
 // CK22: [[MTYPE13:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK22: [[SIZE14:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 20]
+// CK22-LABEL: @.__omp_offloading_{{.*}}explicit_maps_globals{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK22: [[SIZE14:@.+]] = private {{.*}}constant [1 x i64] [i64 20]
 // CK22: [[MTYPE14:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
 int a;
@@ -3086,7 +3234,7 @@ STT<int> sta ;
 STT<int> stc[100];
 STT<int> *std;
 
-// CK22-LABEL: explicit_maps_globals
+// CK22-LABEL: explicit_maps_globals{{.*}}(
 int explicit_maps_globals(void){
   // Region 00
   // CK22-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE00]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE00]]{{.+}})
@@ -3103,7 +3251,7 @@ int explicit_maps_globals(void){
   // CK22: call void [[CALL00:@.+]](i32* {{[^,]+}})
   #pragma omp target map(a)
   { a+=1; }
-  
+
   // Region 01
   // CK22-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE01]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE01]]{{.+}})
   // CK22-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3119,7 +3267,7 @@ int explicit_maps_globals(void){
   // CK22: call void [[CALL01:@.+]]([100 x i32]* {{[^,]+}})
   #pragma omp target map(c)
   { c[3]+=1; }
-  
+
   // Region 02
   // CK22-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE02]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE02]]{{.+}})
   // CK22-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3135,7 +3283,7 @@ int explicit_maps_globals(void){
   // CK22: call void [[CALL02:@.+]](i32** {{[^,]+}})
   #pragma omp target map(d)
   { d[3]+=1; }
-    
+
   // Region 03
   // CK22-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE03]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE03]]{{.+}})
   // CK22-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3151,7 +3299,7 @@ int explicit_maps_globals(void){
   // CK22: call void [[CALL03:@.+]]([100 x i32]* {{[^,]+}})
   #pragma omp target map(c[1:4])
   { c[3]+=1; }
-  
+
   // Region 04
   // CK22-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE04]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE04]]{{.+}})
   // CK22-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3170,7 +3318,7 @@ int explicit_maps_globals(void){
   // CK22: call void [[CALL04:@.+]](i32* {{[^,]+}})
   #pragma omp target map(d[2:5])
   { d[3]+=1; }
-  
+
   // Region 05
   // CK22-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE05]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE05]]{{.+}})
   // CK22-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3186,7 +3334,7 @@ int explicit_maps_globals(void){
   // CK22: call void [[CALL05:@.+]]([[ST]]* {{[^,]+}})
   #pragma omp target map(sa)
   { sa.fa+=1; }
-  
+
   // Region 06
   // CK22-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE06]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE06]]{{.+}})
   // CK22-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3202,7 +3350,7 @@ int explicit_maps_globals(void){
   // CK22: call void [[CALL06:@.+]]([100 x [[ST]]]* {{[^,]+}})
   #pragma omp target map(sc)
   { sc[3].fa+=1; }
-  
+
   // Region 07
   // CK22-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE07]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE07]]{{.+}})
   // CK22-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3218,7 +3366,7 @@ int explicit_maps_globals(void){
   // CK22: call void [[CALL07:@.+]]([[ST]]** {{[^,]+}})
   #pragma omp target map(sd)
   { sd[3].fa+=1; }
-  
+
   // Region 08
   // CK22-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE08]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE08]]{{.+}})
   // CK22-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3234,7 +3382,7 @@ int explicit_maps_globals(void){
   // CK22: call void [[CALL08:@.+]]([100 x [[ST]]]* {{[^,]+}})
   #pragma omp target map(sc[1:4])
   { sc[3].fa+=1; }
-  
+
   // Region 09
   // CK22-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE09]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE09]]{{.+}})
   // CK22-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3253,7 +3401,7 @@ int explicit_maps_globals(void){
   // CK22: call void [[CALL09:@.+]]([[ST]]* {{[^,]+}})
   #pragma omp target map(sd[2:5])
   { sd[3].fa+=1; }
-  
+
   // Region 10
   // CK22-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE10]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE10]]{{.+}})
   // CK22-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3269,7 +3417,7 @@ int explicit_maps_globals(void){
   // CK22: call void [[CALL10:@.+]]([[STT]]* {{[^,]+}})
   #pragma omp target map(sta)
   { sta.fa+=1; }
-  
+
   // Region 11
   // CK22-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE11]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE11]]{{.+}})
   // CK22-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3285,7 +3433,7 @@ int explicit_maps_globals(void){
   // CK22: call void [[CALL11:@.+]]([100 x [[STT]]]* {{[^,]+}})
   #pragma omp target map(stc)
   { stc[3].fa+=1; }
-  
+
   // Region 12
   // CK22-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE12]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE12]]{{.+}})
   // CK22-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3301,7 +3449,7 @@ int explicit_maps_globals(void){
   // CK22: call void [[CALL12:@.+]]([[STT]]** {{[^,]+}})
   #pragma omp target map(std)
   { std[3].fa+=1; }
-  
+
   // Region 13
   // CK22-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE13]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE13]]{{.+}})
   // CK22-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3317,7 +3465,7 @@ int explicit_maps_globals(void){
   // CK22: call void [[CALL13:@.+]]([100 x [[STT]]]* {{[^,]+}})
   #pragma omp target map(stc[1:4])
   { stc[3].fa+=1; }
-  
+
   // Region 14
   // CK22-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE14]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE14]]{{.+}})
   // CK22-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3356,47 +3504,53 @@ int explicit_maps_globals(void){
 // CK22: define {{.+}}[[CALL14]]
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -std=c++11 -DCK23 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK23 --check-prefix CK23-64
+// RUN: %clang_cc1 -std=c++11 -DCK23 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK23 --check-prefix CK23-64
 // RUN: %clang_cc1 -std=c++11 -DCK23 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -std=c++11 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK23 --check-prefix CK23-64
-// RUN: %clang_cc1 -std=c++11 -DCK23 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK23 --check-prefix CK23-32
+// RUN: %clang_cc1 -std=c++11 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK23 --check-prefix CK23-64
+// RUN: %clang_cc1 -std=c++11 -DCK23 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK23 --check-prefix CK23-32
 // RUN: %clang_cc1 -std=c++11 -DCK23 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -std=c++11 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK23 --check-prefix CK23-32
+// RUN: %clang_cc1 -std=c++11 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK23 --check-prefix CK23-32
 
-// RUN: %clang_cc1 -std=c++11 -DCK23 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY22 %s
+// RUN: %clang_cc1 -std=c++11 -DCK23 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY22 %s
 // RUN: %clang_cc1 -std=c++11 -DCK23 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -std=c++11 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY22 %s
-// RUN: %clang_cc1 -std=c++11 -DCK23 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY22 %s
+// RUN: %clang_cc1 -std=c++11 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY22 %s
+// RUN: %clang_cc1 -std=c++11 -DCK23 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY22 %s
 // RUN: %clang_cc1 -std=c++11 -DCK23 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -std=c++11 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY22 %s
+// RUN: %clang_cc1 -std=c++11 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY22 %s
 // SIMD-ONLY22-NOT: {{__kmpc|__tgt}}
 #ifdef CK23
 
-// CK23: [[SIZE00:@.+]] = private {{.*}}constant [1 x i[[Z:64|32]]] [i[[Z:64|32]] 4]
+// CK23-LABEL: @.__omp_offloading_{{.*}}explicit_maps_inside_captured{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK23: [[SIZE00:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK23: [[MTYPE00:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK23: [[SIZE01:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
+// CK23-LABEL: @.__omp_offloading_{{.*}}explicit_maps_inside_captured{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK23: [[SIZE01:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK23: [[MTYPE01:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK23: [[SIZE02:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 400]
+// CK23-LABEL: @.__omp_offloading_{{.*}}explicit_maps_inside_captured{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK23: [[SIZE02:@.+]] = private {{.*}}constant [1 x i64] [i64 400]
 // CK23: [[MTYPE02:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK23: [[SIZE03:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] {{8|4}}]
+// CK23-LABEL: @.__omp_offloading_{{.*}}explicit_maps_inside_captured{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK23: [[SIZE03:@.+]] = private {{.*}}constant [1 x i64] [i64 {{8|4}}]
 // CK23: [[MTYPE03:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK23: [[SIZE04:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 16]
+// CK23-LABEL: @.__omp_offloading_{{.*}}explicit_maps_inside_captured{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK23: [[SIZE04:@.+]] = private {{.*}}constant [1 x i64] [i64 16]
 // CK23: [[MTYPE04:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK23: [[SIZE05:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 16]
+// CK23-LABEL: @.__omp_offloading_{{.*}}explicit_maps_inside_captured{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK23: [[SIZE05:@.+]] = private {{.*}}constant [1 x i64] [i64 16]
 // CK23: [[MTYPE05:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK23-LABEL: explicit_maps_inside_captured
+// CK23-LABEL: explicit_maps_inside_captured{{.*}}(
 int explicit_maps_inside_captured(int a){
   float b;
   float c[100];
   float *d;
-  
-  // CK23: call void @{{.*}}explicit_maps_inside_captured{{.*}}([[SA:%.+]]* {{.*}}) 
+
+  // CK23: call void @{{.*}}explicit_maps_inside_captured{{.*}}([[SA:%.+]]* {{.*}})
   // CK23: define {{.*}}explicit_maps_inside_captured{{.*}}
   [&](void){
     // Region 00
@@ -3456,7 +3610,7 @@ int explicit_maps_inside_captured(int a){
     // CK23: call void [[CALL02:@.+]]([100 x float]* {{[^,]+}})
     #pragma omp target map(c)
       { c[3]+=1; }
-      
+
     // Region 03
     // CK23-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE03]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE03]]{{.+}})
     // CK23-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3492,11 +3646,11 @@ int explicit_maps_inside_captured(int a){
     // CK23-DAG: [[CAP0]] = getelementptr inbounds [[SA]], [[SA]]
     // CK23-DAG: [[VAR00]] = load [100 x float]*, [100 x float]** [[CAP00:%[^,]+]]
     // CK23-DAG: [[CAP00]] = getelementptr inbounds [[SA]], [[SA]]
-    
+
     // CK23: call void [[CALL04:@.+]]([100 x float]* {{[^,]+}})
     #pragma omp target map(c[2:4])
       { c[3]+=1; }
-      
+
     // Region 05
     // CK23-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE05]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE05]]{{.+}})
     // CK23-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
@@ -3515,7 +3669,7 @@ int explicit_maps_inside_captured(int a){
     // CK23-DAG: [[CAP0]] = getelementptr inbounds [[SA]], [[SA]]
     // CK23-DAG: [[VAR00]] = load float**, float*** [[CAP00:%[^,]+]]
     // CK23-DAG: [[CAP00]] = getelementptr inbounds [[SA]], [[SA]]
-        
+
     // CK23: call void [[CALL05:@.+]](float* {{[^,]+}})
     #pragma omp target map(d[2:4])
       { d[3]+=1; }
@@ -3531,19 +3685,19 @@ int explicit_maps_inside_captured(int a){
 // CK23: define {{.+}}[[CALL05]]
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK24 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK24 --check-prefix CK24-64
+// RUN: %clang_cc1 -DCK24 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK24 --check-prefix CK24-64
 // RUN: %clang_cc1 -DCK24 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK24 --check-prefix CK24-64
-// RUN: %clang_cc1 -DCK24 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK24 --check-prefix CK24-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK24 --check-prefix CK24-64
+// RUN: %clang_cc1 -DCK24 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK24 --check-prefix CK24-32
 // RUN: %clang_cc1 -DCK24 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK24 --check-prefix CK24-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK24 --check-prefix CK24-32
 
-// RUN: %clang_cc1 -DCK24 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY23 %s
+// RUN: %clang_cc1 -DCK24 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY23 %s
 // RUN: %clang_cc1 -DCK24 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY23 %s
-// RUN: %clang_cc1 -DCK24 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY23 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY23 %s
+// RUN: %clang_cc1 -DCK24 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY23 %s
 // RUN: %clang_cc1 -DCK24 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY23 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY23 %s
 // SIMD-ONLY23-NOT: {{__kmpc|__tgt}}
 #ifdef CK24
 
@@ -3570,44 +3724,44 @@ struct SC{
   int b[10];
 };
 
-// CK24: [[SIZE01:@.+]] = private {{.*}}constant [1 x i[[Z:64|32]]] [i[[Z:64|32]] 4]
-// CK24: [[MTYPE01:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
+// CK24-LABEL: @.__omp_offloading_{{.*}}explicit_maps_struct_fields{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK24: [[MTYPE01:@.+]] = private {{.*}}constant [2 x i64] [i64 32, i64 281474976710659]
 
-// CK24: [[SIZE13:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
-// CK24: [[MTYPE13:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
+// CK24-LABEL: @.__omp_offloading_{{.*}}explicit_maps_struct_fields{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK24: [[MTYPE13:@.+]] = private {{.*}}constant [2 x i64] [i64 32, i64 281474976710659]
 
-// CK24: [[SIZE14:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] {{56|48}}]
-// CK24: [[MTYPE14:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
+// CK24-LABEL: @.__omp_offloading_{{.*}}explicit_maps_struct_fields{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK24: [[MTYPE14:@.+]] = private {{.*}}constant [2 x i64] [i64 32, i64 281474976710659]
 
-// CK24: [[SIZE15:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
-// CK24: [[MTYPE15:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
+// CK24-LABEL: @.__omp_offloading_{{.*}}explicit_maps_struct_fields{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK24: [[MTYPE15:@.+]] = private {{.*}}constant [2 x i64] [i64 32, i64 281474976710659]
 
-// CK24: [[SIZE16:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 20]
-// CK24: [[MTYPE16:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
+// CK24-LABEL: @.__omp_offloading_{{.*}}explicit_maps_struct_fields{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK24: [[MTYPE16:@.+]] = private {{.*}}constant [2 x i64] [i64 32, i64 281474976710659]
 
-// CK24: [[SIZE17:@.+]] = private {{.*}}constant [2 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] {{3560|2880}}]
-// CK24: [[MTYPE17:@.+]] = private {{.*}}constant [2 x i64] [i64 35, i64 19]
+// CK24-LABEL: @.__omp_offloading_{{.*}}explicit_maps_struct_fields{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK24: [[MTYPE17:@.+]] = private {{.*}}constant [2 x i64] [i64 32, i64 281474976710675]
 
-// CK24: [[SIZE18:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
-// CK24: [[MTYPE18:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
+// CK24-LABEL: @.__omp_offloading_{{.*}}explicit_maps_struct_fields{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK24: [[MTYPE18:@.+]] = private {{.*}}constant [2 x i64] [i64 32, i64 281474976710659]
 
-// CK24: [[SIZE19:@.+]] = private {{.*}}constant [2 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] 4]
-// CK24: [[MTYPE19:@.+]] = private {{.*}}constant [2 x i64] [i64 35, i64 19]
+// CK24-LABEL: @.__omp_offloading_{{.*}}explicit_maps_struct_fields{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK24: [[MTYPE19:@.+]] = private {{.*}}constant [3 x i64] [i64 32, i64 281474976710659, i64 281474976710675]
 
-// CK24: [[SIZE20:@.+]] = private {{.*}}constant [2 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] 4]
-// CK24: [[MTYPE20:@.+]] = private {{.*}}constant [2 x i64] [i64 35, i64 19]
+// CK24-LABEL: @.__omp_offloading_{{.*}}explicit_maps_struct_fields{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK24: [[MTYPE20:@.+]] = private {{.*}}constant [2 x i64] [i64 32, i64 281474976710675]
 
-// CK24: [[SIZE21:@.+]] = private {{.*}}constant [2 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] 4]
-// CK24: [[MTYPE21:@.+]] = private {{.*}}constant [2 x i64] [i64 35, i64 19]
+// CK24-LABEL: @.__omp_offloading_{{.*}}explicit_maps_struct_fields{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK24: [[MTYPE21:@.+]] = private {{.*}}constant [3 x i64] [i64 32, i64 281474976710659, i64 281474976710675]
 
-// CK24: [[SIZE22:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] {{8|4}}]
-// CK24: [[MTYPE22:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
+// CK24-LABEL: @.__omp_offloading_{{.*}}explicit_maps_struct_fields{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK24: [[MTYPE22:@.+]] = private {{.*}}constant [2 x i64] [i64 32, i64 281474976710659]
 
-// CK24: [[SIZE23:@.+]] = private {{.*}}constant [2 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] {{8|4}}]
-// CK24: [[MTYPE23:@.+]] = private {{.*}}constant [2 x i64] [i64 35, i64 19]
+// CK24-LABEL: @.__omp_offloading_{{.*}}explicit_maps_struct_fields{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK24: [[MTYPE23:@.+]] = private {{.*}}constant [3 x i64] [i64 32, i64 281474976710659, i64 281474976710675]
 
-// CK24: [[SIZE24:@.+]] = private {{.*}}constant [4 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] {{8|4}}, i[[Z]] {{8|4}}, i[[Z]] 4]
-// CK24: [[MTYPE24:@.+]] = private {{.*}}constant [4 x i64] [i64 35, i64 19, i64 19, i64 19]
+// CK24-LABEL: @.__omp_offloading_{{.*}}explicit_maps_struct_fields{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK24: [[MTYPE24:@.+]] = private {{.*}}constant [4 x i64] [i64 32, i64 281474976710672, i64 16, i64 19]
 
 // CK24-LABEL: explicit_maps_struct_fields
 int explicit_maps_struct_fields(int a){
@@ -3615,37 +3769,61 @@ int explicit_maps_struct_fields(int a){
   SC *p;
 
 // Region 01
-// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE01]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE01]]{{.+}})
+// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE01]]{{.+}})
 // CK24-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
 // CK24-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+// CK24-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
 // CK24-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+// CK24-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SC]]**
 // CK24-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i32**
 // CK24-DAG: store [[SC]]* [[VAR0:%.+]], [[SC]]** [[CBP0]]
 // CK24-DAG: store i32* [[SEC0:%.+]], i32** [[CP0]]
+// CK24-DAG: store i64 {{%.+}}, i64* [[S0]]
 // CK24-DAG: [[SEC0]] = getelementptr {{.*}}[[SC]]* [[VAR0]], i{{.+}} 0, i{{.+}} 0
+
+// CK24-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SC]]**
+// CK24-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i32**
+// CK24-DAG: store [[SC]]* [[VAR0]], [[SC]]** [[CBP1]]
+// CK24-DAG: store i32* [[SEC0]], i32** [[CP1]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S1]]
 
 // CK24: call void [[CALL01:@.+]]([[SC]]* {{[^,]+}})
 #pragma omp target map(s.a)
   { s.a++; }
-  
+
 //
 // Same thing but starting from a pointer.
 //
 // Region 13
-// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE13]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE13]]{{.+}})
+// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE13]]{{.+}})
 // CK24-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
 // CK24-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+// CK24-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
 // CK24-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+// CK24-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SC]]**
 // CK24-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i32**
 // CK24-DAG: store [[SC]]* [[VAR0:%.+]], [[SC]]** [[CBP0]]
 // CK24-DAG: store i32* [[SEC0:%.+]], i32** [[CP0]]
+// CK24-DAG: store i64 {{%.+}}, i64* [[S0]]
 // CK24-DAG: [[SEC0]] = getelementptr {{.*}}[[SC]]* [[VAR00:%.+]], i{{.+}} 0, i{{.+}} 0
+
+// CK24-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SC]]**
+// CK24-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i32**
+// CK24-DAG: store [[SC]]* [[VAR0]], [[SC]]** [[CBP1]]
+// CK24-DAG: store i32* [[SEC0]], i32** [[CP1]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S1]]
 
 // CK24-DAG: [[VAR0]] = load [[SC]]*, [[SC]]** %{{.+}}
 // CK24-DAG: [[VAR00]] = load [[SC]]*, [[SC]]** %{{.+}}
@@ -3653,20 +3831,32 @@ int explicit_maps_struct_fields(int a){
 // CK24: call void [[CALL13:@.+]]([[SC]]* {{[^,]+}})
 #pragma omp target map(p->a)
   { p->a++; }
-  
+
 // Region 14
-// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE14]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE14]]{{.+}})
+// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE14]]{{.+}})
 // CK24-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
 // CK24-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+// CK24-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
 // CK24-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+// CK24-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SC]]**
 // CK24-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to [[SA]]**
 // CK24-DAG: store [[SC]]* [[VAR0:%.+]], [[SC]]** [[CBP0]]
 // CK24-DAG: store [[SA]]* [[SEC0:%.+]], [[SA]]** [[CP0]]
+// CK24-DAG: store i64 {{%.+}}, i64* [[S0]]
 // CK24-DAG: [[SEC0]] = getelementptr {{.*}}[[SB]]* [[SEC00:%[^,]+]], i{{.+}} 0, i{{.+}} 1
 // CK24-DAG: [[SEC00]] = getelementptr {{.*}}[[SC]]* [[VAR00:%.+]], i{{.+}} 0, i{{.+}} 1
+
+// CK24-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SC]]**
+// CK24-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to [[SA]]**
+// CK24-DAG: store [[SC]]* [[VAR0]], [[SC]]** [[CBP1]]
+// CK24-DAG: store [[SA]]* [[SEC0]], [[SA]]** [[CP1]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S1]]
 
 // CK24-DAG: [[VAR0]] = load [[SC]]*, [[SC]]** %{{.+}}
 // CK24-DAG: [[VAR00]] = load [[SC]]*, [[SC]]** %{{.+}}
@@ -3674,21 +3864,33 @@ int explicit_maps_struct_fields(int a){
 // CK24: call void [[CALL14:@.+]]([[SC]]* {{[^,]+}})
 #pragma omp target map(p->s.s)
   { p->a++; }
-  
+
 // Region 15
-// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE15]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE15]]{{.+}})
+// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[sz:64|32]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE15]]{{.+}})
 // CK24-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
 // CK24-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+// CK24-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
 // CK24-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+// CK24-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SC]]**
 // CK24-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i32**
 // CK24-DAG: store [[SC]]* [[VAR0:%.+]], [[SC]]** [[CBP0]]
 // CK24-DAG: store i32* [[SEC0:%.+]], i32** [[CP0]]
+// CK24-DAG: store i64 {{%.+}}, i64* [[S0]]
 // CK24-DAG: [[SEC0]] = getelementptr {{.*}}[[SA]]* [[SEC00:%[^,]+]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[SEC00]] = getelementptr {{.*}}[[SB]]* [[SEC000:%[^,]+]], i{{.+}} 0, i{{.+}} 1
 // CK24-DAG: [[SEC000]] = getelementptr {{.*}}[[SC]]* [[VAR00:%.+]], i{{.+}} 0, i{{.+}} 1
+
+// CK24-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SC]]**
+// CK24-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i32**
+// CK24-DAG: store [[SC]]* [[VAR0]], [[SC]]** [[CBP1]]
+// CK24-DAG: store i32* [[SEC0]], i32** [[CP1]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S1]]
 
 // CK24-DAG: [[VAR0]] = load [[SC]]*, [[SC]]** %{{.+}}
 // CK24-DAG: [[VAR00]] = load [[SC]]*, [[SC]]** %{{.+}}
@@ -3698,18 +3900,30 @@ int explicit_maps_struct_fields(int a){
   { p->a++; }
 
 // Region 16
-// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE16]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE16]]{{.+}})
+// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE16]]{{.+}})
 // CK24-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
 // CK24-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+// CK24-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
 // CK24-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+// CK24-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SC]]**
 // CK24-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i32**
 // CK24-DAG: store [[SC]]* [[VAR0:%.+]], [[SC]]** [[CBP0]]
 // CK24-DAG: store i32* [[SEC0:%.+]], i32** [[CP0]]
+// CK24-DAG: store i64 {{%.+}}, i64* [[S0]]
 // CK24-DAG: [[SEC0]] = getelementptr {{.*}}[10 x i32]* [[SEC00:%[^,]+]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[SEC00]] = getelementptr {{.*}}[[SC]]* [[VAR00:%.+]], i{{.+}} 0, i{{.+}} 3
+
+// CK24-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SC]]**
+// CK24-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i32**
+// CK24-DAG: store [[SC]]* [[VAR0]], [[SC]]** [[CBP1]]
+// CK24-DAG: store i32* [[SEC0]], i32** [[CP1]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S1]]
 
 // CK24-DAG: [[VAR0]] = load [[SC]]*, [[SC]]** %{{.+}}
 // CK24-DAG: [[VAR00]] = load [[SC]]*, [[SC]]** %{{.+}}
@@ -3717,26 +3931,31 @@ int explicit_maps_struct_fields(int a){
 // CK24: call void [[CALL16:@.+]]([[SC]]* {{[^,]+}})
 #pragma omp target map(p->b[:5])
   { p->a++; }
-  
+
 // Region 17
-// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[SIZE17]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE17]]{{.+}})
+// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE17]]{{.+}})
 // CK24-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
 // CK24-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+// CK24-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
 // CK24-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+// CK24-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SC]]**
 // CK24-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to [[SB]]***
 // CK24-DAG: store [[SC]]* [[VAR0:%.+]], [[SC]]** [[CBP0]]
 // CK24-DAG: store [[SB]]** [[SEC0:%.+]], [[SB]]*** [[CP0]]
+// CK24-DAG: store i64 {{%.+}}, i64* [[S0]]
 // CK24-DAG: [[SEC0]] = getelementptr {{.*}}[[SC]]* [[VAR00:%.+]], i{{.+}} 0, i{{.+}} 2
 
 // CK24-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
 // CK24-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
 // CK24-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SB]]***
 // CK24-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to [[SB]]**
 // CK24-DAG: store [[SB]]** [[SEC0]], [[SB]]*** [[CBP1]]
 // CK24-DAG: store [[SB]]* [[SEC1:%.+]], [[SB]]** [[CP1]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S1]]
 // CK24-DAG: [[SEC1]] = getelementptr {{.*}}[[SB]]* [[SEC11:%[^,]+]], i{{.+}} 0
 // CK24-DAG: [[SEC11]] = load [[SB]]*, [[SB]]** [[SEC111:%[^,]+]],
 // CK24-DAG: [[SEC111]] = getelementptr {{.*}}[[SC]]* [[VAR000:%.+]], i{{.+}} 0, i{{.+}} 2
@@ -3745,25 +3964,37 @@ int explicit_maps_struct_fields(int a){
 // CK24-DAG: [[VAR00]] = load [[SC]]*, [[SC]]** %{{.+}}
 // CK24-DAG: [[VAR000]] = load [[SC]]*, [[SC]]** %{{.+}}
 
-// CK24: call void [[CALL17:@.+]]([[SC]]* {{[^,]+}}) 
+// CK24: call void [[CALL17:@.+]]([[SC]]* {{[^,]+}})
 #pragma omp target map(p->p[:5])
   { p->a++; }
 
 // Region 18
-// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE18]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE18]]{{.+}})
+// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE18]]{{.+}})
 // CK24-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
 // CK24-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+// CK24-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
 // CK24-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+// CK24-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SC]]**
 // CK24-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i32**
 // CK24-DAG: store [[SC]]* [[VAR0:%.+]], [[SC]]** [[CBP0]]
 // CK24-DAG: store i32* [[SEC0:%.+]], i32** [[CP0]]
+// CK24-DAG: store i64 {{%.+}}, i64* [[S0]]
 // CK24-DAG: [[SEC0]] = getelementptr {{.*}}[[SA]]* [[SEC00:%[^,]+]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[SEC00]] = getelementptr {{.*}}[10 x [[SA]]]* [[SEC000:%[^,]+]], i{{.+}} 0, i{{.+}} 3
 // CK24-DAG: [[SEC000]] = getelementptr {{.*}}[[SB]]* [[SEC0000:%[^,]+]], i{{.+}} 0, i{{.+}} 2
 // CK24-DAG: [[SEC0000]] = getelementptr {{.*}}[[SC]]* [[VAR00:%.+]], i{{.+}} 0, i{{.+}} 1
+
+// CK24-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SC]]**
+// CK24-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i32**
+// CK24-DAG: store [[SC]]* [[VAR0]], [[SC]]** [[CBP1]]
+// CK24-DAG: store i32* [[SEC0]], i32** [[CP1]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S1]]
 
 // CK24-DAG: [[VAR0]] = load [[SC]]*, [[SC]]** %{{.+}}
 // CK24-DAG: [[VAR00]] = load [[SC]]*, [[SC]]** %{{.+}}
@@ -3771,28 +4002,40 @@ int explicit_maps_struct_fields(int a){
 // CK24: call void [[CALL18:@.+]]([[SC]]* {{[^,]+}})
 #pragma omp target map(p->s.sa[3].a)
   { p->a++; }
-  
+
 // Region 19
-// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[SIZE19]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE19]]{{.+}})
+// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 3, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[3 x i{{.+}}]* [[MTYPE19]]{{.+}})
 // CK24-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
 // CK24-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+// CK24-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
 // CK24-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+// CK24-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SC]]**
 // CK24-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to [[SA]]***
 // CK24-DAG: store [[SC]]* [[VAR0:%.+]], [[SC]]** [[CBP0]]
 // CK24-DAG: store [[SA]]** [[SEC0:%.+]], [[SA]]*** [[CP0]]
+// CK24-DAG: store i64 {{%.+}}, i64* [[S0]]
 // CK24-DAG: [[SEC0]] = getelementptr {{.*}}[10 x [[SA]]*]* [[SEC00:%[^,]+]], i{{.+}} 0, i{{.+}} 3
 // CK24-DAG: [[SEC00]] = getelementptr {{.*}}[[SB]]* [[SEC000:%[^,]+]], i{{.+}} 0, i{{.+}} 3
 // CK24-DAG: [[SEC000]] = getelementptr {{.*}}[[SC]]* [[VAR00:%.+]], i{{.+}} 0, i{{.+}} 1
 
 // CK24-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
 // CK24-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
-// CK24-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SA]]***
-// CK24-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i32**
-// CK24-DAG: store [[SA]]** [[SEC0]], [[SA]]*** [[CBP1]]
-// CK24-DAG: store i32* [[SEC1:%.+]], i32** [[CP1]]
+// CK24-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SC]]**
+// CK24-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to [[SA]]***
+// CK24-DAG: store [[SC]]* [[VAR0]], [[SC]]** [[CBP1]]
+// CK24-DAG: store [[SA]]** [[SEC0]], [[SA]]*** [[CP1]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S1]]
+
+// CK24-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 2
+// CK24-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 2
+// CK24-DAG: [[CBP2:%.+]] = bitcast i8** [[BP2]] to [[SA]]***
+// CK24-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to i32**
+// CK24-DAG: store [[SA]]** [[SEC0]], [[SA]]*** [[CBP2]]
+// CK24-DAG: store i32* [[SEC1:%.+]], i32** [[CP2]]
 // CK24-DAG: [[SEC1]] = getelementptr {{.*}}[[SA]]* [[SEC11:%[^,]+]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[SEC11]] = load [[SA]]*, [[SA]]** [[SEC111:%[^,]+]],
 // CK24-DAG: [[SEC111]] = getelementptr {{.*}}[10 x [[SA]]*]* [[SEC1111:%[^,]+]], i{{.+}} 0, i{{.+}} 3
@@ -3808,16 +4051,19 @@ int explicit_maps_struct_fields(int a){
   { p->a++; }
 
 // Region 20
-// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[SIZE20]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE20]]{{.+}})
+// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE20]]{{.+}})
 // CK24-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
 // CK24-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+// CK24-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
 // CK24-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+// CK24-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SC]]**
 // CK24-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to [[SB]]***
 // CK24-DAG: store [[SC]]* [[VAR0:%.+]], [[SC]]** [[CBP0]]
 // CK24-DAG: store [[SB]]** [[SEC0:%.+]], [[SB]]*** [[CP0]]
+// CK24-DAG: store i64 {{%.+}}, i64* [[S0]]
 // CK24-DAG: [[SEC0]] = getelementptr {{.*}}[[SC]]* [[VAR00:%.+]], i{{.+}} 0, i{{.+}} 2
 
 // CK24-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
@@ -3837,27 +4083,41 @@ int explicit_maps_struct_fields(int a){
 // CK24: call void [[CALL20:@.+]]([[SC]]* {{[^,]+}})
 #pragma omp target map(p->p->a)
   { p->a++; }
-  
+
 // Region 21
-// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[SIZE21]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE21]]{{.+}})
+// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 3, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[3 x i{{.+}}]* [[MTYPE21]]{{.+}})
 // CK24-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
 // CK24-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+// CK24-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
 // CK24-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+// CK24-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SC]]**
 // CK24-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to [[SA]]***
 // CK24-DAG: store [[SC]]* [[VAR0:%.+]], [[SC]]** [[CBP0]]
 // CK24-DAG: store [[SA]]** [[SEC0:%.+]], [[SA]]*** [[CP0]]
+// CK24-DAG: store i64 {{%.+}}, i64* [[S0]]
 // CK24-DAG: [[SEC0]] = getelementptr {{.*}}[[SB]]* [[SEC00:[^,]+]], i{{.+}} 0, i{{.+}} 4
 // CK24-DAG: [[SEC00]] = getelementptr {{.*}}[[SC]]* [[VAR00:%.+]], i{{.+}} 0, i{{.+}} 1
 
 // CK24-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
 // CK24-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
-// CK24-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SA]]***
-// CK24-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i32**
-// CK24-DAG: store [[SA]]** [[SEC0]], [[SA]]*** [[CBP1]]
-// CK24-DAG: store i32* [[SEC1:%.+]], i32** [[CP1]]
+// CK24-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SC]]**
+// CK24-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to [[SA]]***
+// CK24-DAG: store [[SC]]* [[VAR0]], [[SC]]** [[CBP1]]
+// CK24-DAG: store [[SA]]** [[SEC0]], [[SA]]*** [[CP1]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S1]]
+
+// CK24-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 2
+// CK24-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 2
+// CK24-DAG: [[S2:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 2
+// CK24-DAG: [[CBP2:%.+]] = bitcast i8** [[BP2]] to [[SA]]***
+// CK24-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to i32**
+// CK24-DAG: store [[SA]]** [[SEC0]], [[SA]]*** [[CBP2]]
+// CK24-DAG: store i32* [[SEC1:%.+]], i32** [[CP2]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S2]]
 // CK24-DAG: [[SEC1]] = getelementptr {{.*}}[[SA]]* [[SEC11:%[^,]+]], i{{.+}} 0
 // CK24-DAG: [[SEC11]] = load [[SA]]*, [[SA]]** [[SEC111:%[^,]+]],
 // CK24-DAG: [[SEC111]] = getelementptr {{.*}}[[SB]]* [[SEC1111:[^,]+]], i{{.+}} 0, i{{.+}} 4
@@ -3867,25 +4127,37 @@ int explicit_maps_struct_fields(int a){
 // CK24-DAG: [[VAR00]] = load [[SC]]*, [[SC]]** %{{.+}}
 // CK24-DAG: [[VAR000]] = load [[SC]]*, [[SC]]** %{{.+}}
 
-// CK24: call void [[CALL21:@.+]]([[SC]]* {{[^,]+}}) 
+// CK24: call void [[CALL21:@.+]]([[SC]]* {{[^,]+}})
 #pragma omp target map(p->s.p->a)
   { p->a++; }
 
 // Region 22
-// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE22]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE22]]{{.+}})
+// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE22]]{{.+}})
 // CK24-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
 // CK24-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+// CK24-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
 // CK24-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+// CK24-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SC]]**
 // CK24-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i32**
 // CK24-DAG: store [[SC]]* [[VAR0:%.+]], [[SC]]** [[CBP0]]
 // CK24-DAG: store i32* [[SEC0:%.+]], i32** [[CP0]]
+// CK24-DAG: store i64 {{%.+}}, i64* [[S0]]
 // CK24-DAG: [[SEC0]] = getelementptr {{.*}}[10 x i32]* [[SEC00:%[^,]+]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[SEC00]] = getelementptr {{.*}}[[SA]]* [[SEC000:%[^,]+]], i{{.+}} 0, i{{.+}} 2
 // CK24-DAG: [[SEC000]] = getelementptr {{.*}}[[SB]]* [[SEC0000:%[^,]+]], i{{.+}} 0, i{{.+}} 1
 // CK24-DAG: [[SEC0000]] = getelementptr {{.*}}[[SC]]* [[VAR00:%.+]], i{{.+}} 0, i{{.+}} 1
+
+// CK24-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SC]]**
+// CK24-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i32**
+// CK24-DAG: store [[SC]]* [[VAR0]], [[SC]]** [[CBP1]]
+// CK24-DAG: store i32* [[SEC0]], i32** [[CP1]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S1]]
 
 // CK24-DAG: [[VAR0]] = load [[SC]]*, [[SC]]** %{{.+}}
 // CK24-DAG: [[VAR00]] = load [[SC]]*, [[SC]]** %{{.+}}
@@ -3893,27 +4165,41 @@ int explicit_maps_struct_fields(int a){
 // CK24: call void [[CALL22:@.+]]([[SC]]* {{[^,]+}})
 #pragma omp target map(p->s.s.b[:2])
   { p->a++; }
-  
+
 // Region 23
-// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[SIZE23]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE23]]{{.+}})
+// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 3, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[3 x i{{.+}}]* [[MTYPE23]]{{.+}})
 // CK24-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
 // CK24-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+// CK24-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
 // CK24-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+// CK24-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SC]]**
 // CK24-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to [[SA]]***
 // CK24-DAG: store [[SC]]* [[VAR0:%.+]], [[SC]]** [[CBP0]]
 // CK24-DAG: store [[SA]]** [[SEC0:%.+]], [[SA]]*** [[CP0]]
+// CK24-DAG: store i64 {{%.+}}, i64* [[S0]]
 // CK24-DAG: [[SEC0]] = getelementptr {{.*}}[[SB]]* [[SEC00:%[^,]+]], i{{.+}} 0, i{{.+}} 4
 // CK24-DAG: [[SEC00]] = getelementptr {{.*}}[[SC]]* [[VAR00:%.+]], i{{.+}} 0, i{{.+}} 1
 
 // CK24-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
 // CK24-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
-// CK24-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SA]]***
-// CK24-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i32**
-// CK24-DAG: store [[SA]]** [[SEC0]], [[SA]]*** [[CBP1]]
-// CK24-DAG: store i32* [[SEC1:%.+]], i32** [[CP1]]
+// CK24-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SC]]**
+// CK24-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to [[SA]]***
+// CK24-DAG: store [[SC]]* [[VAR0]], [[SC]]** [[CBP1]]
+// CK24-DAG: store [[SA]]** [[SEC0]], [[SA]]*** [[CP1]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S1]]
+
+// CK24-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 2
+// CK24-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 2
+// CK24-DAG: [[S2:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 2
+// CK24-DAG: [[CBP2:%.+]] = bitcast i8** [[BP2]] to [[SA]]***
+// CK24-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to i32**
+// CK24-DAG: store [[SA]]** [[SEC0]], [[SA]]*** [[CBP2]]
+// CK24-DAG: store i32* [[SEC1:%.+]], i32** [[CP2]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S2]]
 // CK24-DAG: [[SEC1]] = getelementptr {{.*}}[10 x i32]* [[SEC11:%[^,]+]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[SEC11]] = getelementptr {{.*}}[[SA]]* [[SEC111:%[^,]+]], i{{.+}} 0, i{{.+}} 2
 // CK24-DAG: [[SEC111]] = load [[SA]]*, [[SA]]** [[SEC1111:%[^,]+]],
@@ -3924,39 +4210,46 @@ int explicit_maps_struct_fields(int a){
 // CK24-DAG: [[VAR00]] = load [[SC]]*, [[SC]]** %{{.+}}
 // CK24-DAG: [[VAR000]] = load [[SC]]*, [[SC]]** %{{.+}}
 
-// CK24: call void [[CALL23:@.+]]([[SC]]* {{[^,]+}}) 
+// CK24: call void [[CALL23:@.+]]([[SC]]* {{[^,]+}})
 #pragma omp target map(p->s.p->b[:2])
   { p->a++; }
 
 // Region 24
-// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 4, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[4 x i{{.+}}]* [[SIZE24]], {{.+}}getelementptr {{.+}}[4 x i{{.+}}]* [[MTYPE24]]{{.+}})
+// CK24-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 4, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[4 x i{{.+}}]* [[MTYPE24]]{{.+}})
 // CK24-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
 // CK24-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+// CK24-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
 // CK24-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+// CK24-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SC]]**
 // CK24-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to [[SB]]***
 // CK24-DAG: store [[SC]]* [[VAR0:%.+]], [[SC]]** [[CBP0]]
 // CK24-DAG: store [[SB]]** [[SEC0:%.+]], [[SB]]*** [[CP0]]
+// CK24-DAG: store i64 {{%.+}}, i64* [[S0]]
 // CK24-DAG: [[SEC0]] = getelementptr {{.*}}[[SC]]* [[VAR00:%.+]], i{{.+}} 0, i{{.+}} 2
 
 // CK24-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
 // CK24-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
+// CK24-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
 // CK24-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SB]]***
 // CK24-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to [[SA]]***
 // CK24-DAG: store [[SB]]** [[SEC0]], [[SB]]*** [[CBP1]]
 // CK24-DAG: store [[SA]]** [[SEC1:%.+]], [[SA]]*** [[CP1]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S1]]
 // CK24-DAG: [[SEC1]] = getelementptr {{.*}}[[SB]]* [[SEC11:%[^,]+]], i{{.+}} 0, i{{.+}} 4
 // CK24-DAG: [[SEC11]] = load [[SB]]*, [[SB]]** [[SEC111:%[^,]+]],
 // CK24-DAG: [[SEC111]] = getelementptr {{.*}}[[SC]]* [[VAR000:%.+]], i{{.+}} 0, i{{.+}} 2
 
 // CK24-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 2
 // CK24-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 2
+// CK24-DAG: [[S2:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 2
 // CK24-DAG: [[CBP2:%.+]] = bitcast i8** [[BP2]] to [[SA]]***
 // CK24-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to [[SA]]***
 // CK24-DAG: store [[SA]]** [[SEC1]], [[SA]]*** [[CBP2]]
 // CK24-DAG: store [[SA]]** [[SEC2:%.+]], [[SA]]*** [[CP2]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S2]]
 // CK24-DAG: [[SEC2]] = getelementptr {{.*}}[[SA]]* [[SEC22:%[^,]+]], i{{.+}} 0, i{{.+}} 1
 // CK24-DAG: [[SEC22]] = load [[SA]]*, [[SA]]** [[SEC222:%[^,]+]],
 // CK24-DAG: [[SEC222]] = getelementptr {{.*}}[[SB]]* [[SEC2222:%[^,]+]], i{{.+}} 0, i{{.+}} 4
@@ -3965,10 +4258,12 @@ int explicit_maps_struct_fields(int a){
 
 // CK24-DAG: [[BP3:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 3
 // CK24-DAG: [[P3:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 3
+// CK24-DAG: [[S3:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 3
 // CK24-DAG: [[CBP3:%.+]] = bitcast i8** [[BP3]] to [[SA]]***
 // CK24-DAG: [[CP3:%.+]] = bitcast i8** [[P3]] to i32**
 // CK24-DAG: store [[SA]]** [[SEC2]], [[SA]]*** [[CBP3]]
 // CK24-DAG: store i32* [[SEC3:%.+]], i32** [[CP3]]
+// CK24-DAG: store i64 {{.+}}, i64* [[S3]]
 // CK24-DAG: [[SEC3]] = getelementptr {{.*}}[[SA]]* [[SEC33:%[^,]+]], i{{.+}} 0, i{{.+}} 0
 // CK24-DAG: [[SEC33]] = load [[SA]]*, [[SA]]** [[SEC333:%[^,]+]],
 // CK24-DAG: [[SEC333]] = getelementptr {{.*}}[[SA]]* [[SEC3333:%[^,]+]], i{{.+}} 0, i{{.+}} 1
@@ -4005,32 +4300,33 @@ int explicit_maps_struct_fields(int a){
 // CK24: define {{.+}}[[CALL24]]
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK25 -std=c++11 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK25 --check-prefix CK25-64
+// RUN: %clang_cc1 -DCK25 -std=c++11 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK25 --check-prefix CK25-64
 // RUN: %clang_cc1 -DCK25 -std=c++11 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -std=c++11 -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK25 --check-prefix CK25-64
-// RUN: %clang_cc1 -DCK25 -std=c++11 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK25 --check-prefix CK25-32
+// RUN: %clang_cc1 -fopenmp -std=c++11 -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK25 --check-prefix CK25-64
+// RUN: %clang_cc1 -DCK25 -std=c++11 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK25 --check-prefix CK25-32
 // RUN: %clang_cc1 -DCK25 -std=c++11 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -std=c++11 -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK25 --check-prefix CK25-32
+// RUN: %clang_cc1 -fopenmp -std=c++11 -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK25 --check-prefix CK25-32
 
-// RUN: %clang_cc1 -DCK25 -std=c++11 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY24 %s
+// RUN: %clang_cc1 -DCK25 -std=c++11 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY24 %s
 // RUN: %clang_cc1 -DCK25 -std=c++11 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -std=c++11 -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY24 %s
-// RUN: %clang_cc1 -DCK25 -std=c++11 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY24 %s
+// RUN: %clang_cc1 -fopenmp-simd -std=c++11 -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY24 %s
+// RUN: %clang_cc1 -DCK25 -std=c++11 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY24 %s
 // RUN: %clang_cc1 -DCK25 -std=c++11 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -std=c++11 -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY24 %s
+// RUN: %clang_cc1 -fopenmp-simd -std=c++11 -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY24 %s
 // SIMD-ONLY24-NOT: {{__kmpc|__tgt}}
 #ifdef CK25
 // CK25: [[ST:%.+]] = type { i32, float }
 // CK25: [[CA00:%.+]] = type { [[ST]]* }
 // CK25: [[CA01:%.+]] = type { i32* }
 
-// CK25: [[SIZE00:@.+]] = private {{.*}}constant [1 x i[[Z:64|32]]] [i[[Z:64|32]] 4]
-// CK25: [[MTYPE00:@.+]] = private {{.*}}constant [1 x i64] [i64 33]
+// CK25-LABEL: @.__omp_offloading_{{.*}}foo{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK25: [[MTYPE00:@.+]] = private {{.*}}constant [2 x i64] [i64 32, i64 281474976710657]
 
-// CK25: [[SIZE01:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
+// CK25-LABEL: @.__omp_offloading_{{.*}}foo{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK25: [[SIZE01:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK25: [[MTYPE01:@.+]] = private {{.*}}constant [1 x i64] [i64 33]
 
-// CK25-LABEL: explicit_maps_with_inner_lambda
+// CK25-LABEL: explicit_maps_with_inner_lambda{{.*}}(
 
 template <int X, typename T>
 struct CC {
@@ -4039,17 +4335,29 @@ struct CC {
 
   int foo(T arg) {
     // Region 00
-    // CK25-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 1, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[SIZE00]], {{.+}}getelementptr {{.+}}[1 x i{{.+}}]* [[MTYPE00]]{{.+}})
+    // CK25-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 2, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[2 x i{{.+}}]* [[MTYPE00]]{{.+}})
     // CK25-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
     // CK25-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+    // CK25-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
     // CK25-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
     // CK25-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+    // CK25-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
     // CK25-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[ST]]**
     // CK25-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to i32**
     // CK25-DAG: store [[ST]]* [[VAR0:%.+]], [[ST]]** [[CBP0]]
     // CK25-DAG: store i32* [[SEC0:%.+]], i32** [[CP0]]
+    // CK25-DAG: store i64 {{%.+}}, i64* [[S0]]
     // CK25-DAG: [[SEC0]] = getelementptr {{.*}}[[ST]]* [[VAR0:%.+]], i{{.+}} 0, i{{.+}} 0
+
+    // CK25-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
+    // CK25-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
+    // CK25-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
+    // CK25-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[ST]]**
+    // CK25-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i32**
+    // CK25-DAG: store [[ST]]* [[VAR0]], [[ST]]** [[CBP1]]
+    // CK25-DAG: store i32* [[SEC0]], i32** [[CP1]]
+    // CK25-DAG: store i64 {{.+}}, i64* [[S1]]
 
     // CK25: call void [[CALL00:@.+]]([[ST]]* {{[^,]+}})
     #pragma omp target map(to:A)
@@ -4107,36 +4415,40 @@ int explicit_maps_with_inner_lambda(int a){
 // CK25: define {{.+}}[[LAMBDA2]]
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK26 -std=c++11 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK26 --check-prefix CK26-64
+// RUN: %clang_cc1 -DCK26 -std=c++11 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK26 --check-prefix CK26-64
 // RUN: %clang_cc1 -DCK26 -std=c++11 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -std=c++11 -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK26 --check-prefix CK26-64
-// RUN: %clang_cc1 -DCK26 -std=c++11 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK26 --check-prefix CK26-32
+// RUN: %clang_cc1 -fopenmp -std=c++11 -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK26 --check-prefix CK26-64
+// RUN: %clang_cc1 -DCK26 -std=c++11 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK26 --check-prefix CK26-32
 // RUN: %clang_cc1 -DCK26 -std=c++11 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -std=c++11 -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK26 --check-prefix CK26-32
+// RUN: %clang_cc1 -fopenmp -std=c++11 -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK26 --check-prefix CK26-32
 
-// RUN: %clang_cc1 -DCK26 -std=c++11 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY25 %s
+// RUN: %clang_cc1 -DCK26 -std=c++11 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY25 %s
 // RUN: %clang_cc1 -DCK26 -std=c++11 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -std=c++11 -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY25 %s
-// RUN: %clang_cc1 -DCK26 -std=c++11 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY25 %s
+// RUN: %clang_cc1 -fopenmp-simd -std=c++11 -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY25 %s
+// RUN: %clang_cc1 -DCK26 -std=c++11 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY25 %s
 // RUN: %clang_cc1 -DCK26 -std=c++11 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -std=c++11 -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY25 %s
+// RUN: %clang_cc1 -fopenmp-simd -std=c++11 -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY25 %s
 // SIMD-ONLY25-NOT: {{__kmpc|__tgt}}
 #ifdef CK26
 // CK26: [[ST:%.+]] = type { i32, float*, i32, float* }
 
-// CK26: [[SIZE00:@.+]] = private {{.*}}constant [2 x i[[Z:64|32]]] [i[[Z:64|32]] {{32|16}}, i[[Z:64|32]] 4]
-// CK26: [[MTYPE00:@.+]] = private {{.*}}constant [2 x i64] [i64 35, i64 35]
+// CK26-LABEL: @.__omp_offloading_{{.*}}CC{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK26: [[SIZE00:@.+]] = private {{.*}}constant [2 x i64] [i64 {{32|16}}, i64 4]
+// CK26: [[MTYPE00:@.+]] = private {{.*}}constant [2 x i64] [i64 547, i64 35]
 
-// CK26: [[SIZE01:@.+]] = private {{.*}}constant [2 x i[[Z]]] [i[[Z]] {{32|16}}, i[[Z]] 4]
-// CK26: [[MTYPE01:@.+]] = private {{.*}}constant [2 x i64] [i64 35, i64 35]
+// CK26-LABEL: @.__omp_offloading_{{.*}}CC{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK26: [[SIZE01:@.+]] = private {{.*}}constant [2 x i64] [i64 {{32|16}}, i64 4]
+// CK26: [[MTYPE01:@.+]] = private {{.*}}constant [2 x i64] [i64 547, i64 35]
 
-// CK26: [[SIZE02:@.+]] = private {{.*}}constant [2 x i[[Z]]] [i[[Z]] {{32|16}}, i[[Z]] 4]
-// CK26: [[MTYPE02:@.+]] = private {{.*}}constant [2 x i64] [i64 35, i64 35]
+// CK26-LABEL: @.__omp_offloading_{{.*}}CC{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK26: [[SIZE02:@.+]] = private {{.*}}constant [2 x i64] [i64 {{32|16}}, i64 4]
+// CK26: [[MTYPE02:@.+]] = private {{.*}}constant [2 x i64] [i64 547, i64 35]
 
-// CK26: [[SIZE03:@.+]] = private {{.*}}constant [2 x i[[Z]]] [i[[Z]] {{32|16}}, i[[Z]] 4]
-// CK26: [[MTYPE03:@.+]] = private {{.*}}constant [2 x i64] [i64 35, i64 35]
+// CK26-LABEL: @.__omp_offloading_{{.*}}CC{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK26: [[SIZE03:@.+]] = private {{.*}}constant [2 x i64] [i64 {{32|16}}, i64 4]
+// CK26: [[MTYPE03:@.+]] = private {{.*}}constant [2 x i64] [i64 547, i64 35]
 
-// CK26-LABEL: explicit_maps_with_private_class_members
+// CK26-LABEL: explicit_maps_with_private_class_members{{.*}}(
 
 struct CC {
   int fA;
@@ -4269,11 +4581,15 @@ struct CC {
 // CK26: define {{.+}}[[CALL00]]({{.*}}i32*{{.*}}[[PVTARG:%.+]])
 // CK26: store i32* [[PVTARG]], i32** [[PVTADDR:%.+]],
 // CK26: [[ADDR:%.+]] = load i32*, i32** [[PVTADDR]],
+// CK26: store i32* [[ADDR]], i32** [[PVTADDR:%.+]],
+// CK26: [[ADDR:%.+]] = load i32*, i32** [[PVTADDR]],
 // CK26: [[VAL:%.+]] = load i32, i32* [[ADDR]],
 // CK26: add nsw i32 [[VAL]], 1
 
 // CK26: define {{.+}}[[CALL01]]({{.*}}float*{{.*}}[[PVTARG:%.+]])
 // CK26: store float* [[PVTARG]], float** [[PVTADDR:%.+]],
+// CK26: [[ADDR:%.+]] = load float*, float** [[PVTADDR]],
+// CK26: store float* [[ADDR]], float** [[PVTADDR:%.+]],
 // CK26: [[ADDR:%.+]] = load float*, float** [[PVTADDR]],
 // CK26: [[VAL:%.+]] = load float, float* [[ADDR]],
 // CK26: [[EXT:%.+]] = fpext float [[VAL]] to double
@@ -4282,11 +4598,15 @@ struct CC {
 // CK26: define {{.+}}[[CALL02]]({{.*}}i32*{{.*}}[[PVTARG:%.+]])
 // CK26: store i32* [[PVTARG]], i32** [[PVTADDR:%.+]],
 // CK26: [[ADDR:%.+]] = load i32*, i32** [[PVTADDR]],
+// CK26: store i32* [[ADDR]], i32** [[PVTADDR:%.+]],
+// CK26: [[ADDR:%.+]] = load i32*, i32** [[PVTADDR]],
 // CK26: [[VAL:%.+]] = load i32, i32* [[ADDR]],
 // CK26: add nsw i32 [[VAL]], 1
 
 // CK26: define {{.+}}[[CALL03]]({{.*}}float*{{.*}}[[PVTARG:%.+]])
 // CK26: store float* [[PVTARG]], float** [[PVTADDR:%.+]],
+// CK26: [[ADDR:%.+]] = load float*, float** [[PVTADDR]],
+// CK26: store float* [[ADDR]], float** [[PVTADDR:%.+]],
 // CK26: [[ADDR:%.+]] = load float*, float** [[PVTADDR]],
 // CK26: [[VAL:%.+]] = load float, float* [[ADDR]],
 // CK26: [[EXT:%.+]] = fpext float [[VAL]] to double
@@ -4299,44 +4619,54 @@ int explicit_maps_with_private_class_members(){
 }
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK27 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK27 --check-prefix CK27-64
+// RUN: %clang_cc1 -DCK27 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK27 --check-prefix CK27-64
 // RUN: %clang_cc1 -DCK27 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK27 --check-prefix CK27-64
-// RUN: %clang_cc1 -DCK27 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK27 --check-prefix CK27-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK27 --check-prefix CK27-64
+// RUN: %clang_cc1 -DCK27 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK27 --check-prefix CK27-32
 // RUN: %clang_cc1 -DCK27 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK27 --check-prefix CK27-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK27 --check-prefix CK27-32
 
-// RUN: %clang_cc1 -DCK27 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY26 %s
+// RUN: %clang_cc1 -DCK27 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY26 %s
 // RUN: %clang_cc1 -DCK27 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY26 %s
-// RUN: %clang_cc1 -DCK27 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY26 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY26 %s
+// RUN: %clang_cc1 -DCK27 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY26 %s
 // RUN: %clang_cc1 -DCK27 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY26 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY26 %s
 // SIMD-ONLY26-NOT: {{__kmpc|__tgt}}
 #ifdef CK27
 
-// CK27: [[SIZE00:@.+]] = private {{.*}}constant [1 x i[[Z:64|32]]] zeroinitializer
-// CK27: [[MTYPE00:@.+]] = private {{.*}}constant [1 x i64] [i64 32]
+// CK27-LABEL: @.__omp_offloading_{{.*}}zero_size_section_and_private_maps{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK27: [[SIZE00:@.+]] = private {{.*}}constant [1 x i64] zeroinitializer
+// CK27: [[MTYPE00:@.+]] = private {{.*}}constant [1 x i64] [i64 544]
 
-// CK27: [[SIZE01:@.+]] = private {{.*}}constant [1 x i[[Z]]] zeroinitializer
+// CK27-LABEL: @.__omp_offloading_{{.*}}zero_size_section_and_private_maps{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK27: [[SIZE01:@.+]] = private {{.*}}constant [1 x i64] zeroinitializer
 // CK27: [[MTYPE01:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK27: [[SIZE02:@.+]] = private {{.*}}constant [1 x i[[Z]]] zeroinitializer
+// CK27-LABEL: @.__omp_offloading_{{.*}}zero_size_section_and_private_maps{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK27: [[SIZE02:@.+]] = private {{.*}}constant [1 x i64] zeroinitializer
 // CK27: [[MTYPE02:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK27: [[SIZE03:@.+]] = private {{.*}}constant [1 x i[[Z]]] zeroinitializer
+// CK27-LABEL: @.__omp_offloading_{{.*}}zero_size_section_and_private_maps{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK27: [[SIZE03:@.+]] = private {{.*}}constant [1 x i64] zeroinitializer
 // CK27: [[MTYPE03:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK27: [[SIZE05:@.+]] = private {{.*}}constant [1 x i[[Z]]] zeroinitializer
+// CK27-LABEL: @.__omp_offloading_{{.*}}zero_size_section_and_private_maps{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK27-LABEL: @.__omp_offloading_{{.*}}zero_size_section_and_private_maps{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK27: [[SIZE05:@.+]] = private {{.*}}constant [1 x i64] zeroinitializer
 // CK27: [[MTYPE05:@.+]] = private {{.*}}constant [1 x i64] [i64 32]
 
-// CK27: [[SIZE07:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 4]
+// CK27-LABEL: @.__omp_offloading_{{.*}}zero_size_section_and_private_maps{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK27-LABEL: @.__omp_offloading_{{.*}}zero_size_section_and_private_maps{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK27: [[SIZE07:@.+]] = private {{.*}}constant [1 x i64] [i64 4]
 // CK27: [[MTYPE07:@.+]] = private {{.*}}constant [1 x i64] [i64 288]
 
-// CK27: [[SIZE09:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 40]
+// CK27-LABEL: @.__omp_offloading_{{.*}}zero_size_section_and_private_maps{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK27-LABEL: @.__omp_offloading_{{.*}}zero_size_section_and_private_maps{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK27: [[SIZE09:@.+]] = private {{.*}}constant [1 x i64] [i64 40]
 // CK27: [[MTYPE09:@.+]] = private {{.*}}constant [1 x i64] [i64 161]
 
-// CK27-LABEL: zero_size_section_and_private_maps
+// CK27-LABEL: zero_size_section_and_private_maps{{.*}}(
 void zero_size_section_and_private_maps (int ii){
 
   // Map of a pointer.
@@ -4467,7 +4797,7 @@ void zero_size_section_and_private_maps (int ii){
   // CK27-DAG: [[PGEP]] = getelementptr inbounds {{.+}}[[PS:%[^,]+]], i32 0, i32 0
   // CK27-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BPS]], i32 0, i32 0
   // CK27-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[PS]], i32 0, i32 0
-  // CK27-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[Z]]*
+  // CK27-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to i[[Z:64|32]]*
   // CK27-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to i[[Z]]*
   // CK27-DAG: store i[[Z]] [[VAL:%.+]], i[[Z]]* [[CBP1]]
   // CK27-DAG: store i[[Z]] [[VAL]], i[[Z]]* [[CP1]]
@@ -4518,29 +4848,31 @@ void zero_size_section_and_private_maps (int ii){
 // CK27: define {{.+}}[[CALL07]]
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK28 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK28 --check-prefix CK28-64
+// RUN: %clang_cc1 -DCK28 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK28 --check-prefix CK28-64
 // RUN: %clang_cc1 -DCK28 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK28 --check-prefix CK28-64
-// RUN: %clang_cc1 -DCK28 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK28 --check-prefix CK28-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK28 --check-prefix CK28-64
+// RUN: %clang_cc1 -DCK28 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK28 --check-prefix CK28-32
 // RUN: %clang_cc1 -DCK28 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK28 --check-prefix CK28-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK28 --check-prefix CK28-32
 
-// RUN: %clang_cc1 -DCK28 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY27 %s
+// RUN: %clang_cc1 -DCK28 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY27 %s
 // RUN: %clang_cc1 -DCK28 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY27 %s
-// RUN: %clang_cc1 -DCK28 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY27 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY27 %s
+// RUN: %clang_cc1 -DCK28 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY27 %s
 // RUN: %clang_cc1 -DCK28 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY27 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY27 %s
 // SIMD-ONLY27-NOT: {{__kmpc|__tgt}}
 #ifdef CK28
 
-// CK28: [[SIZE00:@.+]] = private {{.*}}constant [1 x i[[Z:64|32]]] [i[[Z:64|32]] {{8|4}}]
+// CK28-LABEL: @.__omp_offloading_{{.*}}explicit_maps_pointer_references{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK28: [[SIZE00:@.+]] = private {{.*}}constant [1 x i64] [i64 {{8|4}}]
 // CK28: [[MTYPE00:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK28: [[SIZE01:@.+]] = private {{.*}}constant [1 x i[[Z]]] [i[[Z]] 400]
+// CK28-LABEL: @.__omp_offloading_{{.*}}explicit_maps_pointer_references{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK28: [[SIZE01:@.+]] = private {{.*}}constant [1 x i64] [i64 400]
 // CK28: [[MTYPE01:@.+]] = private {{.*}}constant [1 x i64] [i64 35]
 
-// CK28-LABEL: explicit_maps_pointer_references
+// CK28-LABEL: explicit_maps_pointer_references{{.*}}(
 void explicit_maps_pointer_references (int *p){
   int *&a = p;
 
@@ -4589,33 +4921,33 @@ void explicit_maps_pointer_references (int *p){
 }
 #endif
 ///==========================================================================///
-// RUN: %clang_cc1 -DCK29 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck %s --check-prefix CK29 --check-prefix CK29-64
+// RUN: %clang_cc1 -DCK29 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK29 --check-prefix CK29-64
 // RUN: %clang_cc1 -DCK29 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK29 --check-prefix CK29-64
-// RUN: %clang_cc1 -DCK29 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck %s  --check-prefix CK29 --check-prefix CK29-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK29 --check-prefix CK29-64
+// RUN: %clang_cc1 -DCK29 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK29 --check-prefix CK29-32
 // RUN: %clang_cc1 -DCK29 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck %s  --check-prefix CK29 --check-prefix CK29-32
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK29 --check-prefix CK29-32
 
-// RUN: %clang_cc1 -DCK29 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY28 %s
+// RUN: %clang_cc1 -DCK29 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY28 %s
 // RUN: %clang_cc1 -DCK29 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY28 %s
-// RUN: %clang_cc1 -DCK29 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck --check-prefix SIMD-ONLY28 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY28 %s
+// RUN: %clang_cc1 -DCK29 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY28 %s
 // RUN: %clang_cc1 -DCK29 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck --check-prefix SIMD-ONLY28 %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY28 %s
 // SIMD-ONLY28-NOT: {{__kmpc|__tgt}}
 #ifdef CK29
 
 // CK29: [[SSA:%.+]] = type { double*, double** }
 // CK29: [[SSB:%.+]]  = type { [[SSA]]*, [[SSA]]** }
 
-// CK29: [[SIZE00:@.+]] = private {{.*}}constant [4 x i[[Z:64|32]]] [i[[Z:64|32]] {{8|4}}, i[[Z:64|32]] {{8|4}}, i[[Z:64|32]] {{8|4}}, i[[Z:64|32]] 80]
-// CK29: [[MTYPE00:@.+]] = private {{.*}}constant [4 x i64] [i64 35, i64 16, i64 19, i64 19]
+// CK29-LABEL: @.__omp_offloading_{{.*}}foo{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK29: [[MTYPE00:@.+]] = private {{.*}}constant [3 x i64] [i64 32, i64 281474976710672, i64 19]
 
-// CK29: [[SIZE01:@.+]] = private {{.*}}constant [4 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] {{8|4}}, i[[Z]] {{8|4}}, i[[Z]] 80]
-// CK29: [[MTYPE01:@.+]] = private {{.*}}constant [4 x i64] [i64 32, i64 19, i64 19, i64 19]
+// CK29-LABEL: @.__omp_offloading_{{.*}}foo{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK29: [[MTYPE01:@.+]] = private {{.*}}constant [3 x i64] [i64 32, i64 281474976710672, i64 19]
 
-// CK29: [[SIZE02:@.+]] = private {{.*}}constant [5 x i[[Z]]] [i[[Z]] {{8|4}}, i[[Z]] {{8|4}}, i[[Z]] {{8|4}}, i[[Z]] {{8|4}}, i[[Z]] 80]
-// CK29: [[MTYPE02:@.+]] = private {{.*}}constant [5 x i64] [i64 32, i64 19, i64 16, i64 19, i64 19]
+// CK29-LABEL: @.__omp_offloading_{{.*}}foo{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// CK29: [[MTYPE02:@.+]] = private {{.*}}constant [3 x i64] [i64 32, i64 281474976710672, i64 19]
 
 struct SSA{
   double *p;
@@ -4632,45 +4964,44 @@ struct SSB{
   void foo() {
 
     // Region 00
-    // CK29-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 4, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[4 x i{{.+}}]* [[SIZE00]], {{.+}}getelementptr {{.+}}[4 x i{{.+}}]* [[MTYPE00]]{{.+}})
+    // CK29-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 3, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i[[Z:64|32]]* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[3 x i{{.+}}]* [[MTYPE00]]{{.+}})
 
     // CK29-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
     // CK29-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+    // CK29-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
     // CK29-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
     // CK29-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+    // CK29-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
     // CK29-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SSB]]**
     // CK29-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to [[SSA]]**
     // CK29-DAG: store [[SSB]]* [[VAR0:%.+]], [[SSB]]** [[CBP0]]
     // CK29-DAG: store [[SSA]]** [[VAR00:%.+]], [[SSA]]*** [[CP0]]
+    // CK29-DAG: store i64 %{{.+}}, i64* [[S0]]
     // CK29-DAG: [[VAR0]] = load [[SSB]]*, [[SSB]]** %
     // CK29-DAG: [[VAR00]] = getelementptr inbounds [[SSB]], [[SSB]]* [[VAR0]], i32 0, i32 0
 
     // CK29-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
     // CK29-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
+    // CK29-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
     // CK29-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SSA]]***
-    // CK29-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to double****
+    // CK29-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to double***
     // CK29-DAG: store [[SSA]]** [[VAR00]], [[SSA]]*** [[CBP1]]
-    // CK29-DAG: store double*** [[VAR1:%.+]], double**** [[CP1]]
-    // CK29-DAG: [[VAR1]] = getelementptr inbounds [[SSA]], [[SSA]]* %{{.+}}, i32 0, i32 1
+    // CK29-DAG: store double** [[VAR1:%.+]], double*** [[CP1]]
+    // CK29-DAG: store i64 {{8|4}}, i64* [[S1]]
+    // CK29-DAG: [[VAR1]] = load double**, double*** [[VAR1_REF:%.+]],
+    // CK29-DAG: [[VAR1_REF]] = getelementptr inbounds [[SSA]], [[SSA]]* %{{.+}}, i32 0, i32 1
 
     // CK29-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 2
     // CK29-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 2
-    // CK29-DAG: [[CBP2:%.+]] = bitcast i8** [[BP2]] to double****
-    // CK29-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to double***
-    // CK29-DAG: store double*** [[VAR1]], double**** [[CBP2]]
-    // CK29-DAG: store double** [[VAR2:%.+]], double*** [[CP2]]
-    // CK29-DAG: [[VAR2]] = load double**, double*** [[VAR22:%.+]],
-    // CK29-DAG: [[VAR22]] = getelementptr inbounds [[SSA]], [[SSA]]* %{{.+}}, i32 0, i32 1
-
-    // CK29-DAG: [[BP3:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 3
-    // CK29-DAG: [[P3:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 3
-    // CK29-DAG: [[CBP3:%.+]] = bitcast i8** [[BP3]] to double***
-    // CK29-DAG: [[CP3:%.+]] = bitcast i8** [[P3]] to double**
-    // CK29-DAG: store double** [[VAR2]], double*** [[CBP3]]
-    // CK29-DAG: store double* [[VAR3:%.+]], double** [[CP3]]
-    // CK29-DAG: [[VAR3]] = getelementptr inbounds double, double* [[VAR33:%.+]], i{{.+}} 0
-    // CK29-DAG: [[VAR33]] = load double*, double** %{{.+}},
+    // CK29-DAG: [[S2:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 2
+    // CK29-DAG: [[CBP2:%.+]] = bitcast i8** [[BP2]] to double***
+    // CK29-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to double**
+    // CK29-DAG: store double** [[VAR1]], double*** [[CBP2]]
+    // CK29-DAG: store double* [[VAR2:%.+]], double** [[CP2]]
+    // CK29-DAG: store i64 80, i64* [[S2]]
+    // CK29-DAG: [[VAR2]] = getelementptr inbounds double, double* [[VAR22:%.+]], i{{.+}} 0
+    // CK29-DAG: [[VAR22]] = load double*, double** %{{.+}},
 
     // CK29: call void [[CALL00:@.+]]([[SSB]]* {{[^,]+}})
     #pragma omp target map(p->pr[:10])
@@ -4679,43 +5010,43 @@ struct SSB{
     }
 
     // Region 01
-    // CK29-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 4, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[4 x i{{.+}}]* [[SIZE01]], {{.+}}getelementptr {{.+}}[4 x i{{.+}}]* [[MTYPE01]]{{.+}})
+    // CK29-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 3, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[3 x i{{.+}}]* [[MTYPE01]]{{.+}})
 
     // CK29-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
     // CK29-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+    // CK29-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
     // CK29-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
     // CK29-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+    // CK29-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
     // CK29-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SSB]]**
-    // CK29-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to [[SSA]]****
-    // CK29-DAG: store [[SSB]]* [[VAR0:%.+]], [[SSB]]** [[CBP0]]
-    // CK29-DAG: store [[SSA]]*** [[VAR00:%.+]], [[SSA]]**** [[CP0]]
-    // CK29-DAG: [[VAR00]] = getelementptr inbounds [[SSB]], [[SSB]]* [[VAR0]], i32 0, i32 1
+    // CK29-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to [[SSA]]**
+    // CK29-DAG: store [[SSB]]* [[VAR0]], [[SSB]]** [[CBP0]]
+    // CK29-DAG: store [[SSA]]** [[VAR00:%.+]], [[SSA]]*** [[CP0]]
+    // CK29-DAG: store i64 %{{.+}}, i64* [[S0]]
+    // CK29-DAG: [[VAR00]] = load [[SSA]]**, [[SSA]]*** [[VAR000:%.+]],
+    // CK29-DAG: [[VAR000]] = getelementptr inbounds [[SSB]], [[SSB]]* [[VAR0]], i32 0, i32 1
 
     // CK29-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
     // CK29-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
-    // CK29-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SSA]]****
-    // CK29-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to [[SSA]]***
-    // CK29-DAG: store [[SSA]]*** [[VAR00]], [[SSA]]**** [[CBP1]]
-    // CK29-DAG: store [[SSA]]** [[VAR1:%.+]], [[SSA]]*** [[CP1]]
-    // CK29-DAG: [[VAR1]] = load [[SSA]]**, [[SSA]]*** [[VAR00]],
+    // CK29-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
+    // CK29-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SSA]]***
+    // CK29-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to double***
+    // CK29-DAG: store [[SSA]]** [[VAR00]], [[SSA]]*** [[CBP1]]
+    // CK29-DAG: store double** [[VAR1:%.+]], double*** [[CP1]]
+    // CK29-DAG: store i64 {{8|4}}, i64* [[S1]]
+    // CK29-DAG: [[VAR1]] = getelementptr inbounds [[SSA]], [[SSA]]* %{{.+}}, i32 0, i32 0
 
     // CK29-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 2
     // CK29-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 2
-    // CK29-DAG: [[CBP2:%.+]] = bitcast i8** [[BP2]] to [[SSA]]***
-    // CK29-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to double***
-    // CK29-DAG: store [[SSA]]** [[VAR1]], [[SSA]]*** [[CBP2]]
-    // CK29-DAG: store double** [[VAR2:%.+]], double*** [[CP2]]
-    // CK29-DAG: [[VAR2]] = getelementptr inbounds [[SSA]], [[SSA]]* %{{.+}}, i32 0, i32 0
-
-    // CK29-DAG: [[BP3:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 3
-    // CK29-DAG: [[P3:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 3
-    // CK29-DAG: [[CBP3:%.+]] = bitcast i8** [[BP3]] to double***
-    // CK29-DAG: [[CP3:%.+]] = bitcast i8** [[P3]] to double**
-    // CK29-DAG: store double** [[VAR2]], double*** [[CBP3]]
-    // CK29-DAG: store double* [[VAR3:%.+]], double** [[CP3]]
-    // CK29-DAG: [[VAR3]] = getelementptr inbounds double, double* [[VAR33:%.+]], i{{.+}} 0
-    // CK29-DAG: [[VAR33]] = load double*, double** %{{.+}},
+    // CK29-DAG: [[S2:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 2
+    // CK29-DAG: [[CBP2:%.+]] = bitcast i8** [[BP2]] to double***
+    // CK29-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to double**
+    // CK29-DAG: store double** [[VAR1]], double*** [[CBP2]]
+    // CK29-DAG: store double* [[VAR2:%.+]], double** [[CP2]]
+    // CK29-DAG: store i64 80, i64* [[S2]]
+    // CK29-DAG: [[VAR2]] = getelementptr inbounds double, double* [[VAR22:%.+]], i{{.+}} 0
+    // CK29-DAG: [[VAR22]] = load double*, double** %{{.+}},
 
     // CK29: call void [[CALL00:@.+]]([[SSB]]* {{[^,]+}})
     #pragma omp target map(pr->p[:10])
@@ -4724,51 +5055,44 @@ struct SSB{
     }
 
     // Region 02
-    // CK29-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 5, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], {{.+}}getelementptr {{.+}}[5 x i{{.+}}]* [[SIZE02]], {{.+}}getelementptr {{.+}}[5 x i{{.+}}]* [[MTYPE02]]{{.+}})
+    // CK29-DAG: call i32 @__tgt_target(i64 {{[^,]+}}, i8* {{[^,]+}}, i32 3, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], {{.+}}getelementptr {{.+}}[3 x i{{.+}}]* [[MTYPE02]]{{.+}})
 
     // CK29-DAG: [[GEPBP]] = getelementptr inbounds {{.+}}[[BP:%[^,]+]]
     // CK29-DAG: [[GEPP]] = getelementptr inbounds {{.+}}[[P:%[^,]+]]
+    // CK29-DAG: [[GEPS]] = getelementptr inbounds {{.+}}[[S:%[^,]+]]
 
     // CK29-DAG: [[BP0:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 0
     // CK29-DAG: [[P0:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 0
+    // CK29-DAG: [[S0:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 0
     // CK29-DAG: [[CBP0:%.+]] = bitcast i8** [[BP0]] to [[SSB]]**
-    // CK29-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to [[SSA]]****
-    // CK29-DAG: store [[SSB]]* [[VAR0:%.+]], [[SSB]]** [[CBP0]]
-    // CK29-DAG: store [[SSA]]*** [[VAR00:%.+]], [[SSA]]**** [[CP0]]
-    // CK29-DAG: [[VAR00]] = getelementptr inbounds [[SSB]], [[SSB]]* [[VAR0]], i32 0, i32 1
+    // CK29-DAG: [[CP0:%.+]] = bitcast i8** [[P0]] to [[SSA]]**
+    // CK29-DAG: store [[SSB]]* [[VAR0]], [[SSB]]** [[CBP0]]
+    // CK29-DAG: store [[SSA]]** [[VAR00:%.+]], [[SSA]]*** [[CP0]]
+    // CK29-DAG: store i64 %{{.+}}, i64* [[S0]]
+    // CK29-DAG: [[VAR00]] = load [[SSA]]**, [[SSA]]*** [[VAR000:%.+]],
+    // CK29-DAG: [[VAR000]] = getelementptr inbounds [[SSB]], [[SSB]]* [[VAR0]], i32 0, i32 1
 
     // CK29-DAG: [[BP1:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 1
     // CK29-DAG: [[P1:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 1
-    // CK29-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SSA]]****
-    // CK29-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to [[SSA]]***
-    // CK29-DAG: store [[SSA]]*** [[VAR00]], [[SSA]]**** [[CBP1]]
-    // CK29-DAG: store [[SSA]]** [[VAR1:%.+]], [[SSA]]*** [[CP1]]
-    // CK29-DAG: [[VAR1]] = load [[SSA]]**, [[SSA]]*** [[VAR00]],
+    // CK29-DAG: [[S1:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 1
+    // CK29-DAG: [[CBP1:%.+]] = bitcast i8** [[BP1]] to [[SSA]]***
+    // CK29-DAG: [[CP1:%.+]] = bitcast i8** [[P1]] to double***
+    // CK29-DAG: store [[SSA]]** [[VAR00]], [[SSA]]*** [[CBP1]]
+    // CK29-DAG: store double** [[VAR1:%.+]], double*** [[CP1]]
+    // CK29-DAG: store i64 {{8|4}}, i64* [[S1]]
+    // CK29-DAG: [[VAR1]] = load double**, double*** [[VAR1_REF:%.+]],
+    // CK29-DAG: [[VAR1_REF]] = getelementptr inbounds [[SSA]], [[SSA]]* %{{.+}}, i32 0, i32 1
 
     // CK29-DAG: [[BP2:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 2
     // CK29-DAG: [[P2:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 2
-    // CK29-DAG: [[CBP2:%.+]] = bitcast i8** [[BP2]] to [[SSA]]***
-    // CK29-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to double****
-    // CK29-DAG: store [[SSA]]** [[VAR1]], [[SSA]]*** [[CBP2]]
-    // CK29-DAG: store double*** [[VAR2:%.+]], double**** [[CP2]]
-    // CK29-DAG: [[VAR2]] = getelementptr inbounds [[SSA]], [[SSA]]* %{{.+}}, i32 0, i32 1
-
-    // CK29-DAG: [[BP3:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 3
-    // CK29-DAG: [[P3:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 3
-    // CK29-DAG: [[CBP3:%.+]] = bitcast i8** [[BP3]] to double****
-    // CK29-DAG: [[CP3:%.+]] = bitcast i8** [[P3]] to double***
-    // CK29-DAG: store double*** [[VAR2]], double**** [[CBP3]]
-    // CK29-DAG: store double** [[VAR3:%.+]], double*** [[CP3]]
-    // CK29-DAG: [[VAR3]] = load double**, double*** [[VAR2]],
-
-    // CK29-DAG: [[BP4:%.+]] = getelementptr inbounds {{.+}}[[BP]], i{{.+}} 0, i{{.+}} 4
-    // CK29-DAG: [[P4:%.+]] = getelementptr inbounds {{.+}}[[P]], i{{.+}} 0, i{{.+}} 4
-    // CK29-DAG: [[CBP4:%.+]] = bitcast i8** [[BP4]] to double***
-    // CK29-DAG: [[CP4:%.+]] = bitcast i8** [[P4]] to double**
-    // CK29-DAG: store double** [[VAR3]], double*** [[CBP4]]
-    // CK29-DAG: store double* [[VAR4:%.+]], double** [[CP4]]
-    // CK29-DAG: [[VAR4]] = getelementptr inbounds double, double* [[VAR44:%.+]], i{{.+}} 0
-    // CK29-DAG: [[VAR44]] = load double*, double**
+    // CK29-DAG: [[S2:%.+]] = getelementptr inbounds {{.+}}[[S]], i{{.+}} 0, i{{.+}} 2
+    // CK29-DAG: [[CBP2:%.+]] = bitcast i8** [[BP2]] to double***
+    // CK29-DAG: [[CP2:%.+]] = bitcast i8** [[P2]] to double**
+    // CK29-DAG: store double** [[VAR1]], double*** [[CBP2]]
+    // CK29-DAG: store double* [[VAR2:%.+]], double** [[CP2]]
+    // CK29-DAG: store i64 80, i64* [[S2]]
+    // CK29-DAG: [[VAR2]] = getelementptr inbounds double, double* [[VAR22:%.+]], i{{.+}} 0
+    // CK29-DAG: [[VAR22]] = load double*, double** %{{.+}},
 
     // CK29: call void [[CALL00:@.+]]([[SSB]]* {{[^,]+}})
     #pragma omp target map(pr->pr[:10])
@@ -4784,5 +5108,154 @@ void explicit_maps_member_pointer_references(SSA *sap) {
   SSB sb(sap);
   sb.foo();
 }
+#endif
+///==========================================================================///
+// RUN: %clang_cc1 -DCK30 -verify -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s --check-prefix CK30 --check-prefix CK30-64
+// RUN: %clang_cc1 -DCK30 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK30 --check-prefix CK30-64
+// RUN: %clang_cc1 -DCK30 -verify -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK30 --check-prefix CK30-32
+// RUN: %clang_cc1 -DCK30 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
+// RUN: %clang_cc1 -fopenmp -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  %s  --check-prefix CK30 --check-prefix CK30-32
+
+// RUN: %clang_cc1 -DCK30 -verify -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY30 %s
+// RUN: %clang_cc1 -DCK30 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -std=c++11 -triple powerpc64le-unknown-unknown -emit-pch -o %t %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=powerpc64le-ibm-linux-gnu -x c++ -triple powerpc64le-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY30 %s
+// RUN: %clang_cc1 -DCK30 -verify -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -emit-llvm %s -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY30 %s
+// RUN: %clang_cc1 -DCK30 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -std=c++11 -triple i386-unknown-unknown -emit-pch -o %t %s
+// RUN: %clang_cc1 -fopenmp-simd -fopenmp-targets=i386-pc-linux-gnu -x c++ -triple i386-unknown-unknown -std=c++11 -include-pch %t -verify %s -emit-llvm -o - | FileCheck -allow-deprecated-dag-overlap  --check-prefix SIMD-ONLY30 %s
+// SIMD-ONLY30-NOT: {{__kmpc|__tgt}}
+#ifdef CK30
+
+// CK30-DAG: [[BASE:%.+]] = type { i32*, i32, i32* }
+// CK30-DAG: [[STRUCT:%.+]] = type { [[BASE]], i32*, i32*, i32, i32* }
+
+// CK30-LABEL: @.__omp_offloading_{{.*}}map_with_deep_copy{{.*}}_l{{[0-9]+}}.region_id = weak constant i8 0
+// The first element: 0x20 - OMP_MAP_TARGET_PARAM
+// 2-4: 0x1000000000003 - OMP_MAP_MEMBER_OF(0) | OMP_MAP_TO | OMP_MAP_FROM - copies all the data in structs excluding deep-copied elements (from &s to &s.ptrBase1, from &s.ptr to &s.ptr1, from &s.ptr1 to end of s).
+// 5-6: 0x1000000000013 - OMP_MAP_MEMBER_OF(0) | OMP_MAP_PTR_AND_OBJ | OMP_MAP_TO | OMP_MAP_FROM - deep copy of the pointers + pointee.
+// CK30: [[MTYPE00:@.+]] = private {{.*}}constant [6 x i64] [i64 32, i64 281474976710659, i64 281474976710659, i64 281474976710659, i64 281474976710675, i64 281474976710675]
+
+typedef struct {
+  int *ptrBase;
+  int valBase;
+  int *ptrBase1;
+} Base;
+
+typedef struct : public Base {
+  int *ptr;
+  int *ptr2;
+  int val;
+  int *ptr1;
+} StructWithPtr;
+
+// CK30-DAG: call i32 @__tgt_target(i64 -1, i8* @.__omp_offloading_{{.*}}map_with_deep_copy{{.*}}_l{{[0-9]+}}.region_id, i32 6, i8** [[GEPBP:%.+]], i8** [[GEPP:%.+]], i64* [[GEPS:%.+]], i64* getelementptr inbounds ([6 x i64], [6 x i64]* [[MTYPE00]], i32 0, i32 0))
+// CK30-DAG: [[GEPS]] = getelementptr inbounds [6 x i{{64|32}}], [6 x i64]* [[SIZES:%.+]], i32 0, i32 0
+// CK30-DAG: [[GEPP]] = getelementptr inbounds [6 x i8*], [6 x i8*]* [[PTRS:%.+]], i32 0, i32 0
+// CK30-DAG: [[GEPBP]] = getelementptr inbounds [6 x i8*], [6 x i8*]* [[BASES:%.+]], i32 0, i32 0
+
+// CK30-DAG: [[BASE_PTR:%.+]] = getelementptr inbounds [6 x i8*], [6 x i8*]* [[BASES]], i32 0, i32 0
+// CK30-DAG: [[BC:%.+]] = bitcast i8** [[BASE_PTR]] to [[STRUCT]]**
+// CK30-DAG: store [[STRUCT]]* [[S:%.+]], [[STRUCT]]** [[BC]],
+// CK30-DAG: [[PTR:%.+]] = getelementptr inbounds [6 x i8*], [6 x i8*]* [[PTRS]], i32 0, i32 0
+// CK30-DAG: [[BC:%.+]] = bitcast i8** [[PTR]] to [[STRUCT]]**
+// CK30-DAG: store [[STRUCT]]* [[S]], [[STRUCT]]** [[BC]],
+// CK30-DAG: [[SIZE:%.+]] = getelementptr inbounds [6 x i{{64|32}}], [6 x i64]* [[SIZES]], i32 0, i32 0
+// CK30-DAG: store i64 [[S_ALLOC_SIZE:%.+]], i64* [[SIZE]],
+// CK30-DAG: [[S_ALLOC_SIZE]] = sdiv exact i64 [[DIFF:%.+]], ptrtoint (i8* getelementptr (i8, i8* null, i32 1) to i64)
+// CK30-DAG: [[DIFF]] = sub i64 [[S_END_BC:%.+]], [[S_BEGIN_BC:%.+]]
+// CK30-DAG: [[S_BEGIN_BC]] = ptrtoint i8* [[S_BEGIN:%.+]] to i64
+// CK30-DAG: [[S_END_BC]] = ptrtoint i8* [[S_END:%.+]] to i64
+// CK30-DAG: [[S_BEGIN]] = bitcast [[STRUCT]]* [[S]] to i8*
+// CK30-DAG: [[S_END]] = getelementptr i8, i8* [[S_LAST:%.+]], i32 1
+// CK30-DAG: [[S_LAST]] = getelementptr i8, i8* [[S_BC:%.+]], i{{64|32}} {{55|27}}
+// CK30-DAG: [[S_BC]] = bitcast [[STRUCT]]* [[S]] to i8*
+
+// CK30-DAG: [[BASE_PTR:%.+]] = getelementptr inbounds [6 x i8*], [6 x i8*]* [[BASES]], i32 0, i32 1
+// CK30-DAG: [[BC:%.+]] = bitcast i8** [[BASE_PTR]] to [[STRUCT]]**
+// CK30-DAG: store [[STRUCT]]* [[S]], [[STRUCT]]** [[BC]],
+// CK30-DAG: [[PTR:%.+]] = getelementptr inbounds [6 x i8*], [6 x i8*]* [[PTRS]], i32 0, i32 1
+// CK30-DAG: [[BC:%.+]] = bitcast i8** [[PTR]] to [[STRUCT]]**
+// CK30-DAG: store [[STRUCT]]* [[S]], [[STRUCT]]** [[BC]],
+// CK30-DAG: [[SIZE:%.+]] = getelementptr inbounds [6 x i64], [6 x i64]* [[SIZES]], i32 0, i32 1
+// CK30-DAG: store i64 [[SIZE1:%.+]], i64* [[SIZE]],
+// CK30-DAG: [[SIZE1]] = sdiv exact i64 [[DIFF:%.+]], ptrtoint (i8* getelementptr (i8, i8* null, i32 1) to i64)
+// CK30-DAG: [[DIFF]] = sub i64 [[S_PTRBASE1_BC:%.+]], [[S_BEGIN_BC:%.+]]
+// CK30-DAG: [[S_BEGIN_BC]] = ptrtoint i8* [[S_BEGIN:%.+]] to i64
+// CK30-DAG: [[S_PTRBASE1_BC]] = ptrtoint i8* [[S_PTRBASE1:%.+]] to i64
+// CK30-DAG: [[S_PTRBASE1]] = bitcast i32** [[S_PTRBASE1_REF:%.+]] to i8*
+// CK30-DAG: [[S_BEGIN]] = bitcast [[STRUCT]]* [[S]] to i8*
+// CK30-DAG: [[S_PTRBASE1_REF]] = getelementptr inbounds [[BASE]], [[BASE]]* [[BASE_ADDR:%.+]], i32 0, i32 2
+// CK30-DAG: [[BASE_ADDR]] = bitcast [[STRUCT]]* [[S]] to [[BASE]]*
+
+// CK30-DAG: [[BASE_PTR:%.+]] = getelementptr inbounds [6 x i8*], [6 x i8*]* [[BASES]], i32 0, i32 2
+// CK30-DAG: [[BC:%.+]] = bitcast i8** [[BASE_PTR]] to [[STRUCT]]**
+// CK30-DAG: store [[STRUCT]]* [[S]], [[STRUCT]]** [[BC]],
+// CK30-DAG: [[PTR:%.+]] = getelementptr inbounds [6 x i8*], [6 x i8*]* [[PTRS]], i32 0, i32 2
+// CK30-DAG: [[BC:%.+]] = bitcast i8** [[PTR]] to i32***
+// CK30-DAG: store i32** [[PTR1:%.+]], i32*** [[BC]],
+// CK30-DAG: [[SIZE:%.+]] = getelementptr inbounds [6 x i64], [6 x i64]* [[SIZES]], i32 0, i32 2
+// CK30-DAG: store i64 [[SIZE2:%.+]], i64* [[SIZE]],
+// CK30-DAG: [[PTR1]] = getelementptr i32*, i32** [[S_PTRBASE1_REF]], i{{64|32}} 1
+// CK30-DAG: [[SIZE2]] = sdiv exact i64 [[DIFF:%.+]], ptrtoint (i8* getelementptr (i8, i8* null, i32 1) to i64)
+// CK30-DAG: [[DIFF]] = sub i64 [[S_PTR1_BC:%.+]], [[S_PTRBASE1_BC:%.+]]
+// CK30-DAG: [[S_PTR1_BC]] = ptrtoint i8* [[S_PTR1:%.+]] to i64
+// CK30-DAG: [[S_PTRBASE1_BC]] = ptrtoint i8* [[S_PTRBASE1:%.+]] to i64
+// CK30-DAG: [[S_PTR1]] = bitcast i32** [[S_PTR1_REF:%.+]] to i8*
+// CK30-DAG: [[S_PTRBASE1]] = bitcast i32** [[PTR1]] to i8*
+// CK30-DAG: [[S_PTR1_REF]] = getelementptr inbounds [[STRUCT]], [[STRUCT]]* [[S]], i32 0, i32 4
+
+// CK30-DAG: [[BASE_PTR:%.+]] = getelementptr inbounds [6 x i8*], [6 x i8*]* [[BASES]], i32 0, i32 3
+// CK30-DAG: [[BC:%.+]] = bitcast i8** [[BASE_PTR]] to [[STRUCT]]**
+// CK30-DAG: store [[STRUCT]]* [[S]], [[STRUCT]]** [[BC]],
+// CK30-DAG: [[PTR:%.+]] = getelementptr inbounds [6 x i8*], [6 x i8*]* [[PTRS]], i32 0, i32 3
+// CK30-DAG: [[BC:%.+]] = bitcast i8** [[PTR]] to i32***
+// CK30-DAG: store i32** [[PTR2:%.+]], i32*** [[BC]],
+// CK30-DAG: [[SIZE:%.+]] = getelementptr inbounds [6 x i64], [6 x i64]* [[SIZES]], i32 0, i32 3
+// CK30-DAG: store i64 [[SIZE3:%.+]], i64* [[SIZE]],
+// CK30-DAG: [[PTR2]] = getelementptr i32*, i32** [[S_PTR1_REF]], i{{64|32}} 1
+// CK30-DAG: [[SIZE3]] = sdiv exact i64 [[DIFF:%.+]], ptrtoint (i8* getelementptr (i8, i8* null, i32 1) to i64)
+// CK30-DAG: [[DIFF]] = sub i64 [[S_END_BC:%.+]], [[S_PTR1_BC:%.+]]
+// CK30-DAG: [[S_PTR1_BC]] = ptrtoint i8* [[S_PTR1:%.+]] to i64
+// CK30-DAG: [[S_END_BC]] = ptrtoint i8* [[S_END:%.+]] to i64
+// CK30-DAG: [[S_PTR1]] = bitcast i32** [[PTR2]] to i8*
+// CK30-DAG: [[S_END]] = getelementptr i8, i8* [[S_LAST]], i{{64|32}} 1
+
+// CK30-DAG: [[BASE_PTR:%.+]] = getelementptr inbounds [6 x i8*], [6 x i8*]* [[BASES]], i32 0, i32 4
+// CK30-DAG: [[BC:%.+]] = bitcast i8** [[BASE_PTR]] to i32***
+// CK30-DAG: store i32** [[S_PTR1:%.+]], i32*** [[BC]],
+// CK30-DAG: [[PTR:%.+]] = getelementptr inbounds [6 x i8*], [6 x i8*]* [[PTRS]], i32 0, i32 4
+// CK30-DAG: [[BC:%.+]] = bitcast i8** [[PTR]] to i32**
+// CK30-DAG: store i32* [[S_PTR1_BEGIN:%.+]], i32** [[BC]],
+// CK30-DAG: [[SIZE:%.+]] = getelementptr inbounds [6 x i64], [6 x i64]* [[SIZES]], i32 0, i32 4
+// CK30-DAG: store i64 4, i64* [[SIZE]],
+// CK30-DAG: [[S_PTR1]] = getelementptr inbounds [[STRUCT]], [[STRUCT]]* [[S]], i32 0, i32 4
+// CK30-DAG: [[S_PTR1_BEGIN]] = getelementptr inbounds i32, i32* [[S_PTR1_BEGIN_REF:%.+]], i{{64|32}} 0
+// CK30-DAG: [[S_PTR1_BEGIN_REF]] = load i32*, i32** [[S_PTR1:%.+]],
+// CK30-DAG: [[S_PTR1]] = getelementptr inbounds [[STRUCT]], [[STRUCT]]* [[S]], i32 0, i32 4
+
+// CK30-DAG: [[BASE_PTR:%.+]] = getelementptr inbounds [6 x i8*], [6 x i8*]* [[BASES]], i32 0, i32 5
+// CK30-DAG: [[BC:%.+]] = bitcast i8** [[BASE_PTR]] to i32***
+// CK30-DAG: store i32** [[S_PTRBASE1:%.+]], i32*** [[BC]],
+// CK30-DAG: [[PTR:%.+]] = getelementptr inbounds [6 x i8*], [6 x i8*]* [[PTRS]], i32 0, i32 5
+// CK30-DAG: [[BC:%.+]] = bitcast i8** [[PTR]] to i32**
+// CK30-DAG: store i32* [[S_PTRBASE1_BEGIN:%.+]], i32** [[BC]],
+// CK30-DAG: [[SIZE:%.+]] = getelementptr inbounds [6 x i{{64|32}}], [6 x i{{64|32}}]* [[SIZES]], i32 0, i32 5
+// CK30-DAG: store i{{64|32}} 4, i{{64|32}}* [[SIZE]],
+// CK30-DAG: [[S_PTRBASE1]] = getelementptr inbounds [[BASE]], [[BASE]]* [[S_BASE:%.+]], i32 0, i32 2
+// CK30-DAG: [[S_BASE]] = bitcast [[STRUCT]]* [[S]] to [[BASE]]*
+// CK30-DAG: [[S_PTRBASE1_BEGIN]] = getelementptr inbounds i32, i32* [[S_PTRBASE1_BEGIN_REF:%.+]], i{{64|32}} 0
+// CK30-DAG: [[S_PTRBASE1_BEGIN_REF]] = load i32*, i32** [[S_PTRBASE1:%.+]],
+// CK30-DAG: [[S_PTRBASE1]] = getelementptr inbounds [[BASE]], [[BASE]]* [[S_BASE:%.+]], i32 0, i32 2
+// CK30-DAG: [[S_BASE]] = bitcast [[STRUCT]]* [[S]] to [[BASE]]*
+void map_with_deep_copy() {
+  StructWithPtr s;
+#pragma omp target map(s, s.ptr1 [0:1], s.ptrBase1 [0:1])
+  {
+    s.val++;
+    s.ptr1[0]++;
+    s.ptrBase1[0] = 10001;
+  }
+}
+
 #endif
 #endif

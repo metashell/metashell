@@ -282,7 +282,7 @@ ret1:
 ; CHECK-NEXT: %2 = call %void_one_out_arg_v2i32_1_use @void_one_out_arg_v2i32_1_use.body(<2 x i32>* undef)
 ; CHECK-NEXT: %3 = extractvalue %void_one_out_arg_v2i32_1_use %2, 0
 ; CHECK-NEXT: store <2 x i32> %3, <2 x i32>* %0, align 8
-; CHCEK-NEXT: ret void
+; CHECK-NEXT: ret void
 define void @void_one_out_arg_v2i32_1_use(<2 x i32>* %val) #0 {
   store <2 x i32> <i32 17, i32 9>, <2 x i32>* %val
   ret void
@@ -812,7 +812,7 @@ attributes #2 = { alwaysinline nounwind }
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 2}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
-!5 = distinct !DISubprogram(name: "test", scope: !1, file: !1, line: 1, type: !6, isLocal: false, isDefinition: true, scopeLine: 1, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
+!5 = distinct !DISubprogram(name: "test", scope: !1, file: !1, line: 1, type: !6, isLocal: false, isDefinition: true, scopeLine: 1, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
 !6 = !DISubroutineType(types: !7)
 !7 = !{null, !8}
 !8 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !9, size: 64)

@@ -38,6 +38,16 @@ namespace
   {
     return mi_.command("step").front();
   }
+
+  json_string skip_any_further(const frame& frame_, metashell_instance& mi_)
+  {
+    json_string result = step(mi_);
+    while (result == frame_)
+    {
+      result = step(mi_);
+    }
+    return result;
+  }
 }
 
 TEST(mdb_step, without_evaluation)
@@ -294,17 +304,20 @@ TEST(mdb_step, over_environment_multiple_steps)
     ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::memoization), step(mi));
     ASSERT_EQ(frame(type("int_<5>"), _, _, event_kind::template_instantiation),
               step(mi));
-    ASSERT_EQ(frame(type("int_<5>"), _, _, event_kind::memoization), step(mi));
+    const frame memoization5(type("int_<5>"), _, _, event_kind::memoization);
+    ASSERT_EQ(memoization5, step(mi));
     ASSERT_EQ(frame(type("fib<6>"), _, _, event_kind::template_instantiation),
-              step(mi));
+              skip_any_further(memoization5, mi));
     ASSERT_EQ(frame(type("fib<4>"), _, _, event_kind::memoization), step(mi));
     ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::memoization), step(mi));
     ASSERT_EQ(frame(type("fib<6>"), _, _, event_kind::memoization), step(mi));
     ASSERT_EQ(frame(type("int_<8>"), _, _, event_kind::template_instantiation),
               step(mi));
-    ASSERT_EQ(frame(type("int_<8>"), _, _, event_kind::memoization), step(mi));
+    const frame memoization8(type("int_<8>"), _, _, event_kind::memoization);
+    ASSERT_EQ(memoization8, step(mi));
 
-    ASSERT_EQ(raw_text("Metaprogram finished"), step(mi));
+    ASSERT_EQ(
+        raw_text("Metaprogram finished"), skip_any_further(memoization8, mi));
   }
 }
 

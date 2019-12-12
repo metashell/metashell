@@ -34,7 +34,7 @@ namespace metashell
         bool use_precompiled_headers_, bool preprocessor_mode_)
     {
       _defaults.use_precompiled_headers = use_precompiled_headers_;
-      _defaults.engine = data::engine_name("auto"),
+      _defaults.engine = data::auto_engine_name(),
       _defaults.preprocessor_mode = preprocessor_mode_;
     }
 
@@ -133,11 +133,12 @@ namespace metashell
         if (*_key == "command")
         {
           _data->engine_args.clear();
-          for (const std::string& s : data::shell_command_view(str_))
+          for (const data::command_line_argument& s :
+               data::shell_command_view(str_))
           {
-            if (!_data->engine_args.empty() &&
-                (_data->engine_args.back() == "-c" ||
-                 _data->engine_args.back() == "-o"))
+            const auto last = _data->engine_args.back();
+
+            if (last && (*last == "-c" || *last == "-o"))
             {
               _data->engine_args.pop_back();
             }

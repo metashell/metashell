@@ -19,6 +19,8 @@
 
 #include <metashell/system_test/json_string.hpp>
 
+#include <metashell/data/command_line_argument.hpp>
+
 #include <boost/filesystem/path.hpp>
 #include <boost/optional.hpp>
 
@@ -39,7 +41,7 @@ namespace metashell
                                 const std::string& suffix_);
 
     boost::optional<boost::filesystem::path>
-    include_path_addition(const std::string& arg_);
+    include_path_addition(const data::command_line_argument& arg_);
 
     std::string c_string_literal(const std::string& s_);
 

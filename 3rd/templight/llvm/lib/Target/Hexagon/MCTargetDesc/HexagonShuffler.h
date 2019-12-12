@@ -1,9 +1,8 @@
 //===- HexagonShuffler.h - Instruction bundle shuffling ---------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -15,8 +14,8 @@
 #ifndef LLVM_LIB_TARGET_HEXAGON_MCTARGETDESC_HEXAGONSHUFFLER_H
 #define LLVM_LIB_TARGET_HEXAGON_MCTARGETDESC_HEXAGONSHUFFLER_H
 
-#include "Hexagon.h"
 #include "MCTargetDesc/HexagonMCInstrInfo.h"
+#include "MCTargetDesc/HexagonMCTargetDesc.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
@@ -75,7 +74,8 @@ private:
     CVI_XLANE = 1 << 0,
     CVI_SHIFT = 1 << 1,
     CVI_MPY0 = 1 << 2,
-    CVI_MPY1 = 1 << 3
+    CVI_MPY1 = 1 << 3,
+    CVI_ZW = 1 << 4
   };
 
   // Count of adjacent slots that the insn requires to be executed.

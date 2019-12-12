@@ -1,9 +1,8 @@
 //===-- scudo_platform.h ----------------------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 ///
@@ -43,13 +42,27 @@
 
 // Maximum number of TSDs that can be created for the Shared model.
 #ifndef SCUDO_SHARED_TSD_POOL_SIZE
-# define SCUDO_SHARED_TSD_POOL_SIZE 32U
+# if SANITIZER_ANDROID
+#  define SCUDO_SHARED_TSD_POOL_SIZE 2U
+# else
+#  define SCUDO_SHARED_TSD_POOL_SIZE 32U
+# endif  // SANITIZER_ANDROID
 #endif  // SCUDO_SHARED_TSD_POOL_SIZE
 
 // The following allows the public interface functions to be disabled.
 #ifndef SCUDO_CAN_USE_PUBLIC_INTERFACE
 # define SCUDO_CAN_USE_PUBLIC_INTERFACE 1
 #endif
+
+// Hooks in the allocation & deallocation paths can become a security concern if
+// implemented improperly, or if overwritten by an attacker. Use with caution.
+#ifndef SCUDO_CAN_USE_HOOKS
+# if SANITIZER_FUCHSIA
+#  define SCUDO_CAN_USE_HOOKS 1
+# else
+#  define SCUDO_CAN_USE_HOOKS 0
+# endif  // SANITIZER_FUCHSIA
+#endif  // SCUDO_CAN_USE_HOOKS
 
 namespace __scudo {
 
@@ -66,7 +79,7 @@ const uptr RegionSizeLog = SANITIZER_ANDROID ? 19 : 20;
 #endif  // SANITIZER_CAN_USE_ALLOCATOR64
 
 #if !defined(SCUDO_SIZE_CLASS_MAP)
-# define SCUDO_SIZE_CLASS_MAP Default
+# define SCUDO_SIZE_CLASS_MAP Dense
 #endif
 
 #define SIZE_CLASS_MAP_TYPE SIZE_CLASS_MAP_TYPE_(SCUDO_SIZE_CLASS_MAP)

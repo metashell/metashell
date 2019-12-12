@@ -1,10 +1,12 @@
 ; A by-value struct is a register-indirect value (breg).
-; RUN: llc %s -filetype=asm -o - | FileCheck %s
+; RUN: llc %s -filetype=obj -o - | llvm-dwarfdump - | FileCheck %s
+; REQUIRES: object-emission
 
-; CHECK: Lsection_info:
-; CHECK: DW_AT_location
-; CHECK-NEXT: .byte 112
-; 112 = 0x70 = DW_OP_breg0
+; Test that the 'f' parameter is present, with a location, and that the
+; expression for the location contains a DW_OP_breg
+; CHECK: DW_TAG_formal_parameter
+; CHECK-NEXT: DW_AT_location
+; CHECK-NEXT: DW_OP_breg
 
 ; rdar://problem/13658587
 ;
@@ -51,7 +53,7 @@ attributes #1 = { nounwind readnone }
 !0 = distinct !DICompileUnit(language: DW_LANG_C99, producer: "LLVM version 3.4 ", isOptimized: false, emissionKind: FullDebug, file: !1, enums: !2, retainedTypes: !2, globals: !2, imports: !2)
 !1 = !DIFile(filename: "struct_by_value.c", directory: "")
 !2 = !{}
-!4 = distinct !DISubprogram(name: "return_five_int", line: 13, isLocal: false, isDefinition: true, virtualIndex: 6, flags: DIFlagPrototyped, isOptimized: false, unit: !0, scopeLine: 14, file: !1, scope: !5, type: !6, variables: !2)
+!4 = distinct !DISubprogram(name: "return_five_int", line: 13, isLocal: false, isDefinition: true, virtualIndex: 6, flags: DIFlagPrototyped, isOptimized: false, unit: !0, scopeLine: 14, file: !1, scope: !5, type: !6, retainedNodes: !2)
 !5 = !DIFile(filename: "struct_by_value.c", directory: "")
 !6 = !DISubroutineType(types: !7)
 !7 = !{!8, !9}

@@ -223,19 +223,14 @@ entry:
   %halfLim = ashr i32 %limit, 2
   br label %loop
 
-; This test originally checked that the OR instruction was cloned. Now the
-; ScalarEvolution is able to understand the loop evolution and that '%iv' at the
-; end of the loop is an even value. Thus '%val' is computed at the end of the
-; loop and the OR instruction is replaced by an ADD keeping the result
-; equivalent.
+; Test cloning an or, which is not an OverflowBinaryOperator.
 ;
 ; CHECK: sext
 ; CHECK: loop:
 ; CHECK: phi i64
 ; CHECK-NOT: sext
-; CHECK: icmp slt i64
+; CHECK: or i64
 ; CHECK: exit:
-; CHECK: add i64
 loop:
   %iv = phi i32 [ 0, %entry], [ %iv.next, %loop ]
   %t1 = sext i32 %iv to i64
@@ -357,6 +352,9 @@ exit:
   ret void
 }
 
+declare void @use32(i32 %x)
+declare void @use64(i64 %x)
+
 ; Test a widened IV that is used by a phi on different paths within the loop.
 ;
 ; CHECK: for.body:
@@ -385,10 +383,12 @@ if.else:
 
 if.then97:
   %idxprom100 = sext i32 %iv to i64
+  call void @use64(i64 %idxprom100)
   br label %for.inc
 
 for.inc:
   %kmin.1 = phi i32 [ %iv, %if.then33 ], [ 0, %if.then ], [ %iv, %if.then97 ], [ 0, %if.else ]
+  call void @use32(i32 %kmin.1)
   %inc = add nsw i32 %iv, 1
   br i1 undef, label %for.body, label %for.end
 

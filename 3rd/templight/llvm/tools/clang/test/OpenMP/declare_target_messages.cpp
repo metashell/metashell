@@ -4,7 +4,7 @@
 
 #pragma omp end declare target // expected-error {{unexpected OpenMP directive '#pragma omp end declare target'}}
 
-int a, b; // expected-warning {{declaration is not declared in any declare target region}}
+int a, b;
 __thread int t; // expected-note {{defined as threadprivate or thread local}}
 
 #pragma omp declare target . // expected-error {{expected '(' after 'declare target'}}
@@ -19,11 +19,11 @@ void f();
 
 #pragma omp declare target link(foo2) // expected-error {{use of undeclared identifier 'foo2'}}
 
-void c(); // expected-warning {{declaration is not declared in any declare target region}}
+void c();
 
 void func() {} // expected-note {{'func' defined here}}
 
-#pragma omp declare target link(func) // expected-error {{function name is not allowed in 'link' clause}}
+#pragma omp declare target link(func) allocate(a) // expected-error {{function name is not allowed in 'link' clause}} expected-error {{unexpected 'allocate' clause, only 'to' or 'link' clauses expected}}
 
 extern int b;
 
@@ -33,7 +33,45 @@ struct NonT {
 
 typedef int sint;
 
-#pragma omp declare target // expected-note {{to match this '#pragma omp declare target'}}
+template <typename T>
+T bla1() { return 0; }
+
+#pragma omp declare target
+template <typename T>
+T bla2() { return 0; }
+#pragma omp end declare target
+
+template<>
+float bla2() { return 1.0; }
+
+#pragma omp declare target
+void blub2() {
+  bla2<float>();
+  bla2<int>();
+}
+#pragma omp end declare target
+
+void t2() {
+#pragma omp target
+  {
+    bla2<float>();
+    bla2<long>();
+  }
+}
+
+#pragma omp declare target
+  void abc();
+#pragma omp end declare target
+void cba();
+#pragma omp end declare target // expected-error {{unexpected OpenMP directive '#pragma omp end declare target'}}
+
+#pragma omp declare target  
+  #pragma omp declare target
+    void def();
+  #pragma omp end declare target
+  void fed();
+
+#pragma omp declare target
 #pragma omp threadprivate(a) // expected-note {{defined as threadprivate or thread local}}
 extern int b;
 int g;
@@ -61,20 +99,23 @@ int C::method1() {
   return 0;
 }
 
-void foo() {
+void foo(int p) {
   a = 0; // expected-error {{threadprivate variables cannot be used in target constructs}}
-  b = 0; // expected-note {{used here}}
+  b = 0;
   t = 1; // expected-error {{threadprivate variables cannot be used in target constructs}}
   C object;
   VC object1;
   g = object.method();
   g += object.method1();
-  g += object1.method();
+  g += object1.method() + p;
   f();
-  c(); // expected-note {{used here}}
+  c();
 }
-#pragma omp declare target // expected-error {{expected '#pragma omp end declare target'}}
+#pragma omp declare target
 void foo1() {}
+#pragma omp end declare target
+
+#pragma omp end declare target
 #pragma omp end declare target
 #pragma omp end declare target // expected-error {{unexpected OpenMP directive '#pragma omp end declare target'}}
 
@@ -92,7 +133,7 @@ int main (int argc, char **argv) {
 #pragma omp declare target // expected-error {{unexpected OpenMP directive '#pragma omp declare target'}}
   int v;
 #pragma omp end declare target // expected-error {{unexpected OpenMP directive '#pragma omp end declare target'}}
-  foo();
+  foo(v);
   return (0);
 }
 

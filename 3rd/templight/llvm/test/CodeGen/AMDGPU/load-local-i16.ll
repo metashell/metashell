@@ -1,7 +1,11 @@
-; RUN: llc -march=amdgcn -verify-machineinstrs < %s | FileCheck -check-prefixes=GCN,SI,SICIVI,FUNC %s
-; RUN: llc -march=amdgcn -mcpu=tonga -verify-machineinstrs < %s | FileCheck -check-prefixes=GCN,SICIVI,GFX89,FUNC %s
-; RUN: llc -march=amdgcn -mcpu=gfx900 -verify-machineinstrs < %s | FileCheck -check-prefixes=GCN,GFX9,GFX89,FUNC %s
-; RUN: llc -march=r600 -mcpu=redwood -verify-machineinstrs < %s | FileCheck -check-prefix=EG -check-prefix=FUNC %s
+; RUN: llc -march=amdgcn -verify-machineinstrs < %s | FileCheck -allow-deprecated-dag-overlap -check-prefixes=GCN,SI,SICIVI,FUNC %s
+; RUN: llc -march=amdgcn -mcpu=tonga -verify-machineinstrs < %s | FileCheck -allow-deprecated-dag-overlap -check-prefixes=GCN,SICIVI,GFX89,FUNC %s
+; RUN: llc -march=amdgcn -mcpu=gfx900 -verify-machineinstrs < %s | FileCheck -allow-deprecated-dag-overlap -check-prefixes=GCN,GFX9,GFX89,FUNC %s
+; RUN: llc -march=r600 -mcpu=redwood -verify-machineinstrs < %s | FileCheck -allow-deprecated-dag-overlap -check-prefix=EG -check-prefix=FUNC %s
+
+; Testing for ds_read/write_b128
+; RUN: llc -march=amdgcn -mcpu=tonga -mattr=+enable-ds128 < %s | FileCheck -allow-deprecated-dag-overlap -check-prefixes=CIVI,FUNC %s
+; RUN: llc -march=amdgcn -mcpu=gfx900 -mattr=+enable-ds128 < %s | FileCheck -allow-deprecated-dag-overlap -check-prefixes=CIVI,FUNC %s
 
 ; FUNC-LABEL: {{^}}local_load_i16:
 ; GFX9-NOT: m0
@@ -48,7 +52,7 @@ entry:
 ; GCN-DAG: ds_write_b16
 
 ; EG-DAG: LDS_USHORT_READ_RET
-; EG-DAG: LDS_READ_RET
+; EG-DAG: LDS_USHORT_READ_RET
 define amdgpu_kernel void @local_load_v3i16(<3 x i16> addrspace(3)* %out, <3 x i16> addrspace(3)* %in) {
 entry:
   %ld = load <3 x i16>, <3 x i16> addrspace(3)* %in
@@ -92,8 +96,8 @@ entry:
 ; GFX9-NOT: m0
 ; SICIVI: s_mov_b32 m0
 
-; GCN-DAG: ds_read2_b64 v{{\[[0-9]+:[0-9]+\]}}, v{{[0-9]+}} offset1:3{{$}}
-; GCN-DAG: ds_read2_b64 v{{\[[0-9]+:[0-9]+\]}}, v{{[0-9]+}} offset0:1 offset1:2{{$}}
+; GCN-DAG: ds_read2_b64 v{{\[[0-9]+:[0-9]+\]}}, v{{[0-9]+}} offset0:2 offset1:3{{$}}
+; GCN-DAG: ds_read2_b64 v{{\[[0-9]+:[0-9]+\]}}, v{{[0-9]+}} offset1:1{{$}}
 
 
 ; EG: LDS_READ_RET
@@ -231,7 +235,9 @@ define amdgpu_kernel void @local_sextload_v2i16_to_v2i32(<2 x i32> addrspace(3)*
 ; GCN-DAG: ds_write_b32
 ; GCN-DAG: ds_write_b64
 
-; EG: LDS_READ_RET
+; EG: LDS_USHORT_READ_RET
+; EG: LDS_USHORT_READ_RET
+; EG: LDS_USHORT_READ_RET
 define amdgpu_kernel void @local_local_zextload_v3i16_to_v3i32(<3 x i32> addrspace(3)* %out, <3 x i16> addrspace(3)* %in) {
 entry:
   %ld = load <3 x i16>, <3 x i16> addrspace(3)* %in
@@ -248,7 +254,9 @@ entry:
 ; GCN-DAG: ds_write_b32
 ; GCN-DAG: ds_write_b64
 
-; EG: LDS_READ_RET
+; EG: LDS_USHORT_READ_RET
+; EG: LDS_USHORT_READ_RET
+; EG: LDS_USHORT_READ_RET
 ; EG-DAG: BFE_INT
 ; EG-DAG: BFE_INT
 ; EG-DAG: BFE_INT
@@ -934,5 +942,24 @@ define amdgpu_kernel void @local_sextload_v32i16_to_v32i64(<32 x i64> addrspace(
 ;   store <64 x i64> %ext, <64 x i64> addrspace(3)* %out
 ;   ret void
 ; }
+
+; Tests if ds_read/write_b128 gets generated for the 16 byte aligned load.
+; FUNC-LABEL: {{^}}local_v8i16_to_128:
+
+; SI-NOT: ds_read_b128
+; SI-NOT: ds_write_b128
+
+; CIVI: ds_read_b128
+; CIVI: ds_write_b128
+
+; EG: LDS_READ_RET
+; EG: LDS_READ_RET
+; EG: LDS_READ_RET
+; EG: LDS_READ_RET
+define amdgpu_kernel void @local_v8i16_to_128(<8 x i16> addrspace(3)* %out, <8 x i16> addrspace(3)* %in) {
+  %ld = load <8 x i16>, <8 x i16> addrspace(3)* %in, align 16
+  store <8 x i16> %ld, <8 x i16> addrspace(3)* %out, align 16
+  ret void
+}
 
 attributes #0 = { nounwind }

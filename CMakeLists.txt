@@ -77,6 +77,10 @@ endif()
 set(TEMPLIGHT_BUILD "${CMAKE_BINARY_DIR}/../templight")
 
 set(
+  TEMPLIGHT_INCLUDE_PATH
+  "${TEMPLIGHT_INCLUDE_PATH};${CMAKE_SOURCE_DIR}/3rd/templight/llvm/tools/clang/lib/Headers"
+)
+set(
   TEMPLIGHT_INCLUDEDIR
   "${TEMPLIGHT_INCLUDEDIR};${CMAKE_SOURCE_DIR}/3rd/templight/llvm/tools/clang/include"
 )
@@ -133,7 +137,6 @@ add_subdirectory(lib/compiler_stub)
 add_subdirectory(lib/core)
 add_subdirectory(lib/data)
 add_subdirectory(lib/defaults)
-add_subdirectory(lib/engine/auto)
 add_subdirectory(lib/engine/clang)
 add_subdirectory(lib/engine/constant)
 add_subdirectory(lib/engine/gcc)

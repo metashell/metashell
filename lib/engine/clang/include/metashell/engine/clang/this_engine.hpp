@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/filesystem/path.hpp>
+#include <metashell/data/executable_path.hpp>
 
 namespace metashell
 {
@@ -25,8 +25,8 @@ namespace metashell
   {
     namespace clang
     {
-      bool is_clang(const boost::filesystem::path&);
-      bool is_templight(const boost::filesystem::path&);
+      bool is_clang(const data::executable_path&);
+      bool is_templight(const data::executable_path&);
     }
   }
 }

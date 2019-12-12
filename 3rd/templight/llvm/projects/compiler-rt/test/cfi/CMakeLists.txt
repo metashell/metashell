@@ -1,6 +1,6 @@
 set(CFI_TESTSUITES)
 
-macro (add_cfi_test_suites lld thinlto)
+macro (add_cfi_test_suites lld thinlto newpm)
   set(suffix)
   if (${lld})
     set(suffix ${suffix}-lld)
@@ -8,24 +8,28 @@ macro (add_cfi_test_suites lld thinlto)
   if (${thinlto})
     set(suffix ${suffix}-thinlto)
   endif()
+  if (${newpm})
+    set(suffix ${suffix}-newpm)
+  endif()
   set(suffix ${suffix}-${CFI_TEST_TARGET_ARCH})
 
   set(CFI_TEST_USE_LLD ${lld})
   set(CFI_TEST_USE_THINLTO ${thinlto})
+  set(CFI_TEST_USE_NEWPM ${newpm})
 
   set(CFI_LIT_TEST_MODE Standalone)
   set(CFI_TEST_CONFIG_SUFFIX -standalone${suffix})
   configure_lit_site_cfg(
-    ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Standalone${suffix}/lit.site.cfg
+    ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.py.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Standalone${suffix}/lit.site.cfg.py
     )
   list(APPEND CFI_TESTSUITES ${CMAKE_CURRENT_BINARY_DIR}/Standalone${suffix})
 
   set(CFI_LIT_TEST_MODE Devirt)
   set(CFI_TEST_CONFIG_SUFFIX -devirt${suffix})
   configure_lit_site_cfg(
-    ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Devirt${suffix}/lit.site.cfg
+    ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.py.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Devirt${suffix}/lit.site.cfg.py
     )
   list(APPEND CFI_TESTSUITES ${CMAKE_CURRENT_BINARY_DIR}/Devirt${suffix})
 endmacro()
@@ -40,16 +44,18 @@ foreach(arch ${CFI_TEST_ARCH})
   get_test_cc_for_arch(${arch} CFI_TEST_TARGET_CC CFI_TEST_TARGET_CFLAGS)
   if (APPLE)
     # FIXME: enable ThinLTO tests after fixing http://llvm.org/pr32741
-    add_cfi_test_suites(False False)
+    add_cfi_test_suites(False False False)
   elseif(WIN32)
-    add_cfi_test_suites(True False)
-    add_cfi_test_suites(True True)
+    add_cfi_test_suites(True False False)
+    add_cfi_test_suites(True True False)
   else()
-    add_cfi_test_suites(False False)
-    add_cfi_test_suites(False True)
+    add_cfi_test_suites(False False False)
+    add_cfi_test_suites(False True False)
+    add_cfi_test_suites(False False True)
+    add_cfi_test_suites(False True True)
     if (COMPILER_RT_HAS_LLD AND NOT arch STREQUAL "i386")
-      add_cfi_test_suites(True False)
-      add_cfi_test_suites(True True)
+	    add_cfi_test_suites(True False False)
+	    add_cfi_test_suites(True True False)
     endif()
   endif()
 endforeach()
@@ -68,15 +74,17 @@ if(NOT COMPILER_RT_STANDALONE_BUILD)
     opt
     sanstats
   )
-  if(LLVM_ENABLE_PIC AND LLVM_BINUTILS_INCDIR)
-    list(APPEND CFI_TEST_DEPS
-      LLVMgold
-    )
-  endif()
-  if(APPLE)
-    list(APPEND CFI_TEST_DEPS
-      LTO
-    )
+  if(LLVM_ENABLE_PIC)
+    if(LLVM_BINUTILS_INCDIR)
+      list(APPEND CFI_TEST_DEPS
+        LLVMgold
+      )
+    endif()
+    if(APPLE)
+      list(APPEND CFI_TEST_DEPS
+        LTO
+      )
+    endif()
   endif()
   if(NOT APPLE AND COMPILER_RT_HAS_LLD)
     list(APPEND CFI_TEST_DEPS

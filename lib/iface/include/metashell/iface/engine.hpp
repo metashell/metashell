@@ -37,7 +37,7 @@ namespace metashell
     public:
       virtual ~engine() {}
 
-      virtual data::engine_name name() const = 0;
+      virtual data::real_engine_name name() const = 0;
 
       virtual data::engine_name display_name() const = 0;
 

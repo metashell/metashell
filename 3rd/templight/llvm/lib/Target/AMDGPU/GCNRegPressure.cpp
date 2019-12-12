@@ -1,9 +1,8 @@
 //===- GCNRegPressure.cpp -------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -19,6 +18,7 @@
 #include "llvm/CodeGen/RegisterPressure.h"
 #include "llvm/CodeGen/SlotIndexes.h"
 #include "llvm/CodeGen/TargetRegisterInfo.h"
+#include "llvm/Config/llvm-config.h"
 #include "llvm/MC/LaneBitmask.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/Debug.h"
@@ -63,9 +63,10 @@ void llvm::printLivesAt(SlotIndex SI,
   }
   if (!Num) dbgs() << "  <none>\n";
 }
+#endif
 
-static bool isEqual(const GCNRPTracker::LiveRegSet &S1,
-                    const GCNRPTracker::LiveRegSet &S2) {
+bool llvm::isEqual(const GCNRPTracker::LiveRegSet &S1,
+                   const GCNRPTracker::LiveRegSet &S2) {
   if (S1.size() != S2.size())
     return false;
 
@@ -76,7 +77,7 @@ static bool isEqual(const GCNRPTracker::LiveRegSet &S1,
   }
   return true;
 }
-#endif
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // GCNRegPressure
@@ -88,7 +89,9 @@ unsigned GCNRegPressure::getRegKind(unsigned Reg,
   auto STI = static_cast<const SIRegisterInfo*>(MRI.getTargetRegisterInfo());
   return STI->isSGPRClass(RC) ?
     (STI->getRegSizeInBits(*RC) == 32 ? SGPR32 : SGPR_TUPLE) :
-    (STI->getRegSizeInBits(*RC) == 32 ? VGPR32 : VGPR_TUPLE);
+    STI->hasAGPRs(RC) ?
+      (STI->getRegSizeInBits(*RC) == 32 ? AGPR32 : AGPR_TUPLE) :
+      (STI->getRegSizeInBits(*RC) == 32 ? VGPR32 : VGPR_TUPLE);
 }
 
 void GCNRegPressure::inc(unsigned Reg,
@@ -109,16 +112,18 @@ void GCNRegPressure::inc(unsigned Reg,
   switch (auto Kind = getRegKind(Reg, MRI)) {
   case SGPR32:
   case VGPR32:
+  case AGPR32:
     assert(PrevMask.none() && NewMask == MaxMask);
     Value[Kind] += Sign;
     break;
 
   case SGPR_TUPLE:
   case VGPR_TUPLE:
+  case AGPR_TUPLE:
     assert(NewMask < MaxMask || NewMask == MaxMask);
     assert(PrevMask < NewMask);
 
-    Value[Kind == SGPR_TUPLE ? SGPR32 : VGPR32] +=
+    Value[Kind == SGPR_TUPLE ? SGPR32 : Kind == AGPR_TUPLE ? AGPR32 : VGPR32] +=
       Sign * (~PrevMask & NewMask).getNumLanes();
 
     if (PrevMask.none()) {
@@ -131,7 +136,7 @@ void GCNRegPressure::inc(unsigned Reg,
   }
 }
 
-bool GCNRegPressure::less(const SISubtarget &ST,
+bool GCNRegPressure::less(const GCNSubtarget &ST,
                           const GCNRegPressure& O,
                           unsigned MaxOccupancy) const {
   const auto SGPROcc = std::min(MaxOccupancy,
@@ -177,7 +182,7 @@ bool GCNRegPressure::less(const SISubtarget &ST,
 
 #if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
 LLVM_DUMP_METHOD
-void GCNRegPressure::print(raw_ostream &OS, const SISubtarget *ST) const {
+void GCNRegPressure::print(raw_ostream &OS, const GCNSubtarget *ST) const {
   OS << "VGPRs: " << getVGPRNum();
   if (ST) OS << "(O" << ST->getOccupancyWithNumVGPRs(getVGPRNum()) << ')';
   OS << ", SGPRs: " << getSGPRNum();
@@ -283,16 +288,25 @@ GCNRPTracker::LiveRegSet llvm::getLiveRegs(SlotIndex SI,
   return LiveRegs;
 }
 
-void GCNUpwardRPTracker::reset(const MachineInstr &MI,
-                               const LiveRegSet *LiveRegsCopy) {
-  MRI = &MI.getParent()->getParent()->getRegInfo();
+void GCNRPTracker::reset(const MachineInstr &MI,
+                         const LiveRegSet *LiveRegsCopy,
+                         bool After) {
+  const MachineFunction &MF = *MI.getMF();
+  MRI = &MF.getRegInfo();
   if (LiveRegsCopy) {
     if (&LiveRegs != LiveRegsCopy)
       LiveRegs = *LiveRegsCopy;
   } else {
-    LiveRegs = getLiveRegsAfter(MI, LIS);
+    LiveRegs = After ? getLiveRegsAfter(MI, LIS)
+                     : getLiveRegsBefore(MI, LIS);
   }
+
   MaxPressure = CurPressure = getRegPressure(*MRI, LiveRegs);
+}
+
+void GCNUpwardRPTracker::reset(const MachineInstr &MI,
+                               const LiveRegSet *LiveRegsCopy) {
+  GCNRPTracker::reset(MI, LiveRegsCopy, true);
 }
 
 void GCNUpwardRPTracker::recede(const MachineInstr &MI) {
@@ -300,7 +314,7 @@ void GCNUpwardRPTracker::recede(const MachineInstr &MI) {
 
   LastTrackedMI = &MI;
 
-  if (MI.isDebugValue())
+  if (MI.isDebugInstr())
     return;
 
   auto const RegUses = collectVirtualRegUses(MI, LIS, *MRI);
@@ -348,13 +362,7 @@ bool GCNDownwardRPTracker::reset(const MachineInstr &MI,
   NextMI = skipDebugInstructionsForward(NextMI, MBBEnd);
   if (NextMI == MBBEnd)
     return false;
-  if (LiveRegsCopy) {
-    if (&LiveRegs != LiveRegsCopy)
-      LiveRegs = *LiveRegsCopy;
-  } else {
-    LiveRegs = getLiveRegsBefore(*NextMI, LIS);
-  }
-  MaxPressure = CurPressure = getRegPressure(*MRI, LiveRegs);
+  GCNRPTracker::reset(*NextMI, LiveRegsCopy, false);
   return true;
 }
 

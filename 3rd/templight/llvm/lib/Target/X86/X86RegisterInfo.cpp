@@ -1,9 +1,8 @@
 //===-- X86RegisterInfo.cpp - X86 Register Information --------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -75,7 +74,7 @@ X86RegisterInfo::X86RegisterInfo(const Triple &TT)
 
 bool
 X86RegisterInfo::trackLivenessAfterRegAlloc(const MachineFunction &MF) const {
-  // ExecutionDepsFixer and PostRAScheduler require liveness.
+  // ExecutionDomainFix, BreakFalseDeps and PostRAScheduler require liveness.
   return true;
 }
 
@@ -164,6 +163,7 @@ X86RegisterInfo::getLargestLegalSuperClass(const TargetRegisterClass *RC,
     case X86::RFP32RegClassID:
     case X86::RFP64RegClassID:
     case X86::RFP80RegClassID:
+    case X86::VR512_0_15RegClassID:
     case X86::VR512RegClassID:
       // Don't return a super-class that would shrink the spill size.
       // That can happen with the vector and float classes.
@@ -214,6 +214,21 @@ X86RegisterInfo::getPointerRegClass(const MachineFunction &MF,
   case 4: // Available for tailcall (not callee-saved GPRs).
     return getGPRsForTailCall(MF);
   }
+}
+
+bool X86RegisterInfo::shouldRewriteCopySrc(const TargetRegisterClass *DefRC,
+                                           unsigned DefSubReg,
+                                           const TargetRegisterClass *SrcRC,
+                                           unsigned SrcSubReg) const {
+  // Prevent rewriting a copy where the destination size is larger than the
+  // input size. See PR41619.
+  // FIXME: Should this be factored into the base implementation somehow.
+  if (DefRC->hasSuperClassEq(&X86::GR64RegClass) && DefSubReg == 0 &&
+      SrcRC->hasSuperClassEq(&X86::GR64RegClass) && SrcSubReg == X86::sub_32bit)
+    return false;
+
+  return TargetRegisterInfo::shouldRewriteCopySrc(DefRC, DefSubReg,
+                                                  SrcRC, SrcSubReg);
 }
 
 const TargetRegisterClass *
@@ -497,6 +512,9 @@ BitVector X86RegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   BitVector Reserved(getNumRegs());
   const X86FrameLowering *TFI = getFrameLowering(MF);
 
+  // Set the floating point control register as reserved.
+  Reserved.set(X86::FPCW);
+
   // Set the stack-pointer register and its aliases as reserved.
   for (MCSubRegIterator I(X86::RSP, this, /*IncludeSelf=*/true); I.isValid();
        ++I)
@@ -552,6 +570,10 @@ BitVector X86RegisterInfo::getReservedRegs(const MachineFunction &MF) const {
     Reserved.set(X86::DIL);
     Reserved.set(X86::BPL);
     Reserved.set(X86::SPL);
+    Reserved.set(X86::SIH);
+    Reserved.set(X86::DIH);
+    Reserved.set(X86::BPH);
+    Reserved.set(X86::SPH);
 
     for (unsigned n = 0; n != 8; ++n) {
       // R8, R9, ...
@@ -571,7 +593,8 @@ BitVector X86RegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   }
 
   assert(checkAllSuperRegsMarked(Reserved,
-                                 {X86::SIL, X86::DIL, X86::BPL, X86::SPL}));
+                                 {X86::SIL, X86::DIL, X86::BPL, X86::SPL,
+                                  X86::SIH, X86::DIH, X86::BPH, X86::SPH}));
   return Reserved;
 }
 
@@ -742,7 +765,7 @@ X86RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   }
 }
 
-unsigned X86RegisterInfo::getFrameRegister(const MachineFunction &MF) const {
+Register X86RegisterInfo::getFrameRegister(const MachineFunction &MF) const {
   const X86FrameLowering *TFI = getFrameLowering(MF);
   return TFI->hasFP(MF) ? FramePtr : StackPtr;
 }
@@ -754,4 +777,13 @@ X86RegisterInfo::getPtrSizedFrameRegister(const MachineFunction &MF) const {
   if (Subtarget.isTarget64BitILP32())
     FrameReg = getX86SubSuperRegister(FrameReg, 32);
   return FrameReg;
+}
+
+unsigned
+X86RegisterInfo::getPtrSizedStackRegister(const MachineFunction &MF) const {
+  const X86Subtarget &Subtarget = MF.getSubtarget<X86Subtarget>();
+  unsigned StackReg = getStackRegister();
+  if (Subtarget.isTarget64BitILP32())
+    StackReg = getX86SubSuperRegister(StackReg, 32);
+  return StackReg;
 }

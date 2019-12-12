@@ -1,10 +1,10 @@
-// RUN: %clang_cc1 -verify -fopenmp -ast-print %s | FileCheck %s
+// RUN: %clang_cc1 -verify -fopenmp -ast-print %s -Wno-openmp-target | FileCheck %s
 // RUN: %clang_cc1 -fopenmp -x c++ -std=c++11 -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp -std=c++11 -include-pch %t -fsyntax-only -verify %s -ast-print | FileCheck %s
+// RUN: %clang_cc1 -fopenmp -std=c++11 -include-pch %t -fsyntax-only -verify %s -ast-print -Wno-openmp-target | FileCheck %s
 
-// RUN: %clang_cc1 -verify -fopenmp-simd -ast-print %s | FileCheck %s
+// RUN: %clang_cc1 -verify -fopenmp-simd -ast-print %s -Wno-openmp-target | FileCheck %s
 // RUN: %clang_cc1 -fopenmp-simd -x c++ -std=c++11 -emit-pch -o %t %s
-// RUN: %clang_cc1 -fopenmp-simd -std=c++11 -include-pch %t -fsyntax-only -verify %s -ast-print | FileCheck %s
+// RUN: %clang_cc1 -fopenmp-simd -std=c++11 -include-pch %t -fsyntax-only -verify %s -ast-print -Wno-openmp-target | FileCheck %s
 // expected-no-diagnostics
 
 #ifndef HEADER
@@ -75,7 +75,7 @@ class S8 : public S7<S> {
 public:
   S8(int v) : S7<S>(v){
 #pragma omp target
-#pragma omp teams distribute simd private(a) private(this->a) private(S7<S>::a) 
+#pragma omp teams distribute simd private(a) private(this->a) private(S7 <S>::a)
     for (int k = 0; k < a.a; ++k)
       ++this->a.a;
   }
@@ -126,16 +126,16 @@ T tmain(T argc) {
   for (int i=0; i < 2; ++i)
     a = 2;
 // CHECK: #pragma omp target
-// CHECK-NEXT: #pragma omp teams distribute simd
+// CHECK-NEXT: #pragma omp teams distribute simd{{$}}
 // CHECK-NEXT: for (int i = 0; i < 2; ++i)
 // CHECK-NEXT: a = 2;
 #pragma omp target
-#pragma omp teams distribute simd private(argc, b), firstprivate(c, d), collapse(2)
+#pragma omp teams distribute simd allocate(b) private(argc, b), firstprivate(c, d), collapse(2) allocate(c)
   for (int i = 0; i < 10; ++i)
     for (int j = 0; j < 10; ++j)
       foo();
 // CHECK: #pragma omp target
-// CHECK-NEXT: #pragma omp teams distribute simd private(argc,b) firstprivate(c,d) collapse(2)
+// CHECK-NEXT: #pragma omp teams distribute simd allocate(b) private(argc,b) firstprivate(c,d) collapse(2) allocate(c)
 // CHECK-NEXT: for (int i = 0; i < 10; ++i)
 // CHECK-NEXT: for (int j = 0; j < 10; ++j)
 // CHECK-NEXT: foo();

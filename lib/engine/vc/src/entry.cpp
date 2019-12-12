@@ -48,18 +48,16 @@ namespace metashell
                   data::feature::cpp_validator()};
         }
 
-        bool this_engine(const std::vector<std::string>& args_)
+        bool this_engine(const data::command_line_argument_list& args_)
         {
-          if (args_.empty())
+          if (const auto first = args_.front())
           {
-            return false;
-          }
-          else
-          {
+            const data::executable_path exe(*first);
             try
             {
               const std::string dash_v =
-                  process::run(args_.front(), {"-v"}, "").standard_error;
+                  process::run(data::command_line(exe, {"-v"}), "")
+                      .standard_error;
               return regex_search(dash_v, std::regex("^Microsoft ")) &&
                      regex_search(dash_v, std::regex("[\\n\\r]cl : .*-v"));
             }
@@ -68,64 +66,64 @@ namespace metashell
               return false;
             }
           }
-        }
-
-        std::string
-        extract_vc_binary(const std::vector<std::string>& engine_args_,
-                          iface::environment_detector& env_detector_,
-                          const std::string& metashell_path_,
-                          const data::engine_name& engine_)
-        {
-          if (engine_args_.empty())
-          {
-            const std::string sample_path =
-                "\"C:\\Program Files (x86)\\Microsoft Visual Studio "
-                "14.0\\VC\\bin\\cl.exe\"";
-            throw data::exception(
-                "The engine requires that you specify the path to cl.exe"
-                " after --. For example: " +
-                metashell_path_ + " --engine " + engine_ + " -- " +
-                sample_path);
-          }
           else
           {
-            const std::string path = engine_args_.front();
-            if (env_detector_.file_exists(path))
+            return false;
+          }
+        }
+
+        data::executable_path
+        extract_vc_binary(const data::command_line_argument_list& engine_args_,
+                          iface::environment_detector& env_detector_,
+                          const data::executable_path& metashell_path_,
+                          const data::engine_name& engine_)
+        {
+          if (const auto first = engine_args_.front())
+          {
+            const data::executable_path exe(*first);
+            if (env_detector_.file_exists(exe))
             {
-              return path;
+              return exe;
             }
             else
             {
               throw data::exception(
-                  "The path specified as the vc binary to use (" + path +
-                  ") does not exist.");
+                  "The path specified as the vc binary to use (" +
+                  to_string(exe) + ") does not exist.");
             }
+          }
+          else
+          {
+            throw data::exception(
+                "The engine requires that you specify the path to cl.exe after "
+                "--. For example: " +
+                metashell_path_ + " --engine " + engine_ +
+                " -- C:\\Program Files (x86)\\Microsoft Visual Studio "
+                "14.0\\VC\\bin\\cl.exe\"");
           }
         }
 
-        std::vector<std::string>
-        vc_args(const std::vector<std::string>& extra_vc_args_,
+        data::command_line_argument_list
+        vc_args(const data::command_line_argument_list& extra_vc_args_,
                 const boost::filesystem::path& internal_dir_)
         {
-          std::vector<std::string> args{"/I" + internal_dir_.string()};
+          data::command_line_argument_list args{"/I" + internal_dir_.string()};
 
           if (extra_vc_args_.size() > 1)
           {
-            args.insert(
-                args.end(), extra_vc_args_.begin() + 1, extra_vc_args_.end());
+            args.append(extra_vc_args_.begin() + 1, extra_vc_args_.end());
           }
 
           return args;
         }
 
         std::unique_ptr<iface::engine>
-        create_vc_engine(const data::config& config_,
+        create_vc_engine(const data::shell_config& config_,
+                         const data::executable_path& metashell_binary_,
                          const boost::filesystem::path& internal_dir_,
                          const boost::filesystem::path& temp_dir_,
                          const boost::filesystem::path& env_filename_,
-                         const std::map<data::engine_name, core::engine_entry>&,
                          iface::environment_detector& env_detector_,
-                         iface::displayer&,
                          core::logger* logger_)
         {
           using core::not_supported;
@@ -137,40 +135,42 @@ namespace metashell
                 " from the Visual Studio Developer Prompt.");
           }
 
-          const boost::filesystem::path vc_path = extract_vc_binary(
-              config_.active_shell_config().engine_args, env_detector_,
-              config_.metashell_binary, config_.active_shell_config().engine);
-          binary cbin(
-              vc_path,
-              vc_args(config_.active_shell_config().engine_args, internal_dir_),
-              temp_dir_, logger_);
+          binary cbin(extract_vc_binary(config_.engine_args, env_detector_,
+                                        metashell_binary_, config_.engine),
+                      vc_args(config_.engine_args, internal_dir_), temp_dir_,
+                      logger_);
 
           return make_engine(
-              name(), config_.active_shell_config().engine, not_supported(),
-              preprocessor_shell(cbin), not_supported(),
-              header_discoverer(cbin), not_supported(),
+              name(), config_.engine, not_supported(), preprocessor_shell(cbin),
+              not_supported(), header_discoverer(cbin), not_supported(),
               cpp_validator(internal_dir_, env_filename_, cbin, logger_),
               not_supported(), not_supported(), supported_features());
         }
       } // anonymous namespace
 
-      data::engine_name name() { return data::engine_name("msvc"); }
+      data::real_engine_name name() { return data::real_engine_name::msvc; }
 
-      core::engine_entry entry()
+      core::engine_entry entry(data::executable_path metashell_binary_)
       {
         return core::engine_entry(
-            &create_vc_engine, "<path to cl.exe> [<cl.exe args>]",
+            [metashell_binary_](const data::shell_config& config_,
+                                const boost::filesystem::path& internal_dir_,
+                                const boost::filesystem::path& temp_dir_,
+                                const boost::filesystem::path& env_filename_,
+                                iface::environment_detector& env_detector_,
+                                iface::displayer&, core::logger* logger_) {
+              return create_vc_engine(config_, metashell_binary_, internal_dir_,
+                                      temp_dir_, env_filename_, env_detector_,
+                                      logger_);
+            },
+            "<path to cl.exe> [<cl.exe args>]",
             data::markdown_string(
                 "Uses the [Visual C++ "
                 "compiler](https://www.visualstudio.com/vs/cplusplus). "
-                "`<cl.exe "
-                "args>` are passed to the compiler as command line-arguments. "
-                "Note "
-                "that currently only the preprocessor shell is supported. You "
-                "need "
-                "to run Metashell from the Visual Studio Developer Prompt to "
-                "use "
-                "this engine."),
+                "`<cl.exe args>` are passed to the compiler as command "
+                "line-arguments. Note that currently only the preprocessor "
+                "shell is supported. You need to run Metashell from the Visual "
+                "Studio Developer Prompt to use this engine."),
             supported_features(), this_engine);
       }
     }

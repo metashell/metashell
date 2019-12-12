@@ -1,9 +1,8 @@
 //===- llvm/CodeGen/TargetSubtargetInfo.h - Target Information --*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -14,6 +13,7 @@
 #ifndef LLVM_CODEGEN_TARGETSUBTARGETINFO_H
 #define LLVM_CODEGEN_TARGETSUBTARGETINFO_H
 
+#include "llvm/ADT/APInt.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
@@ -42,6 +42,7 @@ class RegisterBankInfo;
 class SDep;
 class SelectionDAGTargetInfo;
 struct SubtargetFeatureKV;
+struct SubtargetSubTypeKV;
 struct SubtargetInfoKV;
 class SUnit;
 class TargetFrameLowering;
@@ -62,8 +63,7 @@ class TargetSubtargetInfo : public MCSubtargetInfo {
 protected: // Can only create subclasses...
   TargetSubtargetInfo(const Triple &TT, StringRef CPU, StringRef FS,
                       ArrayRef<SubtargetFeatureKV> PF,
-                      ArrayRef<SubtargetFeatureKV> PD,
-                      const SubtargetInfoKV *ProcSched,
+                      ArrayRef<SubtargetSubTypeKV> PD,
                       const MCWriteProcResEntry *WPR,
                       const MCWriteLatencyEntry *WL,
                       const MCReadAdvanceEntry *RA, const InstrStage *IS,
@@ -144,7 +144,44 @@ public:
     return 0;
   }
 
-  /// \brief True if the subtarget should run MachineScheduler after aggressive
+  /// Returns true if MI is a dependency breaking zero-idiom instruction for the
+  /// subtarget.
+  ///
+  /// This function also sets bits in Mask related to input operands that
+  /// are not in a data dependency relationship.  There is one bit for each
+  /// machine operand; implicit operands follow explicit operands in the bit
+  /// representation used for Mask.  An empty (i.e. a mask with all bits
+  /// cleared) means: data dependencies are "broken" for all the explicit input
+  /// machine operands of MI.
+  virtual bool isZeroIdiom(const MachineInstr *MI, APInt &Mask) const {
+    return false;
+  }
+
+  /// Returns true if MI is a dependency breaking instruction for the subtarget.
+  ///
+  /// Similar in behavior to `isZeroIdiom`. However, it knows how to identify
+  /// all dependency breaking instructions (i.e. not just zero-idioms).
+  /// 
+  /// As for `isZeroIdiom`, this method returns a mask of "broken" dependencies.
+  /// (See method `isZeroIdiom` for a detailed description of Mask).
+  virtual bool isDependencyBreaking(const MachineInstr *MI, APInt &Mask) const {
+    return isZeroIdiom(MI, Mask);
+  }
+
+  /// Returns true if MI is a candidate for move elimination.
+  ///
+  /// A candidate for move elimination may be optimized out at register renaming
+  /// stage. Subtargets can specify the set of optimizable moves by
+  /// instantiating tablegen class `IsOptimizableRegisterMove` (see
+  /// llvm/Target/TargetInstrPredicate.td).
+  ///
+  /// SubtargetEmitter is responsible for processing all the definitions of class
+  /// IsOptimizableRegisterMove, and auto-generate an override for this method.
+  virtual bool isOptimizableRegisterMove(const MachineInstr *MI) const {
+    return false;
+  }
+
+  /// True if the subtarget should run MachineScheduler after aggressive
   /// coalescing.
   ///
   /// This currently replaces the SelectionDAG scheduler with the "source" order
@@ -152,14 +189,14 @@ public:
   /// TargetLowering preference). It does not yet disable the postRA scheduler.
   virtual bool enableMachineScheduler() const;
 
-  /// \brief Support printing of [latency:throughput] comment in output .S file.
-  virtual bool supportPrintSchedInfo() const { return false; }
-
-  /// \brief True if the machine scheduler should disable the TLI preference
+  /// True if the machine scheduler should disable the TLI preference
   /// for preRA scheduling with the source level scheduler.
   virtual bool enableMachineSchedDefaultSched() const { return true; }
 
-  /// \brief True if the subtarget should enable joining global copies.
+  /// True if the subtarget should run MachinePipeliner
+  virtual bool enableMachinePipeliner() const { return true; };
+
+  /// True if the subtarget should enable joining global copies.
   ///
   /// By default this is enabled if the machine scheduler is enabled, but
   /// can be overridden.
@@ -171,13 +208,13 @@ public:
   /// which is the preferred way to influence this.
   virtual bool enablePostRAScheduler() const;
 
-  /// \brief True if the subtarget should run the atomic expansion pass.
+  /// True if the subtarget should run the atomic expansion pass.
   virtual bool enableAtomicExpand() const;
 
   /// True if the subtarget should run the indirectbr expansion pass.
   virtual bool enableIndirectBrExpand() const;
 
-  /// \brief Override generic scheduling policy within a region.
+  /// Override generic scheduling policy within a region.
   ///
   /// This is a convenient way for targets that don't provide any custom
   /// scheduling heuristics (no custom MachineSchedStrategy) to make
@@ -185,7 +222,7 @@ public:
   virtual void overrideSchedPolicy(MachineSchedPolicy &Policy,
                                    unsigned NumRegionInstrs) const {}
 
-  // \brief Perform target specific adjustments to the latency of a schedule
+  // Perform target specific adjustments to the latency of a schedule
   // dependency.
   virtual void adjustSchedDependency(SUnit *def, SUnit *use, SDep &dep) const {}
 
@@ -200,17 +237,21 @@ public:
     return CriticalPathRCs.clear();
   }
 
-  // \brief Provide an ordered list of schedule DAG mutations for the post-RA
+  // Provide an ordered list of schedule DAG mutations for the post-RA
   // scheduler.
   virtual void getPostRAMutations(
       std::vector<std::unique_ptr<ScheduleDAGMutation>> &Mutations) const {
   }
 
-  // \brief Provide an ordered list of schedule DAG mutations for the machine
+  // Provide an ordered list of schedule DAG mutations for the machine
   // pipeliner.
   virtual void getSMSMutations(
       std::vector<std::unique_ptr<ScheduleDAGMutation>> &Mutations) const {
   }
+
+  /// Default to DFA for resource management, return false when target will use
+  /// ProcResource in InstrSchedModel instead.
+  virtual bool useDFAforSMS() const { return true; }
 
   // For use with PostRAScheduling: get the minimum optimization level needed
   // to enable post-RA scheduling.
@@ -218,25 +259,25 @@ public:
     return CodeGenOpt::Default;
   }
 
-  /// \brief True if the subtarget should run the local reassignment
+  /// True if the subtarget should run the local reassignment
   /// heuristic of the register allocator.
   /// This heuristic may be compile time intensive, \p OptLevel provides
   /// a finer grain to tune the register allocator.
   virtual bool enableRALocalReassignment(CodeGenOpt::Level OptLevel) const;
 
-  /// \brief True if the subtarget should consider the cost of local intervals
+  /// True if the subtarget should consider the cost of local intervals
   /// created by a split candidate when choosing the best split candidate. This
   /// heuristic may be compile time intensive.
   virtual bool enableAdvancedRASplitCost() const;
 
-  /// \brief Enable use of alias analysis during code generation (during MI
+  /// Enable use of alias analysis during code generation (during MI
   /// scheduling, DAGCombine, etc.).
   virtual bool useAA() const;
 
-  /// \brief Enable the use of the early if conversion pass.
+  /// Enable the use of the early if conversion pass.
   virtual bool enableEarlyIfConversion() const { return false; }
 
-  /// \brief Return PBQPConstraint(s) for the target.
+  /// Return PBQPConstraint(s) for the target.
   ///
   /// Override to provide custom PBQP constraints.
   virtual std::unique_ptr<PBQPRAConstraint> getCustomPBQPConstraints() const {
@@ -248,9 +289,16 @@ public:
   /// possible.
   virtual bool enableSubRegLiveness() const { return false; }
 
-  /// Returns string representation of scheduler comment
-  std::string getSchedInfoStr(const MachineInstr &MI) const override;
-  std::string getSchedInfoStr(MCInst const &MCI) const override;
+  /// This is called after a .mir file was loaded.
+  virtual void mirFileLoaded(MachineFunction &MF) const;
+
+  /// True if the register allocator should use the allocation orders exactly as
+  /// written in the tablegen descriptions, false if it should allocate
+  /// the specified physical register later if is it callee-saved.
+  virtual bool ignoreCSRForAllocationOrder(const MachineFunction &MF,
+                                           unsigned PhysReg) const {
+    return false;
+  }
 };
 
 } // end namespace llvm

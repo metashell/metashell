@@ -1,9 +1,8 @@
 //===-- PPCAsmPrinter.cpp - Print machine instrs to PowerPC assembly ------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -16,7 +15,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "InstPrinter/PPCInstPrinter.h"
+#include "MCTargetDesc/PPCInstPrinter.h"
 #include "MCTargetDesc/PPCMCExpr.h"
 #include "MCTargetDesc/PPCMCTargetDesc.h"
 #include "MCTargetDesc/PPCPredicates.h"
@@ -26,6 +25,7 @@
 #include "PPCSubtarget.h"
 #include "PPCTargetMachine.h"
 #include "PPCTargetStreamer.h"
+#include "TargetInfo/PowerPCTargetInfo.h"
 #include "llvm/ADT/MapVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Triple.h"
@@ -95,84 +95,101 @@ public:
     return AsmPrinter::doInitialization(M);
   }
 
-    void EmitInstruction(const MachineInstr *MI) override;
+  void EmitInstruction(const MachineInstr *MI) override;
 
-    void printOperand(const MachineInstr *MI, unsigned OpNo, raw_ostream &O);
+  /// This function is for PrintAsmOperand and PrintAsmMemoryOperand,
+  /// invoked by EmitMSInlineAsmStr and EmitGCCInlineAsmStr only.
+  /// The \p MI would be INLINEASM ONLY.
+  void printOperand(const MachineInstr *MI, unsigned OpNo, raw_ostream &O);
 
-    bool PrintAsmOperand(const MachineInstr *MI, unsigned OpNo,
-                         unsigned AsmVariant, const char *ExtraCode,
-                         raw_ostream &O) override;
-    bool PrintAsmMemoryOperand(const MachineInstr *MI, unsigned OpNo,
-                               unsigned AsmVariant, const char *ExtraCode,
-                               raw_ostream &O) override;
+  void PrintSymbolOperand(const MachineOperand &MO, raw_ostream &O) override;
+  bool PrintAsmOperand(const MachineInstr *MI, unsigned OpNo,
+                       const char *ExtraCode, raw_ostream &O) override;
+  bool PrintAsmMemoryOperand(const MachineInstr *MI, unsigned OpNo,
+                             const char *ExtraCode, raw_ostream &O) override;
 
-    void EmitEndOfAsmFile(Module &M) override;
+  void EmitEndOfAsmFile(Module &M) override;
 
-    void LowerSTACKMAP(StackMaps &SM, const MachineInstr &MI);
-    void LowerPATCHPOINT(StackMaps &SM, const MachineInstr &MI);
-    void EmitTlsCall(const MachineInstr *MI, MCSymbolRefExpr::VariantKind VK);
-    bool runOnMachineFunction(MachineFunction &MF) override {
-      Subtarget = &MF.getSubtarget<PPCSubtarget>();
-      bool Changed = AsmPrinter::runOnMachineFunction(MF);
-      emitXRayTable();
-      return Changed;
-    }
-  };
+  void LowerSTACKMAP(StackMaps &SM, const MachineInstr &MI);
+  void LowerPATCHPOINT(StackMaps &SM, const MachineInstr &MI);
+  void EmitTlsCall(const MachineInstr *MI, MCSymbolRefExpr::VariantKind VK);
+  bool runOnMachineFunction(MachineFunction &MF) override {
+    Subtarget = &MF.getSubtarget<PPCSubtarget>();
+    bool Changed = AsmPrinter::runOnMachineFunction(MF);
+    emitXRayTable();
+    return Changed;
+  }
+};
 
-  /// PPCLinuxAsmPrinter - PowerPC assembly printer, customized for Linux
-  class PPCLinuxAsmPrinter : public PPCAsmPrinter {
-  public:
-    explicit PPCLinuxAsmPrinter(TargetMachine &TM,
-                                std::unique_ptr<MCStreamer> Streamer)
-        : PPCAsmPrinter(TM, std::move(Streamer)) {}
+/// PPCLinuxAsmPrinter - PowerPC assembly printer, customized for Linux
+class PPCLinuxAsmPrinter : public PPCAsmPrinter {
+public:
+  explicit PPCLinuxAsmPrinter(TargetMachine &TM,
+                              std::unique_ptr<MCStreamer> Streamer)
+      : PPCAsmPrinter(TM, std::move(Streamer)) {}
 
-    StringRef getPassName() const override {
-      return "Linux PPC Assembly Printer";
-    }
+  StringRef getPassName() const override {
+    return "Linux PPC Assembly Printer";
+  }
 
-    bool doFinalization(Module &M) override;
-    void EmitStartOfAsmFile(Module &M) override;
+  bool doFinalization(Module &M) override;
+  void EmitStartOfAsmFile(Module &M) override;
 
-    void EmitFunctionEntryLabel() override;
+  void EmitFunctionEntryLabel() override;
 
-    void EmitFunctionBodyStart() override;
-    void EmitFunctionBodyEnd() override;
-    void EmitInstruction(const MachineInstr *MI) override;
-  };
+  void EmitFunctionBodyStart() override;
+  void EmitFunctionBodyEnd() override;
+  void EmitInstruction(const MachineInstr *MI) override;
+};
 
-  /// PPCDarwinAsmPrinter - PowerPC assembly printer, customized for Darwin/Mac
-  /// OS X
-  class PPCDarwinAsmPrinter : public PPCAsmPrinter {
-  public:
-    explicit PPCDarwinAsmPrinter(TargetMachine &TM,
-                                 std::unique_ptr<MCStreamer> Streamer)
-        : PPCAsmPrinter(TM, std::move(Streamer)) {}
+/// PPCDarwinAsmPrinter - PowerPC assembly printer, customized for Darwin/Mac
+/// OS X
+class PPCDarwinAsmPrinter : public PPCAsmPrinter {
+public:
+  explicit PPCDarwinAsmPrinter(TargetMachine &TM,
+                               std::unique_ptr<MCStreamer> Streamer)
+      : PPCAsmPrinter(TM, std::move(Streamer)) {}
 
-    StringRef getPassName() const override {
-      return "Darwin PPC Assembly Printer";
-    }
+  StringRef getPassName() const override {
+    return "Darwin PPC Assembly Printer";
+  }
 
-    bool doFinalization(Module &M) override;
-    void EmitStartOfAsmFile(Module &M) override;
-  };
+  bool doFinalization(Module &M) override;
+  void EmitStartOfAsmFile(Module &M) override;
+};
+
+class PPCAIXAsmPrinter : public PPCAsmPrinter {
+public:
+  PPCAIXAsmPrinter(TargetMachine &TM, std::unique_ptr<MCStreamer> Streamer)
+      : PPCAsmPrinter(TM, std::move(Streamer)) {}
+
+  StringRef getPassName() const override { return "AIX PPC Assembly Printer"; }
+};
 
 } // end anonymous namespace
 
-/// stripRegisterPrefix - This method strips the character prefix from a
-/// register name so that only the number is left.  Used by for linux asm.
-static const char *stripRegisterPrefix(const char *RegName) {
-  switch (RegName[0]) {
-    case 'r':
-    case 'f':
-    case 'q': // for QPX
-    case 'v':
-      if (RegName[1] == 's')
-        return RegName + 2;
-      return RegName + 1;
-    case 'c': if (RegName[1] == 'r') return RegName + 2;
+void PPCAsmPrinter::PrintSymbolOperand(const MachineOperand &MO,
+                                       raw_ostream &O) {
+  // Computing the address of a global symbol, not calling it.
+  const GlobalValue *GV = MO.getGlobal();
+  MCSymbol *SymToPrint;
+
+  // External or weakly linked global variables need non-lazily-resolved stubs
+  if (Subtarget->hasLazyResolverStub(GV)) {
+    SymToPrint = getSymbolWithGlobalValueBase(GV, "$non_lazy_ptr");
+    MachineModuleInfoImpl::StubValueTy &StubSym =
+        MMI->getObjFileInfo<MachineModuleInfoMachO>().getGVStubEntry(
+            SymToPrint);
+    if (!StubSym.getPointer())
+      StubSym = MachineModuleInfoImpl::StubValueTy(getSymbol(GV),
+                                                   !GV->hasInternalLinkage());
+  } else {
+    SymToPrint = getSymbol(GV);
   }
 
-  return RegName;
+  SymToPrint->print(O, MAI);
+
+  printOffset(MO.getOffset(), O);
 }
 
 void PPCAsmPrinter::printOperand(const MachineInstr *MI, unsigned OpNo,
@@ -182,27 +199,13 @@ void PPCAsmPrinter::printOperand(const MachineInstr *MI, unsigned OpNo,
 
   switch (MO.getType()) {
   case MachineOperand::MO_Register: {
-    unsigned Reg = MO.getReg();
-
-    // There are VSX instructions that use VSX register numbering (vs0 - vs63)
-    // as well as those that use VMX register numbering (v0 - v31 which
-    // correspond to vs32 - vs63). If we have an instruction that uses VSX
-    // numbering, we need to convert the VMX registers to VSX registers.
-    // Namely, we print 32-63 when the instruction operates on one of the
-    // VMX registers.
-    // (Please synchronize with PPCInstPrinter::printOperand)
-    if (MI->getDesc().TSFlags & PPCII::UseVSXReg) {
-      if (PPCInstrInfo::isVRRegister(Reg))
-        Reg = PPC::VSX32 + (Reg - PPC::V0);
-      else if (PPCInstrInfo::isVFRegister(Reg))
-        Reg = PPC::VSX32 + (Reg - PPC::VF0);
-    }
-    const char *RegName = PPCInstPrinter::getRegisterName(Reg);
+    // The MI is INLINEASM ONLY and UseVSXReg is always false.
+    const char *RegName = PPCInstPrinter::getRegisterName(MO.getReg());
 
     // Linux assembler (Others?) does not take register mnemonics.
     // FIXME - What about special registers used in mfspr/mtspr?
     if (!Subtarget->isDarwin())
-      RegName = stripRegisterPrefix(RegName);
+      RegName = PPCRegisterInfo::stripRegisterPrefix(RegName);
     O << RegName;
     return;
   }
@@ -221,26 +224,7 @@ void PPCAsmPrinter::printOperand(const MachineInstr *MI, unsigned OpNo,
     GetBlockAddressSymbol(MO.getBlockAddress())->print(O, MAI);
     return;
   case MachineOperand::MO_GlobalAddress: {
-    // Computing the address of a global symbol, not calling it.
-    const GlobalValue *GV = MO.getGlobal();
-    MCSymbol *SymToPrint;
-
-    // External or weakly linked global variables need non-lazily-resolved stubs
-    if (Subtarget->hasLazyResolverStub(GV)) {
-      SymToPrint = getSymbolWithGlobalValueBase(GV, "$non_lazy_ptr");
-      MachineModuleInfoImpl::StubValueTy &StubSym =
-          MMI->getObjFileInfo<MachineModuleInfoMachO>().getGVStubEntry(
-              SymToPrint);
-      if (!StubSym.getPointer())
-        StubSym = MachineModuleInfoImpl::StubValueTy(getSymbol(GV),
-                                                     !GV->hasInternalLinkage());
-    } else {
-      SymToPrint = getSymbol(GV);
-    }
-
-    SymToPrint->print(O, MAI);
-
-    printOffset(MO.getOffset(), O);
+    PrintSymbolOperand(MO, O);
     return;
   }
 
@@ -253,7 +237,6 @@ void PPCAsmPrinter::printOperand(const MachineInstr *MI, unsigned OpNo,
 /// PrintAsmOperand - Print out an operand for an inline asm expression.
 ///
 bool PPCAsmPrinter::PrintAsmOperand(const MachineInstr *MI, unsigned OpNo,
-                                    unsigned AsmVariant,
                                     const char *ExtraCode, raw_ostream &O) {
   // Does this asm operand have a single letter operand modifier?
   if (ExtraCode && ExtraCode[0]) {
@@ -262,9 +245,7 @@ bool PPCAsmPrinter::PrintAsmOperand(const MachineInstr *MI, unsigned OpNo,
     switch (ExtraCode[0]) {
     default:
       // See if this is a generic print operand
-      return AsmPrinter::PrintAsmOperand(MI, OpNo, AsmVariant, ExtraCode, O);
-    case 'c': // Don't print "$" before a global var name or constant.
-      break; // PPC never has a prefix.
+      return AsmPrinter::PrintAsmOperand(MI, OpNo, ExtraCode, O);
     case 'L': // Write second word of DImode reference.
       // Verify that this operand has two consecutive registers.
       if (!MI->getOperand(OpNo).isReg() ||
@@ -279,6 +260,21 @@ bool PPCAsmPrinter::PrintAsmOperand(const MachineInstr *MI, unsigned OpNo,
       if (MI->getOperand(OpNo).isImm())
         O << "i";
       return false;
+    case 'x':
+      if(!MI->getOperand(OpNo).isReg())
+        return true;
+      // This operand uses VSX numbering.
+      // If the operand is a VMX register, convert it to a VSX register.
+      unsigned Reg = MI->getOperand(OpNo).getReg();
+      if (PPCInstrInfo::isVRRegister(Reg))
+        Reg = PPC::VSX32 + (Reg - PPC::V0);
+      else if (PPCInstrInfo::isVFRegister(Reg))
+        Reg = PPC::VSX32 + (Reg - PPC::VF0);
+      const char *RegName;
+      RegName = PPCInstPrinter::getRegisterName(Reg);
+      RegName = PPCRegisterInfo::stripRegisterPrefix(RegName);
+      O << RegName;
+      return false;
     }
   }
 
@@ -291,7 +287,6 @@ bool PPCAsmPrinter::PrintAsmOperand(const MachineInstr *MI, unsigned OpNo,
 // assembler operand.
 
 bool PPCAsmPrinter::PrintAsmMemoryOperand(const MachineInstr *MI, unsigned OpNo,
-                                          unsigned AsmVariant,
                                           const char *ExtraCode,
                                           raw_ostream &O) {
   if (ExtraCode && ExtraCode[0]) {
@@ -303,7 +298,7 @@ bool PPCAsmPrinter::PrintAsmMemoryOperand(const MachineInstr *MI, unsigned OpNo,
       {
         const char *RegName = "r0";
         if (!Subtarget->isDarwin())
-          RegName = stripRegisterPrefix(RegName);
+          RegName = PPCRegisterInfo::stripRegisterPrefix(RegName);
         O << RegName << ", ";
         printOperand(MI, OpNo, O);
         return false;
@@ -341,7 +336,7 @@ MCSymbol *PPCAsmPrinter::lookUpOrCreateTOCEntry(MCSymbol *Sym) {
 }
 
 void PPCAsmPrinter::EmitEndOfAsmFile(Module &M) {
-  SM.serializeToStackMapSection();
+  emitStackMaps(SM);
 }
 
 void PPCAsmPrinter::LowerSTACKMAP(StackMaps &SM, const MachineInstr &MI) {
@@ -474,6 +469,7 @@ void PPCAsmPrinter::EmitTlsCall(const MachineInstr *MI,
   StringRef Name = "__tls_get_addr";
   MCSymbol *TlsGetAddr = OutContext.getOrCreateSymbol(Name);
   MCSymbolRefExpr::VariantKind Kind = MCSymbolRefExpr::VK_None;
+  const Module *M = MF->getFunction().getParent();
 
   assert(MI->getOperand(0).isReg() &&
          ((Subtarget->isPPC64() && MI->getOperand(0).getReg() == PPC::X3) ||
@@ -487,8 +483,14 @@ void PPCAsmPrinter::EmitTlsCall(const MachineInstr *MI,
   if (!Subtarget->isPPC64() && !Subtarget->isDarwin() &&
       isPositionIndependent())
     Kind = MCSymbolRefExpr::VK_PLT;
-  const MCSymbolRefExpr *TlsRef =
+  const MCExpr *TlsRef =
     MCSymbolRefExpr::create(TlsGetAddr, Kind, OutContext);
+
+  // Add 32768 offset to the symbol so we follow up the latest GOT/PLT ABI.
+  if (Kind == MCSymbolRefExpr::VK_PLT && Subtarget->isSecurePlt() &&
+      M->getPICLevel() == PICLevel::BigPIC)
+    TlsRef = MCBinaryExpr::createAdd(
+        TlsRef, MCConstantExpr::create(32768, OutContext), OutContext);
   const MachineOperand &MO = MI->getOperand(2);
   const GlobalValue *GValue = MO.getGlobal();
   MCSymbol *MOSymbol = getSymbol(GValue);
@@ -510,6 +512,32 @@ void PPCAsmPrinter::EmitInstruction(const MachineInstr *MI) {
   const Module *M = MF->getFunction().getParent();
   PICLevel::Level PL = M->getPICLevel();
 
+#ifndef NDEBUG
+  // Validate that SPE and FPU are mutually exclusive in codegen
+  if (!MI->isInlineAsm()) {
+    for (const MachineOperand &MO: MI->operands()) {
+      if (MO.isReg()) {
+        unsigned Reg = MO.getReg();
+        if (Subtarget->hasSPE()) {
+          if (PPC::F4RCRegClass.contains(Reg) ||
+              PPC::F8RCRegClass.contains(Reg) ||
+              PPC::QBRCRegClass.contains(Reg) ||
+              PPC::QFRCRegClass.contains(Reg) ||
+              PPC::QSRCRegClass.contains(Reg) ||
+              PPC::VFRCRegClass.contains(Reg) ||
+              PPC::VRRCRegClass.contains(Reg) ||
+              PPC::VSFRCRegClass.contains(Reg) ||
+              PPC::VSSRCRegClass.contains(Reg)
+              )
+            llvm_unreachable("SPE targets cannot have FPRegs!");
+        } else {
+          if (PPC::SPERCRegClass.contains(Reg))
+            llvm_unreachable("SPE register found in FPU-targeted code!");
+        }
+      }
+    }
+  }
+#endif
   // Lower multi-instruction pseudo operations.
   switch (MI->getOpcode()) {
   default: break;
@@ -563,33 +591,59 @@ void PPCAsmPrinter::EmitInstruction(const MachineInstr *MI) {
     // Transform %rd = UpdateGBR(%rt, %ri)
     // Into: lwz %rt, .L0$poff - .L0$pb(%ri)
     //       add %rd, %rt, %ri
+    // or into (if secure plt mode is on):
+    //       addis r30, r30, {.LTOC,_GLOBAL_OFFSET_TABLE} - .L0$pb@ha
+    //       addi r30, r30, {.LTOC,_GLOBAL_OFFSET_TABLE} - .L0$pb@l
     // Get the offset from the GOT Base Register to the GOT
     LowerPPCMachineInstrToMCInst(MI, TmpInst, *this, isDarwin);
-    MCSymbol *PICOffset =
-      MF->getInfo<PPCFunctionInfo>()->getPICOffsetSymbol();
-    TmpInst.setOpcode(PPC::LWZ);
-    const MCExpr *Exp =
-      MCSymbolRefExpr::create(PICOffset, MCSymbolRefExpr::VK_None, OutContext);
-    const MCExpr *PB =
-      MCSymbolRefExpr::create(MF->getPICBaseSymbol(),
-                              MCSymbolRefExpr::VK_None,
-                              OutContext);
-    const MCOperand TR = TmpInst.getOperand(1);
-    const MCOperand PICR = TmpInst.getOperand(0);
+    if (Subtarget->isSecurePlt() && isPositionIndependent() ) {
+      unsigned PICR = TmpInst.getOperand(0).getReg();
+      MCSymbol *BaseSymbol = OutContext.getOrCreateSymbol(
+          M->getPICLevel() == PICLevel::SmallPIC ? "_GLOBAL_OFFSET_TABLE_"
+                                                 : ".LTOC");
+      const MCExpr *PB =
+          MCSymbolRefExpr::create(MF->getPICBaseSymbol(), OutContext);
 
-    // Step 1: lwz %rt, .L$poff - .L$pb(%ri)
-    TmpInst.getOperand(1) =
-        MCOperand::createExpr(MCBinaryExpr::createSub(Exp, PB, OutContext));
-    TmpInst.getOperand(0) = TR;
-    TmpInst.getOperand(2) = PICR;
-    EmitToStreamer(*OutStreamer, TmpInst);
+      const MCExpr *DeltaExpr = MCBinaryExpr::createSub(
+          MCSymbolRefExpr::create(BaseSymbol, OutContext), PB, OutContext);
 
-    TmpInst.setOpcode(PPC::ADD4);
-    TmpInst.getOperand(0) = PICR;
-    TmpInst.getOperand(1) = TR;
-    TmpInst.getOperand(2) = PICR;
-    EmitToStreamer(*OutStreamer, TmpInst);
-    return;
+      const MCExpr *DeltaHi = PPCMCExpr::createHa(DeltaExpr, false, OutContext);
+      EmitToStreamer(
+          *OutStreamer,
+          MCInstBuilder(PPC::ADDIS).addReg(PICR).addReg(PICR).addExpr(DeltaHi));
+
+      const MCExpr *DeltaLo = PPCMCExpr::createLo(DeltaExpr, false, OutContext);
+      EmitToStreamer(
+          *OutStreamer,
+          MCInstBuilder(PPC::ADDI).addReg(PICR).addReg(PICR).addExpr(DeltaLo));
+      return;
+    } else {
+      MCSymbol *PICOffset =
+        MF->getInfo<PPCFunctionInfo>()->getPICOffsetSymbol();
+      TmpInst.setOpcode(PPC::LWZ);
+      const MCExpr *Exp =
+        MCSymbolRefExpr::create(PICOffset, MCSymbolRefExpr::VK_None, OutContext);
+      const MCExpr *PB =
+        MCSymbolRefExpr::create(MF->getPICBaseSymbol(),
+                                MCSymbolRefExpr::VK_None,
+                                OutContext);
+      const MCOperand TR = TmpInst.getOperand(1);
+      const MCOperand PICR = TmpInst.getOperand(0);
+
+      // Step 1: lwz %rt, .L$poff - .L$pb(%ri)
+      TmpInst.getOperand(1) =
+          MCOperand::createExpr(MCBinaryExpr::createSub(Exp, PB, OutContext));
+      TmpInst.getOperand(0) = TR;
+      TmpInst.getOperand(2) = PICR;
+      EmitToStreamer(*OutStreamer, TmpInst);
+
+      TmpInst.setOpcode(PPC::ADD4);
+      TmpInst.getOperand(0) = PICR;
+      TmpInst.getOperand(1) = TR;
+      TmpInst.getOperand(2) = PICR;
+      EmitToStreamer(*OutStreamer, TmpInst);
+      return;
+    }
   }
   case PPC::LWZtoc: {
     // Transform %r3 = LWZtoc @min1, %r2
@@ -741,11 +795,11 @@ void PPCAsmPrinter::EmitInstruction(const MachineInstr *MI) {
     else if (MO.isGlobal()) {
       const GlobalValue *GV = MO.getGlobal();
       MOSymbol = getSymbol(GV);
-      DEBUG(
-        unsigned char GVFlags = Subtarget->classifyGlobalReference(GV);
-        assert((GVFlags & PPCII::MO_NLP_FLAG) &&
-               "LDtocL used on symbol that could be accessed directly is "
-               "invalid. Must match ADDIStocHA."));
+      LLVM_DEBUG(
+          unsigned char GVFlags = Subtarget->classifyGlobalReference(GV);
+          assert((GVFlags & PPCII::MO_NLP_FLAG) &&
+                 "LDtocL used on symbol that could be accessed directly is "
+                 "invalid. Must match ADDIStocHA."));
       MOSymbol = lookUpOrCreateTOCEntry(MOSymbol);
     }
 
@@ -770,11 +824,9 @@ void PPCAsmPrinter::EmitInstruction(const MachineInstr *MI) {
 
     if (MO.isGlobal()) {
       const GlobalValue *GV = MO.getGlobal();
-      DEBUG(
-        unsigned char GVFlags = Subtarget->classifyGlobalReference(GV);
-        assert (
-            !(GVFlags & PPCII::MO_NLP_FLAG) &&
-            "Interposable definitions must use indirect access."));
+      LLVM_DEBUG(unsigned char GVFlags = Subtarget->classifyGlobalReference(GV);
+                 assert(!(GVFlags & PPCII::MO_NLP_FLAG) &&
+                        "Interposable definitions must use indirect access."));
       MOSymbol = getSymbol(GV);
     } else if (MO.isCPI()) {
       MOSymbol = GetCPISymbol(MO.getIndex());
@@ -814,8 +866,10 @@ void PPCAsmPrinter::EmitInstruction(const MachineInstr *MI) {
     const GlobalValue *GValue = MO.getGlobal();
     MCSymbol *MOSymbol = getSymbol(GValue);
     const MCExpr *Exp =
-      MCSymbolRefExpr::create(MOSymbol, MCSymbolRefExpr::VK_PPC_GOT_TPREL_LO,
-                              OutContext);
+        MCSymbolRefExpr::create(MOSymbol,
+                                isPPC64 ? MCSymbolRefExpr::VK_PPC_GOT_TPREL_LO
+                                        : MCSymbolRefExpr::VK_PPC_GOT_TPREL,
+                                OutContext);
     TmpInst.getOperand(1) = MCOperand::createExpr(Exp);
     EmitToStreamer(*OutStreamer, TmpInst);
     return;
@@ -1233,7 +1287,7 @@ void PPCLinuxAsmPrinter::EmitFunctionEntryLabel() {
 
   if (!Subtarget->isPPC64()) {
     const PPCFunctionInfo *PPCFI = MF->getInfo<PPCFunctionInfo>();
-    if (PPCFI->usesPICBase()) {
+    if (PPCFI->usesPICBase() && !Subtarget->isSecurePlt()) {
       MCSymbol *RelocSymbol = PPCFI->getPICOffsetSymbol();
       MCSymbol *PICBase = MF->getPICBaseSymbol();
       OutStreamer->EmitLabel(RelocSymbol);
@@ -1255,7 +1309,7 @@ void PPCLinuxAsmPrinter::EmitFunctionEntryLabel() {
   if (Subtarget->isELFv2ABI()) {
     // In the Large code model, we allow arbitrary displacements between
     // the text section and its associated TOC section.  We place the
-    // full 8-byte offset to the TOC in memory immediatedly preceding
+    // full 8-byte offset to the TOC in memory immediately preceding
     // the function global entry point.
     if (TM.getCodeModel() == CodeModel::Large
         && !MF->getRegInfo().use_empty(PPC::X2)) {
@@ -1458,6 +1512,7 @@ void PPCDarwinAsmPrinter::EmitStartOfAsmFile(Module &M) {
     "ppc750",
     "ppc970",
     "ppcA2",
+    "ppce500",
     "ppce500mc",
     "ppce5500",
     "power3",
@@ -1599,6 +1654,9 @@ createPPCAsmPrinterPass(TargetMachine &tm,
                         std::unique_ptr<MCStreamer> &&Streamer) {
   if (tm.getTargetTriple().isMacOSX())
     return new PPCDarwinAsmPrinter(tm, std::move(Streamer));
+  if (tm.getTargetTriple().isOSAIX())
+    return new PPCAIXAsmPrinter(tm, std::move(Streamer));
+
   return new PPCLinuxAsmPrinter(tm, std::move(Streamer));
 }
 

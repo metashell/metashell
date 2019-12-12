@@ -53,6 +53,56 @@ entry:
 	ret i32 %result
 }
 
+; If bitcast isn't considered a safe phi/select use, the alloca
+; remains as an array.
+; FIXME: Why isn't this identical to test2?
+
+; CHECK-LABEL: @test2_bitcast(
+; CHECK: alloca i32
+; CHECK-NEXT: alloca i32
+
+; CHECK: %select = select i1 %cond, i32* %a.sroa.3, i32* %a.sroa.0
+; CHECK-NEXT: %select.bc = bitcast i32* %select to float*
+; CHECK-NEXT: %result = load float, float* %select.bc, align 4
+define float @test2_bitcast() {
+entry:
+  %a = alloca [2 x i32]
+  %a0 = getelementptr [2 x i32], [2 x i32]* %a, i64 0, i32 0
+  %a1 = getelementptr [2 x i32], [2 x i32]* %a, i64 0, i32 1
+  store i32 0, i32* %a0
+  store i32 1, i32* %a1
+  %v0 = load i32, i32* %a0
+  %v1 = load i32, i32* %a1
+  %cond = icmp sle i32 %v0, %v1
+  %select = select i1 %cond, i32* %a1, i32* %a0
+  %select.bc = bitcast i32* %select to float*
+  %result = load float, float* %select.bc
+  ret float %result
+}
+
+; CHECK-LABEL: @test2_addrspacecast(
+; CHECK: alloca i32
+; CHECK-NEXT: alloca i32
+
+; CHECK: %select = select i1 %cond, i32* %a.sroa.3, i32* %a.sroa.0
+; CHECK-NEXT: %select.asc = addrspacecast i32* %select to i32 addrspace(1)*
+; CHECK-NEXT: load i32, i32 addrspace(1)* %select.asc, align 4
+define i32 @test2_addrspacecast() {
+entry:
+  %a = alloca [2 x i32]
+  %a0 = getelementptr [2 x i32], [2 x i32]* %a, i64 0, i32 0
+  %a1 = getelementptr [2 x i32], [2 x i32]* %a, i64 0, i32 1
+  store i32 0, i32* %a0
+  store i32 1, i32* %a1
+  %v0 = load i32, i32* %a0
+  %v1 = load i32, i32* %a1
+  %cond = icmp sle i32 %v0, %v1
+  %select = select i1 %cond, i32* %a1, i32* %a0
+  %select.asc = addrspacecast i32* %select to i32 addrspace(1)*
+  %result = load i32, i32 addrspace(1)* %select.asc
+  ret i32 %result
+}
+
 define i32 @test3(i32 %x) {
 ; CHECK-LABEL: @test3(
 entry:
@@ -599,4 +649,48 @@ if.then5:                                         ; preds = %if.then2, %if.end
 ; CHECK: phi {{.*}} %[[cast]]
   store %struct.S undef, %struct.S* %f1, align 4
   ret void
+}
+
+define i32 @phi_align(i32* %z) {
+; CHECK-LABEL: @phi_align(
+entry:
+  %a = alloca [8 x i8], align 8
+; CHECK: alloca [7 x i8]
+
+  %a0x = getelementptr [8 x i8], [8 x i8]* %a, i64 0, i32 1
+  %a0 = bitcast i8* %a0x to i32*
+  %a1x = getelementptr [8 x i8], [8 x i8]* %a, i64 0, i32 4
+  %a1 = bitcast i8* %a1x to i32*
+; CHECK: store i32 0, {{.*}}, align 1
+  store i32 0, i32* %a0, align 1
+; CHECK: store i32 1, {{.*}}, align 1
+  store i32 1, i32* %a1, align 4
+; CHECK: load {{.*}}, align 1
+  %v0 = load i32, i32* %a0, align 1
+; CHECK: load {{.*}}, align 1
+  %v1 = load i32, i32* %a1, align 4
+  %cond = icmp sle i32 %v0, %v1
+  br i1 %cond, label %then, label %exit
+
+then:
+  br label %exit
+
+exit:
+; CHECK: %phi = phi i32* [ {{.*}}, %then ], [ %z, %entry ]
+; CHECK-NEXT: %result = load i32, i32* %phi, align 1
+  %phi = phi i32* [ %a1, %then ], [ %z, %entry ]
+  %result = load i32, i32* %phi, align 4
+  ret i32 %result
+}
+
+; Don't speculate a load based on an earlier volatile operation.
+define i8 @volatile_select(i8* %p, i1 %b) {
+; CHECK-LABEL: @volatile_select(
+; CHECK: select i1 %b, i8* %p, i8* %p2
+  %p2 = alloca i8
+  store i8 0, i8* %p2
+  store volatile i8 0, i8* %p
+  %px = select i1 %b, i8* %p, i8* %p2
+  %v2 = load i8, i8* %px
+  ret i8 %v2
 }

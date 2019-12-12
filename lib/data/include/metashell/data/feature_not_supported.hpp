@@ -26,7 +26,7 @@ namespace metashell
     template <class Feature>
     struct feature_not_supported : some_feature_not_supported
     {
-      explicit feature_not_supported(const data::engine_name& engine_)
+      explicit feature_not_supported(const real_engine_name& engine_)
         : some_feature_not_supported(engine_, Feature::name_of_feature())
       {
       }

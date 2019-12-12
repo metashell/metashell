@@ -1,9 +1,8 @@
 //===- DeclContextInternals.h - DeclContext Representation ------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -30,17 +29,17 @@ namespace clang {
 
 class DependentDiagnostic;
 
-/// \brief An array of decls optimized for the common case of only containing
+/// An array of decls optimized for the common case of only containing
 /// one entry.
 struct StoredDeclsList {
-  /// \brief When in vector form, this is what the Data pointer points to.
+  /// When in vector form, this is what the Data pointer points to.
   using DeclsTy = SmallVector<NamedDecl *, 4>;
 
-  /// \brief A collection of declarations, with a flag to indicate if we have
+  /// A collection of declarations, with a flag to indicate if we have
   /// further external declarations.
   using DeclsAndHasExternalTy = llvm::PointerIntPair<DeclsTy *, 1, bool>;
 
-  /// \brief The stored data, which will be either a pointer to a NamedDecl,
+  /// The stored data, which will be either a pointer to a NamedDecl,
   /// or a pointer to a vector with a flag to indicate if there are further
   /// external declarations.
   llvm::PointerUnion<NamedDecl *, DeclsAndHasExternalTy> Data;
@@ -114,15 +113,14 @@ public:
     }
 
     DeclsTy &Vec = *getAsVector();
-    DeclsTy::iterator I = std::find(Vec.begin(), Vec.end(), D);
+    DeclsTy::iterator I = llvm::find(Vec, D);
     assert(I != Vec.end() && "list does not contain decl");
     Vec.erase(I);
 
-    assert(std::find(Vec.begin(), Vec.end(), D)
-             == Vec.end() && "list still contains decl");
+    assert(llvm::find(Vec, D) == Vec.end() && "list still contains decl");
   }
 
-  /// \brief Remove any declarations which were imported from an external
+  /// Remove any declarations which were imported from an external
   /// AST source.
   void removeExternalDecls() {
     if (isNull()) {

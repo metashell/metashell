@@ -1,9 +1,8 @@
 //=- Mips32r6InstrInfo.td - Mips32r6 Instruction Information -*- tablegen -*-=//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -150,7 +149,6 @@ class SELEQZ_ENC : SPECIAL_3R_FM<0b00000, 0b110101>;
 class SELNEZ_ENC : SPECIAL_3R_FM<0b00000, 0b110111>;
 
 class LWPC_ENC   : PCREL19_FM<OPCODE2_LWPC>;
-class LWUPC_ENC  : PCREL19_FM<OPCODE2_LWUPC>;
 
 class MAX_S_ENC : COP1_3R_FM<0b011101, FIELD_FMT_S>;
 class MAX_D_ENC : COP1_3R_FM<0b011101, FIELD_FMT_D>;
@@ -189,6 +187,18 @@ class CLO_R6_ENC : SPECIAL_2R_FM<OPCODE6_CLO>;
 class CLZ_R6_ENC : SPECIAL_2R_FM<OPCODE6_CLZ>;
 
 class SDBBP_R6_ENC : SPECIAL_SDBBP_FM;
+
+class CRC32B_ENC  : SPECIAL3_2R_SZ_CRC<0,0>;
+class CRC32H_ENC  : SPECIAL3_2R_SZ_CRC<1,0>;
+class CRC32W_ENC  : SPECIAL3_2R_SZ_CRC<2,0>;
+class CRC32CB_ENC : SPECIAL3_2R_SZ_CRC<0,1>;
+class CRC32CH_ENC : SPECIAL3_2R_SZ_CRC<1,1>;
+class CRC32CW_ENC : SPECIAL3_2R_SZ_CRC<2,1>;
+
+class GINVI_ENC : SPECIAL3_GINV<0>;
+class GINVT_ENC : SPECIAL3_GINV<2>;
+
+class SIGRIE_ENC : SIGRIE_FM;
 
 //===----------------------------------------------------------------------===//
 //
@@ -314,7 +324,6 @@ class PCREL_DESC_BASE<string instr_asm, RegisterOperand GPROpnd,
 class ADDIUPC_DESC : PCREL_DESC_BASE<"addiupc", GPR32Opnd, simm19_lsl2,
                                      II_ADDIUPC>;
 class LWPC_DESC: PCREL_DESC_BASE<"lwpc", GPR32Opnd, simm19_lsl2, II_LWPC>;
-class LWUPC_DESC: PCREL_DESC_BASE<"lwupc", GPR32Opnd, simm19_lsl2, II_LWUPC>;
 
 class ALIGN_DESC_BASE<string instr_asm, RegisterOperand GPROpnd,
                       Operand ImmOpnd, InstrItinClass itin>
@@ -804,6 +813,46 @@ class SDBBP_R6_DESC {
   InstrItinClass Itinerary = II_SDBBP;
 }
 
+class CRC_DESC_BASE<string instr_asm, RegisterOperand GPROpnd,
+                    InstrItinClass itin> : MipsR6Arch<instr_asm> {
+  dag OutOperandList = (outs GPROpnd:$rd);
+  dag InOperandList = (ins GPROpnd:$rs, GPROpnd:$rt);
+  string AsmString = !strconcat(instr_asm, "\t$rd, $rs, $rt");
+  list<dag> Pattern = [];
+  InstrItinClass Itinerary = itin;
+}
+
+class CRC32B_DESC : CRC_DESC_BASE<"crc32b", GPR32Opnd, II_CRC32B>;
+class CRC32H_DESC : CRC_DESC_BASE<"crc32h", GPR32Opnd, II_CRC32H>;
+class CRC32W_DESC : CRC_DESC_BASE<"crc32w", GPR32Opnd, II_CRC32W>;
+class CRC32CB_DESC : CRC_DESC_BASE<"crc32cb", GPR32Opnd, II_CRC32CB>;
+class CRC32CH_DESC : CRC_DESC_BASE<"crc32ch", GPR32Opnd, II_CRC32CH>;
+class CRC32CW_DESC : CRC_DESC_BASE<"crc32cw", GPR32Opnd, II_CRC32CW>;
+
+class GINV_DESC_BASE<string instr_asm, RegisterOperand GPROpnd,
+                     InstrItinClass itin> : MipsR6Arch<instr_asm> {
+  dag OutOperandList = (outs);
+  dag InOperandList = (ins GPROpnd:$rs, uimm2:$type_);
+  string AsmString = !strconcat(instr_asm, "\t$rs, $type_");
+  list<dag> Pattern = [];
+  InstrItinClass Itinerary = itin;
+  bit hasSideEffects = 1;
+}
+
+class GINVI_DESC : GINV_DESC_BASE<"ginvi", GPR32Opnd, II_GINVI> {
+  dag InOperandList = (ins GPR32Opnd:$rs);
+  string AsmString = "ginvi\t$rs";
+}
+class GINVT_DESC : GINV_DESC_BASE<"ginvt", GPR32Opnd, II_GINVT>;
+
+class SIGRIE_DESC {
+  dag OutOperandList = (outs);
+  dag InOperandList = (ins uimm16:$code_);
+  string AsmString = "sigrie\t$code_";
+  list<dag> Pattern = [];
+  InstrItinClass Itinerary = II_SIGRIE;
+}
+
 //===----------------------------------------------------------------------===//
 //
 // Instruction Definitions
@@ -846,9 +895,7 @@ let AdditionalPredicates = [NotInMicroMips] in {
   def BNEZC : R6MMR6Rel, BNEZC_ENC, BNEZC_DESC, ISA_MIPS32R6;
   def BNVC : R6MMR6Rel, BNVC_ENC, BNVC_DESC, ISA_MIPS32R6;
   def BOVC : R6MMR6Rel, BOVC_ENC, BOVC_DESC, ISA_MIPS32R6;
-}
-def CACHE_R6 : R6MMR6Rel, CACHE_ENC, CACHE_DESC, ISA_MIPS32R6;
-let AdditionalPredicates = [NotInMicroMips] in {
+  def CACHE_R6 : R6MMR6Rel, CACHE_ENC, CACHE_DESC, ISA_MIPS32R6;
   def CLASS_D : CLASS_D_ENC, CLASS_D_DESC, ISA_MIPS32R6, HARDFLOAT;
   def CLASS_S : CLASS_S_ENC, CLASS_S_DESC, ISA_MIPS32R6, HARDFLOAT;
 }
@@ -877,7 +924,6 @@ let AdditionalPredicates = [NotInMicroMips] in {
 }
 def LWPC : R6MMR6Rel, LWPC_ENC, LWPC_DESC, ISA_MIPS32R6;
 let AdditionalPredicates = [NotInMicroMips] in {
-  def LWUPC : R6MMR6Rel, LWUPC_ENC, LWUPC_DESC, ISA_MIPS32R6;
   def MADDF_S : MADDF_S_ENC, MADDF_S_DESC, ISA_MIPS32R6, HARDFLOAT;
   def MADDF_D : MADDF_D_ENC, MADDF_D_DESC, ISA_MIPS32R6, HARDFLOAT;
   def MAXA_D : MAXA_D_ENC, MAXA_D_DESC, ISA_MIPS32R6, HARDFLOAT;
@@ -901,8 +947,8 @@ let AdditionalPredicates = [NotInMicroMips] in {
   def MULU   : R6MMR6Rel, MULU_ENC, MULU_DESC, ISA_MIPS32R6;
 }
 def NAL; // BAL with rd=0
-def PREF_R6 : R6MMR6Rel, PREF_ENC, PREF_DESC, ISA_MIPS32R6;
 let AdditionalPredicates = [NotInMicroMips] in {
+  def PREF_R6 : R6MMR6Rel, PREF_ENC, PREF_DESC, ISA_MIPS32R6;
   def RINT_D : RINT_D_ENC, RINT_D_DESC, ISA_MIPS32R6, HARDFLOAT;
   def RINT_S : RINT_S_ENC, RINT_S_DESC, ISA_MIPS32R6, HARDFLOAT;
   def SC_R6 : SC_R6_ENC, SC_R6_DESC, PTR_32, ISA_MIPS32R6;
@@ -921,6 +967,21 @@ let AdditionalPredicates = [NotInMicroMips] in {
   def SEL_S : R6MMR6Rel, SEL_S_ENC, SEL_S_DESC, ISA_MIPS32R6, HARDFLOAT;
   def SDC2_R6 : SDC2_R6_ENC, SDC2_R6_DESC, ISA_MIPS32R6;
   def SWC2_R6 : SWC2_R6_ENC, SWC2_R6_DESC, ISA_MIPS32R6;
+  def SIGRIE : SIGRIE_ENC, SIGRIE_DESC, ISA_MIPS32R6;
+}
+
+let AdditionalPredicates = [NotInMicroMips] in {
+  def CRC32B : R6MMR6Rel, CRC32B_ENC, CRC32B_DESC, ISA_MIPS32R6, ASE_CRC;
+  def CRC32H : R6MMR6Rel, CRC32H_ENC, CRC32H_DESC, ISA_MIPS32R6, ASE_CRC;
+  def CRC32W : R6MMR6Rel, CRC32W_ENC, CRC32W_DESC, ISA_MIPS32R6, ASE_CRC;
+  def CRC32CB : R6MMR6Rel, CRC32CB_ENC, CRC32CB_DESC, ISA_MIPS32R6, ASE_CRC;
+  def CRC32CH : R6MMR6Rel, CRC32CH_ENC, CRC32CH_DESC, ISA_MIPS32R6, ASE_CRC;
+  def CRC32CW : R6MMR6Rel, CRC32CW_ENC, CRC32CW_DESC, ISA_MIPS32R6, ASE_CRC;
+}
+
+let AdditionalPredicates = [NotInMicroMips] in {
+  def GINVI : R6MMR6Rel, GINVI_ENC, GINVI_DESC, ISA_MIPS32R6, ASE_GINV;
+  def GINVT : R6MMR6Rel, GINVT_ENC, GINVT_DESC, ISA_MIPS32R6, ASE_GINV;
 }
 
 //===----------------------------------------------------------------------===//
@@ -934,6 +995,7 @@ def : MipsInstAlias<"evp", (EVP ZERO), 0>, ISA_MIPS32R6;
 
 let AdditionalPredicates = [NotInMicroMips] in {
 def : MipsInstAlias<"sdbbp", (SDBBP_R6 0)>, ISA_MIPS32R6;
+def : MipsInstAlias<"sigrie", (SIGRIE 0)>, ISA_MIPS32R6;
 def : MipsInstAlias<"jr $rs", (JALR ZERO, GPR32Opnd:$rs), 1>, ISA_MIPS32R6, GPR_32;
 }
 
@@ -1039,7 +1101,7 @@ def : MipsPat<(select i32:$cond, immz, i32:$f),
 
 // Pseudo instructions
 let isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1, hasDelaySlot = 1,
-    hasExtraSrcRegAllocReq = 1, isCTI = 1, Defs = [AT] in {
+    hasExtraSrcRegAllocReq = 1, isCTI = 1, Defs = [AT], hasPostISelHook = 1 in {
   class TailCallRegR6<Instruction JumpInst, Register RT, RegisterOperand RO> :
     PseudoSE<(outs), (ins RO:$rs), [(MipsTailCall RO:$rs)], II_JR>,
     PseudoInstExpansion<(JumpInst RT:$rt, RO:$rs)>;

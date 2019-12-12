@@ -1,9 +1,8 @@
 //===- RDFCopy.cpp --------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -18,6 +17,7 @@
 #include "llvm/CodeGen/MachineDominators.h"
 #include "llvm/CodeGen/MachineInstr.h"
 #include "llvm/CodeGen/MachineOperand.h"
+#include "llvm/CodeGen/MachineRegisterInfo.h"
 #include "llvm/CodeGen/TargetOpcodes.h"
 #include "llvm/CodeGen/TargetRegisterInfo.h"
 #include "llvm/MC/MCRegisterInfo.h"
@@ -103,7 +103,7 @@ bool CopyPropagation::run() {
 
   if (trace()) {
     dbgs() << "Copies:\n";
-    for (auto I : Copies) {
+    for (NodeId I : Copies) {
       dbgs() << "Instr: " << *DFG.addr<StmtNode*>(I).Addr->getCode();
       dbgs() << "   eq: {";
       for (auto J : CopyMap[I])
@@ -130,7 +130,7 @@ bool CopyPropagation::run() {
     return 0;
   };
 
-  for (auto C : Copies) {
+  for (NodeId C : Copies) {
 #ifndef NDEBUG
     if (HasLimit && CpCount >= CpLimit)
       break;

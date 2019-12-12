@@ -1,8 +1,8 @@
-; RUN: llc -march=amdgcn -verify-machineinstrs < %s | FileCheck -enable-var-scope -check-prefixes=GCN,SI,SICIVI,FUNC %s
-; RUN: llc -march=amdgcn -mcpu=bonaire -verify-machineinstrs < %s | FileCheck -enable-var-scope -check-prefixes=GCN,CIVI,FUNC %s
-; RUN: llc -march=amdgcn -mcpu=tonga -mattr=-flat-for-global -verify-machineinstrs < %s | FileCheck -enable-var-scope -check-prefixes=GCN,CIVI,SICIVI,FUNC %s
-; RUN: llc -march=amdgcn -mcpu=gfx900 -mattr=-flat-for-global -verify-machineinstrs < %s | FileCheck -enable-var-scope -check-prefixes=GCN,GFX9,FUNC %s
-; RUN: llc -march=r600 -mcpu=redwood -verify-machineinstrs < %s | FileCheck -enable-var-scope -check-prefixes=EG,FUNC %s
+; RUN: llc -march=amdgcn -amdgpu-atomic-optimizations=false -verify-machineinstrs < %s | FileCheck -enable-var-scope -check-prefixes=GCN,SI,SICIVI,FUNC %s
+; RUN: llc -march=amdgcn -mcpu=bonaire -amdgpu-atomic-optimizations=false -verify-machineinstrs < %s | FileCheck -enable-var-scope -check-prefixes=GCN,CIVI,FUNC %s
+; RUN: llc -march=amdgcn -mcpu=tonga -mattr=-flat-for-global -amdgpu-atomic-optimizations=false -verify-machineinstrs < %s | FileCheck -enable-var-scope -check-prefixes=GCN,CIVI,SICIVI,FUNC %s
+; RUN: llc -march=amdgcn -mcpu=gfx900 -mattr=-flat-for-global -amdgpu-atomic-optimizations=false -verify-machineinstrs < %s | FileCheck -enable-var-scope -check-prefixes=GCN,GFX9,FUNC %s
+; RUN: llc -march=r600 -mcpu=redwood -amdgpu-atomic-optimizations=false -verify-machineinstrs < %s | FileCheck -enable-var-scope -check-prefixes=EG,FUNC %s
 
 ; FUNC-LABEL: {{^}}lds_atomic_xchg_ret_i32:
 ; EG: LDS_WRXCHG_RET *
@@ -33,6 +33,20 @@ define amdgpu_kernel void @lds_atomic_xchg_ret_i32_offset(i32 addrspace(1)* %out
   %gep = getelementptr i32, i32 addrspace(3)* %ptr, i32 4
   %result = atomicrmw xchg i32 addrspace(3)* %gep, i32 4 seq_cst
   store i32 %result, i32 addrspace(1)* %out, align 4
+  ret void
+}
+
+; FUNC-LABEL: {{^}}lds_atomic_xchg_ret_f32_offset:
+; SICIVI: s_mov_b32 m0
+; GFX9-NOT: m0
+
+; EG: LDS_WRXCHG_RET *
+; GCN: ds_wrxchg_rtn_b32 v{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}} offset:16
+; GCN: s_endpgm
+define amdgpu_kernel void @lds_atomic_xchg_ret_f32_offset(float addrspace(1)* %out, float addrspace(3)* %ptr) nounwind {
+  %gep = getelementptr float, float addrspace(3)* %ptr, i32 4
+  %result = atomicrmw xchg float addrspace(3)* %gep, float 4.0 seq_cst
+  store float %result, float addrspace(1)* %out, align 4
   ret void
 }
 

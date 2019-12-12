@@ -1,10 +1,10 @@
 // RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- mulvti3_test.c - Test __mulvti3 -----------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -99,13 +99,13 @@ int main()
     if (test__mulvti3(-81985529216486895LL, 1, -81985529216486895LL))
         return 1;
 
-    if (test__mulvti3(3037000499LL, 3037000499LL, 9223372030926249001LL))
+    if (test__mulvti3(3037000499LL, 3037000499LL, 9223372030926249001ULL))
         return 1;
     if (test__mulvti3(-3037000499LL, 3037000499LL, -9223372030926249001LL))
         return 1;
     if (test__mulvti3(3037000499LL, -3037000499LL, -9223372030926249001LL))
         return 1;
-    if (test__mulvti3(-3037000499LL, -3037000499LL, 9223372030926249001LL))
+    if (test__mulvti3(-3037000499LL, -3037000499LL, 9223372030926249001ULL))
         return 1;
 
     if (test__mulvti3(4398046511103LL, 2097152LL, 9223372036852678656LL))
@@ -117,7 +117,7 @@ int main()
     if (test__mulvti3(-4398046511103LL, -2097152LL, 9223372036852678656LL))
         return 1;
 
-    if (test__mulvti3(2097152LL, 4398046511103LL, 9223372036852678656LL))
+    if (test__mulvti3(2097152LL, 4398046511103LL, 9223372036852678656ULL))
         return 1;
     if (test__mulvti3(-2097152LL, 4398046511103LL, -9223372036852678656LL))
         return 1;

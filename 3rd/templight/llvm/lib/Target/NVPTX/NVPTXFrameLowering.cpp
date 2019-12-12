@@ -1,9 +1,8 @@
 //=======- NVPTXFrameLowering.cpp - NVPTX Frame Information ---*- C++ -*-=====//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -62,6 +61,14 @@ void NVPTXFrameLowering::emitPrologue(MachineFunction &MF,
             NVPTX::VRFrameLocal)
         .addImm(MF.getFunctionNumber());
   }
+}
+
+int NVPTXFrameLowering::getFrameIndexReference(const MachineFunction &MF,
+                                               int FI,
+                                               unsigned &FrameReg) const {
+  const MachineFrameInfo &MFI = MF.getFrameInfo();
+  FrameReg = NVPTX::VRDepot;
+  return MFI.getObjectOffset(FI) - getOffsetOfLocalArea();
 }
 
 void NVPTXFrameLowering::emitEpilogue(MachineFunction &MF,

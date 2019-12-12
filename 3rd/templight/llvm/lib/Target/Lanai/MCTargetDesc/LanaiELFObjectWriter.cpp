@@ -1,9 +1,8 @@
 //===-- LanaiELFObjectWriter.cpp - Lanai ELF Writer -----------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -35,7 +34,7 @@ protected:
 
 LanaiELFObjectWriter::LanaiELFObjectWriter(uint8_t OSABI)
     : MCELFObjectTargetWriter(/*Is64Bit_=*/false, OSABI, ELF::EM_LANAI,
-                              /*HasRelocationAddend=*/true) {}
+                              /*HasRelocationAddend_=*/true) {}
 
 unsigned LanaiELFObjectWriter::getRelocType(MCContext & /*Ctx*/,
                                             const MCValue & /*Target*/,
@@ -87,8 +86,7 @@ bool LanaiELFObjectWriter::needsRelocateWithSymbol(const MCSymbol & /*SD*/,
   }
 }
 
-std::unique_ptr<MCObjectWriter>
-llvm::createLanaiELFObjectWriter(raw_pwrite_stream &OS, uint8_t OSABI) {
-  return createELFObjectWriter(llvm::make_unique<LanaiELFObjectWriter>(OSABI),
-                               OS, /*IsLittleEndian=*/false);
+std::unique_ptr<MCObjectTargetWriter>
+llvm::createLanaiELFObjectWriter(uint8_t OSABI) {
+  return llvm::make_unique<LanaiELFObjectWriter>(OSABI);
 }

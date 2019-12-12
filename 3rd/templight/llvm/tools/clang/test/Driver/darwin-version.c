@@ -18,7 +18,7 @@
 
 // RUN: %clang -target armv7-apple-ios11.0 -c -### %s 2> %t.err
 // RUN: FileCheck --input-file=%t.err --check-prefix=CHECK-VERSION-IOS41 %s
-// CHECK-VERSION-IOS41: invalid iOS deployment version '--target=armv7-apple-ios11.0'
+// CHECK-VERSION-IOS41: invalid iOS deployment version '-target armv7-apple-ios11.0'
 
 // RUN: %clang -target armv7-apple-darwin -miphoneos-version-min=11.0 -c -### %s 2> %t.err
 // RUN: FileCheck --input-file=%t.err --check-prefix=CHECK-VERSION-IOS5 %s
@@ -197,11 +197,11 @@
 
 // RUN: %clang -target x86_64-apple-macos10.11.2 -mmacos-version-min=10.6 -c %s -### 2>&1 | \
 // RUN:   FileCheck --check-prefix=CHECK-VERSION-TNO-OSV1 %s
-// CHECK-VERSION-TNO-OSV1: overriding '-mmacosx-version-min=10.6' option with '--target=x86_64-apple-macos10.11.2'
+// CHECK-VERSION-TNO-OSV1: overriding '-mmacos-version-min=10.6' option with '-target x86_64-apple-macos10.11.2'
 
 // RUN: %clang -target x86_64-apple-macos -miphoneos-version-min=9.1 -c %s -### 2>&1 | \
 // RUN:   FileCheck --check-prefix=CHECK-VERSION-TNO-OSV2 %s
-// CHECK-VERSION-TNO-OSV2: overriding '-miphoneos-version-min=9.1' option with '--target=x86_64-apple-macos'
+// CHECK-VERSION-TNO-OSV2: overriding '-miphoneos-version-min=9.1' option with '-target x86_64-apple-macos'
 
 // RUN: %clang -target x86_64-apple-ios -miphonesimulator-version-min=10.0 -c %s -### 2>&1 | \
 // RUN:   FileCheck --check-prefix=CHECK-VERSION-TNO-OSV3 %s
@@ -211,14 +211,14 @@
 
 // RUN: %clang -target arm64-apple-ios10.1.0 -miphoneos-version-min=10.1.0.1 -c %s -### 2>&1 | \
 // RUN:   FileCheck --check-prefix=CHECK-VERSION-TNO-OSV4 %s
-// CHECK-VERSION-TNO-OSV4: overriding '-miphoneos-version-min=10.1.0.1' option with '--target=arm64-apple-ios10.1.0'
+// CHECK-VERSION-TNO-OSV4: overriding '-miphoneos-version-min=10.1.0.1' option with '-target arm64-apple-ios10.1.0'
 
 // RUN: %clang -target x86_64-apple-macos10.6 -mmacos-version-min=10.6 -c %s -### 2>&1 | \
 // RUN:   FileCheck --check-prefix=CHECK-VERSION-TNO-SAME %s
 // CHECK-VERSION-TNO-SAME-NOT: overriding
 // CHECK-VERSION-TNO-SAME-NOT: argument unused during compilation
 
-// Target with OS version is not overriden by -m<os>-version-min variables:
+// Target with OS version is not overridden by -m<os>-version-min variables:
 
 // RUN: %clang -target x86_64-apple-macos10.11.2 -mmacos-version-min=10.6 -c %s -### 2>&1 | \
 // RUN:   FileCheck --check-prefix=CHECK-VERSION-TIGNORE-OSV1 %s
@@ -236,7 +236,7 @@
 // RUN:   FileCheck --check-prefix=CHECK-VERSION-TIGNORE-OSV4 %s
 // CHECK-VERSION-TIGNORE-OSV4: "thumbv7k-apple-watchos3.0.0"
 
-// Target without OS version inlcudes the OS given by -m<os>-version-min arguments:
+// Target without OS version includes the OS given by -m<os>-version-min arguments:
 
 // RUN: %clang -target x86_64-apple-macos -mmacos-version-min=10.11 -c %s -### 2>&1 | \
 // RUN:   FileCheck --check-prefix=CHECK-VERSION-USE-OS-ARG1 %s
@@ -254,7 +254,7 @@
 // RUN:   FileCheck --check-prefix=CHECK-VERSION-USE-OS-ARG4 %s
 // CHECK-VERSION-USE-OS-ARG4: "thumbv7k-apple-watchos4.0.0"
 
-// Target with OS version is not overriden by environment variables:
+// Target with OS version is not overridden by environment variables:
 
 // RUN: env MACOSX_DEPLOYMENT_TARGET=10.1 \
 // RUN:   %clang -target i386-apple-macos10.5 -c %s -### 2>&1 | \
@@ -276,7 +276,7 @@
 // RUN:   FileCheck --check-prefix=CHECK-VERSION-TWATCHOS-CMD %s
 // CHECK-VERSION-TWATCHOS-CMD: "thumbv7k-apple-watchos3.0.0"
 
-// Target with OS version is not overriden by the SDK:
+// Target with OS version is not overridden by the SDK:
 
 // RUN: %clang -target armv7-apple-ios9 -Wno-missing-sysroot -isysroot SDKs/iPhoneOS11.0.sdk -c -### %s 2>&1 | \
 // RUN: FileCheck --check-prefix=CHECK-VERSION-TIOS-SDK %s
@@ -290,7 +290,7 @@
 // RUN: FileCheck --check-prefix=CHECK-VERSION-TTVOS-SDK %s
 // CHECK-VERSION-TTVOS-SDK: thumbv7-apple-tvos9
 
-// Target with OS version is not overriden by arch:
+// Target with OS version is not overridden by arch:
 
 // RUN: %clang -target uknown-apple-macos10.11.2 -arch=armv7k -c %s -### 2>&1 | \
 // RUN:   FileCheck --check-prefix=CHECK-VERSION-TIGNORE-ARCH1 %s

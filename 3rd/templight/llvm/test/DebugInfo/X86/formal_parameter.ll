@@ -41,6 +41,9 @@ entry:
   ret void, !dbg !22
 }
 
+; LOWERING: ![[SCOPE:[0-9]+]] = distinct !DISubprogram(name: "foo",
+; LOWERING: ![[LOC]] = !DILocation(line: 0, scope: ![[SCOPE]]
+
 ; Function Attrs: nounwind readnone
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 
@@ -62,7 +65,7 @@ attributes #3 = { nounwind }
 !0 = distinct !DICompileUnit(language: DW_LANG_C99, producer: "clang version 3.5.0 ", isOptimized: true, emissionKind: FullDebug, file: !1, enums: !2, retainedTypes: !2, globals: !2, imports: !2)
 !1 = !DIFile(filename: "formal_parameter.c", directory: "")
 !2 = !{}
-!4 = distinct !DISubprogram(name: "foo", line: 1, isLocal: false, isDefinition: true, virtualIndex: 6, flags: DIFlagPrototyped, isOptimized: true, unit: !0, scopeLine: 2, file: !1, scope: !5, type: !6, variables: !9)
+!4 = distinct !DISubprogram(name: "foo", line: 1, isLocal: false, isDefinition: true, virtualIndex: 6, flags: DIFlagPrototyped, isOptimized: true, unit: !0, scopeLine: 2, file: !1, scope: !5, type: !6, retainedNodes: !9)
 !5 = !DIFile(filename: "formal_parameter.c", directory: "")
 !6 = !DISubroutineType(types: !7)
 !7 = !{null, !8}

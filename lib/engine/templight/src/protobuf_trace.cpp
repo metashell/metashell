@@ -50,12 +50,14 @@ namespace metashell
           case 6:
             return event_kind::default_template_argument_checking;
           case 7:
-            return event_kind::exception_spec_instantiation;
+            return event_kind::exception_spec_evaluation;
           case 8:
-            return event_kind::declaring_special_member;
+            return event_kind::exception_spec_instantiation;
           case 9:
-            return event_kind::defining_synthesized_function;
+            return event_kind::declaring_special_member;
           case 10:
+            return event_kind::defining_synthesized_function;
+          case 11:
             return event_kind::memoization;
           default:
             throw data::exception(

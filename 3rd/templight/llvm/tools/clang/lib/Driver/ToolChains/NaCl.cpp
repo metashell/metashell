@@ -1,9 +1,8 @@
 //===--- NaCl.cpp - Native Client ToolChain Implementations -----*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -309,25 +308,31 @@ void NaClToolChain::AddCXXStdlibLibArgs(const ArgList &Args,
   CmdArgs.push_back("-lc++");
 }
 
-std::string NaClToolChain::findLibCxxIncludePath() const {
+void NaClToolChain::addLibCxxIncludePaths(
+    const llvm::opt::ArgList &DriverArgs,
+    llvm::opt::ArgStringList &CC1Args) const {
   const Driver &D = getDriver();
 
   SmallString<128> P(D.Dir + "/../");
   switch (getTriple().getArch()) {
+  default:
+    break;
   case llvm::Triple::arm:
     llvm::sys::path::append(P, "arm-nacl/include/c++/v1");
-    return P.str();
+    addSystemInclude(DriverArgs, CC1Args, P.str());
+    break;
   case llvm::Triple::x86:
     llvm::sys::path::append(P, "x86_64-nacl/include/c++/v1");
-    return P.str();
+    addSystemInclude(DriverArgs, CC1Args, P.str());
+    break;
   case llvm::Triple::x86_64:
     llvm::sys::path::append(P, "x86_64-nacl/include/c++/v1");
-    return P.str();
+    addSystemInclude(DriverArgs, CC1Args, P.str());
+    break;
   case llvm::Triple::mipsel:
     llvm::sys::path::append(P, "mipsel-nacl/include/c++/v1");
-    return P.str();
-  default:
-    return "";
+    addSystemInclude(DriverArgs, CC1Args, P.str());
+    break;
   }
 }
 

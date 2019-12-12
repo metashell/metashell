@@ -1,9 +1,8 @@
 //===- MC/MCRegisterInfo.cpp - Target Register Description ----------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -13,6 +12,7 @@
 
 #include "llvm/MC/MCRegisterInfo.h"
 #include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/Twine.h"
 #include "llvm/Support/ErrorHandling.h"
 #include <algorithm>
 #include <cassert>
@@ -127,6 +127,8 @@ int MCRegisterInfo::getCodeViewRegNum(unsigned RegNum) const {
     report_fatal_error("target does not implement codeview register mapping");
   const DenseMap<unsigned, int>::const_iterator I = L2CVRegs.find(RegNum);
   if (I == L2CVRegs.end())
-    report_fatal_error("unknown codeview register");
+    report_fatal_error("unknown codeview register " + (RegNum < getNumRegs()
+                                                           ? getName(RegNum)
+                                                           : Twine(RegNum)));
   return I->second;
 }

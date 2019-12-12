@@ -1,6 +1,8 @@
 lli - directly execute programs from LLVM bitcode
 =================================================
 
+.. program:: lli
+
 SYNOPSIS
 --------
 
@@ -125,6 +127,7 @@ CODE GENERATION OPTIONS
  .. code-block:: text
 
       default: Target default code model
+      tiny: Tiny code model
       small: Small code model
       kernel: Kernel code model
       medium: Medium code model
@@ -211,4 +214,4 @@ Otherwise, it will return the exit code of the program it executes.
 SEE ALSO
 --------
 
-:program:`llc`
+:manpage:`llc(1)`

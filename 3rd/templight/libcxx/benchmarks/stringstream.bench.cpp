@@ -1,7 +1,9 @@
-#include "benchmark/benchmark_api.h"
+#include "benchmark/benchmark.h"
+#include "test_macros.h"
 
 #include <sstream>
-double __attribute__((noinline)) istream_numbers();
+
+TEST_NOINLINE double istream_numbers();
 
 double istream_numbers() {
   const char *a[] = {
@@ -35,4 +37,4 @@ static void BM_Istream_numbers(benchmark::State &state) {
 }
 
 BENCHMARK(BM_Istream_numbers)->RangeMultiplier(2)->Range(1024, 4096);
-BENCHMARK_MAIN()
+BENCHMARK_MAIN();

@@ -18,8 +18,8 @@ body: |
 
     ; CHECK-LABEL: test_lddwrdptrq
 
-    ; CHECK:      ldd     r30, Y+10
-    ; CHECK-NEXT: ldd     r31, Y+11
+    ; CHECK:      ldd     r24, Z+10
+    ; CHECK-NEXT: ldd     r25, Z+11
 
-    early-clobber %r31r30 = LDDWRdPtrQ undef %r29r28, 10
+    early-clobber $r25r24 = LDDWRdPtrQ undef $r31r30, 10
 ...

@@ -1,4 +1,4 @@
-# Build for the undefined behavior sanitizer runtime support library.
+# Build for the minimal undefined behavior sanitizer runtime support library.
 
 set(UBSAN_MINIMAL_SOURCES
   ubsan_minimal_handlers.cc
@@ -15,7 +15,7 @@ set(UBSAN_DYNAMIC_LIBS ${SANITIZER_COMMON_LINK_LIBS})
 
 add_compiler_rt_component(ubsan-minimal)
 
-# Common parts of UBSan runtime.
+# Common parts of minimal UBSan runtime.
 add_compiler_rt_object_libraries(RTUbsan_minimal
   OS ${SANITIZER_COMMON_SUPPORTED_OS}
   ARCHS ${UBSAN_COMMON_SUPPORTED_ARCH}
@@ -23,9 +23,7 @@ add_compiler_rt_object_libraries(RTUbsan_minimal
 
 
 if(COMPILER_RT_HAS_UBSAN_MINIMAL)
-  # Initializer of standalone UBSan runtime.
-
-  # Standalone UBSan runtimes.
+  # Standalone minimal UBSan runtimes.
   add_compiler_rt_runtime(clang_rt.ubsan_minimal
     STATIC
     OS ${SANITIZER_COMMON_SUPPORTED_OS}
@@ -44,7 +42,7 @@ if(COMPILER_RT_HAS_UBSAN_MINIMAL)
     LINK_LIBS ${UBSAN_DYNAMIC_LIBS}
     PARENT_TARGET ubsan-minimal)
 
-  if (UNIX AND NOT APPLE)
+  if (SANITIZER_USE_SYMBOLS AND NOT APPLE)
     set(ARCHS_FOR_SYMBOLS ${UBSAN_SUPPORTED_ARCH})
     list(REMOVE_ITEM ARCHS_FOR_SYMBOLS i386 i686)
     add_sanitizer_rt_symbols(clang_rt.ubsan_minimal

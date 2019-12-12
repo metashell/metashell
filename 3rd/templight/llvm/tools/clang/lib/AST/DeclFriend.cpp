@@ -1,9 +1,8 @@
 //===- DeclFriend.cpp - C++ Friend Declaration AST Node Implementation ----===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -39,7 +38,7 @@ FriendDecl *FriendDecl::Create(ASTContext &C, DeclContext *DC,
                           ArrayRef<TemplateParameterList *> FriendTypeTPLists) {
 #ifndef NDEBUG
   if (Friend.is<NamedDecl *>()) {
-    NamedDecl *D = Friend.get<NamedDecl*>();
+    const auto *D = Friend.get<NamedDecl*>();
     assert(isa<FunctionDecl>(D) ||
            isa<CXXRecordDecl>(D) ||
            isa<FunctionTemplateDecl>(D) ||
@@ -57,8 +56,8 @@ FriendDecl *FriendDecl::Create(ASTContext &C, DeclContext *DC,
   std::size_t Extra =
       FriendDecl::additionalSizeToAlloc<TemplateParameterList *>(
           FriendTypeTPLists.size());
-  FriendDecl *FD = new (C, DC, Extra) FriendDecl(DC, L, Friend, FriendL,
-                                                 FriendTypeTPLists);
+  auto *FD = new (C, DC, Extra) FriendDecl(DC, L, Friend, FriendL,
+                                           FriendTypeTPLists);
   cast<CXXRecordDecl>(DC)->pushFriendDecl(FD);
   return FD;
 }

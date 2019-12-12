@@ -1,5 +1,7 @@
 ; RUN: opt -mtriple=x86_64-unknown-linux-gnu -load-store-vectorizer -S < %s | \
 ; RUN:     FileCheck %s
+; RUN: opt -mtriple=x86_64-unknown-linux-gnu -aa-pipeline=basic-aa -passes='function(load-store-vectorizer)' -S < %s | \
+; RUN:     FileCheck %s
 ;
 ; The GPU Load & Store Vectorizer may merge differently-typed accesses into a
 ; single instruction. This test checks that we merge TBAA tags for such
@@ -43,4 +45,4 @@ entry:
 !8 = !{!3, !7, i64 4}
 
 ; CHECK-DAG: [[TYPE_char:!.*]] = !{!"omnipotent char", {{.*}}, i64 0}
-; CHECK-FAG: [[TAG_char]] = !{[[TYPE_char]], [[TYPE_char]], i64 0}
+; CHECK-DAG: [[TAG_char]] = !{[[TYPE_char]], [[TYPE_char]], i64 0}

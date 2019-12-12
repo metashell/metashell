@@ -1,9 +1,8 @@
 //===- ASTUnresolvedSet.h - Unresolved sets of declarations -----*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -26,7 +25,7 @@ namespace clang {
 
 class NamedDecl;
 
-/// \brief An UnresolvedSet-like class which uses the ASTContext's allocator.
+/// An UnresolvedSet-like class which uses the ASTContext's allocator.
 class ASTUnresolvedSet {
   friend class LazyASTUnresolvedSet;
 
@@ -89,7 +88,7 @@ public:
   const DeclAccessPair &operator[](unsigned I) const { return Decls[I]; }
 };
 
-/// \brief An UnresolvedSet-like class that might not have been loaded from the
+/// An UnresolvedSet-like class that might not have been loaded from the
 /// external AST source yet.
 class LazyASTUnresolvedSet {
   mutable ASTUnresolvedSet Impl;

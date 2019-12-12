@@ -47,35 +47,39 @@ namespace metashell
                   data::feature::macro_discovery()};
         }
 
-        bool this_engine(const std::vector<std::string>& args_)
+        bool this_engine(const data::command_line_argument_list& args_)
         {
-          return !args_.empty() && is_clang(args_.front()) &&
-                 !is_templight(args_.front());
+          if (const auto front = args_.front())
+          {
+            const data::executable_path exe(*front);
+            return is_clang(exe) && !is_templight(exe);
+          }
+          else
+          {
+            return false;
+          }
         }
 
-        std::unique_ptr<iface::engine> create_clang_engine(
-            const data::config& config_,
-            const boost::filesystem::path& internal_dir_,
-            const boost::filesystem::path& temp_dir_,
-            const boost::filesystem::path& env_filename_,
-            const std::map<data::engine_name, core::engine_entry>&,
-            iface::environment_detector& env_detector_,
-            iface::displayer& displayer_,
-            core::logger* logger_)
+        std::unique_ptr<iface::engine>
+        create_clang_engine(const data::shell_config& config_,
+                            const data::executable_path& metashell_binary_,
+                            const boost::filesystem::path& internal_dir_,
+                            const boost::filesystem::path& temp_dir_,
+                            const boost::filesystem::path& env_filename_,
+                            iface::environment_detector& env_detector_,
+                            iface::displayer& displayer_,
+                            core::logger* logger_)
         {
           using core::not_supported;
 
           const binary cbin(
               false,
-              find_clang(false, config_.active_shell_config().engine_args,
-                         config_.metashell_binary,
-                         config_.active_shell_config().engine, env_detector_,
-                         displayer_, logger_),
-              config_.active_shell_config().engine_args, internal_dir_,
-              env_detector_, logger_);
+              find_clang(false, config_.engine_args, metashell_binary_,
+                         config_.engine, env_detector_, displayer_, logger_),
+              config_.engine_args, internal_dir_, env_detector_, logger_);
 
           return core::make_engine(
-              name(), config_.active_shell_config().engine,
+              name(), config_.engine,
               type_shell(internal_dir_, env_filename_, cbin, logger_),
               preprocessor_shell(cbin),
               code_completer(
@@ -86,23 +90,30 @@ namespace metashell
         }
       } // anonymous namespace
 
-      data::engine_name name() { return data::engine_name("clang"); }
+      data::real_engine_name name() { return data::real_engine_name::clang; }
 
-      core::engine_entry entry()
+      core::engine_entry entry(data::executable_path metashell_binary_)
       {
         return core::engine_entry(
-            &create_clang_engine,
+            [metashell_binary_](const data::shell_config& config_,
+                                const boost::filesystem::path& internal_dir_,
+                                const boost::filesystem::path& temp_dir_,
+                                const boost::filesystem::path& env_filename_,
+                                iface::environment_detector& env_detector_,
+                                iface::displayer& displayer_,
+                                core::logger* logger_) {
+              return create_clang_engine(
+                  config_, metashell_binary_, internal_dir_, temp_dir_,
+                  env_filename_, env_detector_, displayer_, logger_);
+            },
             "<Clang binary> -std=<standard to use> [<Clang args>]",
             data::markdown_string(
                 "Uses the [Clang compiler](http://clang.llvm.org). `<Clang "
-                "args>` "
-                "are passed to the compiler as command line-arguments. Note "
-                "that "
-                "Metashell requires C++11 or above. If your Clang uses such a "
-                "standard by default, you can omit the `-std` argument. "
-                "Metaprogram "
-                "debugging (MDB) is supported only when Clang has been patched "
-                "with "
+                "args>` are passed to the compiler as command line-arguments. "
+                "Note that Metashell requires C++11 or above. If your Clang "
+                "uses such a standard by default, you can omit the `-std` "
+                "argument. Metaprogram debugging (MDB) is supported only when "
+                "Clang has been patched with "
                 "[templight](https://github.com/mikael-s-persson/templight)"),
             supported_features(), this_engine);
       }

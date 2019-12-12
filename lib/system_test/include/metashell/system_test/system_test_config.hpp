@@ -17,10 +17,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/filesystem/path.hpp>
-
-#include <string>
-#include <vector>
+#include <metashell/data/command_line_argument.hpp>
+#include <metashell/data/command_line_argument_list.hpp>
+#include <metashell/data/executable_path.hpp>
 
 namespace metashell
 {
@@ -28,11 +27,11 @@ namespace metashell
   {
     namespace system_test_config
     {
-      void metashell_binary(const boost::filesystem::path& path_);
-      void metashell_arg(const std::string& arg_);
+      void metashell_binary(data::executable_path path_);
+      void metashell_arg(data::command_line_argument arg_);
 
-      boost::filesystem::path metashell_binary();
-      const std::vector<std::string>& metashell_args();
+      data::executable_path metashell_binary();
+      const data::command_line_argument_list& metashell_args();
     }
   }
 }

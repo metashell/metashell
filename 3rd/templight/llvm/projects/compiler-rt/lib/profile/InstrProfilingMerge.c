@@ -1,9 +1,8 @@
 /*===- InstrProfilingMerge.c - Profile in-process Merging  ---------------===*\
 |*
-|*                     The LLVM Compiler Infrastructure
-|*
-|* This file is distributed under the University of Illinois Open Source
-|* License. See LICENSE.TXT for details.
+|* Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+|* See https://llvm.org/LICENSE.txt for license information.
+|* SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 |*
 |*===----------------------------------------------------------------------===*
 |* This file defines the API needed for in-process merging of profile data
@@ -17,8 +16,9 @@
 #define INSTR_PROF_VALUE_PROF_DATA
 #include "InstrProfData.inc"
 
-COMPILER_RT_WEAK void (*VPMergeHook)(ValueProfData *,
-                                     __llvm_profile_data *) = NULL;
+COMPILER_RT_VISIBILITY
+void (*VPMergeHook)(ValueProfData *, __llvm_profile_data *);
+
 COMPILER_RT_VISIBILITY
 uint64_t lprofGetLoadModuleSignature() {
   /* A very fast way to compute a module signature.  */

@@ -1,9 +1,8 @@
 //===--- RewriterTestContext.h ----------------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -39,15 +38,15 @@ class RewriterTestContext {
          Diagnostics(IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs),
                      &*DiagOpts),
          DiagnosticPrinter(llvm::outs(), &*DiagOpts),
-         InMemoryFileSystem(new vfs::InMemoryFileSystem),
+         InMemoryFileSystem(new llvm::vfs::InMemoryFileSystem),
          OverlayFileSystem(
-             new vfs::OverlayFileSystem(vfs::getRealFileSystem())),
+             new llvm::vfs::OverlayFileSystem(llvm::vfs::getRealFileSystem())),
          Files(FileSystemOptions(), OverlayFileSystem),
          Sources(Diagnostics, Files), Rewrite(Sources, Options) {
-    Diagnostics.setClient(&DiagnosticPrinter, false);
-    // FIXME: To make these tests truly in-memory, we need to overlay the
-    // builtin headers.
-    OverlayFileSystem->pushOverlay(InMemoryFileSystem);
+     Diagnostics.setClient(&DiagnosticPrinter, false);
+     // FIXME: To make these tests truly in-memory, we need to overlay the
+     // builtin headers.
+     OverlayFileSystem->pushOverlay(InMemoryFileSystem);
   }
 
   ~RewriterTestContext() {}
@@ -114,8 +113,8 @@ class RewriterTestContext {
   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts;
   DiagnosticsEngine Diagnostics;
   TextDiagnosticPrinter DiagnosticPrinter;
-  IntrusiveRefCntPtr<vfs::InMemoryFileSystem> InMemoryFileSystem;
-  IntrusiveRefCntPtr<vfs::OverlayFileSystem> OverlayFileSystem;
+  IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> InMemoryFileSystem;
+  IntrusiveRefCntPtr<llvm::vfs::OverlayFileSystem> OverlayFileSystem;
   FileManager Files;
   SourceManager Sources;
   LangOptions Options;

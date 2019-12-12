@@ -1,4 +1,4 @@
-@ RUN: not llvm-mc < %s -triple thumbv8-unknown-unknown -show-encoding -mattr=+fp-only-sp,-neon 2> %t > %t2
+@ RUN: not llvm-mc < %s -triple thumbv8-unknown-unknown -show-encoding -mattr=-fp64,-fpregs64,-neon 2> %t > %t2
 @ RUN:     FileCheck %s < %t --check-prefix=CHECK-ERRORS
 @ RUN:     FileCheck %s < %t2
 
@@ -72,7 +72,7 @@
         @ FIXME: overlapping aliases and a probable TableGen indeterminacy mean
         @ that the actual reason can vary by platform.
         vmov.f64 d11, d10
-@ CHECK-ERRORS: instruction requires: NEON
+@ CHECK-ERRORS: instruction requires: 64-bit fp registers
 @ CHECK-ERRORS-NEXT: vmov.f64 d11, d10
 
         vcvt.f64.s32 d9, s8
@@ -170,6 +170,21 @@
 @ CHECK-ERRORS-NEXT: vrintp.f64.f64 d5, d4
 @ CHECK-ERRORS: error: instruction requires: double precision VFP
 @ CHECK-ERRORS-NEXT: vrintm.f64 d3, d2
+
+        vstm r4, {}
+        vstm r4, {d15-d30}
+        vstm r4, {d15-d31}
+        vstm r4, {s15-s31}
+        vldm r4, {d15-d30}
+        vldm r4, {d15-d31}
+        vldm r4, {s15-s31}
+@ CHECK-ERRORS: error: register expected
+@ CHECK:  vstmia  r4, {d15, d16, d17, d18, d19, d20, d21, d22, d23, d24, d25, d26, d27, d28, d29, d30}
+@ CHECK-ERRORS: error: list of registers must be at least 1 and at most 16
+@ CHECK:  vstmia  r4, {s15, s16, s17, s18, s19, s20, s21, s22, s23, s24, s25, s26, s27, s28, s29, s30, s31}
+@ CHECK:  vldmia  r4, {d15, d16, d17, d18, d19, d20, d21, d22, d23, d24, d25, d26, d27, d28, d29, d30}
+@ CHECK-ERRORS: error: list of registers must be at least 1 and at most 16
+@ CHECK:  vldmia  r4, {s15, s16, s17, s18, s19, s20, s21, s22, s23, s24, s25, s26, s27, s28, s29, s30, s31}
 
         @ Double precisionish operations that actually *are* allowed.
         vldr d0, [sp]

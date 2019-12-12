@@ -56,7 +56,7 @@ unsigned long long monotonic_clock_ns() {
 #endif
 
 //The const kPCInc must be in sync with StackTrace::GetPreviousInstructionPc
-#if defined(__powerpc64__)
+#if defined(__powerpc64__) || defined(__arm__) || defined(__aarch64__)
 // PCs are always 4 byte aligned.
 const int kPCInc = 4;
 #elif defined(__sparc__) || defined(__mips__)
@@ -89,3 +89,9 @@ void AnnotateRWLockReleased(const char *f, int l, void *m, long is_w);
     AnnotateRWLockAcquired(__FILE__, __LINE__, m, is_w)
 #define ANNOTATE_RWLOCK_RELEASED(m, is_w) \
     AnnotateRWLockReleased(__FILE__, __LINE__, m, is_w)
+
+#ifdef __APPLE__
+#define ASM_SYMBOL(symbol) "_" #symbol
+#else
+#define ASM_SYMBOL(symbol) #symbol
+#endif

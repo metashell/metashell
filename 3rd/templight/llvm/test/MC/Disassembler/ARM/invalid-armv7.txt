@@ -1,4 +1,4 @@
-# RUN: not llvm-mc -disassemble %s -mcpu cortex-a8 -triple armv7 2>&1 | FileCheck %s
+# RUN: not llvm-mc -disassemble %s -mcpu cortex-a15 -triple armv7 2>&1 | FileCheck %s
 
 # This file is checking ARMv7 encodings which are globally invalid, usually due
 # to the constraints of the instructions not being met. For example invalid
@@ -69,9 +69,9 @@
 # Undefined encoding space for hint instructions
 #------------------------------------------------------------------------------
 
-# FIXME: is it "dbg #14" or not????
-[0xfe 0xf0 0x20 0xe3]
-# CHCK: invalid instruction encoding
+[0xfe 0xf0 0x20 0xf3]
+# CHECK: invalid instruction encoding
+# CHECK-NEXT: [0xfe 0xf0 0x20 0xf3]
 
 
 #------------------------------------------------------------------------------
@@ -500,3 +500,19 @@
 [0x3d 0x3c 0xa0 0xf4]
 # CHECK: invalid instruction encoding
 # CHECK-NEXT: [0x3d 0x3c 0xa0 0xf4]
+
+
+#------------------------------------------------------------------------------
+# Undefined encodings for MSR/MRS (banked register)
+#------------------------------------------------------------------------------
+# These have a banked register encoding of 0b111111, which is unallocated.
+
+# msr <invalid>, r0
+[0x00,0xf3,0x6f,0xe1]
+# CHECK: invalid instruction encoding
+# CHECK-NEXT: [0x00,0xf3,0x6f,0xe1]
+
+# mrs r0, <invalid>
+[0x00,0x03,0x4f,0xe1]
+# CHECK: invalid instruction encoding
+# CHECK-NEXT: [0x00,0x03,0x4f,0xe1]

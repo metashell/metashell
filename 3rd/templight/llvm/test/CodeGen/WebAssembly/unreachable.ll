@@ -5,14 +5,14 @@
 ; wasm unreachable
 
 target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
-target triple = "wasm32-unknown-unknown-wasm"
+target triple = "wasm32-unknown-unknown"
 
 declare void @llvm.trap()
 declare void @llvm.debugtrap()
 declare void @abort()
 
 ; CHECK-LABEL: f1:
-; CHECK: call abort@FUNCTION{{$}}
+; CHECK: call abort{{$}}
 ; CHECK: unreachable
 define i32 @f1() {
   call void @abort()

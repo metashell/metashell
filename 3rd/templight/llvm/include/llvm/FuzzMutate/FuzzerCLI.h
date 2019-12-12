@@ -1,9 +1,8 @@
 //===-- FuzzerCLI.h - Common logic for CLIs of fuzzers ----------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -67,6 +66,12 @@ std::unique_ptr<Module> parseModule(const uint8_t *Data, size_t Size,
 /// \return Number of bytes that were written. When module size exceeds MaxSize
 ///         returns 0 and leaves Dest unchanged.
 size_t writeModule(const Module &M, uint8_t *Dest, size_t MaxSize);
+
+/// Try to parse module and verify it. May output verification errors to the
+/// errs().
+/// \return New module or nullptr in case of error.
+std::unique_ptr<Module> parseAndVerify(const uint8_t *Data, size_t Size,
+                                       LLVMContext &Context);
 
 } // end llvm namespace
 

@@ -1,9 +1,8 @@
 //===- TemplateName.h - C++ Template Name Representation --------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -14,6 +13,7 @@
 #ifndef LLVM_CLANG_AST_TEMPLATENAME_H
 #define LLVM_CLANG_AST_TEMPLATENAME_H
 
+#include "clang/AST/NestedNameSpecifier.h"
 #include "clang/Basic/LLVM.h"
 #include "llvm/ADT/FoldingSet.h"
 #include "llvm/ADT/PointerIntPair.h"
@@ -22,7 +22,7 @@
 #include <cassert>
 
 namespace clang {
-  
+
 class ASTContext;
 class DependentTemplateName;
 class DiagnosticBuilder;
@@ -31,6 +31,8 @@ class NamedDecl;
 class NestedNameSpecifier;
 enum OverloadedOperatorKind : int;
 class OverloadedTemplateStorage;
+class AssumedTemplateStorage;
+class PartialDiagnostic;
 struct PrintingPolicy;
 class QualifiedTemplateName;
 class SubstTemplateTemplateParmPackStorage;
@@ -38,22 +40,23 @@ class SubstTemplateTemplateParmStorage;
 class TemplateArgument;
 class TemplateDecl;
 class TemplateTemplateParmDecl;
-  
-/// \brief Implementation class used to describe either a set of overloaded
+
+/// Implementation class used to describe either a set of overloaded
 /// template names or an already-substituted template template parameter pack.
 class UncommonTemplateNameStorage {
 protected:
   enum Kind {
     Overloaded,
+    Assumed, // defined in DeclarationName.h
     SubstTemplateTemplateParm,
     SubstTemplateTemplateParmPack
   };
 
   struct BitsTag {
-    /// \brief A Kind.
+    /// A Kind.
     unsigned Kind : 2;
-    
-    /// \brief The number of stored templates or template arguments,
+
+    /// The number of stored templates or template arguments,
     /// depending on which subclass we have.
     unsigned Size : 30;
   };
@@ -62,21 +65,27 @@ protected:
     struct BitsTag Bits;
     void *PointerAlignment;
   };
-  
+
   UncommonTemplateNameStorage(Kind kind, unsigned size) {
     Bits.Kind = kind;
     Bits.Size = size;
   }
-  
+
 public:
   unsigned size() const { return Bits.Size; }
-  
+
   OverloadedTemplateStorage *getAsOverloadedStorage()  {
     return Bits.Kind == Overloaded
-             ? reinterpret_cast<OverloadedTemplateStorage *>(this) 
+             ? reinterpret_cast<OverloadedTemplateStorage *>(this)
              : nullptr;
   }
-  
+
+  AssumedTemplateStorage *getAsAssumedTemplateName()  {
+    return Bits.Kind == Assumed
+             ? reinterpret_cast<AssumedTemplateStorage *>(this)
+             : nullptr;
+  }
+
   SubstTemplateTemplateParmStorage *getAsSubstTemplateTemplateParm() {
     return Bits.Kind == SubstTemplateTemplateParm
              ? reinterpret_cast<SubstTemplateTemplateParmStorage *>(this)
@@ -89,13 +98,13 @@ public:
              : nullptr;
   }
 };
-  
-/// \brief A structure for storing the information associated with an
+
+/// A structure for storing the information associated with an
 /// overloaded template name.
 class OverloadedTemplateStorage : public UncommonTemplateNameStorage {
   friend class ASTContext;
 
-  OverloadedTemplateStorage(unsigned size) 
+  OverloadedTemplateStorage(unsigned size)
       : UncommonTemplateNameStorage(Overloaded, size) {}
 
   NamedDecl **getStorage() {
@@ -112,10 +121,10 @@ public:
   iterator end() const { return getStorage() + size(); }
 };
 
-/// \brief A structure for storing an already-substituted template template
+/// A structure for storing an already-substituted template template
 /// parameter pack.
 ///
-/// This kind of template names occurs when the parameter pack has been 
+/// This kind of template names occurs when the parameter pack has been
 /// provided with a template template argument pack in a context where its
 /// enclosing pack expansion could not be fully expanded.
 class SubstTemplateTemplateParmPackStorage
@@ -123,32 +132,32 @@ class SubstTemplateTemplateParmPackStorage
 {
   TemplateTemplateParmDecl *Parameter;
   const TemplateArgument *Arguments;
-  
+
 public:
   SubstTemplateTemplateParmPackStorage(TemplateTemplateParmDecl *Parameter,
-                                       unsigned Size, 
+                                       unsigned Size,
                                        const TemplateArgument *Arguments)
       : UncommonTemplateNameStorage(SubstTemplateTemplateParmPack, Size),
         Parameter(Parameter), Arguments(Arguments) {}
-  
-  /// \brief Retrieve the template template parameter pack being substituted.
+
+  /// Retrieve the template template parameter pack being substituted.
   TemplateTemplateParmDecl *getParameterPack() const {
     return Parameter;
   }
-  
-  /// \brief Retrieve the template template argument pack with which this
+
+  /// Retrieve the template template argument pack with which this
   /// parameter was substituted.
   TemplateArgument getArgumentPack() const;
-  
+
   void Profile(llvm::FoldingSetNodeID &ID, ASTContext &Context);
-  
+
   static void Profile(llvm::FoldingSetNodeID &ID,
                       ASTContext &Context,
                       TemplateTemplateParmDecl *Parameter,
                       const TemplateArgument &ArgPack);
 };
 
-/// \brief Represents a C++ template name within the type system.
+/// Represents a C++ template name within the type system.
 ///
 /// A C++ template name refers to a template within the C++ type
 /// system. In most cases, a template name is simply a reference to a
@@ -185,27 +194,31 @@ class TemplateName {
   explicit TemplateName(void *Ptr);
 
 public:
-  // \brief Kind of name that is actually stored.
+  // Kind of name that is actually stored.
   enum NameKind {
-    /// \brief A single template declaration.
+    /// A single template declaration.
     Template,
 
-    /// \brief A set of overloaded template declarations.
+    /// A set of overloaded template declarations.
     OverloadedTemplate,
 
-    /// \brief A qualified template name, where the qualification is kept 
+    /// An unqualified-id that has been assumed to name a function template
+    /// that will be found by ADL.
+    AssumedTemplate,
+
+    /// A qualified template name, where the qualification is kept
     /// to describe the source code as written.
     QualifiedTemplate,
 
-    /// \brief A dependent template name that has not been resolved to a 
+    /// A dependent template name that has not been resolved to a
     /// template (or set of templates).
     DependentTemplate,
 
-    /// \brief A template template parameter that has been substituted
+    /// A template template parameter that has been substituted
     /// for some other template name.
     SubstTemplateTemplateParm,
 
-    /// \brief A template template parameter pack that has been substituted for 
+    /// A template template parameter pack that has been substituted for
     /// a template template argument pack, but has not yet been expanded into
     /// individual arguments.
     SubstTemplateTemplateParmPack
@@ -214,18 +227,19 @@ public:
   TemplateName() = default;
   explicit TemplateName(TemplateDecl *Template);
   explicit TemplateName(OverloadedTemplateStorage *Storage);
+  explicit TemplateName(AssumedTemplateStorage *Storage);
   explicit TemplateName(SubstTemplateTemplateParmStorage *Storage);
   explicit TemplateName(SubstTemplateTemplateParmPackStorage *Storage);
   explicit TemplateName(QualifiedTemplateName *Qual);
   explicit TemplateName(DependentTemplateName *Dep);
 
-  /// \brief Determine whether this template name is NULL.
+  /// Determine whether this template name is NULL.
   bool isNull() const;
-  
-  // \brief Get the kind of name that is actually stored.
+
+  // Get the kind of name that is actually stored.
   NameKind getKind() const;
 
-  /// \brief Retrieve the underlying template declaration that
+  /// Retrieve the underlying template declaration that
   /// this template name refers to, if known.
   ///
   /// \returns The template declaration that this template name refers
@@ -234,8 +248,8 @@ public:
   /// set of function templates, returns NULL.
   TemplateDecl *getAsTemplateDecl() const;
 
-  /// \brief Retrieve the underlying, overloaded function template
-  // declarations that this template name refers to, if known.
+  /// Retrieve the underlying, overloaded function template
+  /// declarations that this template name refers to, if known.
   ///
   /// \returns The set of overloaded function templates that this template
   /// name refers to, if known. If the template name does not refer to a
@@ -243,14 +257,18 @@ public:
   /// refers to a single template, returns NULL.
   OverloadedTemplateStorage *getAsOverloadedTemplate() const;
 
-  /// \brief Retrieve the substituted template template parameter, if 
+  /// Retrieve information on a name that has been assumed to be a
+  /// template-name in order to permit a call via ADL.
+  AssumedTemplateStorage *getAsAssumedTemplateName() const;
+
+  /// Retrieve the substituted template template parameter, if
   /// known.
   ///
   /// \returns The storage for the substituted template template parameter,
   /// if known. Otherwise, returns NULL.
   SubstTemplateTemplateParmStorage *getAsSubstTemplateTemplateParm() const;
 
-  /// \brief Retrieve the substituted template template parameter pack, if 
+  /// Retrieve the substituted template template parameter pack, if
   /// known.
   ///
   /// \returns The storage for the substituted template template parameter pack,
@@ -258,11 +276,11 @@ public:
   SubstTemplateTemplateParmPackStorage *
   getAsSubstTemplateTemplateParmPack() const;
 
-  /// \brief Retrieve the underlying qualified template name
+  /// Retrieve the underlying qualified template name
   /// structure, if any.
   QualifiedTemplateName *getAsQualifiedTemplateName() const;
 
-  /// \brief Retrieve the underlying dependent template name
+  /// Retrieve the underlying dependent template name
   /// structure, if any.
   DependentTemplateName *getAsDependentTemplateName() const;
 
@@ -273,18 +291,18 @@ public:
   /// the template, including any default template arguments.
   TemplateName getNameToSubstitute() const;
 
-  /// \brief Determines whether this is a dependent template name.
+  /// Determines whether this is a dependent template name.
   bool isDependent() const;
 
-  /// \brief Determines whether this is a template name that somehow
+  /// Determines whether this is a template name that somehow
   /// depends on a template parameter.
   bool isInstantiationDependent() const;
 
-  /// \brief Determines whether this template name contains an
+  /// Determines whether this template name contains an
   /// unexpanded parameter pack (for C++0x variadic templates).
   bool containsUnexpandedParameterPack() const;
 
-  /// \brief Print the template name.
+  /// Print the template name.
   ///
   /// \param OS the output stream to which the template name will be
   /// printed.
@@ -295,10 +313,10 @@ public:
   void print(raw_ostream &OS, const PrintingPolicy &Policy,
              bool SuppressNNS = false) const;
 
-  /// \brief Debugging aid that dumps the template name.
+  /// Debugging aid that dumps the template name.
   void dump(raw_ostream &OS) const;
 
-  /// \brief Debugging aid that dumps the template name to standard
+  /// Debugging aid that dumps the template name to standard
   /// error.
   void dump() const;
 
@@ -306,10 +324,10 @@ public:
     ID.AddPointer(Storage.getOpaqueValue());
   }
 
-  /// \brief Retrieve the template name as a void pointer.
+  /// Retrieve the template name as a void pointer.
   void *getAsVoidPointer() const { return Storage.getOpaqueValue(); }
 
-  /// \brief Build a template name from a void pointer.
+  /// Build a template name from a void pointer.
   static TemplateName getFromVoidPointer(void *Ptr) {
     return TemplateName(Ptr);
   }
@@ -319,8 +337,10 @@ public:
 /// into a diagnostic with <<.
 const DiagnosticBuilder &operator<<(const DiagnosticBuilder &DB,
                                     TemplateName N);
+const PartialDiagnostic &operator<<(const PartialDiagnostic &PD,
+                                    TemplateName N);
 
-/// \brief A structure for storing the information associated with a
+/// A structure for storing the information associated with a
 /// substituted template template parameter.
 class SubstTemplateTemplateParmStorage
   : public UncommonTemplateNameStorage, public llvm::FoldingSetNode {
@@ -339,7 +359,7 @@ public:
   TemplateName getReplacement() const { return Replacement; }
 
   void Profile(llvm::FoldingSetNodeID &ID);
-  
+
   static void Profile(llvm::FoldingSetNodeID &ID,
                       TemplateTemplateParmDecl *parameter,
                       TemplateName replacement);
@@ -352,7 +372,7 @@ inline TemplateName TemplateName::getUnderlying() const {
   return *this;
 }
 
-/// \brief Represents a template name that was expressed as a
+/// Represents a template name that was expressed as a
 /// qualified name.
 ///
 /// This kind of template name refers to a template name that was
@@ -366,7 +386,7 @@ inline TemplateName TemplateName::getUnderlying() const {
 class QualifiedTemplateName : public llvm::FoldingSetNode {
   friend class ASTContext;
 
-  /// \brief The nested name specifier that qualifies the template name.
+  /// The nested name specifier that qualifies the template name.
   ///
   /// The bit is used to indicate whether the "template" keyword was
   /// present before the template name itself. Note that the
@@ -375,7 +395,7 @@ class QualifiedTemplateName : public llvm::FoldingSetNode {
   /// this name with DependentTemplateName).
   llvm::PointerIntPair<NestedNameSpecifier *, 1> Qualifier;
 
-  /// \brief The template declaration or set of overloaded function templates
+  /// The template declaration or set of overloaded function templates
   /// that this qualified name refers to.
   TemplateDecl *Template;
 
@@ -384,18 +404,18 @@ class QualifiedTemplateName : public llvm::FoldingSetNode {
       : Qualifier(NNS, TemplateKeyword? 1 : 0), Template(Template) {}
 
 public:
-  /// \brief Return the nested name specifier that qualifies this name.
+  /// Return the nested name specifier that qualifies this name.
   NestedNameSpecifier *getQualifier() const { return Qualifier.getPointer(); }
 
-  /// \brief Whether the template name was prefixed by the "template"
+  /// Whether the template name was prefixed by the "template"
   /// keyword.
   bool hasTemplateKeyword() const { return Qualifier.getInt(); }
 
-  /// \brief The template declaration that this qualified name refers
+  /// The template declaration that this qualified name refers
   /// to.
   TemplateDecl *getDecl() const { return Template; }
 
-  /// \brief The template declaration to which this qualified name
+  /// The template declaration to which this qualified name
   /// refers.
   TemplateDecl *getTemplateDecl() const { return Template; }
 
@@ -411,7 +431,7 @@ public:
   }
 };
 
-/// \brief Represents a dependent template name that cannot be
+/// Represents a dependent template name that cannot be
 /// resolved prior to template instantiation.
 ///
 /// This kind of template name refers to a dependent template name,
@@ -422,7 +442,7 @@ public:
 class DependentTemplateName : public llvm::FoldingSetNode {
   friend class ASTContext;
 
-  /// \brief The nested name specifier that qualifies the template
+  /// The nested name specifier that qualifies the template
   /// name.
   ///
   /// The bit stored in this qualifier describes whether the \c Name field
@@ -430,20 +450,20 @@ class DependentTemplateName : public llvm::FoldingSetNode {
   /// overloaded operator kind (when set).
   llvm::PointerIntPair<NestedNameSpecifier *, 1, bool> Qualifier;
 
-  /// \brief The dependent template name.
+  /// The dependent template name.
   union {
-    /// \brief The identifier template name.
+    /// The identifier template name.
     ///
     /// Only valid when the bit on \c Qualifier is clear.
     const IdentifierInfo *Identifier;
-    
-    /// \brief The overloaded operator name.
+
+    /// The overloaded operator name.
     ///
     /// Only valid when the bit on \c Qualifier is set.
     OverloadedOperatorKind Operator;
   };
 
-  /// \brief The canonical template name to which this dependent
+  /// The canonical template name to which this dependent
   /// template name refers.
   ///
   /// The canonical template name for a dependent template name is
@@ -453,50 +473,50 @@ class DependentTemplateName : public llvm::FoldingSetNode {
 
   DependentTemplateName(NestedNameSpecifier *Qualifier,
                         const IdentifierInfo *Identifier)
-      : Qualifier(Qualifier, false), Identifier(Identifier), 
+      : Qualifier(Qualifier, false), Identifier(Identifier),
         CanonicalTemplateName(this) {}
 
   DependentTemplateName(NestedNameSpecifier *Qualifier,
                         const IdentifierInfo *Identifier,
                         TemplateName Canon)
-      : Qualifier(Qualifier, false), Identifier(Identifier), 
+      : Qualifier(Qualifier, false), Identifier(Identifier),
         CanonicalTemplateName(Canon) {}
 
   DependentTemplateName(NestedNameSpecifier *Qualifier,
                         OverloadedOperatorKind Operator)
-      : Qualifier(Qualifier, true), Operator(Operator), 
+      : Qualifier(Qualifier, true), Operator(Operator),
         CanonicalTemplateName(this) {}
-  
+
   DependentTemplateName(NestedNameSpecifier *Qualifier,
                         OverloadedOperatorKind Operator,
                         TemplateName Canon)
-       : Qualifier(Qualifier, true), Operator(Operator), 
+       : Qualifier(Qualifier, true), Operator(Operator),
          CanonicalTemplateName(Canon) {}
-  
+
 public:
-  /// \brief Return the nested name specifier that qualifies this name.
+  /// Return the nested name specifier that qualifies this name.
   NestedNameSpecifier *getQualifier() const { return Qualifier.getPointer(); }
 
-  /// \brief Determine whether this template name refers to an identifier.
+  /// Determine whether this template name refers to an identifier.
   bool isIdentifier() const { return !Qualifier.getInt(); }
 
-  /// \brief Returns the identifier to which this template name refers.
-  const IdentifierInfo *getIdentifier() const { 
+  /// Returns the identifier to which this template name refers.
+  const IdentifierInfo *getIdentifier() const {
     assert(isIdentifier() && "Template name isn't an identifier?");
     return Identifier;
   }
-  
-  /// \brief Determine whether this template name refers to an overloaded
+
+  /// Determine whether this template name refers to an overloaded
   /// operator.
   bool isOverloadedOperator() const { return Qualifier.getInt(); }
-  
-  /// \brief Return the overloaded operator to which this template name refers.
-  OverloadedOperatorKind getOperator() const { 
+
+  /// Return the overloaded operator to which this template name refers.
+  OverloadedOperatorKind getOperator() const {
     assert(isOverloadedOperator() &&
            "Template name isn't an overloaded operator?");
-    return Operator; 
+    return Operator;
   }
-  
+
   void Profile(llvm::FoldingSetNodeID &ID) {
     if (isIdentifier())
       Profile(ID, getQualifier(), getIdentifier());
@@ -523,7 +543,7 @@ public:
 
 namespace llvm {
 
-/// \brief The clang::TemplateName class is effectively a pointer.
+/// The clang::TemplateName class is effectively a pointer.
 template<>
 struct PointerLikeTypeTraits<clang::TemplateName> {
   static inline void *getAsVoidPointer(clang::TemplateName TN) {

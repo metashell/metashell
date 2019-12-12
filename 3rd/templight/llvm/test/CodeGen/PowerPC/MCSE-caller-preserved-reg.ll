@@ -1,4 +1,4 @@
-; RUN: llc -verify-machineinstrs -mtriple=powerpc64le-unknown-linux-gnu < %s | FileCheck %s
+; RUN: llc -relocation-model=pic -verify-machineinstrs -mtriple=powerpc64le-unknown-linux-gnu < %s | FileCheck %s
 ; The instructions addis,addi, bl are used to calculate the address of TLS
 ; thread local variables. These TLS access code sequences are generated
 ; repeatedly every time the thread local variable is accessed. By communicating
@@ -15,15 +15,15 @@
 define noalias i8* @_ZN2CC3funEv(%class.CC* %this) {
 ; CHECK-LABEL: _ZN2CC3funEv:
 ; CHECK:    mflr 0
-; CHECK-NEXT:    std 0, 16(1)
-; CHECK-NEXT:    stdu 1, -48(1)
 ; CHECK-NEXT:    .cfi_def_cfa_offset 48
 ; CHECK-NEXT:    .cfi_offset lr, 16
 ; CHECK-NEXT:    .cfi_offset r30, -16
-; CHECK-NEXT:    std 30, 32(1)
-; CHECK-NEXT:    mr 30, 3
-; CHECK-NEXT:    ld 12, 0(30)
+; CHECK-NEXT:    std 30, -16(1)
+; CHECK-NEXT:    std 0, 16(1)
+; CHECK-NEXT:    stdu 1, -48(1)
 ; CHECK-NEXT:    std 2, 24(1)
+; CHECK-NEXT:    mr 30, 3
+; CHECK-NEXT:    ld 12, 0(3)
 ; CHECK-NEXT:    mtctr 12
 ; CHECK-NEXT:    bctrl
 ; CHECK-NEXT:    ld 2, 24(1)
@@ -38,11 +38,11 @@ define noalias i8* @_ZN2CC3funEv(%class.CC* %this) {
 ; CHECK-NEXT:    mr 3, 30
 ; CHECK-NEXT:    bl _ZN2CC3barEPi
 ; CHECK-NEXT:    nop
-; CHECK:    ld 30, 32(1)
-; CHECK-NEXT:    li 3, 0
+; CHECK:    li 3, 0
 ; CHECK-NEXT:    addi 1, 1, 48
 ; CHECK-NEXT:    ld 0, 16(1)
 ; CHECK-NEXT:    mtlr 0
+; CHECK:    ld 30, -16(1)
 ; CHECK-NEXT:    blr
 entry:
   %foo = getelementptr inbounds %class.CC, %class.CC* %this, i64 0, i32 0, i32 0

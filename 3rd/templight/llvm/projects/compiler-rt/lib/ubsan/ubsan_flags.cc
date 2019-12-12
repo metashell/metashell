@@ -1,9 +1,8 @@
 //===-- ubsan_flags.cc ----------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -24,6 +23,15 @@ namespace __ubsan {
 
 const char *MaybeCallUbsanDefaultOptions() {
   return (&__ubsan_default_options) ? __ubsan_default_options() : "";
+}
+
+static const char *GetFlag(const char *flag) {
+  // We cannot call getenv() from inside a preinit array initializer
+  if (SANITIZER_CAN_USE_PREINIT_ARRAY) {
+    return GetEnv(flag);
+  } else {
+    return getenv(flag);
+  }
 }
 
 Flags ubsan_flags;
@@ -47,7 +55,7 @@ void InitializeFlags() {
     CommonFlags cf;
     cf.CopyFrom(*common_flags());
     cf.print_summary = false;
-    cf.external_symbolizer_path = getenv("UBSAN_SYMBOLIZER_PATH");
+    cf.external_symbolizer_path = GetFlag("UBSAN_SYMBOLIZER_PATH");
     OverrideCommonFlags(cf);
   }
 
@@ -61,7 +69,7 @@ void InitializeFlags() {
   // Override from user-specified string.
   parser.ParseString(MaybeCallUbsanDefaultOptions());
   // Override from environment variable.
-  parser.ParseString(getenv("UBSAN_OPTIONS"));
+  parser.ParseStringFromEnv("UBSAN_OPTIONS");
   InitializeCommonFlags();
   if (Verbosity()) ReportUnrecognizedFlags();
 

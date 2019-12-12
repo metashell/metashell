@@ -1,9 +1,8 @@
 //===- TypeIndex.h ----------------------------------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -134,6 +133,8 @@ public:
     return static_cast<SimpleTypeMode>(Index & SimpleModeMask);
   }
 
+  TypeIndex makeDirect() const { return TypeIndex{getSimpleKind()}; }
+
   static TypeIndex None() { return TypeIndex(SimpleTypeKind::None); }
   static TypeIndex Void() { return TypeIndex(SimpleTypeKind::Void); }
   static TypeIndex VoidPointer32() {
@@ -141,6 +142,13 @@ public:
   }
   static TypeIndex VoidPointer64() {
     return TypeIndex(SimpleTypeKind::Void, SimpleTypeMode::NearPointer64);
+  }
+
+  static TypeIndex NullptrT() {
+    // std::nullptr_t uses the pointer mode that doesn't indicate bit-width,
+    // presumably because std::nullptr_t is intended to be compatible with any
+    // pointer type.
+    return TypeIndex(SimpleTypeKind::Void, SimpleTypeMode::NearPointer);
   }
 
   static TypeIndex SignedCharacter() {

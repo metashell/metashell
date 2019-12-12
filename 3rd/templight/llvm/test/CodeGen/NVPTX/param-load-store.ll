@@ -1,5 +1,5 @@
 ; Verifies correctness of load/store of parameters and return values.
-; RUN: llc < %s -march=nvptx64 -mcpu=sm_35 -O0 -verify-machineinstrs | FileCheck %s
+; RUN: llc < %s -march=nvptx64 -mcpu=sm_35 -O0 -verify-machineinstrs | FileCheck -allow-deprecated-dag-overlap %s
 
 %s_i1 = type { i1 }
 %s_i8 = type { i8 }
@@ -23,10 +23,13 @@
 ; CHECK: .func  (.param .b32 func_retval0)
 ; CHECK-LABEL: test_i1(
 ; CHECK-NEXT: .param .b32 test_i1_param_0
-; CHECK:      ld.param.u8 [[A8:%r[0-9]+]], [test_i1_param_0];
-; CHECK:      and.b32 [[A:%r[0-9]+]], [[A8]], 1;
+; CHECK:      ld.param.u8 [[A8:%rs[0-9]+]], [test_i1_param_0];
+; CHECK:      and.b16 [[A:%rs[0-9]+]], [[A8]], 1;
+; CHECK:      setp.eq.b16 %p1, [[A]], 1
+; CHECK:      cvt.u32.u16 [[B:%r[0-9]+]], [[A8]]
+; CHECK:      and.b32 [[C:%r[0-9]+]], [[B]], 1;
 ; CHECK:      .param .b32 param0;
-; CHECK:      st.param.b32    [param0+0], [[A]]
+; CHECK:      st.param.b32    [param0+0], [[C]]
 ; CHECK:      .param .b32 retval0;
 ; CHECK:      call.uni
 ; CHECK-NEXT: test_i1,
@@ -513,7 +516,7 @@ define <3 x i32> @test_v3i32(<3 x i32> %a) {
 ; CHECK-NEXT: test_v4i32,
 ; CHECK:      ld.param.v4.b32  {[[RE0:%r[0-9]+]], [[RE1:%r[0-9]+]], [[RE2:%r[0-9]+]], [[RE3:%r[0-9]+]]}, [retval0+0];
 ; CHECK:      st.param.v4.b32  [func_retval0+0], {[[RE0]], [[RE1]], [[RE2]], [[RE3]]}
-; CHCK-NEXT: ret;
+; CHECK-NEXT: ret;
 define <4 x i32> @test_v4i32(<4 x i32> %a) {
        %r = tail call <4 x i32> @test_v4i32(<4 x i32> %a);
        ret <4 x i32> %r;

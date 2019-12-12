@@ -44,7 +44,8 @@ namespace
   {
     std::unique_ptr<iface::engine> engine =
         engine::constant::create_with_include_path(
-            Type, {"foo", "bar"})(data::config());
+            Type, {"foo", "bar"})(data::shell_config{
+            data::shell_config_name("default"), data::shell_config_data()});
     NiceMock<mock::shell> sh;
     ON_CALL(sh, engine()).WillByDefault(ReturnRef(*engine));
 

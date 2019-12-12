@@ -20,20 +20,20 @@ define i32 @ebpf_filter(%struct.__sk_buff* nocapture readnone %ebpf_packet) #0 s
 ; CHECK: *(u64 *)(r10 - 8) = r1
 
 ; CHECK: r1 = 0
-; CHECK: *(u16 *)(r10 + 24) = r1
-; CHECK: *(u16 *)(r10 + 22) = r1
-; CHECK: *(u16 *)(r10 + 20) = r1
-; CHECK: *(u16 *)(r10 + 18) = r1
-; CHECK: *(u16 *)(r10 + 16) = r1
-; CHECK: *(u16 *)(r10 + 14) = r1
-; CHECK: *(u16 *)(r10 + 12) = r1
-; CHECK: *(u16 *)(r10 + 10) = r1
-; CHECK: *(u16 *)(r10 + 8) = r1
-; CHECK: *(u16 *)(r10 + 6) = r1
-; CHECK: *(u16 *)(r10 + 4) = r1
-; CHECK: *(u16 *)(r10 + 2) = r1
-; CHECK: *(u16 *)(r10 + 0) = r1
-; CHECK: *(u16 *)(r10 + 26) = r1
+; CHECK-DAG: *(u16 *)(r10 + 24) = r1
+; CHECK-DAG: *(u16 *)(r10 + 22) = r1
+; CHECK-DAG: *(u16 *)(r10 + 20) = r1
+; CHECK-DAG: *(u16 *)(r10 + 18) = r1
+; CHECK-DAG: *(u16 *)(r10 + 16) = r1
+; CHECK-DAG: *(u16 *)(r10 + 14) = r1
+; CHECK-DAG: *(u16 *)(r10 + 12) = r1
+; CHECK-DAG: *(u16 *)(r10 + 10) = r1
+; CHECK-DAG: *(u16 *)(r10 + 8) = r1
+; CHECK-DAG: *(u16 *)(r10 + 6) = r1
+; CHECK-DAG: *(u16 *)(r10 + 4) = r1
+; CHECK-DAG: *(u16 *)(r10 + 2) = r1
+; CHECK-DAG: *(u16 *)(r10 + 0) = r1
+; CHECK-DAG: *(u16 *)(r10 + 26) = r1
 
 ; CHECK: r2 = r10
 ; CHECK: r2 += -8
@@ -54,12 +54,12 @@ define i32 @ebpf_filter(%struct.__sk_buff* nocapture readnone %ebpf_packet) #0 s
   %6 = getelementptr inbounds %struct.routing_key_2, %struct.routing_key_2* %key, i64 0, i32 0, i64 5
   store i8 10, i8* %6, align 1
   %7 = getelementptr inbounds %struct.routing_key_2, %struct.routing_key_2* %key, i64 1, i32 0, i64 0
-  call void @llvm.memset.p0i8.i64(i8* %7, i8 0, i64 30, i32 1, i1 false)
+  call void @llvm.memset.p0i8.i64(i8* %7, i8 0, i64 30, i1 false)
   %8 = call i32 (%struct.bpf_map_def*, %struct.routing_key_2*, ...) bitcast (i32 (...)* @bpf_map_lookup_elem to i32 (%struct.bpf_map_def*, %struct.routing_key_2*, ...)*)(%struct.bpf_map_def* nonnull @routing, %struct.routing_key_2* nonnull %key) #3
   ret i32 undef
 }
 
 ; Function Attrs: nounwind argmemonly
-declare void @llvm.memset.p0i8.i64(i8* nocapture, i8, i64, i32, i1) #1
+declare void @llvm.memset.p0i8.i64(i8* nocapture, i8, i64, i1) #1
 
 declare i32 @bpf_map_lookup_elem(...) #2

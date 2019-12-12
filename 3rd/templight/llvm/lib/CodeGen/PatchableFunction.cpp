@@ -1,9 +1,8 @@
 //===-- PatchableFunction.cpp - Patchable prologues for LLVM -------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -49,6 +48,7 @@ static bool doesNotGeneratecode(const MachineInstr &MI) {
   case TargetOpcode::EH_LABEL:
   case TargetOpcode::GC_LABEL:
   case TargetOpcode::DBG_VALUE:
+  case TargetOpcode::DBG_LABEL:
     return true;
   }
 }

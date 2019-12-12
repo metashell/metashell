@@ -1,9 +1,8 @@
 //===-- AArch64AdvSIMDScalar.cpp - Replace dead defs w/ zero reg --===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 // When profitable, replace GPR targeting i64 instructions with their
@@ -277,7 +276,7 @@ static MachineInstr *insertCopy(const TargetInstrInfo *TII, MachineInstr &MI,
   MachineInstrBuilder MIB = BuildMI(*MI.getParent(), MI, MI.getDebugLoc(),
                                     TII->get(AArch64::COPY), Dst)
                                 .addReg(Src, getKillRegState(IsKill));
-  DEBUG(dbgs() << "    adding copy: " << *MIB);
+  LLVM_DEBUG(dbgs() << "    adding copy: " << *MIB);
   ++NumCopiesInserted;
   return MIB;
 }
@@ -286,7 +285,7 @@ static MachineInstr *insertCopy(const TargetInstrInfo *TII, MachineInstr &MI,
 // to its equivalant AdvSIMD scalar instruction. Update inputs and outputs
 // to be the correct register class, minimizing cross-class copies.
 void AArch64AdvSIMDScalar::transformInstruction(MachineInstr &MI) {
-  DEBUG(dbgs() << "Scalar transform: " << MI);
+  LLVM_DEBUG(dbgs() << "Scalar transform: " << MI);
 
   MachineBasicBlock *MBB = MI.getParent();
   unsigned OldOpc = MI.getOpcode();
@@ -391,7 +390,7 @@ bool AArch64AdvSIMDScalar::processMachineBasicBlock(MachineBasicBlock *MBB) {
 // runOnMachineFunction - Pass entry point from PassManager.
 bool AArch64AdvSIMDScalar::runOnMachineFunction(MachineFunction &mf) {
   bool Changed = false;
-  DEBUG(dbgs() << "***** AArch64AdvSIMDScalar *****\n");
+  LLVM_DEBUG(dbgs() << "***** AArch64AdvSIMDScalar *****\n");
 
   if (skipFunction(mf.getFunction()))
     return false;

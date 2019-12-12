@@ -1,9 +1,8 @@
 //===-- RISCVMCInstLower.cpp - Convert RISCV MachineInstr to an MCInst ------=//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -37,22 +36,53 @@ static MCOperand lowerSymbolOperand(const MachineOperand &MO, MCSymbol *Sym,
   case RISCVII::MO_None:
     Kind = RISCVMCExpr::VK_RISCV_None;
     break;
+  case RISCVII::MO_CALL:
+    Kind = RISCVMCExpr::VK_RISCV_CALL;
+    break;
+  case RISCVII::MO_PLT:
+    Kind = RISCVMCExpr::VK_RISCV_CALL_PLT;
+    break;
   case RISCVII::MO_LO:
     Kind = RISCVMCExpr::VK_RISCV_LO;
     break;
   case RISCVII::MO_HI:
     Kind = RISCVMCExpr::VK_RISCV_HI;
     break;
+  case RISCVII::MO_PCREL_LO:
+    Kind = RISCVMCExpr::VK_RISCV_PCREL_LO;
+    break;
+  case RISCVII::MO_PCREL_HI:
+    Kind = RISCVMCExpr::VK_RISCV_PCREL_HI;
+    break;
+  case RISCVII::MO_GOT_HI:
+    Kind = RISCVMCExpr::VK_RISCV_GOT_HI;
+    break;
+  case RISCVII::MO_TPREL_LO:
+    Kind = RISCVMCExpr::VK_RISCV_TPREL_LO;
+    break;
+  case RISCVII::MO_TPREL_HI:
+    Kind = RISCVMCExpr::VK_RISCV_TPREL_HI;
+    break;
+  case RISCVII::MO_TPREL_ADD:
+    Kind = RISCVMCExpr::VK_RISCV_TPREL_ADD;
+    break;
+  case RISCVII::MO_TLS_GOT_HI:
+    Kind = RISCVMCExpr::VK_RISCV_TLS_GOT_HI;
+    break;
+  case RISCVII::MO_TLS_GD_HI:
+    Kind = RISCVMCExpr::VK_RISCV_TLS_GD_HI;
+    break;
   }
 
   const MCExpr *ME =
       MCSymbolRefExpr::create(Sym, MCSymbolRefExpr::VK_None, Ctx);
 
-  if (!MO.isJTI() && MO.getOffset())
+  if (!MO.isJTI() && !MO.isMBB() && MO.getOffset())
     ME = MCBinaryExpr::createAdd(
         ME, MCConstantExpr::create(MO.getOffset(), Ctx), Ctx);
 
-  ME = RISCVMCExpr::create(ME, Kind, Ctx);
+  if (Kind != RISCVMCExpr::VK_RISCV_None)
+    ME = RISCVMCExpr::create(ME, Kind, Ctx);
   return MCOperand::createExpr(ME);
 }
 
@@ -75,8 +105,7 @@ bool llvm::LowerRISCVMachineOperandToMCOperand(const MachineOperand &MO,
     MCOp = MCOperand::createImm(MO.getImm());
     break;
   case MachineOperand::MO_MachineBasicBlock:
-    MCOp = MCOperand::createExpr(
-        MCSymbolRefExpr::create(MO.getMBB()->getSymbol(), AP.OutContext));
+    MCOp = lowerSymbolOperand(MO, MO.getMBB()->getSymbol(), AP);
     break;
   case MachineOperand::MO_GlobalAddress:
     MCOp = lowerSymbolOperand(MO, AP.getSymbol(MO.getGlobal()), AP);
@@ -88,6 +117,9 @@ bool llvm::LowerRISCVMachineOperandToMCOperand(const MachineOperand &MO,
   case MachineOperand::MO_ExternalSymbol:
     MCOp = lowerSymbolOperand(
         MO, AP.GetExternalSymbolSymbol(MO.getSymbolName()), AP);
+    break;
+  case MachineOperand::MO_ConstantPoolIndex:
+    MCOp = lowerSymbolOperand(MO, AP.GetCPISymbol(MO.getIndex()), AP);
     break;
   }
   return true;

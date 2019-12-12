@@ -1,9 +1,8 @@
 //===--------- AVRMCELFStreamer.h - AVR subclass of MCELFStreamer ---------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -16,6 +15,7 @@
 #include "llvm/MC/MCCodeEmitter.h"
 #include "llvm/MC/MCELFStreamer.h"
 #include "llvm/MC/MCInstrInfo.h"
+#include "llvm/MC/MCObjectWriter.h"
 
 namespace llvm {
 
@@ -27,16 +27,18 @@ class AVRMCELFStreamer : public MCELFStreamer {
 
 public:
   AVRMCELFStreamer(MCContext &Context, std::unique_ptr<MCAsmBackend> TAB,
-                   raw_pwrite_stream &OS,
+                   std::unique_ptr<MCObjectWriter> OW,
                    std::unique_ptr<MCCodeEmitter> Emitter)
-      : MCELFStreamer(Context, std::move(TAB), OS, std::move(Emitter)),
+      : MCELFStreamer(Context, std::move(TAB), std::move(OW),
+                      std::move(Emitter)),
         MCII(createAVRMCInstrInfo()) {}
 
   AVRMCELFStreamer(MCContext &Context, std::unique_ptr<MCAsmBackend> TAB,
-                   raw_pwrite_stream &OS,
+                   std::unique_ptr<MCObjectWriter> OW,
                    std::unique_ptr<MCCodeEmitter> Emitter,
                    MCAssembler *Assembler)
-      : MCELFStreamer(Context, std::move(TAB), OS, std::move(Emitter)),
+      : MCELFStreamer(Context, std::move(TAB), std::move(OW),
+                      std::move(Emitter)),
         MCII(createAVRMCInstrInfo()) {}
 
   void EmitValueForModiferKind(
@@ -46,7 +48,7 @@ public:
 
 MCStreamer *createAVRELFStreamer(Triple const &TT, MCContext &Context,
                                  std::unique_ptr<MCAsmBackend> MAB,
-                                 raw_pwrite_stream &OS,
+                                 std::unique_ptr<MCObjectWriter> OW,
                                  std::unique_ptr<MCCodeEmitter> CE);
 
 } // end namespace llvm

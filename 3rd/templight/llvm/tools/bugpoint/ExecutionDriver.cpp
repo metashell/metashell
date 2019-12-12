@@ -1,9 +1,8 @@
 //===- ExecutionDriver.cpp - Allow execution of LLVM program --------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -148,8 +147,9 @@ Error BugDriver::initializeExecutionEnvironment() {
   std::string Message;
 
   if (CCBinary.empty()) {
-    if (sys::findProgramByName("clang"))
-      CCBinary = "clang";
+    if (ErrorOr<std::string> ClangPath =
+            FindProgramByName("clang", getToolName(), &AbsTolerance))
+      CCBinary = *ClangPath;
     else
       CCBinary = "gcc";
   }
@@ -193,11 +193,11 @@ Error BugDriver::initializeExecutionEnvironment() {
     break;
   case CompileCustom:
     Interpreter = AbstractInterpreter::createCustomCompiler(
-        Message, CustomCompileCommand);
+        getToolName(), Message, CustomCompileCommand);
     break;
   case Custom:
-    Interpreter =
-        AbstractInterpreter::createCustomExecutor(Message, CustomExecCommand);
+    Interpreter = AbstractInterpreter::createCustomExecutor(
+        getToolName(), Message, CustomExecCommand);
     break;
   }
   if (!Interpreter)
@@ -239,8 +239,8 @@ Error BugDriver::initializeExecutionEnvironment() {
         SafeInterpreterSel == RunLLCIA);
     break;
   case Custom:
-    SafeInterpreter =
-        AbstractInterpreter::createCustomExecutor(Message, CustomExecCommand);
+    SafeInterpreter = AbstractInterpreter::createCustomExecutor(
+        getToolName(), Message, CustomExecCommand);
     break;
   default:
     Message = "Sorry, this back-end is not supported by bugpoint as the "
@@ -252,7 +252,7 @@ Error BugDriver::initializeExecutionEnvironment() {
     exit(1);
   }
 
-  cc = CC::create(Message, CCBinary, &CCToolArgv);
+  cc = CC::create(getToolName(), Message, CCBinary, &CCToolArgv);
   if (!cc) {
     outs() << Message << "\nExiting.\n";
     exit(1);
@@ -265,11 +265,9 @@ Error BugDriver::initializeExecutionEnvironment() {
   return Error::success();
 }
 
-/// compileProgram - Try to compile the specified module, returning false and
-/// setting Error if an error occurs.  This is used for code generation
-/// crash testing.
-///
-Error BugDriver::compileProgram(Module *M) const {
+/// Try to compile the specified module, returning false and setting Error if an
+/// error occurs.  This is used for code generation crash testing.
+Error BugDriver::compileProgram(Module &M) const {
   // Emit the program to a bitcode file...
   auto Temp =
       sys::fs::TempFile::create(OutputPrefix + "-test-program-%%%%%%%.bc");
@@ -290,11 +288,10 @@ Error BugDriver::compileProgram(Module *M) const {
   return Interpreter->compileProgram(Temp->TmpName, Timeout, MemoryLimit);
 }
 
-/// executeProgram - This method runs "Program", capturing the output of the
-/// program to a file, returning the filename of the file.  A recommended
-/// filename may be optionally specified.
-///
-Expected<std::string> BugDriver::executeProgram(const Module *Program,
+/// This method runs "Program", capturing the output of the program to a file,
+/// returning the filename of the file.  A recommended filename may be
+/// optionally specified.
+Expected<std::string> BugDriver::executeProgram(const Module &Program,
                                                 std::string OutputFile,
                                                 std::string BitcodeFile,
                                                 const std::string &SharedObj,
@@ -302,25 +299,31 @@ Expected<std::string> BugDriver::executeProgram(const Module *Program,
   if (!AI)
     AI = Interpreter;
   assert(AI && "Interpreter should have been created already!");
+  bool CreatedBitcode = false;
   if (BitcodeFile.empty()) {
     // Emit the program to a bitcode file...
-    auto File =
-        sys::fs::TempFile::create(OutputPrefix + "-test-program-%%%%%%%.bc");
-    if (!File) {
-      errs() << ToolName
-             << ": Error making unique filename: " << toString(File.takeError())
+    SmallString<128> UniqueFilename;
+    int UniqueFD;
+    std::error_code EC = sys::fs::createUniqueFile(
+        OutputPrefix + "-test-program-%%%%%%%.bc", UniqueFD, UniqueFilename);
+    if (EC) {
+      errs() << ToolName << ": Error making unique filename: " << EC.message()
              << "!\n";
       exit(1);
     }
-    DiscardTemp Discard{*File};
-    BitcodeFile = File->TmpName;
+    BitcodeFile = UniqueFilename.str();
 
-    if (writeProgramToFile(File->FD, Program)) {
+    if (writeProgramToFile(BitcodeFile, UniqueFD, Program)) {
       errs() << ToolName << ": Error emitting bitcode to file '" << BitcodeFile
              << "'!\n";
       exit(1);
     }
+    CreatedBitcode = true;
   }
+
+  // Remove the temporary bitcode file when we are done.
+  std::string BitcodePath(BitcodeFile);
+  FileRemover BitcodeFileRemover(BitcodePath, CreatedBitcode && !SaveTemps);
 
   if (OutputFile.empty())
     OutputFile = OutputPrefix + "-execution-output-%%%%%%%";
@@ -373,11 +376,10 @@ Expected<std::string> BugDriver::executeProgram(const Module *Program,
   return OutputFile;
 }
 
-/// executeProgramSafely - Used to create reference output with the "safe"
-/// backend, if reference output is not provided.
-///
+/// Used to create reference output with the "safe" backend, if reference output
+/// is not provided.
 Expected<std::string>
-BugDriver::executeProgramSafely(const Module *Program,
+BugDriver::executeProgramSafely(const Module &Program,
                                 const std::string &OutputFile) const {
   return executeProgram(Program, OutputFile, "", "", SafeInterpreter);
 }
@@ -404,16 +406,14 @@ BugDriver::compileSharedObject(const std::string &BitcodeFile) {
   return SharedObjectFile;
 }
 
-/// createReferenceFile - calls compileProgram and then records the output
-/// into ReferenceOutputFile. Returns true if reference file created, false
-/// otherwise. Note: initializeExecutionEnvironment should be called BEFORE
-/// this function.
-///
-Error BugDriver::createReferenceFile(Module *M, const std::string &Filename) {
-  if (Error E = compileProgram(Program))
+/// Calls compileProgram and then records the output into ReferenceOutputFile.
+/// Returns true if reference file created, false otherwise. Note:
+/// initializeExecutionEnvironment should be called BEFORE this function.
+Error BugDriver::createReferenceFile(Module &M, const std::string &Filename) {
+  if (Error E = compileProgram(*Program))
     return E;
 
-  Expected<std::string> Result = executeProgramSafely(Program, Filename);
+  Expected<std::string> Result = executeProgramSafely(*Program, Filename);
   if (Error E = Result.takeError()) {
     if (Interpreter != SafeInterpreter) {
       E = joinErrors(
@@ -432,12 +432,11 @@ Error BugDriver::createReferenceFile(Module *M, const std::string &Filename) {
   return Error::success();
 }
 
-/// diffProgram - This method executes the specified module and diffs the
-/// output against the file specified by ReferenceOutputFile.  If the output
-/// is different, 1 is returned.  If there is a problem with the code
-/// generator (e.g., llc crashes), this will set ErrMsg.
-///
-Expected<bool> BugDriver::diffProgram(const Module *Program,
+/// This method executes the specified module and diffs the output against the
+/// file specified by ReferenceOutputFile.  If the output is different, 1 is
+/// returned.  If there is a problem with the code generator (e.g., llc
+/// crashes), this will set ErrMsg.
+Expected<bool> BugDriver::diffProgram(const Module &Program,
                                       const std::string &BitcodeFile,
                                       const std::string &SharedObject,
                                       bool RemoveBitcode) const {

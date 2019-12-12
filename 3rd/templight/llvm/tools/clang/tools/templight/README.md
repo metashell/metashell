@@ -50,38 +50,26 @@ The debugger is enabled by the templight option `-debugger`, and it supports the
 
 ### Getting and Compiling Templight
 
-**NOTE**: This branch contains the source code for an earlier version of LLVM/Clang, and may not get updated.
-
 Templight must be compiled from source, alongside the Clang source code.
 
-1. Download the LLVM/Clang **6.0 release source code** from the official SVN repository.
-```bash
-  $ svn co http://llvm.org/svn/llvm-project/llvm/branches/release_60 llvm
-  $ cd llvm/tools
-  $ svn co http://llvm.org/svn/llvm-project/cfe/branches/release_60 clang
-```
-2. Download the Templight repository.
+1. [Follow the instructions from LLVM/Clang](http://clang.llvm.org/get_started.html) to get a local copy of the **latest svn trunk** of the Clang source code. Cloning the official git repository should work just as well.
+
+2. Clone the templight repository into the clang directories, as follows:
 ```bash
   (from top-level folder)
   $ cd llvm/tools/clang/tools
   $ mkdir templight
   $ git clone <link-to-clone-templight-github-repo> templight
-  $ cd templight
-  $ git checkout release_60
 ```
-3. Apply the supplied patch to Clang's source code:
-```bash  
-  (from top-level folder)
-  $ cd llvm/tools/clang
-  $ svn patch tools/templight/templight_clang_patch.diff
-```
-4. Add the templight subdirectory to CMake:
+
+3. Add the `templight` subdirectory to CMake:
 ```bash
   (from top-level folder)
   $ cd llvm/tools/clang/tools
   $ echo "add_clang_subdirectory(templight)" >> CMakeLists.txt
 ```
-5. (Re-)Compile LLVM / Clang: (same as the corresponding step in LLVM/Clang instructions)
+
+4. (Re-)Compile LLVM / Clang: (same as the corresponding step in LLVM/Clang instructions)
 ```bash
   (from top-level folder)
   $ mkdir build
@@ -89,7 +77,8 @@ Templight must be compiled from source, alongside the Clang source code.
   $ cmake ../llvm/
   $ make
 ```
-6. If successful, there should be templight executables in the build/bin folder.
+
+5. If successful, there should be a `templight` and a `templight++` executable in the build/bin folder.
 
 
 ### Invoking Templight

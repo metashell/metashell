@@ -1,9 +1,8 @@
 //===-- BPFRegisterInfo.cpp - BPF Register Information ----------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -37,8 +36,8 @@ BPFRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
 
 BitVector BPFRegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   BitVector Reserved(getNumRegs());
-  Reserved.set(BPF::R10); // R10 is read only frame pointer
-  Reserved.set(BPF::R11); // R11 is pseudo stack pointer
+  markSuperRegs(Reserved, BPF::W10); // [W|R]10 is read only frame pointer
+  markSuperRegs(Reserved, BPF::W11); // [W|R]11 is pseudo stack pointer
   return Reserved;
 }
 
@@ -122,6 +121,6 @@ void BPFRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   }
 }
 
-unsigned BPFRegisterInfo::getFrameRegister(const MachineFunction &MF) const {
+Register BPFRegisterInfo::getFrameRegister(const MachineFunction &MF) const {
   return BPF::R10;
 }

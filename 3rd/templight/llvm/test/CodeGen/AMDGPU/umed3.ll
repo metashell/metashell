@@ -42,25 +42,6 @@ define amdgpu_kernel void @v_test_umed3_multi_use_r_i_i_i32(i32 addrspace(1)* %o
   ret void
 }
 
-; GCN-LABEL: {{^}}v_test_umed3_r_i_i_constant_order_i32:
-; GCN: v_max_u32_e32 v{{[0-9]+}}, 17, v{{[0-9]+}}
-; GCN: v_min_u32_e32 v{{[0-9]+}}, 12, v{{[0-9]+}}
-define amdgpu_kernel void @v_test_umed3_r_i_i_constant_order_i32(i32 addrspace(1)* %out, i32 addrspace(1)* %aptr) #1 {
-  %tid = call i32 @llvm.amdgcn.workitem.id.x()
-  %gep0 = getelementptr i32, i32 addrspace(1)* %aptr, i32 %tid
-  %outgep = getelementptr i32, i32 addrspace(1)* %out, i32 %tid
-  %a = load i32, i32 addrspace(1)* %gep0
-
-  %icmp0 = icmp ugt i32 %a, 17
-  %i0 = select i1 %icmp0, i32 %a, i32 17
-
-  %icmp1 = icmp ult i32 %i0, 12
-  %i1 = select i1 %icmp1, i32 %i0, i32 12
-
-  store i32 %i1, i32 addrspace(1)* %outgep
-  ret void
-}
-
 ; GCN-LABEL: {{^}}v_test_umed3_r_i_i_sign_mismatch_i32:
 ; GCN: v_max_i32_e32 v{{[0-9]+}}, 12, v{{[0-9]+}}
 ; GCN: v_min_u32_e32 v{{[0-9]+}}, 17, v{{[0-9]+}}
@@ -363,12 +344,218 @@ bb:
   ret void
 }
 
+; 16 combinations
+
+; 16: min(max(x, y), max(min(x, y), z))
+; 17: min(max(x, y), max(min(y, x), z))
+; 18: min(max(x, y), max(z, min(x, y)))
+; 19: min(max(x, y), max(z, min(y, x)))
+; 20: min(max(y, x), max(min(x, y), z))
+; 21: min(max(y, x), max(min(y, x), z))
+; 22: min(max(y, x), max(z, min(x, y)))
+; 23: min(max(y, x), max(z, min(y, x)))
+;
+; + commute outermost min
+
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_16:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_16(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %x, i32 %y)
+  %tmp1 = call i32 @umax(i32 %x, i32 %y)
+  %tmp2 = call i32 @umax(i32 %tmp0, i32 %z)
+  %tmp3 = call i32 @umin(i32 %tmp1, i32 %tmp2)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_17:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_17(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %y, i32 %x)
+  %tmp1 = call i32 @umax(i32 %x, i32 %y)
+  %tmp2 = call i32 @umax(i32 %tmp0, i32 %z)
+  %tmp3 = call i32 @umin(i32 %tmp1, i32 %tmp2)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_18:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_18(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %x, i32 %y)
+  %tmp1 = call i32 @umax(i32 %x, i32 %y)
+  %tmp2 = call i32 @umax(i32 %z, i32 %tmp0)
+  %tmp3 = call i32 @umin(i32 %tmp1, i32 %tmp2)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_19:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_19(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %y, i32 %x)
+  %tmp1 = call i32 @umax(i32 %x, i32 %y)
+  %tmp2 = call i32 @umax(i32 %z, i32 %tmp0)
+  %tmp3 = call i32 @umin(i32 %tmp1, i32 %tmp2)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_20:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_20(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %x, i32 %y)
+  %tmp1 = call i32 @umax(i32 %y, i32 %x)
+  %tmp2 = call i32 @umax(i32 %tmp0, i32 %z)
+  %tmp3 = call i32 @umin(i32 %tmp1, i32 %tmp2)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_21:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_21(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %y, i32 %x)
+  %tmp1 = call i32 @umax(i32 %y, i32 %x)
+  %tmp2 = call i32 @umax(i32 %tmp0, i32 %z)
+  %tmp3 = call i32 @umin(i32 %tmp1, i32 %tmp2)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_22:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_22(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %x, i32 %y)
+  %tmp1 = call i32 @umax(i32 %y, i32 %x)
+  %tmp2 = call i32 @umax(i32 %z, i32 %tmp0)
+  %tmp3 = call i32 @umin(i32 %tmp1, i32 %tmp2)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_23:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_23(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %y, i32 %x)
+  %tmp1 = call i32 @umax(i32 %y, i32 %x)
+  %tmp2 = call i32 @umax(i32 %z, i32 %tmp0)
+  %tmp3 = call i32 @umin(i32 %tmp1, i32 %tmp2)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_24:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_24(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %x, i32 %y)
+  %tmp1 = call i32 @umax(i32 %x, i32 %y)
+  %tmp2 = call i32 @umax(i32 %tmp0, i32 %z)
+  %tmp3 = call i32 @umin(i32 %tmp2, i32 %tmp1)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_25:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_25(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %y, i32 %x)
+  %tmp1 = call i32 @umax(i32 %x, i32 %y)
+  %tmp2 = call i32 @umax(i32 %tmp0, i32 %z)
+  %tmp3 = call i32 @umin(i32 %tmp1, i32 %tmp2)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_26:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_26(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %x, i32 %y)
+  %tmp1 = call i32 @umax(i32 %x, i32 %y)
+  %tmp2 = call i32 @umax(i32 %z, i32 %tmp0)
+  %tmp3 = call i32 @umin(i32 %tmp2, i32 %tmp1)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_27:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_27(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %y, i32 %x)
+  %tmp1 = call i32 @umax(i32 %x, i32 %y)
+  %tmp2 = call i32 @umax(i32 %z, i32 %tmp0)
+  %tmp3 = call i32 @umin(i32 %tmp2, i32 %tmp1)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_28:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_28(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %x, i32 %y)
+  %tmp1 = call i32 @umax(i32 %y, i32 %x)
+  %tmp2 = call i32 @umax(i32 %tmp0, i32 %z)
+  %tmp3 = call i32 @umin(i32 %tmp2, i32 %tmp1)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_29:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_29(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %y, i32 %x)
+  %tmp1 = call i32 @umax(i32 %y, i32 %x)
+  %tmp2 = call i32 @umax(i32 %tmp0, i32 %z)
+  %tmp3 = call i32 @umin(i32 %tmp2, i32 %tmp1)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_30:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_30(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %x, i32 %y)
+  %tmp1 = call i32 @umax(i32 %y, i32 %x)
+  %tmp2 = call i32 @umax(i32 %z, i32 %tmp0)
+  %tmp3 = call i32 @umin(i32 %tmp2, i32 %tmp1)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
+; GCN-LABEL: {{^}}s_test_umed3_i32_pat_31:
+; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @s_test_umed3_i32_pat_31(i32 addrspace(1)* %arg, i32 %x, i32 %y, i32 %z) #1 {
+bb:
+  %tmp0 = call i32 @umin(i32 %y, i32 %x)
+  %tmp1 = call i32 @umax(i32 %y, i32 %x)
+  %tmp2 = call i32 @umax(i32 %z, i32 %tmp0)
+  %tmp3 = call i32 @umin(i32 %tmp2, i32 %tmp1)
+  store i32 %tmp3, i32 addrspace(1)* %arg
+  ret void
+}
+
 ; GCN-LABEL: {{^}}s_test_umed3_i16_pat_0:
 ; GCN: s_and_b32
 ; GCN: s_and_b32
 ; GCN: s_and_b32
 ; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
-define amdgpu_kernel void @s_test_umed3_i16_pat_0(i16 addrspace(1)* %arg, i16 %x, i16 %y, i16 %z) #1 {
+define amdgpu_kernel void @s_test_umed3_i16_pat_0(i16 addrspace(1)* %arg, [8 x i32], i16 %x, [8 x i32], i16 %y, [8 x i32], i16 %z) #1 {
 bb:
   %tmp0 = call i16 @umin16(i16 %x, i16 %y)
   %tmp1 = call i16 @umax16(i16 %x, i16 %y)
@@ -383,7 +570,7 @@ bb:
 ; GCN: s_and_b32
 ; GCN: s_and_b32
 ; GCN: v_med3_u32 v{{[0-9]+}}, s{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
-define amdgpu_kernel void @s_test_umed3_i8_pat_0(i8 addrspace(1)* %arg, i8 %x, i8 %y, i8 %z) #1 {
+define amdgpu_kernel void @s_test_umed3_i8_pat_0(i8 addrspace(1)* %arg, [8 x i32], i8 %x, [8 x i32], i8 %y, [8 x i32], i8 %z) #1 {
 bb:
   %tmp0 = call i8 @umin8(i8 %x, i8 %y)
   %tmp1 = call i8 @umax8(i8 %x, i8 %y)
@@ -506,6 +693,27 @@ bb:
   %tmp1 = call i16 @umax16(i16 %x, i16 %y)
   %tmp2 = call i16 @umin16(i16 %tmp1, i16 %z)
   %tmp3 = call i16 @umax16(i16 %tmp0, i16 %tmp2)
+  store i16 %tmp3, i16 addrspace(1)* %out.gep
+  ret void
+}
+
+; GCN-LABEL: {{^}}v_test_umed3_i16_pat_1:
+; GFX9: v_med3_u16 v{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}, v{{[0-9]+}}
+define amdgpu_kernel void @v_test_umed3_i16_pat_1(i16 addrspace(1)* %arg, i16 addrspace(1)* %out, i16 addrspace(1)* %a.ptr) #1 {
+bb:
+  %tid = call i32 @llvm.amdgcn.workitem.id.x()
+  %gep0 = getelementptr inbounds i16, i16 addrspace(1)* %a.ptr, i32 %tid
+  %gep1 = getelementptr inbounds i16, i16 addrspace(1)* %gep0, i32 3
+  %gep2 = getelementptr inbounds i16, i16 addrspace(1)* %gep0, i32 8
+  %out.gep = getelementptr inbounds i16, i16 addrspace(1)* %out, i32 %tid
+  %x = load i16, i16 addrspace(1)* %gep0
+  %y = load i16, i16 addrspace(1)* %gep1
+  %z = load i16, i16 addrspace(1)* %gep2
+
+  %tmp0 = call i16 @umin16(i16 %x, i16 %y)
+  %tmp1 = call i16 @umax16(i16 %x, i16 %y)
+  %tmp2 = call i16 @umax16(i16 %tmp0, i16 %z)
+  %tmp3 = call i16 @umin16(i16 %tmp1, i16 %tmp2)
   store i16 %tmp3, i16 addrspace(1)* %out.gep
   ret void
 }

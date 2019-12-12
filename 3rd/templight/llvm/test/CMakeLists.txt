@@ -1,15 +1,19 @@
 llvm_canonicalize_cmake_booleans(
-  LLVM_TOOL_LTO_BUILD
+  BUILD_SHARED_LIBS
+  HAVE_LIBXAR
+  HAVE_LIBZ
   HAVE_OCAMLOPT
   HAVE_OCAML_OUNIT
-  LLVM_INCLUDE_GO_TESTS
-  LLVM_USE_INTEL_JITEVENTS
-  HAVE_LIBZ
-  HAVE_LIBXAR
   LLVM_ENABLE_DIA_SDK
   LLVM_ENABLE_FFI
-  BUILD_SHARED_LIBS
+  LLVM_ENABLE_THREADS
+  LLVM_INCLUDE_GO_TESTS
+  LLVM_LIBXML2_ENABLED
   LLVM_LINK_LLVM_DYLIB
+  LLVM_TOOL_LTO_BUILD
+  LLVM_USE_INTEL_JITEVENTS
+  LLVM_BUILD_EXAMPLES
+  LLVM_ENABLE_PLUGINS
   )
 
 configure_lit_site_cfg(
@@ -42,36 +46,42 @@ set(LLVM_TEST_DEPENDS
           llc
           lli
           lli-child-target
+          llvm-addr2line
           llvm-ar
           llvm-as
           llvm-bcanalyzer
           llvm-c-test
           llvm-cat
           llvm-cfi-verify
-          llvm-cxxfilt
           llvm-config
           llvm-cov
-          llvm-cxxdump
           llvm-cvtres
+          llvm-cxxdump
+          llvm-cxxfilt
+          llvm-cxxmap
           llvm-diff
           llvm-dis
           llvm-dlltool
-          llvm-dsymutil
+          dsymutil
           llvm-dwarfdump
           llvm-dwp
+          llvm-elfabi
+          llvm-exegesis
           llvm-extract
           llvm-isel-fuzzer
-          llvm-opt-fuzzer
+          llvm-jitlink
           llvm-lib
           llvm-link
+          llvm-lipo
           llvm-lto2
           llvm-mc
-          llvm-mcmarkup
+          llvm-mca
           llvm-modextract
           llvm-mt
           llvm-nm
           llvm-objcopy
           llvm-objdump
+          llvm-opt-fuzzer
           llvm-opt-report
           llvm-pdbutil
           llvm-profdata
@@ -83,8 +93,10 @@ set(LLVM_TEST_DEPENDS
           llvm-size
           llvm-split
           llvm-strings
+          llvm-strip
           llvm-symbolizer
           llvm-tblgen
+          llvm-undname
           llvm-xray
           not
           obj2yaml

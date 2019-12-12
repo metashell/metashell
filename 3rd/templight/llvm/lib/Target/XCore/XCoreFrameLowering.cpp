@@ -1,9 +1,8 @@
 //===-- XCoreFrameLowering.cpp - Frame info for XCore Target --------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -151,7 +150,7 @@ static void GetSpillList(SmallVectorImpl<StackSlotInfo> &SpillList,
                                       Offset,
                                       FramePtr));
   }
-  std::sort(SpillList.begin(), SpillList.end(), CompareSSIOffset);
+  llvm::sort(SpillList, CompareSSIOffset);
 }
 
 /// Creates an ordered list of EH info register 'spills'.
@@ -170,7 +169,7 @@ static void GetEHSpillList(SmallVectorImpl<StackSlotInfo> &SpillList,
   SpillList.push_back(
       StackSlotInfo(EHSlot[0], MFI.getObjectOffset(EHSlot[1]),
                     TL->getExceptionSelectorRegister(PersonalityFn)));
-  std::sort(SpillList.begin(), SpillList.end(), CompareSSIOffset);
+  llvm::sort(SpillList, CompareSSIOffset);
 }
 
 static MachineMemOperand *getFrameIndexMMO(MachineBasicBlock &MBB,
@@ -427,7 +426,7 @@ spillCalleeSavedRegisters(MachineBasicBlock &MBB,
   bool emitFrameMoves = XCoreRegisterInfo::needsFrameMoves(*MF);
 
   DebugLoc DL;
-  if (MI != MBB.end() && !MI->isDebugValue())
+  if (MI != MBB.end() && !MI->isDebugInstr())
     DL = MI->getDebugLoc();
 
   for (std::vector<CalleeSavedInfo>::const_iterator it = CSI.begin();

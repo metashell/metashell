@@ -164,8 +164,10 @@ public:
   X(int i) {
     if (i > 0) {
 #if !PUREONLY
-	// expected-note-re@-2 {{{{^}}Taking true branch}}
-	// expected-note-re@-3 {{{{^}}Taking false branch}}
+	// expected-note-re@-2 {{{{^}}'i' is > 0}}
+	// expected-note-re@-3 {{{{^}}Taking true branch}}
+	// expected-note-re@-4 {{{{^}}'i' is <= 0}}
+	// expected-note-re@-5 {{{{^}}Taking false branch}}
 #endif
       X x(i - 1);
 #if !PUREONLY
@@ -262,6 +264,9 @@ int main() {
 	//expected-note-re@-2 {{{{^}}Calling default constructor for 'M'}}
 #endif
   Y *y = new Y;
+#if !PUREONLY
+  //expected-note-re@-2 {{{{^}}Calling default constructor for 'Y'}}
+#endif
   delete y;
   header::Z z;
 #if !PUREONLY
