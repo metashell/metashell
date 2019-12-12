@@ -247,7 +247,7 @@ namespace metashell
 
             if (!cpp_standard_set(extra_clang_args_))
             {
-              args.push_back("-std=c++0x");
+              args.push_back("-std=c++14");
             }
 
             if (!max_template_depth_set(extra_clang_args_))

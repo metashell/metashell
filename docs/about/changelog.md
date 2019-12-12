@@ -30,6 +30,7 @@
       in their name, `#msh config` treats them as directories and behaves
       similar to the `ls` command. The old behvaiour of `#msh config` is
       available using the `#msh all config` pragma.
+    * The default C++ standard version of the `internal` engine is C++14.
 
 ## Version 4.0.0
 
