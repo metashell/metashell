@@ -34,19 +34,17 @@ function(register_system_test TEST_TARGET_NAME)
       "-I$<TARGET_FILE_DIR:metashell>/windows_headers/mingw32"
       "-I$<TARGET_FILE_DIR:metashell>/templight/include"
     )
+  elseif (APPLE)
+    set(
+      CLANG_FLAGS
+      "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
+      "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/libcxx"
+    )
   else()
-    if (APPLE)
-      set(
-        CLANG_FLAGS
-        "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
-        "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/libcxx"
-      )
-    else()
-      set(
-        CLANG_FLAGS
-        "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
-      )
-    endif()
+    set(
+      CLANG_FLAGS
+      "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
+    )
   endif()
 
   add_test(
