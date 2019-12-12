@@ -109,11 +109,8 @@ used:
 
 ### Standard header files on Windows
 
-The `windows_headers` directory contains the [MinGW](http://mingw.org/) header
-files. These files are made available for Metashell.
-
-The `tools/get_windows_headers.sh' script can (re)download these MinGW standard
-header files. You need to run this script on Linux.
+The headers of Visual C++ are used on Windows, which requires Visual C++ to be
+installed on the host.
 
 ### WinEditLine
 

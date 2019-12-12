@@ -30,9 +30,6 @@ function(register_system_test TEST_TARGET_NAME)
       CLANG_FLAGS
       -fno-ms-compatibility
       -U_MSC_VER
-      "-I$<TARGET_FILE_DIR:metashell>/windows_headers"
-      "-I$<TARGET_FILE_DIR:metashell>/windows_headers/mingw32"
-      "-I$<TARGET_FILE_DIR:metashell>/templight/include"
     )
   elseif (APPLE)
     set(

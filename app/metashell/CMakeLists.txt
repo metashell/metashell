@@ -51,15 +51,5 @@ if (TEMPLIGHT_FOUND)
   include(MetashellTemplight)
   
   copy_templight_next_to_binary(true)
-  
-  if (WIN32)
-    # Windows header files
-    copy_all_files_to_binary_dir(
-      "${CMAKE_SOURCE_DIR}/windows_headers"
-      "windows_headers"
-      true
-      windows_headers
-    )
-  endif ()
 endif ()
 

@@ -181,22 +181,7 @@ namespace metashell
           const boost::filesystem::path dir_of_executable =
               env_detector_.directory_of_executable();
 
-          if (env_detector_.on_windows())
-          {
-            // mingw headers shipped with Metashell
-            const boost::filesystem::path mingw_headers =
-                dir_of_executable / "windows_headers";
-
-            result.push_back(mingw_headers);
-            result.push_back(mingw_headers / "mingw32");
-            if (!clang_binary_path_ ||
-                *clang_binary_path_ ==
-                    templight_shipped_with_metashell(env_detector_))
-            {
-              result.push_back(dir_of_executable / "templight" / "include");
-            }
-          }
-          else
+          if (!env_detector_.on_windows())
           {
             if (env_detector_.on_osx())
             {

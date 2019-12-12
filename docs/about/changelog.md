@@ -31,6 +31,7 @@
       similar to the `ls` command. The old behvaiour of `#msh config` is
       available using the `#msh all config` pragma.
     * The default C++ standard version of the `internal` engine is C++14.
+    * Using the Visual C++ system headers on Windows instead of the MinGW ones.
 
 ## Version 4.0.0
 
