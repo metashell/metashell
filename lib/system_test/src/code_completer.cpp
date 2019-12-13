@@ -16,9 +16,12 @@
 
 #include <metashell/system_test/code_completer.hpp>
 #include <metashell/system_test/code_completion_result.hpp>
+#include <metashell/system_test/error.hpp>
 #include <metashell/system_test/prompt.hpp>
 
 #include <metashell/system_test/metashell_instance.hpp>
+
+using pattern::_;
 
 namespace metashell
 {
@@ -33,7 +36,13 @@ namespace metashell
     {
       metashell_instance mi;
 
-      mi.command(_init_code);
+      for (const json_string& init_result : mi.command(_init_code))
+      {
+        if (error(_) == init_result)
+        {
+          return init_result;
+        }
+      }
 
       return mi.code_completion(code_).front();
     }

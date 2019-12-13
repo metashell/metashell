@@ -51,8 +51,7 @@ namespace
     };
 
     if (ends_with({"shell"}) || ends_with({"templight"}) ||
-        ends_with({"metashell", "libcxx"}) || ends_with({"windows_headers"}) ||
-        ends_with({"windows_headers", "mingw32"}) ||
+        ends_with({"metashell", "libcxx"}) ||
         ends_with({"templight", "include"}))
     {
       return true;

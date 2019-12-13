@@ -30,23 +30,18 @@ function(register_system_test TEST_TARGET_NAME)
       CLANG_FLAGS
       -fno-ms-compatibility
       -U_MSC_VER
-      "-I$<TARGET_FILE_DIR:metashell>/windows_headers"
-      "-I$<TARGET_FILE_DIR:metashell>/windows_headers/mingw32"
-      "-I$<TARGET_FILE_DIR:metashell>/templight/include"
+    )
+  elseif (APPLE)
+    set(
+      CLANG_FLAGS
+      "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
+      "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/libcxx"
     )
   else()
-    if (APPLE)
-      set(
-        CLANG_FLAGS
-        "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
-        "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/libcxx"
-      )
-    else()
-      set(
-        CLANG_FLAGS
-        "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
-      )
-    endif()
+    set(
+      CLANG_FLAGS
+      "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
+    )
   endif()
 
   add_test(
@@ -76,7 +71,7 @@ function(register_system_test TEST_TARGET_NAME)
     COMMAND
       ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine templight --
       "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
-      -std=c++0x
+      -std=c++14
       -ftemplate-depth=256
       -Wfatal-errors
       ${CLANG_FLAGS}
@@ -92,7 +87,7 @@ function(register_system_test TEST_TARGET_NAME)
     COMMAND
       ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
       "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
-      -std=c++0x
+      -std=c++14
       -ftemplate-depth=256
       -Wfatal-errors
       ${CLANG_FLAGS}
@@ -108,7 +103,7 @@ function(register_system_test TEST_TARGET_NAME)
     COMMAND
       ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine clang --
       "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
-      -std=c++0x
+      -std=c++14
       -ftemplate-depth=256
       -Wfatal-errors
       ${CLANG_FLAGS}
@@ -124,7 +119,7 @@ function(register_system_test TEST_TARGET_NAME)
     COMMAND
       ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
       "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
-      -std=c++0x
+      -std=c++14
       -ftemplate-depth=256
       -Wfatal-errors
       ${CLANG_FLAGS}
@@ -144,7 +139,7 @@ function(register_gcc_system_test TEST_TARGET_NAME)
       COMMAND
         ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine gcc --
         "${GXX_BINARY}"
-        -std=c++0x
+        -std=c++14
         "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
         "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
         "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
@@ -157,7 +152,7 @@ function(register_gcc_system_test TEST_TARGET_NAME)
       COMMAND
         ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
         "${GXX_BINARY}"
-        -std=c++0x
+        -std=c++14
         "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
         "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
         "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"

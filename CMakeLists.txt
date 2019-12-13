@@ -374,7 +374,7 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
     set(CPACK_PACKAGING_INSTALL_PREFIX "/tmp")
   endif ()
 
-  set(CPACK_COMPONENTS_ALL metashell windows_headers templight)
+  set(CPACK_COMPONENTS_ALL metashell templight)
   set(CPACK_ALL_INSTALL_TYPES full notemplight minimal)
 
   set(CPACK_INSTALL_TYPE_FULL_DISPLAY_NAME "Full")
@@ -384,10 +384,6 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
   set(CPACK_COMPONENT_METASHELL_DISPLAY_NAME "Metashell")
   set(CPACK_COMPONENT_METASHELL_DESCRIPTION "The Metashell binary")
   set(CPACK_COMPONENT_METASHELL_INSTALL_TYPES full notemplight minimal)
-
-  set(CPACK_COMPONENT_WINDOWS_HEADERS_DISPLAY_NAME "C++ headers")
-  set(CPACK_COMPONENT_WINDOWS_HEADERS_DESCRIPTION "The MinGW standard headers")
-  set(CPACK_COMPONENT_WINDOWS_HEADERS_INSTALL_TYPES full notemplight)
 
   set(CPACK_COMPONENT_TEMPLIGHT_DISPLAY_NAME "Templight")
   set(CPACK_COMPONENT_TEMPLIGHT_DESCRIPTION "Templight")
