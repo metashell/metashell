@@ -26,6 +26,7 @@
 
 #include <boost/filesystem/path.hpp>
 #include <boost/operators.hpp>
+#include <boost/optional.hpp>
 
 #include <variant.hpp>
 
@@ -89,10 +90,13 @@ namespace metashell
           data::include_type,
           data::standard_headers_allowed = data::standard_headers_allowed::all);
 
+      void run_before_all_checks(std::string);
+
       static std::array<test_filename, 3> all_test_filenames();
 
     private:
       just::temp::directory _tmp_dir;
+      boost::optional<std::string> _init_command;
 
       boost::filesystem::path tmp() const;
 

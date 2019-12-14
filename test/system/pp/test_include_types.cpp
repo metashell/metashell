@@ -326,6 +326,11 @@ namespace
 
 TEST(include_types, tests)
 {
+  const std::string current_engine = current_real_engine();
+
   include_test_env env;
+  test_include_path_extensions(env);
+
+  env.run_before_all_checks("#msh engine switch " + current_engine);
   test_include_path_extensions(env);
 }

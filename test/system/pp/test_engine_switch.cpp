@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/comment.hpp>
 #include <metashell/system_test/error.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
 
@@ -38,11 +39,17 @@ namespace
     for (const std::string engine : {"clang", "gcc", "internal", "msvc", "null",
                                      "pure_wave", "templight", "wave"})
     {
-      ASSERT_EQ(
-          error("Error switching to engine " + engine +
-                ": Switching from engine " + engine_ + " is not supported."),
-          mi_.command("#msh engine switch " + engine).front());
+      if (engine != engine_)
+      {
+        ASSERT_EQ(
+            error("Error switching to engine " + engine +
+                  ": Switching from engine " + engine_ + " is not supported."),
+            mi_.command("#msh engine switch " + engine).front());
+      }
     }
+
+    ASSERT_EQ(comment("Already using engine " + engine_),
+              mi_.command("#msh engine switch " + engine_).front());
   }
 }
 

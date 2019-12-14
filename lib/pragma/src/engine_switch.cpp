@@ -52,6 +52,12 @@ namespace metashell
       const data::real_engine_name name =
           data::parse_real_engine_name(arg.value());
 
+      if (name == shell_.engine().name())
+      {
+        displayer_.show_comment(data::text("Already using engine " + name));
+        return;
+      }
+
       try
       {
         shell_.engine().config();

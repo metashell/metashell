@@ -233,6 +233,19 @@ namespace metashell
 
       metashell_instance mi(args, cwd(), true, true);
 
+      if (_init_command)
+      {
+        for (const json_string& res : mi.command(*_init_command))
+        {
+          if (error(_) == res)
+          {
+            throw std::runtime_error("Command " + *_init_command +
+                                     " failed with the following error: " +
+                                     res.get());
+          }
+        }
+      }
+
       mi.command("#msh preprocessor mode");
 
       const std::vector<json_string> out = mi.command(
@@ -295,6 +308,11 @@ namespace metashell
       }
 
       return original;
+    }
+
+    void include_test_env::run_before_all_checks(std::string cmd_)
+    {
+      _init_command = std::move(cmd_);
     }
   }
 }
