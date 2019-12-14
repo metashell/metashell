@@ -42,6 +42,11 @@ namespace
       return data::real_engine_name::internal;
     }
 
+    data::engine_config config() const override
+    {
+      return data::engine_config();
+    }
+
     iface::type_shell& type_shell() override
     {
       return return_if_works(_base.type_shell());

@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/engine_name.hpp>
+#include <metashell/data/exception.hpp>
 #include <metashell/data/feature.hpp>
 
 #include <metashell/core/feature_validator.hpp>
@@ -28,6 +29,7 @@
 
 #include <boost/optional.hpp>
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -89,9 +91,11 @@ namespace metashell
              MetaprogramTracer metaprogram_tracer_,
              CppValidator cpp_validator_,
              MacroDiscovery macro_discovery_,
-             PreprocessorTracer preprocessor_tracer_)
+             PreprocessorTracer preprocessor_tracer_,
+             std::function<data::engine_config()> parse_config_)
         : _name(std::move(name_)),
           _display_name(std::move(display_name_)),
+          _parse_config(std::move(parse_config_)),
           _type_shell(std::move(type_shell_)),
           _preprocessor_shell(std::move(preprocessor_shell_)),
           _code_completer(std::move(code_completer_)),
@@ -108,6 +112,19 @@ namespace metashell
       virtual data::engine_name display_name() const override
       {
         return _display_name;
+      }
+
+      virtual data::engine_config config() const override
+      {
+        if (_parse_config)
+        {
+          return _parse_config();
+        }
+        else
+        {
+          throw data::exception("Switching from engine " + to_string(_name) +
+                                " is not supported.");
+        }
       }
 
       virtual iface::type_shell& type_shell() override
@@ -204,6 +221,7 @@ namespace metashell
     private:
       data::real_engine_name _name;
       data::engine_name _display_name;
+      std::function<data::engine_config()> _parse_config;
       TypeShell _type_shell;
       PreprocessorShell _preprocessor_shell;
       CodeCompleter _code_completer;
@@ -240,7 +258,9 @@ namespace metashell
                 CppValidator&& cpp_validator_,
                 MacroDiscovery&& macro_discovery_,
                 PreprocessorTracer&& preprocessor_tracer_,
-                const std::vector<data::feature>& supported_features_)
+                const std::vector<data::feature>& supported_features_,
+                std::function<data::engine_config()> parse_config_ =
+                    std::function<data::engine_config()>())
     {
       // clang-format off
 
@@ -270,7 +290,8 @@ namespace metashell
           std::forward<MetaprogramTracer>(metaprogram_tracer_),
           std::forward<CppValidator>(cpp_validator_),
           std::forward<MacroDiscovery>(macro_discovery_),
-          std::forward<PreprocessorTracer>(preprocessor_tracer_));
+          std::forward<PreprocessorTracer>(preprocessor_tracer_),
+          std::move(parse_config_));
     }
 
     boost::optional<std::string> limitation(const iface::engine& engine_);

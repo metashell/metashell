@@ -13,6 +13,9 @@
     * Support `-idirafter` arguments in the Wave engine adding elements to the
       include path after the system header locations.
     * Support `-U` arguments in the Wave engine undefining macros.
+    * Support for switching between engines from the shell. This makes it
+      possible to switch to a different compiler without leaving the shell.
+      (The `#msh engine switch` pragma)
 
 * Fixes
     * When multiple shell configs use the same engine with different engine
