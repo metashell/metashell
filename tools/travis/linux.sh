@@ -17,6 +17,11 @@ sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-7 /usr/bin/g++
 
 PLATFORM_ID="$(tools/detect_platform.sh --id)"
 
+if [ "${TESTS}" != "unit" ]
+then
+  export NO_INSTALLER=1
+fi
+
 if [ "${STATIC_CHECKS}" = "true" ]
 then
 
