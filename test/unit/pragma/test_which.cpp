@@ -22,7 +22,7 @@
 #include <metashell/core/command.hpp>
 #include <metashell/core/in_memory_displayer.hpp>
 
-#include <metashell/mock/shell.hpp>
+#include <metashell/mock/main_shell.hpp>
 
 #include <gtest/gtest.h>
 
@@ -36,7 +36,7 @@ using namespace metashell;
 #define CHECK_IF_DISPLAYS_ERROR(command_, error_message_)                      \
   {                                                                            \
     core::in_memory_displayer d;                                               \
-    mock::shell sh;                                                            \
+    mock::main_shell sh;                                                       \
     const auto cmd = core::to_command(data::cpp_code("which"));                \
     const auto carg = core::to_command(data::cpp_code(command_));              \
                                                                                \

@@ -30,7 +30,8 @@ namespace metashell
 
     std::string macro::description() const { return _description; }
 
-    void macro::run(iface::shell& shell_, iface::displayer& displayer_) const
+    void macro::run(iface::main_shell& shell_,
+                    iface::displayer& displayer_) const
     {
       core::null_history ignore;
 

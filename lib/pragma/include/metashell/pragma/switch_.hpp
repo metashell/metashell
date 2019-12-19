@@ -30,15 +30,15 @@ namespace metashell
     public:
       explicit switch_(data::shell_flag flag_);
 
-      virtual std::string arguments() const override;
-      virtual std::string description() const override;
+      std::string arguments() const override;
+      std::string description() const override;
 
-      virtual void run(const data::command::iterator& name_begin_,
-                       const data::command::iterator& name_end_,
-                       const data::command::iterator& args_begin_,
-                       const data::command::iterator& args_end_,
-                       iface::shell& shell_,
-                       iface::displayer& displayer_) const override;
+      void run(const data::command::iterator& name_begin_,
+               const data::command::iterator& name_end_,
+               const data::command::iterator& args_begin_,
+               const data::command::iterator& args_end_,
+               iface::main_shell& shell_,
+               iface::displayer& displayer_) const override;
 
     private:
       data::shell_flag _flag;

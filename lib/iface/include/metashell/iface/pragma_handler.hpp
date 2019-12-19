@@ -18,7 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/iface/displayer.hpp>
-#include <metashell/iface/shell.hpp>
+#include <metashell/iface/main_shell.hpp>
 
 #include <metashell/data/command.hpp>
 
@@ -40,7 +40,7 @@ namespace metashell
                        const data::command::iterator& name_end_,
                        const data::command::iterator& args_begin_,
                        const data::command::iterator& args_end_,
-                       shell& shell_,
+                       main_shell& shell_,
                        displayer& displayer_) const = 0;
     };
   }

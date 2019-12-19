@@ -1,8 +1,8 @@
-#ifndef METASHELL_PRAGMA_ENVIRONMENT_HPP
-#define METASHELL_PRAGMA_ENVIRONMENT_HPP
+#ifndef METASHELL_IFACE_MAIN_SHELL_HPP
+#define METASHELL_IFACE_MAIN_SHELL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,18 +17,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma/without_arguments.hpp>
+#include <metashell/iface/shell.hpp>
 
 namespace metashell
 {
-  namespace pragma
+  namespace iface
   {
-    class environment : public without_arguments
+    class main_shell : public shell
     {
     public:
-      std::string description() const override;
-
-      void run(iface::main_shell&, iface::displayer&) const override;
     };
   }
 }

@@ -30,14 +30,14 @@ namespace metashell
     class includes : public without_arguments
     {
     public:
-      virtual std::string description() const override
+      std::string description() const override
       {
         return std::string("Displays the directories checked for ") +
                data::include_dotdotdot<Type>();
       }
 
-      virtual void run(iface::shell& shell_,
-                       iface::displayer& displayer_) const override
+      void run(iface::main_shell& shell_,
+               iface::displayer& displayer_) const override
       {
         displayer_.show_filename_list(
             shell_.engine().header_discoverer().include_path(Type));

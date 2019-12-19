@@ -21,7 +21,7 @@
 #include <metashell/core/command.hpp>
 #include <metashell/core/in_memory_displayer.hpp>
 
-#include <metashell/mock/shell.hpp>
+#include <metashell/mock/main_shell.hpp>
 
 #include <gtest/gtest.h>
 
@@ -36,7 +36,7 @@ namespace
   {
     constexpr data::shell_flag flag = data::shell_flag::echo;
 
-    NiceMock<mock::shell> sh;
+    NiceMock<mock::main_shell> sh;
 
     ON_CALL(sh, enabled(flag)).WillByDefault(Return(!ExpectedResult));
     EXPECT_CALL(sh, enabled(flag, ExpectedResult));
@@ -68,7 +68,7 @@ TEST(switch_, displays_error_when_extra_arguments_are_given)
 
   const pragma::switch_ p(data::shell_flag::echo);
 
-  NiceMock<mock::shell> sh;
+  NiceMock<mock::main_shell> sh;
   const data::command cmd = core::to_command(data::cpp_code("on foo"));
 
   p.run(cmd.begin(), cmd.begin(), cmd.begin(),

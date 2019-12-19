@@ -22,7 +22,7 @@ namespace metashell
   {
     std::string quit::description() const { return "Terminates the shell."; }
 
-    void quit::run(iface::shell& shell_, iface::displayer&) const
+    void quit::run(iface::main_shell& shell_, iface::displayer&) const
     {
       shell_.stop();
     }

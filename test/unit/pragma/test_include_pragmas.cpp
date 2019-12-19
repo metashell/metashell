@@ -20,7 +20,7 @@
 
 #include <metashell/core/in_memory_displayer.hpp>
 
-#include <metashell/mock/shell.hpp>
+#include <metashell/mock/main_shell.hpp>
 
 #include <gtest/gtest.h>
 
@@ -46,7 +46,7 @@ namespace
         engine::constant::create_with_include_path(
             Type, {"foo", "bar"})(data::shell_config{
             data::shell_config_name("default"), data::shell_config_data()});
-    NiceMock<mock::shell> sh;
+    NiceMock<mock::main_shell> sh;
     ON_CALL(sh, engine()).WillByDefault(ReturnRef(*engine));
 
     core::in_memory_displayer d;

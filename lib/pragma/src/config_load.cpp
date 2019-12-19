@@ -31,7 +31,7 @@ namespace metashell
     namespace
     {
       void restore_config(const data::shell_config_name& name_,
-                          iface::shell& shell_)
+                          iface::main_shell& shell_)
       {
         shell_.get_config().activate(name_);
         shell_.rebuild_environment();
@@ -49,7 +49,7 @@ namespace metashell
                           const data::command::iterator&,
                           const data::command::iterator& args_begin_,
                           const data::command::iterator& args_end_,
-                          iface::shell& shell_,
+                          iface::main_shell& shell_,
                           iface::displayer& displayer_) const
     {
       const data::shell_config_name name = data::shell_config_name(

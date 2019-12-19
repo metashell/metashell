@@ -36,7 +36,7 @@ namespace metashell
                                const data::command::iterator&,
                                const data::command::iterator& args_begin_,
                                const data::command::iterator& args_end_,
-                               iface::shell& shell_,
+                               iface::main_shell& shell_,
                                iface::displayer& displayer_) const
     {
       if (shell_.get_config().saving_enabled)

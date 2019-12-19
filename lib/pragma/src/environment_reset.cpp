@@ -26,7 +26,8 @@ namespace metashell
              " It does not change the environment stack.";
     }
 
-    void environment_reset::run(iface::shell& shell_, iface::displayer&) const
+    void environment_reset::run(iface::main_shell& shell_,
+                                iface::displayer&) const
     {
       shell_.reset_environment();
     }
