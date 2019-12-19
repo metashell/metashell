@@ -333,4 +333,18 @@ TEST(include_types, tests)
 
   env.run_before_all_checks("#msh engine switch " + current_engine);
   test_include_path_extensions(env);
+
+  if (current_engine != "null" && current_engine != "internal" &&
+      current_engine != "clang" && current_engine != "gcc" &&
+      current_engine != "msvc" && current_engine != "templight")
+  {
+    for (const std::string engine : {"internal", "wave"})
+    {
+      if (engine != current_engine)
+      {
+        env.run_before_all_checks("#msh engine switch " + engine);
+        test_include_path_extensions(env);
+      }
+    }
+  }
 }

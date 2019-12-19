@@ -22,6 +22,7 @@
 
 using namespace metashell::system_test;
 using namespace metashell;
+using pattern::_;
 
 namespace
 {
@@ -36,20 +37,47 @@ namespace
     ASSERT_EQ(error("Error: Invalid engine name: auto"),
               mi_.command("#msh engine switch auto").front());
 
-    for (const std::string engine : {"clang", "gcc", "internal", "msvc", "null",
-                                     "pure_wave", "templight", "wave"})
-    {
-      if (engine != engine_)
-      {
-        ASSERT_EQ(
-            error("Error switching to engine " + engine +
-                  ": Switching from engine " + engine_ + " is not supported."),
-            mi_.command("#msh engine switch " + engine).front());
-      }
-    }
-
     ASSERT_EQ(comment("Already using engine " + engine_),
               mi_.command("#msh engine switch " + engine_).front());
+
+    if (engine_ != "wave" && engine_ != "pure_wave")
+    {
+      for (const std::string engine :
+           {"clang", "gcc", "internal", "msvc", "null", "pure_wave",
+            "templight", "wave"})
+      {
+        if (engine != engine_)
+        {
+          ASSERT_EQ(error("Error switching to engine " + engine +
+                          ": Switching from engine " + engine_ +
+                          " is not supported."),
+                    mi_.command("#msh engine switch " + engine).front());
+        }
+      }
+    }
+    else
+    {
+      for (const std::string engine : {"clang", "gcc", "msvc", "templight"})
+      {
+        if (engine != engine_)
+        {
+          ASSERT_EQ(
+              error("Error switching to engine " + engine +
+                    ": Switching to engine " + engine + " is not supported."),
+              mi_.command("#msh engine switch " + engine).front());
+        }
+      }
+
+      for (const std::string engine : {"internal", "null", "pure_wave", "wave"})
+      {
+        if (engine != engine_)
+        {
+          const json_string result =
+              mi_.command("#msh engine switch " + engine).front();
+          ASSERT_EQ(comment(_), result);
+        }
+      }
+    }
   }
 }
 

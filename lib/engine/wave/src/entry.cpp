@@ -120,7 +120,8 @@ namespace metashell
               header_discoverer(cfg, system_includes), not_supported(),
               cpp_validator(cfg, system_includes),
               macro_discovery(cfg, system_includes),
-              preprocessor_tracer(cfg, system_includes), supported_features());
+              preprocessor_tracer(cfg, system_includes), supported_features(),
+              [cfg] { return cfg.config; });
         }
 
         template <bool UseTemplightHeaders>

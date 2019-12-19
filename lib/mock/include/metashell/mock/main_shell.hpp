@@ -75,6 +75,8 @@ namespace metashell
 
       MOCK_CONST_METHOD1(enabled, bool(data::shell_flag));
       MOCK_METHOD2(enabled, void(data::shell_flag, bool));
+
+      MOCK_METHOD1(switch_to, void(const data::real_engine_name&));
     };
   }
 }

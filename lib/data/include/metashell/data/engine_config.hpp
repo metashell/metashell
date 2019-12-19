@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/command_line_argument_list.hpp>
+#include <metashell/data/engine_arguments.hpp>
 #include <metashell/data/include_config.hpp>
 #include <metashell/data/language_standard.hpp>
 #include <metashell/data/macro_def_or_undef.hpp>
@@ -38,6 +39,8 @@ namespace metashell
       standard_headers_allowed use_standard_headers =
           standard_headers_allowed::all;
     };
+
+    engine_arguments convert_to(real_engine_name, const engine_config&);
   }
 }
 

@@ -98,6 +98,7 @@ namespace metashell
       data::config& get_config() override;
 
       iface::engine& engine() override;
+      void switch_to(const data::real_engine_name&) override;
 
       boost::filesystem::path env_path() const override;
 

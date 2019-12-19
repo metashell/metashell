@@ -102,6 +102,17 @@ namespace metashell
         }
       }
 
+      template <size_t Len>
+      void append_with_prefix(const char (&prefix_)[Len],
+                              const std::vector<std::string>& values_)
+      {
+        _items.reserve(_items.size() + values_.size());
+        for (const std::string& value : values_)
+        {
+          _items.emplace_back(prefix_ + value);
+        }
+      }
+
       template <class InputIt>
       void append(InputIt begin_, InputIt end_)
       {

@@ -60,5 +60,25 @@ namespace metashell
       append(idirafter, rhs_.idirafter);
       return *this;
     }
+
+    command_line_argument_list to_clang_arguments(const include_config& cfg_)
+    {
+      command_line_argument_list result;
+      result.append_with_prefix("-iquote", cfg_.iquote);
+      result.append_with_prefix("-I", cfg_.capital_i);
+      result.append_with_prefix("-isystem", cfg_.isystem);
+      result.append_with_prefix("-idirafter", cfg_.idirafter);
+      return result;
+    }
+
+    command_line_argument_list to_wave_arguments(const include_config& cfg_)
+    {
+      command_line_argument_list result;
+      result.append_with_prefix("-iquote", cfg_.iquote);
+      result.append_with_prefix("-I", cfg_.capital_i);
+      result.append_with_prefix("-S", cfg_.isystem);
+      result.append_with_prefix("-idirafter", cfg_.idirafter);
+      return result;
+    }
   }
 }

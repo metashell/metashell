@@ -60,7 +60,18 @@ namespace metashell
 
       try
       {
-        shell_.engine().config();
+        shell_.switch_to(name);
+
+        data::text comment;
+        comment.paragraphs.emplace_back("Switched to engine " + name);
+
+        if (const auto limit = core::limitation(shell_.engine()))
+        {
+          comment.paragraphs.emplace_back();
+          comment.paragraphs.emplace_back(*limit);
+        }
+
+        displayer_.show_comment(comment);
       }
       catch (const std::exception& e)
       {

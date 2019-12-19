@@ -26,6 +26,7 @@ namespace metashell
     class main_shell : public shell
     {
     public:
+      virtual void switch_to(const data::real_engine_name&) = 0;
     };
   }
 }

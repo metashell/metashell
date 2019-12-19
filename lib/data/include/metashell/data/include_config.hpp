@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/command_line_argument_list.hpp>
 #include <metashell/data/include_type.hpp>
 
 #include <boost/filesystem/path.hpp>
@@ -41,6 +42,9 @@ namespace metashell
 
       include_config& operator+=(const include_config&);
     };
+
+    command_line_argument_list to_clang_arguments(const include_config&);
+    command_line_argument_list to_wave_arguments(const include_config&);
   }
 }
 
