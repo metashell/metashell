@@ -190,11 +190,11 @@ function(register_msvc_system_test TEST_TARGET_NAME)
           NAME ${TEST_TARGET_NAME}_msvc
           COMMAND
             ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine msvc --
-            "\"${MSVC_CL_BINARY}\""
-            "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\config\\include\""
-            "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\mpl\\include\""
-            "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\preprocessor\\include\""
-            "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\type_traits\\include\""
+            "${MSVC_CL_BINARY}"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\config\\include"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\mpl\\include"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\preprocessor\\include"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\type_traits\\include"
             "/EHsc"
             --
         )
@@ -203,11 +203,11 @@ function(register_msvc_system_test TEST_TARGET_NAME)
           NAME ${TEST_TARGET_NAME}_auto_msvc
           COMMAND
             ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
-            "\"${MSVC_CL_BINARY}\""
-            "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\config\\include\""
-            "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\mpl\\include\""
-            "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\preprocessor\\include\""
-            "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\type_traits\\include\""
+            "${MSVC_CL_BINARY}"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\config\\include"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\mpl\\include"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\preprocessor\\include"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\type_traits\\include"
             "/EHsc"
             --
         )

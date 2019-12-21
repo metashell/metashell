@@ -40,7 +40,19 @@ namespace metashell
 
     std::string quote(const command_line_argument& arg_)
     {
-      return arg_.value();
+      std::string result("\"");
+      for (char c : arg_)
+      {
+        switch (c)
+        {
+        case '\'':
+        case '\"':
+          result += '\\';
+          break;
+        }
+        result += c;
+      }
+      return result + "\"";
     }
   }
 }
