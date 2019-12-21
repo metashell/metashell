@@ -40,7 +40,7 @@ namespace
     ASSERT_EQ(comment("Already using engine " + engine_),
               mi_.command("#msh engine switch " + engine_).front());
 
-    if (engine_ != "wave" && engine_ != "pure_wave")
+    if (engine_ != "wave" && engine_ != "pure_wave" && engine_ != "msvc")
     {
       for (const std::string engine :
            {"clang", "gcc", "internal", "msvc", "null", "pure_wave",
@@ -91,4 +91,15 @@ TEST(engine_switch, null_engine)
 {
   metashell_instance mi({"--engine", "null"}, {}, false);
   test_error_handling("null", mi);
+}
+
+TEST(engine_switch, unsupported_compiler_arguments)
+{
+  if (using_msvc())
+  {
+    metashell_instance mi({"--no_precompiled_headers", "--", "/FOOBAR"});
+    ASSERT_EQ(error("Error switching to engine wave: Compiler argument /FOOBAR "
+                    "is not yet supported by Metashell."),
+              mi.command("#msh engine switch wave").front());
+  }
 }

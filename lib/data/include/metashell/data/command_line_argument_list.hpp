@@ -66,6 +66,8 @@ namespace metashell
       command_line_argument_list&
       operator=(command_line_argument_list&&) = default;
 
+      command_line_argument_list tail() const;
+
       bool empty() const;
       size_type size() const;
 
@@ -127,6 +129,16 @@ namespace metashell
       std::vector<const char*> argv(const executable_path&) const;
 
       command_line_argument_list& operator+=(const command_line_argument_list&);
+
+      std::pair<command_line_argument_list, command_line_argument_list>
+      split_at_first(const command_line_argument&) const;
+
+      template <size_t Len>
+      std::pair<command_line_argument_list, command_line_argument_list>
+      split_at_first(const char (&arg_)[Len]) const
+      {
+        return split_at_first(command_line_argument(arg_));
+      }
 
     private:
       container _items;

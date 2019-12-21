@@ -126,6 +126,27 @@ namespace metashell
 
     void command_line_argument_list::clear() { _items.clear(); }
 
+    command_line_argument_list command_line_argument_list::tail() const
+    {
+      auto b = begin();
+      const auto e = end();
+      if (b != e)
+      {
+        ++b;
+      }
+      return command_line_argument_list(b, e);
+    }
+
+    std::pair<command_line_argument_list, command_line_argument_list>
+    command_line_argument_list::split_at_first(
+        const command_line_argument& arg_) const
+    {
+      const auto sep = std::find(_items.begin(), _items.end(), arg_);
+      return {command_line_argument_list(_items.begin(), sep),
+              command_line_argument_list(
+                  sep == _items.end() ? sep : sep + 1, _items.end())};
+    }
+
     std::ostream& operator<<(std::ostream& out_,
                              const command_line_argument_list& l_)
     {

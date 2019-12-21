@@ -336,7 +336,7 @@ TEST(include_types, tests)
 
   if (current_engine != "null" && current_engine != "internal" &&
       current_engine != "clang" && current_engine != "gcc" &&
-      current_engine != "msvc" && current_engine != "templight")
+      current_engine != "templight")
   {
     for (const std::string engine : {"internal", "wave"})
     {

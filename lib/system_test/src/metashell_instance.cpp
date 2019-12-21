@@ -55,41 +55,38 @@ namespace metashell
                     bool allow_user_defined_args_,
                     bool allow_standard_headers_)
       {
-        data::command_line_argument_list cmd{"--console=json", "--nosplash"};
+        data::command_line_argument_list args{"--console=json", "--nosplash"};
+        data::command_line_argument_list engine_args;
+
         if (allow_user_defined_args_)
         {
-          cmd += system_test_config::metashell_args();
+          const auto a =
+              system_test_config::metashell_args().split_at_first("--");
+          args += a.first;
+          engine_args += a.second;
         }
-        if (const auto first_extra = extra_args_.front())
-        {
-          if (!contains(cmd, "--") ||
-              *first_extra != data::command_line_argument("--"))
-          {
-            cmd += extra_args_;
-          }
-          else
-          {
-            cmd.append(extra_args_.begin() + 1, extra_args_.end());
-          }
-        }
+
+        const auto extra = extra_args_.split_at_first("--");
+        args += extra.first;
+        engine_args += extra.second;
+
         if (!allow_standard_headers_ && !using_msvc())
         {
-          if (!contains(cmd, "--"))
-          {
-            cmd.push_back("--");
-          }
           if (using_wave())
           {
-            cmd.push_back("--nostdinc++");
+            engine_args.push_back("--nostdinc++");
           }
           else
           {
-            cmd.push_back("-nostdinc");
-            cmd.push_back("-nostdinc++");
+            engine_args.push_back("-nostdinc");
+            engine_args.push_back("-nostdinc++");
           }
         }
 
-        return cmd;
+        args.push_back("--");
+        args += std::move(engine_args);
+
+        return args;
       }
     }
 

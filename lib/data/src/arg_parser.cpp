@@ -23,6 +23,19 @@ namespace metashell
 {
   namespace data
   {
+    arg_parser::arg_parser()
+      : _invalid_argument([](const command_line_argument& arg_) {
+          return "Invalid argument: " + arg_;
+        })
+    {
+    }
+
+    arg_parser::arg_parser(std::function<std::string(
+                               const command_line_argument&)> invalid_argument_)
+      : _invalid_argument(std::move(invalid_argument_))
+    {
+    }
+
     arg_parser::flag_definition::flag_definition(command_line_argument name_,
                                                  std::string description_,
                                                  std::function<void()> action_)
@@ -114,7 +127,7 @@ namespace metashell
         }
       }
 
-      throw exception("Invalid argument: " + arg_);
+      throw exception(_invalid_argument(arg_));
     }
 
     std::string arg_parser::description() const

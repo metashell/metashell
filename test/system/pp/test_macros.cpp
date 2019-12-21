@@ -62,7 +62,7 @@ TEST(macros, defined_from_cli)
   ASSERT_EQ(cpp_code("double"), mi.command("FOO").front());
   ASSERT_EQ(cpp_code("BAR"), mi.command("BAR").front());
 
-  if (using_wave())
+  if (using_wave() || using_msvc())
   {
     for (const std::string engine : {"internal", "pure_wave", "wave"})
     {

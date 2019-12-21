@@ -32,6 +32,10 @@ namespace metashell
     class arg_parser
     {
     public:
+      arg_parser();
+      explicit arg_parser(
+          std::function<std::string(const command_line_argument&)>);
+
       template <size_t Len>
       arg_parser& flag(const char (&name_)[Len],
                        std::string desc_,
@@ -126,6 +130,8 @@ namespace metashell
 
       std::vector<flag_definition> _flags;
       std::vector<arg_with_value_definition> _args_with_value;
+      std::function<std::string(const command_line_argument&)>
+          _invalid_argument;
 
       boost::optional<std::vector<arg_with_value_definition>::iterator>
       parse(boost::optional<std::vector<arg_with_value_definition>::iterator>,

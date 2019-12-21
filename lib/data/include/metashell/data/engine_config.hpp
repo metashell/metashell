@@ -41,6 +41,8 @@ namespace metashell
     };
 
     engine_arguments convert_to(real_engine_name, const engine_config&);
+
+    engine_config parse_vc_arguments(const command_line_argument_list&);
   }
 }
 

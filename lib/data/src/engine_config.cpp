@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/arg_parser.hpp>
 #include <metashell/data/engine_config.hpp>
 #include <metashell/data/exception.hpp>
 #include <metashell/data/unsupported_standard_headers_allowed.hpp>
@@ -110,12 +111,72 @@ namespace metashell
         assert(!"Invalid engine name");
         return {};
       }
+
+      std::string
+      unsupported_compiler_argument(const command_line_argument& arg_)
+      {
+        return "Compiler argument " + arg_ +
+               " is not yet supported by Metashell.";
+      }
+
+      struct ignore_t
+      {
+        void operator()(const command_line_argument&) {}
+        void operator()() {}
+      };
     }
 
     engine_arguments convert_to(real_engine_name engine_,
                                 const engine_config& cfg_)
     {
       return {to_arguments(engine_, cfg_), engine_};
+    }
+
+    engine_config parse_vc_arguments(const command_line_argument_list& args_)
+    {
+      ignore_t ignore;
+
+      engine_config result;
+      result.standard = language_standard::cpp17;
+
+      arg_parser parser(unsupported_compiler_argument);
+
+      // clang-format off
+      parser
+        .with_value(
+          "/I",
+          "specify an additional include directory",
+          result.includes.capital_i
+        )
+        .with_value(
+          "/D",
+          "specify a macro to define (as `macro[=[value]]`)",
+          [&result](const command_line_argument& def_)
+          { result.macros.push_back(data::macro_definition(def_)); }
+        )
+        .with_value(
+          "/U",
+          "specify a macro to undefine",
+          [&result](const command_line_argument& name_)
+          { result.macros.push_back(data::macro_undefinition(name_)); }
+        )
+        .flag(
+          "/X",
+          "ignore standard headers",
+          [&result]
+          { result.use_standard_headers = standard_headers_allowed::none; }
+        )
+        .with_value(
+          "/EH",
+          "exception handling model",
+          ignore
+        )
+      ;
+      // clang-format on
+
+      parser.parse(args_);
+
+      return result;
     }
   }
 }
