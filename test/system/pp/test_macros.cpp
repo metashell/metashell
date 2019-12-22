@@ -49,3 +49,11 @@ TEST(macros, getting_defined_macro_name)
     ASSERT_NE(cpp_code(regex("#define")), macro_names);
   }
 }
+
+TEST(macros, defined_from_cli)
+{
+  const std::string define = using_msvc() ? "/D" : "-D";
+  metashell_instance mi({"--", define + "FOO=double"});
+  mi.command("#msh preprocessor mode");
+  ASSERT_EQ(cpp_code("double"), mi.command("FOO").front());
+}
