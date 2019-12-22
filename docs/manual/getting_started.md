@@ -43,11 +43,23 @@ load it:
 > #msh config load <name of the config>
 ```
 
-Note that Metashell will detect the compiler you use for building your code and
+Metashell will detect the compiler you use for building your code and
 use the same compiler in the backend.
-[GCC support](../reference/engines.html#gcc) is currently very limited in
-Metashell, it is recommended to compile your code with
-[Clang](http://clang.llvm.org/) when using Metashell.
+[GCC](../reference/engines#gcc) and [Visual C++](../reference/engines#msvc)
+support is currently very limited in Metashell, but you can switch to the
+Templight shipped by Metashell by running
+
+```cpp
+> #msh engine switch internal
+```
+
+to be able to use the type shell or the template debugger or to Wave by running
+
+```cpp
+> #msh engine switch wave
+```
+
+to be able to use the macro debugger.
 
 ## Evaluating simple expressions
 
