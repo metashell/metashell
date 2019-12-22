@@ -53,7 +53,10 @@ TEST(macros, getting_defined_macro_name)
 TEST(macros, defined_from_cli)
 {
   const std::string define = using_msvc() ? "/D" : "-D";
-  metashell_instance mi({"--", define + "FOO=double"});
+  const std::string undefine = using_msvc() ? "/U" : "-U";
+  metashell_instance mi(
+      {"--", define + "FOO=double", define + "BAR=int", undefine + "BAR"});
   mi.command("#msh preprocessor mode");
   ASSERT_EQ(cpp_code("double"), mi.command("FOO").front());
+  ASSERT_EQ(cpp_code("BAR"), mi.command("BAR").front());
 }

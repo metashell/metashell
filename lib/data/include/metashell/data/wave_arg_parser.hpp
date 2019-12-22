@@ -43,7 +43,7 @@ namespace metashell
       wave_arg_parser& operator=(wave_arg_parser&&) = delete;
 
       void parse(const command_line_argument_list& args_,
-                 std::vector<std::string> sysmacros_);
+                 std::vector<macro_definition> sysmacros_);
 
       const wave_config& result() const;
 

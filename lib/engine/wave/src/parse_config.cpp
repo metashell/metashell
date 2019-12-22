@@ -46,7 +46,8 @@ namespace metashell
                   core::wave_token>
         {
         public:
-          explicit macro_definition_collector(std::vector<std::string>& out_)
+          explicit macro_definition_collector(
+              std::vector<data::macro_definition>& out_)
             : _out(out_)
           {
           }
@@ -90,7 +91,7 @@ namespace metashell
                   definition_.begin(), definition_.end(),
                   std::ostream_iterator<typename Token::string_type>(s),
                   [](const Token& t_) { return t_.get_value(); });
-              _out.push_back(s.str());
+              _out.emplace_back(s.str());
             }
           }
 
@@ -100,11 +101,11 @@ namespace metashell
           }
 
         private:
-          std::vector<std::string>& _out;
+          std::vector<data::macro_definition>& _out;
           std::set<core::wave_token::string_type> _blacklist;
         };
 
-        std::vector<std::string>
+        std::vector<data::macro_definition>
         clang_macros(const clang::binary& cbin_,
                      const boost::filesystem::path& internal_dir_)
         {
@@ -112,10 +113,12 @@ namespace metashell
           // to be able to parse libcxx headers. They define decltype as a macro
           // otherwise, and call it with template expression that contains
           // multiple preprocessor parameters.
-          std::vector<std::string> result{
-              "__has_include_next(_)=0",
-              "__metashell_has_feature_impl__cxx_decltype=1",
-              "__has_feature(x)=__metashell_has_feature_impl__ ## x"};
+          std::vector<data::macro_definition> result{
+              data::macro_definition("__has_include_next(_)=0"),
+              data::macro_definition(
+                  "__metashell_has_feature_impl__cxx_decltype=1"),
+              data::macro_definition(
+                  "__has_feature(x)=__metashell_has_feature_impl__ ## x")};
 
           empty_environment env(internal_dir_);
           const data::cpp_code defines =
@@ -171,7 +174,7 @@ namespace metashell
           return result;
         }
 
-        std::vector<std::string>
+        std::vector<data::macro_definition>
         internal_clang_macros(const data::executable_path& metashell_binary_,
                               const boost::filesystem::path& internal_dir_,
                               iface::environment_detector& env_detector_,
@@ -208,7 +211,7 @@ namespace metashell
                                 internal_clang_macros(
                                     metashell_binary_, internal_dir_,
                                     env_detector_, displayer_, logger_) :
-                                std::vector<std::string>());
+                                std::vector<data::macro_definition>());
         return parser.result();
       }
     }

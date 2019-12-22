@@ -148,6 +148,16 @@ namespace metashell
         }
       }
 
+      void apply(context& ctx_, const data::macro_definition& def_)
+      {
+        ctx_.add_macro_definition(to_string(def_));
+      }
+
+      void apply(context& ctx_, const data::macro_undefinition& undef_)
+      {
+        ctx_.remove_macro_definition(to_string(undef_), true);
+      }
+
       void apply(context& ctx_,
                  const data::wave_config& cfg_,
                  const std::vector<boost::filesystem::path>& system_includes_)
@@ -156,9 +166,9 @@ namespace metashell
 
         ctx_.set_language(language_support(cfg_));
 
-        for (const std::string& macro : cfg_.config.macros)
+        for (const auto& macro : cfg_.config.macros)
         {
-          ctx_.add_macro_definition(macro);
+          mpark::visit([&ctx_](const auto& m_) { apply(ctx_, m_); }, macro);
         }
       }
 

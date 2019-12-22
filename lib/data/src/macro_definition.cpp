@@ -1,6 +1,3 @@
-#ifndef METASHELL_DATA_ENGINE_CONFIG_HPP
-#define METASHELL_DATA_ENGINE_CONFIG_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,28 +14,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/command_line_argument_list.hpp>
-#include <metashell/data/include_config.hpp>
-#include <metashell/data/language_standard.hpp>
-#include <metashell/data/macro_def_or_undef.hpp>
-#include <metashell/data/standard_headers_allowed.hpp>
+#include <metashell/data/macro_definition.hpp>
 
-#include <vector>
+#include <iostream>
 
 namespace metashell
 {
   namespace data
   {
-    struct engine_config
+    macro_definition::macro_definition(const command_line_argument& arg_)
+      : _value(arg_.value())
     {
-      include_config includes;
+    }
 
-      std::vector<macro_def_or_undef> macros;
-      language_standard standard = language_standard::cpp98;
-      standard_headers_allowed use_standard_headers =
-          standard_headers_allowed::all;
-    };
+    macro_definition::macro_definition(std::string value_)
+      : _value(std::move(value_))
+    {
+    }
+
+    const std::string& macro_definition::value() const { return _value; }
+
+    command_line_argument clang_argument(const macro_definition& def_)
+    {
+      return command_line_argument("-D" + def_.value());
+    }
+
+    std::string to_string(const macro_definition& def_) { return def_.value(); }
+
+    std::ostream& operator<<(std::ostream& out_, const macro_definition& def_)
+    {
+      return out_ << to_string(def_);
+    }
   }
 }
-
-#endif

@@ -56,7 +56,14 @@ namespace metashell
         .with_value(
           "-D", "--define",
           "specify a macro to define (as `macro[=[value]]`)",
-          _config.config.macros
+          [this](const command_line_argument& def_)
+          { this->_config.config.macros.push_back(data::macro_definition(def_)); }
+        )
+        .with_value(
+          "-U",
+          "specify a macro to undefine",
+          [this](const command_line_argument& name_)
+          { this->_config.config.macros.push_back(data::macro_undefinition(name_)); }
         )
         .flag(
           "--long_long",
@@ -98,9 +105,12 @@ namespace metashell
     }
 
     void wave_arg_parser::parse(const command_line_argument_list& args_,
-                                std::vector<std::string> sysmacros_)
+                                std::vector<macro_definition> sysmacros_)
     {
-      _config.config.macros = std::move(sysmacros_);
+      for (macro_definition& m : sysmacros_)
+      {
+        _config.config.macros.push_back(std::move(m));
+      }
 
       _parser.parse(args_);
 

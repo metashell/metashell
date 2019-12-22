@@ -12,6 +12,7 @@
       quote include path only.
     * Support `-idirafter` arguments in the Wave engine adding elements to the
       include path after the system header locations.
+    * Support `-U` arguments in the Wave engine undefining macros.
 
 * Fixes
     * When multiple shell configs use the same engine with different engine
