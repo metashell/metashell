@@ -79,7 +79,9 @@ namespace
            !(uses_clang(engine_) && on_windows);
   }
 
-  void test_include_path_extensions(include_test_env& env_)
+  void test_include_path_extensions(
+      include_test_env& env_,
+      const boost::optional<std::string>& engine_override_ = boost::none)
   {
     using data::standard_headers_allowed;
 
@@ -104,7 +106,9 @@ namespace
 
     const bool can_use_c_headers_without_cpp_headers =
         !std_headers_on_include_path &&
-        can_engine_use_c_headers_without_cpp_headers(current_real_engine());
+        can_engine_use_c_headers_without_cpp_headers(current_real_engine()) &&
+        (!engine_override_ ||
+         can_engine_use_c_headers_without_cpp_headers(*engine_override_));
 
     const include_test_env::result none_found =
         include_test_env::result::none();
@@ -334,16 +338,14 @@ TEST(include_types, tests)
   env.run_before_all_checks("#msh engine switch " + current_engine);
   test_include_path_extensions(env);
 
-  if (current_engine != "null" && current_engine != "internal" &&
-      current_engine != "clang" && current_engine != "gcc" &&
-      current_engine != "templight")
+  if (current_engine != "null")
   {
     for (const std::string engine : {"internal", "wave"})
     {
       if (engine != current_engine)
       {
         env.run_before_all_checks("#msh engine switch " + engine);
-        test_include_path_extensions(env);
+        test_include_path_extensions(env, engine);
       }
     }
   }

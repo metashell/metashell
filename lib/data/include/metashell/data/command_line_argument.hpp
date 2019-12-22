@@ -50,6 +50,9 @@ namespace metashell
         return contains_impl(substr_);
       }
 
+      boost::optional<int> as_int() const;
+      int as_int(const std::string& error_) const;
+
       static constexpr const char* name_of_type()
       {
         return "Command line argument";

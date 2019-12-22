@@ -90,12 +90,16 @@ namespace metashell
         {
           using core::not_supported;
 
+          const data::command_line_argument_list extra_clang_args =
+              UseInternalTemplight ? config_.engine->args :
+                                     config_.engine->args.tail();
+
           const clang::binary cbin(
               UseInternalTemplight,
               clang::find_clang(UseInternalTemplight, *config_.engine,
                                 metashell_binary_, env_detector_, displayer_,
                                 logger_),
-              config_.engine->args, internal_dir_, env_detector_, logger_);
+              extra_clang_args, internal_dir_, env_detector_, logger_);
 
           return core::make_engine(
               name(UseInternalTemplight), config_.engine->name,
@@ -106,7 +110,9 @@ namespace metashell
               clang::header_discoverer(cbin), metaprogram_tracer(cbin),
               clang::cpp_validator(internal_dir_, env_filename_, cbin, logger_),
               clang::macro_discovery(cbin), not_supported(),
-              supported_features());
+              supported_features(), [extra_clang_args] {
+                return parse_clang_arguments(extra_clang_args);
+              });
         }
       } // anonymous namespace
 

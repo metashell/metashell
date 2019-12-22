@@ -23,6 +23,36 @@ namespace metashell
 {
   namespace data
   {
+    standard_headers_allowed disable_c(standard_headers_allowed value_)
+    {
+      switch (value_)
+      {
+      case standard_headers_allowed::all:
+        return standard_headers_allowed::cpp;
+      case standard_headers_allowed::none:
+      case standard_headers_allowed::c:
+      case standard_headers_allowed::cpp:
+        return standard_headers_allowed::none;
+      }
+      assert(!"Invalid standard_headers_allowed value");
+      return standard_headers_allowed::none;
+    }
+
+    standard_headers_allowed disable_cpp(standard_headers_allowed value_)
+    {
+      switch (value_)
+      {
+      case standard_headers_allowed::all:
+        return standard_headers_allowed::c;
+      case standard_headers_allowed::none:
+      case standard_headers_allowed::c:
+      case standard_headers_allowed::cpp:
+        return standard_headers_allowed::none;
+      }
+      assert(!"Invalid standard_headers_allowed value");
+      return standard_headers_allowed::none;
+    }
+
     std::string to_string(standard_headers_allowed value_)
     {
       switch (value_)

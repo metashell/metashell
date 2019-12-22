@@ -38,11 +38,13 @@ namespace metashell
       language_standard standard = language_standard::cpp98;
       standard_headers_allowed use_standard_headers =
           standard_headers_allowed::all;
+      int template_instantiation_depth = 900;
     };
 
     engine_arguments convert_to(real_engine_name, const engine_config&);
 
     engine_config parse_vc_arguments(const command_line_argument_list&);
+    engine_config parse_clang_arguments(const command_line_argument_list&);
   }
 }
 

@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/comment.hpp>
 #include <metashell/system_test/error.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/type.hpp>
@@ -43,5 +44,17 @@ TEST(compiler_flags, template_instantiation_depth)
 
     ASSERT_EQ(error(_), mi32.command("d<512>::type").front());
     ASSERT_EQ(type("int"), mi1024.command("d<512>::type").front());
+
+    const std::string engine = current_real_engine();
+    if (engine != "msvc" || engine != "wave" || engine != "pure_wave")
+    {
+      ASSERT_EQ(
+          comment(_), mi32.command("#msh engine switch internal").front());
+      ASSERT_EQ(error(_), mi32.command("d<512>::type").front());
+
+      ASSERT_EQ(
+          comment(_), mi1024.command("#msh engine switch internal").front());
+      ASSERT_EQ(type("int"), mi1024.command("d<512>::type").front());
+    }
   }
 }

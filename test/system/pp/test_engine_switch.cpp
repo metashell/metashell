@@ -40,7 +40,7 @@ namespace
     ASSERT_EQ(comment("Already using engine " + engine_),
               mi_.command("#msh engine switch " + engine_).front());
 
-    if (engine_ != "wave" && engine_ != "pure_wave" && engine_ != "msvc")
+    if (engine_ == "null")
     {
       for (const std::string engine :
            {"clang", "gcc", "internal", "msvc", "null", "pure_wave",
@@ -95,7 +95,8 @@ TEST(engine_switch, null_engine)
 
 TEST(engine_switch, unsupported_compiler_arguments)
 {
-  if (using_msvc())
+  const std::string engine = current_real_engine();
+  if (engine != "wave" && engine != "pure_wave")
   {
     metashell_instance mi({"--no_precompiled_headers", "--", "/FOOBAR"});
     ASSERT_EQ(error("Error switching to engine wave: Compiler argument /FOOBAR "

@@ -245,15 +245,9 @@ namespace metashell
                   "-idirafter",
                   determine_include_path(clang_path_, env_detector_, logger_));
             }
-
-            args += extra_clang_args_;
-          }
-          else if (extra_clang_args_.size() > 1)
-          {
-            args.append(extra_clang_args_.begin() + 1, extra_clang_args_.end());
           }
 
-          return args;
+          return args + extra_clang_args_;
         }
 
         data::result

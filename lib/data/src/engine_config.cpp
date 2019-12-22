@@ -39,6 +39,9 @@ namespace metashell
           result.push_back(clang_argument(macro));
         }
 
+        result.push_back("-ftemplate-depth=" +
+                         std::to_string(cfg_.template_instantiation_depth));
+
         result.push_back(command_line_argument("-std=") +
                          gcc_name(cfg_.standard));
 
@@ -169,6 +172,92 @@ namespace metashell
         .with_value(
           "/EH",
           "exception handling model",
+          ignore
+        )
+      ;
+      // clang-format on
+
+      parser.parse(args_);
+
+      return result;
+    }
+
+    engine_config parse_clang_arguments(const command_line_argument_list& args_)
+    {
+      ignore_t ignore;
+
+      engine_config result;
+      result.standard = language_standard::cpp11;
+      result.use_standard_headers = standard_headers_allowed::all;
+
+      arg_parser parser(unsupported_compiler_argument);
+
+      // clang-format off
+      parser
+        .with_value(
+          "-I",
+          "specify an additional include directory",
+          result.includes.capital_i
+        )
+        .with_value(
+          "-isystem",
+          "specify an additional system include directory",
+          result.includes.isystem
+        )
+        .with_value(
+          "-iquote",
+          "specify an additional quote include directory",
+          result.includes.iquote
+        )
+        .with_value(
+          "-idirafter",
+          "specify an additional include directory to be checked after system headers",
+          result.includes.idirafter
+        )
+        .with_value(
+          "-D",
+          "specify a macro to define (as `macro[=[value]]`)",
+          [&result](const command_line_argument& def_)
+          { result.macros.push_back(data::macro_definition(def_)); }
+        )
+        .with_value(
+          "-U",
+          "specify a macro to undefine",
+          [&result](const command_line_argument& name_)
+          { result.macros.push_back(data::macro_undefinition(name_)); }
+        )
+        .with_value(
+          "-ftemplate-depth=",
+          "specify the maximum template instantion depth",
+          [&result](const command_line_argument& arg_)
+          { result.template_instantiation_depth = arg_.as_int("Invalid template instantiation depth"); }
+        )
+        .with_value(
+          "-std=",
+          "specify the languge standard to use",
+          [&result](const command_line_argument& arg_)
+          { result.standard = parse_standard(data::real_engine_name::clang, arg_.value()); }
+        )
+        .with_value(
+          "-W",
+          "Warning-related setting",
+          ignore
+        )
+        .flag(
+          "-nostdinc",
+          "ignore standard C headers",
+          [&result]
+          { result.use_standard_headers = disable_c(result.use_standard_headers); }
+        )
+        .flag(
+          "-nostdinc++",
+          "ignore standard C headers",
+          [&result]
+          { result.use_standard_headers = disable_cpp(result.use_standard_headers); }
+        )
+        .flag(
+          "-fno-ms-compatibility",
+          "disable Visual C++ compatibility",
           ignore
         )
       ;

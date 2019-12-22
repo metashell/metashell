@@ -32,6 +32,9 @@ namespace metashell
       all
     };
 
+    standard_headers_allowed disable_c(standard_headers_allowed);
+    standard_headers_allowed disable_cpp(standard_headers_allowed);
+
     std::string to_string(standard_headers_allowed);
     std::ostream& operator<<(std::ostream&, standard_headers_allowed);
   }

@@ -72,10 +72,13 @@ namespace metashell
         {
           using core::not_supported;
 
+          const data::command_line_argument_list extra_clang_args =
+              config_.engine->args.tail();
+
           const binary cbin(
               false, find_clang(false, *config_.engine, metashell_binary_,
                                 env_detector_, displayer_, logger_),
-              config_.engine->args, internal_dir_, env_detector_, logger_);
+              extra_clang_args, internal_dir_, env_detector_, logger_);
 
           return core::make_engine(
               name(), config_.engine->name,
@@ -85,7 +88,10 @@ namespace metashell
                   internal_dir_, temp_dir_, env_filename_, cbin, logger_),
               header_discoverer(cbin), metaprogram_tracer(cbin),
               cpp_validator(internal_dir_, env_filename_, cbin, logger_),
-              macro_discovery(cbin), not_supported(), supported_features());
+              macro_discovery(cbin), not_supported(), supported_features(),
+              [extra_clang_args] {
+                return parse_clang_arguments(extra_clang_args);
+              });
         }
       } // anonymous namespace
 
