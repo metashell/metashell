@@ -8,6 +8,14 @@ os:
 compiler:
   - gcc
   - clang
+env:
+  - TESTS=unit
+  - TESTS=internal
+  - TESTS=templight
+  - TESTS=clang
+  - TESTS=gcc
+  - TESTS=wave
+  - TESTS=auto
 matrix:
   include:
     - os: linux

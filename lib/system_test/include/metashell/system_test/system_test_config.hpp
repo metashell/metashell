@@ -32,6 +32,7 @@ namespace metashell
 
       data::executable_path metashell_binary();
       const data::command_line_argument_list& metashell_args();
+      const data::command_line_argument_list& engine_args();
     }
   }
 }

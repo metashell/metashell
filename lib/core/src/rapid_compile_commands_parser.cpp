@@ -30,11 +30,36 @@ namespace metashell
 {
   namespace core
   {
+    namespace
+    {
+      data::command_line_argument_list
+      parse_compiler_command(const data::shell_command_view& command_)
+      {
+        data::command_line_argument_list result;
+
+        for (const data::command_line_argument& s : command_)
+        {
+          const auto last = result.back();
+
+          if (last && (*last == "-c" || *last == "-o"))
+          {
+            result.pop_back();
+          }
+          else
+          {
+            result.push_back(s);
+          }
+        }
+
+        return result;
+      }
+    }
+
     rapid_compile_commands_parser::rapid_compile_commands_parser(
         bool use_precompiled_headers_, bool preprocessor_mode_)
     {
       _defaults.use_precompiled_headers = use_precompiled_headers_;
-      _defaults.engine = data::auto_engine_name(),
+      _defaults.engine.default_value().name = data::auto_engine_name(),
       _defaults.preprocessor_mode = preprocessor_mode_;
     }
 
@@ -132,21 +157,8 @@ namespace metashell
       {
         if (*_key == "command")
         {
-          _data->engine_args.clear();
-          for (const data::command_line_argument& s :
-               data::shell_command_view(str_))
-          {
-            const auto last = _data->engine_args.back();
-
-            if (last && (*last == "-c" || *last == "-o"))
-            {
-              _data->engine_args.pop_back();
-            }
-            else
-            {
-              _data->engine_args.push_back(s);
-            }
-          }
+          _data->engine.default_value().args =
+              parse_compiler_command(data::shell_command_view(str_));
         }
         else if (*_key == "file")
         {

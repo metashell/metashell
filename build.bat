@@ -20,6 +20,11 @@ if not defined INCLUDE goto no_dev
 
 set PLATFORM_ID="windows_Win32"
 
+set TESTS_ARG=
+if not defined tests goto after_tests
+  set TESTS_ARG="-DTESTS=%TESTS%"
+:after_tests
+
 rem Build Templight
 if defined no_templight goto skip_templight
   md bin\%PLATFORM_ID%\templight
@@ -36,8 +41,8 @@ if defined no_templight goto skip_templight
 rem Build Metashell
 md bin\%PLATFORM_ID%\metashell
 cd bin\%PLATFORM_ID%\metashell
-  if defined METASHELL_NO_DOC_GENERATION cmake ..\..\.. -DMETASHELL_NO_DOC_GENERATION=1
-  if not defined METASHELL_NO_DOC_GENERATION cmake ..\..\..
+  if defined METASHELL_NO_DOC_GENERATION cmake ..\..\.. %TESTS_ARG% -DMETASHELL_NO_DOC_GENERATION=1
+  if not defined METASHELL_NO_DOC_GENERATION cmake ..\..\.. %TESTS_ARG%
   msbuild metashell_project.sln /p:Configuration=Release /p:Platform="Win32"
   if errorlevel 1 goto no_dev
 

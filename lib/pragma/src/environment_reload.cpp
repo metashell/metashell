@@ -25,7 +25,8 @@ namespace metashell
       return "Re-reads the included header files from disc.";
     }
 
-    void environment_reload::run(iface::shell& shell_, iface::displayer&) const
+    void environment_reload::run(iface::main_shell& shell_,
+                                 iface::displayer&) const
     {
       shell_.rebuild_environment();
     }

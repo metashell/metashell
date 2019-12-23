@@ -33,6 +33,9 @@ Display a comment containing <text>.
 * __`#msh engine show`__ <br />
 Displays information about the current engine.
 
+* __`#msh engine switch <engine name>`__ <br />
+Switches the engine being used keeping the environment and config. The engine arguments are transformed (eg. -I arguments of Clang are interpreted as /I for Visual C++)
+
 * __`#msh environment`__ <br />
 Displays the entire content of the environment.
 

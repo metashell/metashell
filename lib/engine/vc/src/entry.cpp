@@ -73,12 +73,11 @@ namespace metashell
         }
 
         data::executable_path
-        extract_vc_binary(const data::command_line_argument_list& engine_args_,
+        extract_vc_binary(const data::engine_arguments& engine_,
                           iface::environment_detector& env_detector_,
-                          const data::executable_path& metashell_path_,
-                          const data::engine_name& engine_)
+                          const data::executable_path& metashell_path_)
         {
-          if (const auto first = engine_args_.front())
+          if (const auto first = engine_.args.front())
           {
             const data::executable_path exe(*first);
             if (env_detector_.file_exists(exe))
@@ -97,24 +96,10 @@ namespace metashell
             throw data::exception(
                 "The engine requires that you specify the path to cl.exe after "
                 "--. For example: " +
-                metashell_path_ + " --engine " + engine_ +
+                metashell_path_ + " --engine " + engine_.name +
                 " -- C:\\Program Files (x86)\\Microsoft Visual Studio "
                 "14.0\\VC\\bin\\cl.exe\"");
           }
-        }
-
-        data::command_line_argument_list
-        vc_args(const data::command_line_argument_list& extra_vc_args_,
-                const boost::filesystem::path& internal_dir_)
-        {
-          data::command_line_argument_list args{"/I" + internal_dir_.string()};
-
-          if (extra_vc_args_.size() > 1)
-          {
-            args.append(extra_vc_args_.begin() + 1, extra_vc_args_.end());
-          }
-
-          return args;
         }
 
         std::unique_ptr<iface::engine>
@@ -135,16 +120,23 @@ namespace metashell
                 " from the Visual Studio Developer Prompt.");
           }
 
-          binary cbin(extract_vc_binary(config_.engine_args, env_detector_,
-                                        metashell_binary_, config_.engine),
-                      vc_args(config_.engine_args, internal_dir_), temp_dir_,
-                      logger_);
+          const data::command_line_argument_list extra_vc_args =
+              config_.engine->args.tail();
+
+          binary cbin(
+              extract_vc_binary(
+                  *config_.engine, env_detector_, metashell_binary_),
+              data::command_line_argument_list{"/I" + internal_dir_.string()} +
+                  extra_vc_args,
+              temp_dir_, logger_);
 
           return make_engine(
-              name(), config_.engine, not_supported(), preprocessor_shell(cbin),
-              not_supported(), header_discoverer(cbin), not_supported(),
+              name(), config_.engine->name, not_supported(),
+              preprocessor_shell(cbin), not_supported(),
+              header_discoverer(cbin), not_supported(),
               cpp_validator(internal_dir_, env_filename_, cbin, logger_),
-              not_supported(), not_supported(), supported_features());
+              not_supported(), not_supported(), supported_features(),
+              [extra_vc_args] { return parse_vc_arguments(extra_vc_args); });
         }
       } // anonymous namespace
 

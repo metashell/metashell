@@ -205,14 +205,12 @@ namespace metashell
         data::shell_config result(
             data::shell_config_name("default"), data::shell_config_data());
 
-        for (auto i = extra_args_begin_; i != extra_args_end_; ++i)
-        {
-          result.engine_args.push_back(data::command_line_argument(*i));
-        }
+        result.engine.default_value().args = data::command_line_argument_list(
+            extra_args_begin_, extra_args_end_);
 
         if (engine_)
         {
-          result.engine = *engine_;
+          result.engine.default_value().name = *engine_;
         }
         result.use_precompiled_headers = !vm_.count("no_precompiled_headers");
         result.preprocessor_mode = vm_.count("preprocessor");
@@ -286,45 +284,45 @@ namespace metashell
                                        return to_string(name_);
                                      }),
                                  ", ") +
-          ". Default: " + data::shell_config_data().engine;
+          ". Default: " + data::shell_config_data().engine->name;
 
       std::vector<boost::filesystem::path> configs_to_load;
       std::vector<boost::filesystem::path> compile_commands_to_load;
 
       options_description desc("Options");
       // clang-format off
-  desc.add_options()
-    ("help", "Display help")
-    ("verbose,V", "Verbose mode")
-    ("no_highlight,H", "Disable syntax highlighting")
-    ("indent", "Enable indenting (experimental)")
-    (
-      "no_precompiled_headers",
-      "Disable precompiled header usage."
-      " (It needs clang++ to be available and writes to the local disc.)"
-    )
-    (
-      "disable_saving",
-      "Disable saving the environment using the #msh environment save"
-    )
-    (
-      "console", value(&con_type)->default_value(con_type),
-      "Console type. Possible values: plain, readline, json"
-    )
-    ("nosplash", "Disable the splash messages")
-    (
-      "log", value(&cfg.log_file),
-      "Log into a file. When it is set to -, it logs into the console."
-    )
-    ("engine", value(&engine), engine_info.c_str())
-    ("help_engine", value(&help_engine), "Display help about the engine")
-    ("preprocessor", "Starts the shell in preprocessor mode")
-    (
-      "load_compile_commands", value(&compile_commands_to_load),
-      "Generate configs for the compilation units of the"
-      " compile_commands.json file"
-    )
-    ("load_configs", value(&configs_to_load), "Load configs from a file.");
+      desc.add_options()
+        ("help", "Display help")
+        ("verbose,V", "Verbose mode")
+        ("no_highlight,H", "Disable syntax highlighting")
+        ("indent", "Enable indenting (experimental)")
+        (
+          "no_precompiled_headers",
+          "Disable precompiled header usage."
+          " (It needs clang++ to be available and writes to the local disc.)"
+        )
+        (
+          "disable_saving",
+          "Disable saving the environment using the #msh environment save"
+        )
+        (
+          "console", value(&con_type)->default_value(con_type),
+          "Console type. Possible values: plain, readline, json"
+        )
+        ("nosplash", "Disable the splash messages")
+        (
+          "log", value(&cfg.log_file),
+          "Log into a file. When it is set to -, it logs into the console."
+        )
+        ("engine", value(&engine), engine_info.c_str())
+        ("help_engine", value(&help_engine), "Display help about the engine")
+        ("preprocessor", "Starts the shell in preprocessor mode")
+        (
+          "load_compile_commands", value(&compile_commands_to_load),
+          "Generate configs for the compilation units of the"
+          " compile_commands.json file"
+        )
+        ("load_configs", value(&configs_to_load), "Load configs from a file.");
       // clang-format on
 
       using dec_arg = decommissioned_argument;

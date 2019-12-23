@@ -20,6 +20,7 @@
 #include <metashell/data/string.hpp>
 
 #include <boost/filesystem/path.hpp>
+#include <boost/optional.hpp>
 
 namespace metashell
 {
@@ -28,17 +29,29 @@ namespace metashell
     class command_line_argument : string<command_line_argument>
     {
     public:
-      using string<command_line_argument>::string;
       using string<command_line_argument>::value;
 
       explicit command_line_argument(const boost::filesystem::path&);
       explicit command_line_argument(const char*);
+      command_line_argument() = default;
+
+      boost::optional<command_line_argument>
+      remove_prefix(const command_line_argument&) const;
 
       template <size_t Len>
       bool starts_with(const char (&prefix_)[Len]) const
       {
         return starts_with_impl(prefix_);
       }
+
+      template <size_t Len>
+      bool contains(const char (&substr_)[Len]) const
+      {
+        return contains_impl(substr_);
+      }
+
+      boost::optional<int> as_int() const;
+      int as_int(const std::string& error_) const;
 
       static constexpr const char* name_of_type()
       {
@@ -47,6 +60,7 @@ namespace metashell
 
     private:
       bool starts_with_impl(const char*) const;
+      bool contains_impl(const char*) const;
     };
 
     std::string quote(const command_line_argument&);

@@ -57,8 +57,11 @@ else()
   )
 endif()
 
-add_test(
-  NAME test_generated_doc
-  COMMAND ${PROJECT_NAME} -t -d "${DOC_DIR}"
-)
-
+if (NOT DEFINED TESTS OR TESTS STREQUAL "unit")
+  add_test(
+    NAME test_generated_doc
+    COMMAND ${PROJECT_NAME} -t -d "${DOC_DIR}"
+  )
+else()
+  message(STATUS "Skipping generated doc tests because TESTS=${TESTS}")
+endif()

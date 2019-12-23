@@ -55,41 +55,38 @@ namespace metashell
                     bool allow_user_defined_args_,
                     bool allow_standard_headers_)
       {
-        data::command_line_argument_list cmd{"--console=json", "--nosplash"};
+        data::command_line_argument_list args{"--console=json", "--nosplash"};
+        data::command_line_argument_list engine_args;
+
         if (allow_user_defined_args_)
         {
-          cmd += system_test_config::metashell_args();
+          const auto a =
+              system_test_config::metashell_args().split_at_first("--");
+          args += a.first;
+          engine_args += a.second;
         }
-        if (const auto first_extra = extra_args_.front())
-        {
-          if (!contains(cmd, "--") ||
-              *first_extra != data::command_line_argument("--"))
-          {
-            cmd += extra_args_;
-          }
-          else
-          {
-            cmd.append(extra_args_.begin() + 1, extra_args_.end());
-          }
-        }
+
+        const auto extra = extra_args_.split_at_first("--");
+        args += extra.first;
+        engine_args += extra.second;
+
         if (!allow_standard_headers_ && !using_msvc())
         {
-          if (!contains(cmd, "--"))
-          {
-            cmd.push_back("--");
-          }
           if (using_wave())
           {
-            cmd.push_back("--nostdinc++");
+            engine_args.push_back("--nostdinc++");
           }
           else
           {
-            cmd.push_back("-nostdinc");
-            cmd.push_back("-nostdinc++");
+            engine_args.push_back("-nostdinc");
+            engine_args.push_back("-nostdinc++");
           }
         }
 
-        return cmd;
+        args.push_back("--");
+        args += std::move(engine_args);
+
+        return args;
       }
     }
 
@@ -197,6 +194,38 @@ namespace metashell
       return _initial_responses;
     }
 
+    std::string current_real_engine()
+    {
+      const std::string engine = current_engine();
+      if (engine != "auto")
+      {
+        return engine;
+      }
+      else if (using_internal())
+      {
+        return "internal";
+      }
+      else if (using_msvc())
+      {
+        return "msvc";
+      }
+
+      const auto first = system_test_config::engine_args().front();
+      assert(first);
+      if (first->contains("templight"))
+      {
+        return "templight";
+      }
+      else if (using_clang())
+      {
+        return "clang";
+      }
+      else
+      {
+        return "gcc";
+      }
+    }
+
     data::command_line_argument_list
     with_sysincludes(data::command_line_argument_list args_,
                      const std::vector<boost::filesystem::path>& paths_)
@@ -243,7 +272,7 @@ namespace metashell
       const auto engine = current_engine();
       if (engine == "auto")
       {
-        const auto& args = system_test_config::metashell_args();
+        const auto& args = system_test_config::engine_args();
         return std::find_if(args.begin(), args.end(),
                             [](const data::command_line_argument& arg) {
                               return find(arg, "cl.exe") != std::string::npos;
@@ -256,5 +285,35 @@ namespace metashell
     }
 
     bool using_wave() { return current_engine() == "wave"; }
+
+    bool using_internal()
+    {
+      const auto engine = current_engine();
+      if (engine == "auto")
+      {
+        const auto first = system_test_config::engine_args().front();
+        return !first || first->starts_with("-");
+      }
+      else
+      {
+        return engine == "internal";
+      }
+    }
+
+    bool using_clang()
+    {
+      const auto engine = current_engine();
+      if (engine == "auto")
+      {
+        const auto first = system_test_config::engine_args().front();
+        return !first || first->contains("clang") ||
+               first->contains("templight");
+      }
+      else
+      {
+        return engine == "internal" || engine == "templight" ||
+               engine == "clang";
+      }
+    }
   }
 }

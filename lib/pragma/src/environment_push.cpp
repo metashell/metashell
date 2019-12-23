@@ -25,7 +25,7 @@ namespace metashell
       return "Pushes the current environment to the environment stack.";
     }
 
-    void environment_push::run(iface::shell& shell_,
+    void environment_push::run(iface::main_shell& shell_,
                                iface::displayer& displayer_) const
     {
       shell_.push_environment();

@@ -25,7 +25,7 @@ namespace metashell
       return "Displays the entire content of the environment.";
     }
 
-    void environment::run(iface::shell& shell_,
+    void environment::run(iface::main_shell& shell_,
                           iface::displayer& displayer_) const
     {
       displayer_.show_cpp_code(shell_.env().get_all());

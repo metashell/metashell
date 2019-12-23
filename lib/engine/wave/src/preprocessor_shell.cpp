@@ -36,8 +36,11 @@ namespace metashell
   {
     namespace wave
     {
-      preprocessor_shell::preprocessor_shell(data::wave_config config_)
-        : _config(std::move(config_))
+      preprocessor_shell::preprocessor_shell(
+          data::wave_config config_,
+          std::vector<boost::filesystem::path> system_includes_)
+        : _config(std::move(config_)),
+          _system_includes(std::move(system_includes_))
       {
       }
 
@@ -46,7 +49,7 @@ namespace metashell
         try
         {
           context ctx(begin(exp_), end(exp_), "<stdin>");
-          wave::apply(ctx, _config);
+          wave::apply(ctx, _config, _system_includes);
 
           std::ostringstream s;
           display(s, ctx, _config.ignore_macro_redefinition);

@@ -62,9 +62,11 @@ namespace metashell
         double now() { return double(std::time(nullptr)); }
       }
 
-      trace_impl::trace_impl(const data::cpp_code& env_,
-                             const boost::optional<data::cpp_code>& exp_,
-                             const data::wave_config& config_)
+      trace_impl::trace_impl(
+          const data::cpp_code& env_,
+          const boost::optional<data::cpp_code>& exp_,
+          const data::wave_config& config_,
+          const std::vector<boost::filesystem::path>& system_includes_)
         : _full_trace(exp_),
           _ignore_macro_redefinition(config_.ignore_macro_redefinition),
           _input(determine_input(env_, exp_)),
@@ -119,7 +121,7 @@ namespace metashell
         hooks.on_line =
             std::bind(&trace_impl::on_line, this, p::_1, p::_2, p::_3);
 
-        wave::apply(_ctx, config_);
+        wave::apply(_ctx, config_, system_includes_);
 
         _pos = _ctx.begin();
       }

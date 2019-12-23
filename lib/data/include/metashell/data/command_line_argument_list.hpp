@@ -51,11 +51,22 @@ namespace metashell
 
       command_line_argument_list(std::initializer_list<command_line_argument>);
 
+      template <class InputIt>
+      command_line_argument_list(InputIt begin_, InputIt end_)
+      {
+        for (InputIt i = begin_; i != end_; ++i)
+        {
+          _items.emplace_back(*i);
+        }
+      }
+
       command_line_argument_list&
       operator=(const command_line_argument_list&) = default;
 
       command_line_argument_list&
       operator=(command_line_argument_list&&) = default;
+
+      command_line_argument_list tail() const;
 
       bool empty() const;
       size_type size() const;
@@ -93,6 +104,17 @@ namespace metashell
         }
       }
 
+      template <size_t Len>
+      void append_with_prefix(const char (&prefix_)[Len],
+                              const std::vector<std::string>& values_)
+      {
+        _items.reserve(_items.size() + values_.size());
+        for (const std::string& value : values_)
+        {
+          _items.emplace_back(prefix_ + value);
+        }
+      }
+
       template <class InputIt>
       void append(InputIt begin_, InputIt end_)
       {
@@ -107,6 +129,16 @@ namespace metashell
       std::vector<const char*> argv(const executable_path&) const;
 
       command_line_argument_list& operator+=(const command_line_argument_list&);
+
+      std::pair<command_line_argument_list, command_line_argument_list>
+      split_at_first(const command_line_argument&) const;
+
+      template <size_t Len>
+      std::pair<command_line_argument_list, command_line_argument_list>
+      split_at_first(const char (&arg_)[Len]) const
+      {
+        return split_at_first(command_line_argument(arg_));
+      }
 
     private:
       container _items;

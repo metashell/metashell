@@ -79,7 +79,7 @@ namespace metashell
       return "Displays the names of the defined macros";
     }
 
-    void macro_names::run(iface::shell& shell_,
+    void macro_names::run(iface::main_shell& shell_,
                           iface::displayer& displayer_) const
     {
       displayer_.show_cpp_code(extract_macro_names(

@@ -21,7 +21,7 @@
 #include <metashell/core/command.hpp>
 #include <metashell/core/null_displayer.hpp>
 
-#include <metashell/mock/shell.hpp>
+#include <metashell/mock/main_shell.hpp>
 
 #include "run.hpp"
 
@@ -36,15 +36,15 @@ namespace
   public:
     explicit test_handler(bool& run_flag_) : _run_flag(run_flag_) {}
 
-    virtual std::string arguments() const override { return "a|b|c"; }
-    virtual std::string description() const override { return "Foo bar"; }
+    std::string arguments() const override { return "a|b|c"; }
+    std::string description() const override { return "Foo bar"; }
 
-    virtual void run(const data::command::iterator&,
-                     const data::command::iterator&,
-                     const data::command::iterator&,
-                     const data::command::iterator&,
-                     iface::shell&,
-                     iface::displayer&) const override
+    void run(const data::command::iterator&,
+             const data::command::iterator&,
+             const data::command::iterator&,
+             const data::command::iterator&,
+             iface::main_shell&,
+             iface::displayer&) const override
     {
       _run_flag = true;
     }
@@ -69,7 +69,7 @@ TEST(process_pragma, processing_non_existing_handler)
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo"));
 
   core::null_displayer d;
-  mock::shell sh;
+  mock::main_shell sh;
   ASSERT_ANY_THROW(
       main_shell::process_pragma({}, cmd.begin(), cmd.end(), sh, d));
 }
@@ -85,7 +85,7 @@ TEST(process_pragma, processing_existing_handler)
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo"));
 
   core::null_displayer d;
-  mock::shell sh;
+  mock::main_shell sh;
   main_shell::process_pragma(m, cmd.begin(), cmd.end(), sh, d);
 
   ASSERT_TRUE(foo_run);
@@ -103,7 +103,7 @@ TEST(process_pragma, pragma_with_two_token_name_is_called)
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo bar"));
 
   core::null_displayer d;
-  mock::shell sh;
+  mock::main_shell sh;
   main_shell::process_pragma(m, cmd.begin(), cmd.end(), sh, d);
 
   ASSERT_TRUE(foo_bar_run);
@@ -124,7 +124,7 @@ TEST(process_pragma,
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo bar"));
 
   core::null_displayer d;
-  mock::shell sh;
+  mock::main_shell sh;
   main_shell::process_pragma(m, cmd.begin(), cmd.end(), sh, d);
 
   ASSERT_FALSE(foo_run);
@@ -145,7 +145,7 @@ TEST(process_pragma, pragma_prefix_is_selected_when_longer_version_is_available)
       core::to_command(data::cpp_code(/* #pragma metashell */ "foo x"));
 
   core::null_displayer d;
-  mock::shell sh;
+  mock::main_shell sh;
   main_shell::process_pragma(m, cmd.begin(), cmd.end(), sh, d);
 
   ASSERT_TRUE(foo_run);

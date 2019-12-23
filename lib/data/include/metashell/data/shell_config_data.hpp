@@ -18,7 +18,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/command_line_argument_list.hpp>
+#include <metashell/data/engine_arguments.hpp>
 #include <metashell/data/engine_name.hpp>
+#include <metashell/data/overridable.hpp>
 
 namespace metashell
 {
@@ -27,10 +29,9 @@ namespace metashell
     class shell_config_data
     {
     public:
-      command_line_argument_list engine_args;
       bool use_precompiled_headers = false;
-      engine_name engine = auto_engine_name();
       bool preprocessor_mode = false;
+      overridable<engine_arguments> engine;
     };
   }
 }

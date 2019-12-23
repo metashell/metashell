@@ -30,7 +30,8 @@ namespace metashell
       class cpp_validator : public iface::cpp_validator
       {
       public:
-        explicit cpp_validator(data::wave_config config_);
+        cpp_validator(data::wave_config,
+                      std::vector<boost::filesystem::path> system_includes_);
 
         virtual data::result
         validate_code(const data::cpp_code& src_,

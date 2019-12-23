@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/command_line_argument.hpp>
+#include <metashell/data/exception.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -38,9 +39,68 @@ namespace metashell
       return boost::starts_with(value(), prefix_);
     }
 
+    bool command_line_argument::contains_impl(const char* substr_) const
+    {
+      return value().find(substr_) != std::string::npos;
+    }
+
+    boost::optional<command_line_argument> command_line_argument::remove_prefix(
+        const command_line_argument& prefix_) const
+    {
+      return starts_with_impl(prefix_.value().c_str()) ?
+                 boost::make_optional(substr(*this, size(prefix_))) :
+                 boost::none;
+    }
+
+    boost::optional<int> command_line_argument::as_int() const
+    {
+      if (value().empty())
+      {
+        return boost::none;
+      }
+
+      int result = 0;
+      for (char c : value())
+      {
+        if (c >= '0' && c <= '9')
+        {
+          result = result * 10 + (c - '0');
+        }
+        else
+        {
+          return boost::none;
+        }
+      }
+      return result;
+    }
+
+    int command_line_argument::as_int(const std::string& error_) const
+    {
+      if (const auto val = as_int())
+      {
+        return *val;
+      }
+      else
+      {
+        throw exception(error_ + ": " + value());
+      }
+    }
+
     std::string quote(const command_line_argument& arg_)
     {
-      return arg_.value();
+      std::string result("\"");
+      for (char c : arg_)
+      {
+        switch (c)
+        {
+        case '\'':
+        case '\"':
+          result += '\\';
+          break;
+        }
+        result += c;
+      }
+      return result + "\"";
     }
   }
 }

@@ -34,112 +34,21 @@ function(register_system_test TEST_TARGET_NAME)
   elseif (APPLE)
     set(
       CLANG_FLAGS
-      "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
-      "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/libcxx"
+      "-idirafter$<TARGET_FILE_DIR:metashell>/../include/metashell/libcxx"
+      "-idirafter$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
     )
   else()
     set(
       CLANG_FLAGS
-      "-I$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
+      "-idirafter$<TARGET_FILE_DIR:metashell>/../include/metashell/templight"
     )
   endif()
 
-  add_test(
-    NAME ${TEST_TARGET_NAME}_internal_templight
-    COMMAND
-      ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
-      --
-  )
-
-  add_test(
-    NAME ${TEST_TARGET_NAME}_auto_internal_templight
-    COMMAND
-      ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
-      --
-  )
-
-  add_test(
-    NAME ${TEST_TARGET_NAME}_templight
-    COMMAND
-      ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine templight --
-      "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
-      -std=c++14
-      -ftemplate-depth=256
-      -Wfatal-errors
-      ${CLANG_FLAGS}
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
-      --
-  )
-
-  add_test(
-    NAME ${TEST_TARGET_NAME}_auto_templight
-    COMMAND
-      ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
-      "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
-      -std=c++14
-      -ftemplate-depth=256
-      -Wfatal-errors
-      ${CLANG_FLAGS}
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
-      --
-  )
-
-  add_test(
-    NAME ${TEST_TARGET_NAME}_clang
-    COMMAND
-      ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine clang --
-      "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
-      -std=c++14
-      -ftemplate-depth=256
-      -Wfatal-errors
-      ${CLANG_FLAGS}
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
-      --
-  )
-
-  add_test(
-    NAME ${TEST_TARGET_NAME}_auto_clang
-    COMMAND
-      ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
-      "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
-      -std=c++14
-      -ftemplate-depth=256
-      -Wfatal-errors
-      ${CLANG_FLAGS}
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
-      --
-  )
-endfunction()
-
-function(register_gcc_system_test TEST_TARGET_NAME)
-  if (GXX_FOUND)
-    message(STATUS "Using ${GXX_BINARY} for gcc system test")
+  if (NOT DEFINED TESTS OR TESTS STREQUAL "internal")
     add_test(
-      NAME ${TEST_TARGET_NAME}_gcc
+      NAME ${TEST_TARGET_NAME}_internal_templight
       COMMAND
-        ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine gcc --
-        "${GXX_BINARY}"
-        -std=c++14
+        ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --
         "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
         "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
         "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
@@ -148,11 +57,9 @@ function(register_gcc_system_test TEST_TARGET_NAME)
     )
 
     add_test(
-      NAME ${TEST_TARGET_NAME}_auto_gcc
+      NAME ${TEST_TARGET_NAME}_auto_internal_templight
       COMMAND
         ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
-        "${GXX_BINARY}"
-        -std=c++14
         "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
         "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
         "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
@@ -160,56 +67,173 @@ function(register_gcc_system_test TEST_TARGET_NAME)
         --
     )
   else()
-    message(WARNING "Skipping gcc system test (g++ exectuable not found)")
+    message(STATUS "Skipping internal system tests because TESTS=${TESTS}")
+  endif()
+
+  if (NOT DEFINED TESTS OR TESTS STREQUAL "templight")
+    add_test(
+      NAME ${TEST_TARGET_NAME}_templight
+      COMMAND
+        ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine templight --
+        "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
+        -std=c++14
+        -ftemplate-depth=256
+        -Wfatal-errors
+        ${CLANG_FLAGS}
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
+        --
+    )
+
+    add_test(
+      NAME ${TEST_TARGET_NAME}_auto_templight
+      COMMAND
+        ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
+        "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
+        -std=c++14
+        -ftemplate-depth=256
+        -Wfatal-errors
+        ${CLANG_FLAGS}
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
+        --
+    )
+  else()
+    message(STATUS "Skipping templight system tests because TESTS=${TESTS}")
+  endif()
+
+  if (NOT DEFINED TESTS OR TESTS STREQUAL "clang")
+    add_test(
+      NAME ${TEST_TARGET_NAME}_clang
+      COMMAND
+        ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine clang --
+        "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
+        -std=c++14
+        -ftemplate-depth=256
+        -Wfatal-errors
+        ${CLANG_FLAGS}
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
+        --
+    )
+
+    add_test(
+      NAME ${TEST_TARGET_NAME}_auto_clang
+      COMMAND
+        ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
+        "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
+        -std=c++14
+        -ftemplate-depth=256
+        -Wfatal-errors
+        ${CLANG_FLAGS}
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
+        --
+    )
+  else()
+    message(STATUS "Skipping clang system tests because TESTS=${TESTS}")
+  endif()
+endfunction()
+
+function(register_gcc_system_test TEST_TARGET_NAME)
+  if (NOT DEFINED TESTS OR TESTS STREQUAL "gcc")
+    if (GXX_FOUND)
+      message(STATUS "Using ${GXX_BINARY} for gcc system test")
+      add_test(
+        NAME ${TEST_TARGET_NAME}_gcc
+        COMMAND
+          ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine gcc --
+          "${GXX_BINARY}"
+          -std=c++14
+          "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+          "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+          "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+          "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
+          --
+      )
+
+      add_test(
+        NAME ${TEST_TARGET_NAME}_auto_gcc
+        COMMAND
+          ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
+          "${GXX_BINARY}"
+          -std=c++14
+          "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+          "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+          "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+          "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
+          --
+      )
+    else()
+      message(WARNING "Skipping gcc system test (g++ exectuable not found)")
+    endif()
+  else()
+    message(STATUS "Skipping gcc system tests because TESTS=${TESTS}")
   endif()
 endfunction()
 
 function(register_msvc_system_test TEST_TARGET_NAME)
   if (WIN32)
-    if (MSVC_FOUND)
-      message(STATUS "cl.exe used in system tests: ${MSVC_CL_BINARY}")
+    if (NOT DEFINED TESTS OR TESTS STREQUAL "msvc")
+      if (MSVC_FOUND)
+        message(STATUS "cl.exe used in system tests: ${MSVC_CL_BINARY}")
 
-      add_test(
-        NAME ${TEST_TARGET_NAME}_msvc
-        COMMAND
-          ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine msvc --
-          "\"${MSVC_CL_BINARY}\""
-          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\config\\include\""
-          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\mpl\\include\""
-          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\preprocessor\\include\""
-          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\type_traits\\include\""
-          "/EHsc"
-          --
-      )
+        add_test(
+          NAME ${TEST_TARGET_NAME}_msvc
+          COMMAND
+            ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine msvc --
+            "${MSVC_CL_BINARY}"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\config\\include"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\mpl\\include"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\preprocessor\\include"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\type_traits\\include"
+            "/EHsc"
+            --
+        )
 
-      add_test(
-        NAME ${TEST_TARGET_NAME}_auto_msvc
-        COMMAND
-          ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
-          "\"${MSVC_CL_BINARY}\""
-          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\config\\include\""
-          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\mpl\\include\""
-          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\preprocessor\\include\""
-          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\type_traits\\include\""
-          "/EHsc"
-          --
-      )
+        add_test(
+          NAME ${TEST_TARGET_NAME}_auto_msvc
+          COMMAND
+            ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine auto --
+            "${MSVC_CL_BINARY}"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\config\\include"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\mpl\\include"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\preprocessor\\include"
+            "/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\type_traits\\include"
+            "/EHsc"
+            --
+        )
+      else()
+        message(WARNING "Skipping Visual C++ system test (cl.exe not found)")
+      endif()
     else()
-      message(WARNING "Skipping Visual C++ system test (cl.exe not found)")
+      message(STATUS "Skipping msvc system tests because TESTS=${TESTS}")
     endif()
   endif()
 endfunction()
 
 function(register_wave_system_test TEST_TARGET_NAME)
-  add_test(
-    NAME ${TEST_TARGET_NAME}_wave
-    COMMAND
-      ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine wave --
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
-      "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
-      --
-  )
+  if (NOT DEFINED TESTS OR TESTS STREQUAL "wave")
+    add_test(
+      NAME ${TEST_TARGET_NAME}_wave
+      COMMAND
+        ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine wave --
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/config/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/mpl/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/preprocessor/include"
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/type_traits/include"
+        --
+    )
+  else()
+    message(STATUS "Skipping wave system tests because TESTS=${TESTS}")
+  endif()
 endfunction()
 

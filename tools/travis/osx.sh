@@ -20,6 +20,11 @@ egrep $(tools/latest_release --no_dots --prefix=version-) docs/index.md
 
 PLATFORM_ID="$(tools/detect_platform.sh --id)"
 
+if [ "${TESTS}" != "unit" ]
+then
+  export NO_INSTALLER=1
+fi
+
 # Get the templight binary
 
 mkdir -p "bin/${PLATFORM_ID}"

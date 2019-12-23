@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/comment.hpp>
 #include <metashell/system_test/cpp_code.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
 
@@ -24,6 +25,7 @@
 using namespace metashell::system_test;
 
 using pattern::regex;
+using pattern::_;
 
 TEST(macros, getting_defined_macro)
 {
@@ -47,5 +49,23 @@ TEST(macros, getting_defined_macro_name)
     const json_string macro_names = mi.command("#msh macro names").front();
     ASSERT_EQ(cpp_code(regex("FOO")), macro_names);
     ASSERT_NE(cpp_code(regex("#define")), macro_names);
+  }
+}
+
+TEST(macros, defined_from_cli)
+{
+  const std::string define = using_msvc() ? "/D" : "-D";
+  const std::string undefine = using_msvc() ? "/U" : "-U";
+  metashell_instance mi(
+      {"--", define + "FOO=double", define + "BAR=int", undefine + "BAR"});
+  mi.command("#msh preprocessor mode");
+  ASSERT_EQ(cpp_code("double"), mi.command("FOO").front());
+  ASSERT_EQ(cpp_code("BAR"), mi.command("BAR").front());
+
+  for (const std::string engine : {"internal", "pure_wave", "wave"})
+  {
+    ASSERT_EQ(comment(_), mi.command("#msh engine switch " + engine).front());
+    ASSERT_EQ(cpp_code("double"), mi.command("FOO").front());
+    ASSERT_EQ(cpp_code("BAR"), mi.command("BAR").front());
   }
 }

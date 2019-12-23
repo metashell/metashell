@@ -1,5 +1,5 @@
-#ifndef METASHELL_MOCK_SHELL_HPP
-#define METASHELL_MOCK_SHELL_HPP
+#ifndef METASHELL_MOCK_MAIN_SHELL_HPP
+#define METASHELL_MOCK_MAIN_SHELL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/shell.hpp>
+#include <metashell/iface/main_shell.hpp>
 
 #include <gmock/gmock.h>
 
@@ -25,7 +25,7 @@ namespace metashell
 {
   namespace mock
   {
-    class shell : public iface::shell
+    class main_shell : public iface::main_shell
     {
     public:
       MOCK_METHOD3(line_available,
@@ -75,6 +75,8 @@ namespace metashell
 
       MOCK_CONST_METHOD1(enabled, bool(data::shell_flag));
       MOCK_METHOD2(enabled, void(data::shell_flag, bool));
+
+      MOCK_METHOD1(switch_to, void(const data::real_engine_name&));
     };
   }
 }

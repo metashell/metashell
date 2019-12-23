@@ -18,25 +18,19 @@
 #include <metashell/engine/wave/parse_config.hpp>
 
 #include <metashell/engine/clang/binary.hpp>
-#include <metashell/engine/clang/header_discoverer.hpp>
 #include <metashell/engine/clang/macro_discovery.hpp>
 
 #include <metashell/core/wave_token.hpp>
 
-#include <boost/algorithm/string/join.hpp>
-#include <boost/program_options/options_description.hpp>
-#include <boost/program_options/parsers.hpp>
-#include <boost/program_options/variables_map.hpp>
+#include <metashell/data/wave_arg_parser.hpp>
+
 #include <boost/wave.hpp>
 #include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
 #include <boost/wave/cpplexer/cpp_lex_token.hpp>
 
 #include <algorithm>
-#include <iterator>
-#include <numeric>
 #include <set>
 #include <sstream>
-#include <stdexcept>
 #include <vector>
 
 namespace metashell
@@ -52,7 +46,8 @@ namespace metashell
                   core::wave_token>
         {
         public:
-          explicit macro_definition_collector(std::vector<std::string>& out_)
+          explicit macro_definition_collector(
+              std::vector<data::macro_definition>& out_)
             : _out(out_)
           {
           }
@@ -96,7 +91,7 @@ namespace metashell
                   definition_.begin(), definition_.end(),
                   std::ostream_iterator<typename Token::string_type>(s),
                   [](const Token& t_) { return t_.get_value(); });
-              _out.push_back(s.str());
+              _out.emplace_back(s.str());
             }
           }
 
@@ -106,11 +101,11 @@ namespace metashell
           }
 
         private:
-          std::vector<std::string>& _out;
+          std::vector<data::macro_definition>& _out;
           std::set<core::wave_token::string_type> _blacklist;
         };
 
-        std::vector<std::string>
+        std::vector<data::macro_definition>
         clang_macros(const clang::binary& cbin_,
                      const boost::filesystem::path& internal_dir_)
         {
@@ -118,10 +113,12 @@ namespace metashell
           // to be able to parse libcxx headers. They define decltype as a macro
           // otherwise, and call it with template expression that contains
           // multiple preprocessor parameters.
-          std::vector<std::string> result{
-              "__has_include_next(_)=0",
-              "__metashell_has_feature_impl__cxx_decltype=1",
-              "__has_feature(x)=__metashell_has_feature_impl__ ## x"};
+          std::vector<data::macro_definition> result{
+              data::macro_definition("__has_include_next(_)=0"),
+              data::macro_definition(
+                  "__metashell_has_feature_impl__cxx_decltype=1"),
+              data::macro_definition(
+                  "__has_feature(x)=__metashell_has_feature_impl__ ## x")};
 
           empty_environment env(internal_dir_);
           const data::cpp_code defines =
@@ -177,114 +174,27 @@ namespace metashell
           return result;
         }
 
-        data::wave_config
-        internal_clang_config(const data::executable_path& metashell_binary_,
+        std::vector<data::macro_definition>
+        internal_clang_macros(const data::executable_path& metashell_binary_,
                               const boost::filesystem::path& internal_dir_,
                               iface::environment_detector& env_detector_,
                               iface::displayer& displayer_,
                               core::logger* logger_)
         {
-          data::wave_config result;
+          data::engine_config result;
           const data::command_line_argument_list extra_clang_args;
           if (const auto clang_path = clang::find_clang_nothrow(
-                  true, extra_clang_args, metashell_binary_,
-                  data::real_engine_name::internal, env_detector_, displayer_,
-                  logger_))
+                  true,
+                  data::engine_arguments{
+                      extra_clang_args, data::real_engine_name::internal},
+                  metashell_binary_, env_detector_, displayer_, logger_))
           {
-            const clang::binary cbin(true, *clang_path, extra_clang_args,
-                                     internal_dir_, env_detector_, logger_);
-
-            clang::header_discoverer header_discoverer(cbin);
-
-            result.includes.sys =
-                header_discoverer.include_path(data::include_type::sys);
-            result.includes.quote =
-                header_discoverer.include_path(data::include_type::quote);
-            result.macros = clang_macros(cbin, internal_dir_);
+            return clang_macros(
+                clang::binary(true, *clang_path, extra_clang_args,
+                              internal_dir_, env_detector_, logger_),
+                internal_dir_);
           }
-          result.standard = data::wave_standard::cpp11;
-          return result;
-        }
-
-        template <class T, class U>
-        void push_back_times(int times_, T& out_, const U& value_)
-        {
-          for (int i = 0; i < times_; ++i)
-          {
-            out_.push_back(value_);
-          }
-        }
-
-        int total_count(const boost::program_options::variables_map& vm_,
-                        const std::vector<std::string>& args_)
-        {
-          return std::accumulate(args_.begin(), args_.end(), 0,
-                                 [&vm_](int sum_, const std::string& arg_) {
-                                   return sum_ + vm_.count(arg_);
-                                 });
-        }
-
-        std::vector<std::string>
-        collect_args(const boost::program_options::variables_map& vm_,
-                     const std::vector<std::string>& args_)
-        {
-          std::vector<std::string> result;
-          result.reserve(total_count(vm_, args_));
-          for (const std::string& arg : args_)
-          {
-            push_back_times(vm_.count(arg), result, "--" + arg);
-          }
-          return result;
-        }
-
-        void validate(const boost::program_options::variables_map& vm_)
-        {
-          const std::vector<std::string> stds{"c99", "c++11"};
-          if (total_count(vm_, stds) > 1)
-          {
-            throw std::runtime_error(
-                "Multiple standards (" +
-                boost::algorithm::join(collect_args(vm_, stds), " ") +
-                ") specified");
-          }
-        }
-
-        void append(std::vector<boost::filesystem::path>& out_,
-                    const std::vector<boost::filesystem::path>& extension_)
-        {
-          out_.insert(out_.end(), extension_.begin(), extension_.end());
-        }
-
-        boost::program_options::options_description
-        wave_options(bool use_templight_headers_,
-                     std::vector<boost::filesystem::path>& quote_includes_,
-                     std::vector<boost::filesystem::path>& sys_includes_,
-                     std::vector<std::string>& macros_)
-        {
-          using boost::program_options::value;
-
-          const std::string nostdinc_help =
-              use_templight_headers_ ?
-                  "don't add standard headers to the include path" :
-                  "ignored (accepted to be compatible with the `wave` engine)";
-
-          boost::program_options::options_description desc("Wave options");
-          // clang-format off
-    desc.add_options()
-      ("include,I", value(&quote_includes_),
-        "specify an additional include directory")
-      ("sysinclude,S", value(&sys_includes_),
-        "specify an additional system include directory")
-      ("define,D", value(&macros_),
-        "specify a macro to define (as `macro[=[value]]`)")
-      ("long_long", "enable long long support in C++ mode")
-      ("variadics", "enable certain C99 extensions in C++ mode")
-      ("c99", "enable C99 mode (implies `--variadics`)")
-      ("c++11", "enable C++11 mode (implies `--variadics` and `--long_long`)")
-      ("nostdinc++", nostdinc_help.c_str())
-      ;
-          // clang-format on
-          return desc;
+          return {};
         }
       }
 
@@ -297,88 +207,13 @@ namespace metashell
                    iface::displayer& displayer_,
                    core::logger* logger_)
       {
-        using boost::program_options::command_line_parser;
-
-        std::vector<std::string> args;
-        args.reserve(args_.size());
-        std::transform(args_.begin(), args_.end(), std::back_inserter(args),
-                       [](const data::command_line_argument& arg_) {
-                         return arg_.value();
-                       });
-
-        data::wave_config result =
-            use_templight_headers_ ?
-                internal_clang_config(metashell_binary_, internal_dir_,
-                                      env_detector_, displayer_, logger_) :
-                data::wave_config();
-
-        result.ignore_macro_redefinition = use_templight_headers_;
-
-        std::vector<boost::filesystem::path> quote_includes;
-        std::vector<boost::filesystem::path> sys_includes;
-
-        boost::program_options::options_description desc =
-            wave_options(use_templight_headers_, quote_includes, sys_includes,
-                         result.macros);
-
-        boost::program_options::variables_map vm;
-        store(command_line_parser(args).options(desc).run(), vm);
-        notify(vm);
-        validate(vm);
-
-        if (vm.count("nostdinc++"))
-        {
-          result.includes.quote.erase(
-              std::remove_if(
-                  result.includes.quote.begin(), result.includes.quote.end(),
-                  [](const boost::filesystem::path& p_) { return p_ != "."; }),
-              result.includes.quote.end());
-          result.includes.sys.clear();
-        }
-
-        append(result.includes.quote, quote_includes);
-        append(result.includes.sys, sys_includes);
-
-        result.long_long = vm.count("long_long");
-        result.variadics = vm.count("variadics");
-
-        if (vm.count("c99"))
-        {
-          result.standard = data::wave_standard::c99;
-          result.long_long = true;
-        }
-        else if (vm.count("c++11"))
-        {
-          result.standard = data::wave_standard::cpp11;
-          result.long_long = true;
-          result.variadics = true;
-        }
-
-        return result;
-      }
-
-      std::string args(bool use_templight_headers_)
-      {
-        std::vector<boost::filesystem::path> quote_includes;
-        std::vector<boost::filesystem::path> sys_includes;
-        std::vector<std::string> macros;
-
-        boost::program_options::options_description desc = wave_options(
-            use_templight_headers_, quote_includes, sys_includes, macros);
-        std::ostringstream s;
-        s << "Wave options:<br />";
-        const auto width = desc.get_option_column_width();
-        for (const auto& option : desc.options())
-        {
-          if (option)
-          {
-            const auto arg = option->format_name();
-            s << "&nbsp;&nbsp;`" << arg << "`"
-              << std::string(width - arg.size() - 2, ' ')
-              << option->description() << "<br />";
-          }
-        }
-        return s.str();
+        data::wave_arg_parser parser(use_templight_headers_);
+        parser.parse(args_, use_templight_headers_ ?
+                                internal_clang_macros(
+                                    metashell_binary_, internal_dir_,
+                                    env_detector_, displayer_, logger_) :
+                                std::vector<data::macro_definition>());
+        return parser.result();
       }
     }
   }

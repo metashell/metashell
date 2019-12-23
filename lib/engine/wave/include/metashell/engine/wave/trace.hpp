@@ -21,6 +21,7 @@
 
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
+#include <metashell/data/wave_config.hpp>
 
 #include <memory>
 
@@ -36,7 +37,8 @@ namespace metashell
         trace(const data::cpp_code& env_,
               const boost::optional<data::cpp_code>& exp_,
               const data::wave_config& config_,
-              data::metaprogram_mode mode_);
+              data::metaprogram_mode mode_,
+              const std::vector<boost::filesystem::path>& system_includes_);
 
         boost::optional<data::event_data> next();
 

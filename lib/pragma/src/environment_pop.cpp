@@ -25,7 +25,7 @@ namespace metashell
       return "Pops the last environment from the environment stack.";
     }
 
-    void environment_pop::run(iface::shell& shell_,
+    void environment_pop::run(iface::main_shell& shell_,
                               iface::displayer& displayer_) const
     {
       shell_.pop_environment();

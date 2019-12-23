@@ -20,7 +20,7 @@
 
 #include <metashell/core/command.hpp>
 
-#include <metashell/mock/shell.hpp>
+#include <metashell/mock/main_shell.hpp>
 
 using ::testing::NiceMock;
 
@@ -28,7 +28,7 @@ void run(const metashell::iface::pragma_handler& handler_,
          const metashell::data::cpp_code& args_,
          metashell::iface::displayer& displayer_)
 {
-  NiceMock<metashell::mock::shell> sh;
+  NiceMock<metashell::mock::main_shell> sh;
 
   const metashell::data::command cmd = metashell::core::to_command(args_);
   handler_.run(cmd.begin(), cmd.begin(), cmd.begin(),

@@ -8,12 +8,22 @@
     * Support for displaying the currently used engine (`#msh engine show`)
     * Support loading compilation flags from `compile_commands.json` generated
       by CMake.
+    * Support `-iquote` arguments in the Wave engine adding elements to the
+      quote include path only.
+    * Support `-idirafter` arguments in the Wave engine adding elements to the
+      include path after the system header locations.
+    * Support `-U` arguments in the Wave engine undefining macros.
+    * Support for switching between engines from the shell. This makes it
+      possible to switch to a different compiler without leaving the shell.
+      (The `#msh engine switch` pragma)
 
 * Fixes
     * When multiple shell configs use the same engine with different engine
       arguments, Metashell can now use the correct arguments for each config
       instead of using the arguments the shell config had, which was loaded
       first.
+    * `.` is not on the sysinclude path in the Wave engine
+    * Display all `-I` arguments with `#msh sysincludes` path in the Wave engine
 
 * Changes to existing behaviour
     * **Breaking change** Regular expression syntax for breakpoints changes
@@ -32,6 +42,8 @@
       available using the `#msh all config` pragma.
     * The default C++ standard version of the `internal` engine is C++14.
     * Using the Visual C++ system headers on Windows instead of the MinGW ones.
+    * Use the relative order of user provided and system include
+      directories in the `wave` engine, that GCC is using.
 
 ## Version 4.0.0
 

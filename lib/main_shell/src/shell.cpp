@@ -574,5 +574,36 @@ namespace metashell {
         break;
       }
     }
+
+    void shell::switch_to(const data::real_engine_name& engine_)
+    {
+      const data::shell_config_name config_name =
+          get_config().active_shell_config().name;
+
+      data::overridable<data::engine_arguments>& engine_args =
+          get_config().active_shell_config().engine;
+      const data::overridable<data::engine_arguments> old = engine_args;
+
+      try
+      {
+        engine_args.set_override();
+        _engines.erase(config_name);
+        rebuild_environment();
+
+        const data::engine_config old_config = engine().config();
+
+        engine_args.set_override(convert_to(engine_, old_config));
+        _engines.erase(config_name);
+        rebuild_environment();
+      }
+      catch (...)
+      {
+        _engines.erase(get_config().active_shell_config().name);
+        engine_args = old;
+
+        rebuild_environment();
+        throw;
+      }
+    }
   }
 }

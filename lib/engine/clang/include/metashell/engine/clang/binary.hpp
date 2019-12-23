@@ -19,6 +19,7 @@
 
 #include <metashell/data/command_line_argument.hpp>
 #include <metashell/data/cpp_code.hpp>
+#include <metashell/data/engine_arguments.hpp>
 #include <metashell/data/engine_name.hpp>
 #include <metashell/data/executable_path.hpp>
 #include <metashell/data/result.hpp>
@@ -69,20 +70,18 @@ namespace metashell
         core::logger* _logger;
       };
 
-      boost::optional<data::executable_path> find_clang_nothrow(
-          bool use_internal_templight_,
-          const data::command_line_argument_list& extra_clang_args_,
-          const data::executable_path& metashell_binary_,
-          const data::engine_name& engine_,
-          iface::environment_detector& env_detector_,
-          iface::displayer& displayer_,
-          core::logger* logger_);
+      boost::optional<data::executable_path>
+      find_clang_nothrow(bool use_internal_templight_,
+                         const data::engine_arguments& engine_,
+                         const data::executable_path& metashell_binary_,
+                         iface::environment_detector& env_detector_,
+                         iface::displayer& displayer_,
+                         core::logger* logger_);
 
       data::executable_path
       find_clang(bool use_internal_templight_,
-                 const data::command_line_argument_list& extra_clang_args_,
+                 const data::engine_arguments& engine_,
                  const data::executable_path& metashell_binary_,
-                 const data::engine_name& engine_,
                  iface::environment_detector& env_detector_,
                  iface::displayer& displayer_,
                  core::logger* logger_);

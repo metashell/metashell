@@ -30,12 +30,15 @@ namespace metashell
       class preprocessor_shell : public iface::preprocessor_shell
       {
       public:
-        explicit preprocessor_shell(data::wave_config config_);
+        preprocessor_shell(
+            data::wave_config,
+            std::vector<boost::filesystem::path> system_includes_);
 
         virtual data::result precompile(const data::cpp_code& exp_) override;
 
       private:
         data::wave_config _config;
+        std::vector<boost::filesystem::path> _system_includes;
       };
     }
   }

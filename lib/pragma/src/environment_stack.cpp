@@ -25,7 +25,7 @@ namespace metashell
       return "Displays the size of the environment stack.";
     }
 
-    void environment_stack::run(iface::shell& shell_,
+    void environment_stack::run(iface::main_shell& shell_,
                                 iface::displayer& displayer_) const
     {
       shell_.display_environment_stack_size(displayer_);

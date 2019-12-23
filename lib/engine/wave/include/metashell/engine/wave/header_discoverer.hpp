@@ -30,7 +30,9 @@ namespace metashell
       class header_discoverer : public iface::header_discoverer
       {
       public:
-        explicit header_discoverer(data::wave_config config_);
+        header_discoverer(
+            data::wave_config,
+            std::vector<boost::filesystem::path> system_includes_);
 
         virtual std::vector<boost::filesystem::path>
         include_path(data::include_type type_) override;
@@ -40,6 +42,7 @@ namespace metashell
 
       private:
         data::wave_config _config;
+        std::vector<boost::filesystem::path> _system_includes;
       };
     }
   }

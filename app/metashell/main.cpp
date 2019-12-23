@@ -136,7 +136,7 @@ int main(int argc_, const char* argv_[])
         // locals by reference should be safe.
         [&engines, &shell_dir, &temp_dir, &env_filename, &det, &ccfg,
          &logger](const metashell::data::shell_config& config_) {
-          return find(engines, config_.engine, config_.engine_args, &logger)
+          return find(engines, *config_.engine, &logger)
               .build(config_, shell_dir, temp_dir, env_filename, det,
                      ccfg.displayer(), &logger);
         },

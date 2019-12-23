@@ -28,10 +28,9 @@ namespace metashell
     class environment_push : public without_arguments
     {
     public:
-      virtual std::string description() const override;
+      std::string description() const override;
 
-      virtual void run(iface::shell& shell_,
-                       iface::displayer& displayer_) const override;
+      void run(iface::main_shell&, iface::displayer&) const override;
     };
   }
 }

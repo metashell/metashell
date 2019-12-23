@@ -81,12 +81,11 @@ namespace metashell
         }
 
         data::executable_path
-        extract_gcc_binary(const data::command_line_argument_list& engine_args_,
+        extract_gcc_binary(const data::engine_arguments& engine_,
                            iface::environment_detector& env_detector_,
-                           const data::executable_path& metashell_path_,
-                           const data::engine_name& engine_)
+                           const data::executable_path& metashell_path_)
         {
-          if (const auto first = engine_args_.front())
+          if (const auto first = engine_.args.front())
           {
             const data::executable_path path(*first);
             if (env_detector_.file_exists(path))
@@ -105,7 +104,7 @@ namespace metashell
             throw std::runtime_error(
                 "The engine requires that you specify the path to the gcc "
                 "compiler after --. For example: " +
-                metashell_path_ + " --engine " + engine_ +
+                metashell_path_ + " --engine " + engine_.name +
                 " -- /usr/bin/g++ -std=c++11");
           }
         }
@@ -121,10 +120,7 @@ namespace metashell
             args.push_back("-I", internal_dir_.string());
           }
 
-          if (extra_gcc_args_.size() > 1)
-          {
-            args.append(extra_gcc_args_.begin() + 1, extra_gcc_args_.end());
-          }
+          args.append(extra_gcc_args_.begin(), extra_gcc_args_.end());
 
           return args;
         }
@@ -141,18 +137,22 @@ namespace metashell
         {
           using core::not_supported;
 
-          clang::binary cbin(
-              extract_gcc_binary(config_.engine_args, env_detector_,
-                                 metashell_binary_, config_.engine),
-              gcc_args(config_.engine_args, internal_dir_), logger_);
+          const data::command_line_argument_list extra_gcc_args =
+              config_.engine->args.tail();
+
+          clang::binary cbin(extract_gcc_binary(*config_.engine, env_detector_,
+                                                metashell_binary_),
+                             gcc_args(extra_gcc_args, internal_dir_), logger_);
 
           return core::make_engine(
-              name(), config_.engine, not_supported(),
+              name(), config_.engine->name, not_supported(),
               clang::preprocessor_shell(cbin), not_supported(),
               clang::header_discoverer(cbin), not_supported(),
               clang::cpp_validator(internal_dir_, env_filename_, cbin, logger_),
               clang::macro_discovery(cbin), not_supported(),
-              supported_features());
+              supported_features(), [extra_gcc_args] {
+                return parse_clang_arguments(extra_gcc_args);
+              });
         }
       } // anonymous namespace
 

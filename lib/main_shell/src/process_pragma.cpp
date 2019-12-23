@@ -48,7 +48,7 @@ namespace metashell
                        std::unique_ptr<iface::pragma_handler>>& handlers_,
         const data::command::iterator& begin_,
         const data::command::iterator& end_,
-        iface::shell& shell_,
+        iface::main_shell& shell_,
         iface::displayer& displayer_)
     {
       const data::command::iterator e =

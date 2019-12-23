@@ -25,8 +25,9 @@ namespace metashell
       trace::trace(const data::cpp_code& env_,
                    const boost::optional<data::cpp_code>& exp_,
                    const data::wave_config& config_,
-                   data::metaprogram_mode mode_)
-        : _impl(new trace_impl(env_, exp_, config_)),
+                   data::metaprogram_mode mode_,
+                   const std::vector<boost::filesystem::path>& system_includes_)
+        : _impl(new trace_impl(env_, exp_, config_, system_includes_)),
           _root_name(exp_ ? *exp_ : data::cpp_code("<environment>")),
           _mode(mode_)
       {

@@ -22,6 +22,7 @@
 #include <metashell/pragma/config_show.hpp>
 #include <metashell/pragma/echo.hpp>
 #include <metashell/pragma/engine_show.hpp>
+#include <metashell/pragma/engine_switch.hpp>
 #include <metashell/pragma/environment.hpp>
 #include <metashell/pragma/environment_add.hpp>
 #include <metashell/pragma/environment_pop.hpp>
@@ -186,6 +187,9 @@ namespace metashell
       result.emplace(sv{"config"}, std::make_unique<pragma::config>());
 
       result.emplace(sv{"quit"}, std::make_unique<pragma::quit>());
+
+      result.emplace(
+          sv{"engine", "switch"}, std::make_unique<pragma::engine_switch>());
 
       return result;
     }

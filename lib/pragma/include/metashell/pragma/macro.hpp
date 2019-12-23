@@ -33,10 +33,9 @@ namespace metashell
     public:
       macro(std::string description_, std::vector<data::user_input> commands_);
 
-      virtual std::string description() const override;
+      std::string description() const override;
 
-      virtual void run(iface::shell& shell_,
-                       iface::displayer& displayer_) const override;
+      void run(iface::main_shell&, iface::displayer&) const override;
 
     private:
       std::vector<data::user_input> _commands;

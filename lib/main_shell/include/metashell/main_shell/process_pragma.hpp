@@ -21,8 +21,8 @@
 #include <metashell/data/pragma_name.hpp>
 
 #include <metashell/iface/displayer.hpp>
+#include <metashell/iface/main_shell.hpp>
 #include <metashell/iface/pragma_handler.hpp>
-#include <metashell/iface/shell.hpp>
 
 #include <map>
 #include <memory>
@@ -36,7 +36,7 @@ namespace metashell
                        std::unique_ptr<iface::pragma_handler>>& handlers_,
         const data::command::iterator& begin_,
         const data::command::iterator& end_,
-        iface::shell& shell_,
+        iface::main_shell& shell_,
         iface::displayer& displayer_);
   }
 }

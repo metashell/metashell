@@ -30,12 +30,14 @@ namespace metashell
       class macro_discovery : public iface::macro_discovery
       {
       public:
-        explicit macro_discovery(data::wave_config config_);
+        macro_discovery(data::wave_config,
+                        std::vector<boost::filesystem::path> system_includes_);
 
         virtual data::cpp_code macros(const iface::environment& env_) override;
 
       private:
         data::wave_config _config;
+        std::vector<boost::filesystem::path> _system_includes;
       };
     }
   }

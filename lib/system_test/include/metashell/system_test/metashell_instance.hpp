@@ -72,8 +72,14 @@ namespace metashell
       std::vector<json_string> _initial_responses;
     };
 
+    std::string current_real_engine();
+
     bool using_msvc();
     bool using_wave();
+    bool using_internal();
+
+    // Note that templight and internal are also using clang
+    bool using_clang();
 
     data::command_line_argument_list
     with_sysincludes(data::command_line_argument_list args_,

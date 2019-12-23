@@ -27,8 +27,11 @@ namespace metashell
   {
     namespace wave
     {
-      preprocessor_tracer::preprocessor_tracer(data::wave_config config_)
-        : _config(std::move(config_))
+      preprocessor_tracer::preprocessor_tracer(
+          data::wave_config config_,
+          std::vector<boost::filesystem::path> system_includes_)
+        : _config(std::move(config_)),
+          _system_includes(std::move(system_includes_))
       {
       }
 
@@ -38,7 +41,7 @@ namespace metashell
                                 data::metaprogram_mode mode_)
       {
         return core::filter_events(
-            trace(env_.get(), exp_, _config, mode_),
+            trace(env_.get(), exp_, _config, mode_, _system_includes),
             data::determine_from_line(
                 env_.get(), exp_, data::stdin_name_in_clang()));
       }

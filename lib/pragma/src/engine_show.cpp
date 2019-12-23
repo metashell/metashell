@@ -25,7 +25,7 @@ namespace metashell
       return "Displays information about the current engine.";
     }
 
-    void engine_show::run(iface::shell& shell_,
+    void engine_show::run(iface::main_shell& shell_,
                           iface::displayer& displayer_) const
     {
       const iface::engine& engine = shell_.engine();

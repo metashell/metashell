@@ -22,6 +22,16 @@ else()
   cmake_policy(VERSION 3.12)
 endif()
 
+set(SYSTEM_TESTS internal templight clang gcc msvc wave)
+set(VALID_TESTS ${SYSTEM_TESTS} unit auto)
+if (DEFINED TESTS AND NOT (TESTS IN_LIST VALID_TESTS))
+  message(
+    FATAL_ERROR
+    "Invalid TESTS value: ${TESTS}."
+    " It should be one of the following: ${VALID_TESTS}"
+  )
+endif()
+
 project(metashell_project)
 
 set(MAJOR_VERSION 4)
@@ -117,21 +127,35 @@ add_subdirectory(app/stub/cl_de)
 add_subdirectory(app/stub/cl_en)
 add_subdirectory(app/stub/gcc)
 
-add_subdirectory(test/system/auto_engine)
-add_subdirectory(test/system/core)
-add_subdirectory(test/system/mdb)
-add_subdirectory(test/system/pdb)
-add_subdirectory(test/system/pp)
-add_subdirectory(test/unit/core)
-add_subdirectory(test/unit/data)
-add_subdirectory(test/unit/engine/clang)
-add_subdirectory(test/unit/engine/templight)
-add_subdirectory(test/unit/engine/vc)
-add_subdirectory(test/unit/main_shell)
-add_subdirectory(test/unit/mdb)
-add_subdirectory(test/unit/pragma)
-add_subdirectory(test/unit/replace_part)
-add_subdirectory(test/unit/system_test)
+if (NOT DEFINED TESTS OR TESTS STREQUAL "auto")
+  add_subdirectory(test/system/auto_engine)
+else()
+  message(STATUS "Skipping auto system tests because TESTS=${TESTS}")
+endif()
+
+if (NOT DEFINED TESTS OR TESTS IN_LIST SYSTEM_TESTS)
+  add_subdirectory(test/system/core)
+  add_subdirectory(test/system/mdb)
+  add_subdirectory(test/system/pdb)
+  add_subdirectory(test/system/pp)
+else()
+  message(STATUS "Skipping system tests because TESTS=${TESTS}")
+endif()
+
+if (NOT DEFINED TESTS OR TESTS STREQUAL "unit")
+  add_subdirectory(test/unit/core)
+  add_subdirectory(test/unit/data)
+  add_subdirectory(test/unit/engine/clang)
+  add_subdirectory(test/unit/engine/templight)
+  add_subdirectory(test/unit/engine/vc)
+  add_subdirectory(test/unit/main_shell)
+  add_subdirectory(test/unit/mdb)
+  add_subdirectory(test/unit/pragma)
+  add_subdirectory(test/unit/replace_part)
+  add_subdirectory(test/unit/system_test)
+else()
+  message(STATUS "Skipping unit tests because TESTS=${TESTS}")
+endif()
 
 add_subdirectory(lib/compiler_stub)
 add_subdirectory(lib/core)
@@ -250,26 +274,38 @@ target_compile_definitions(
     METASHELL_PATCH=${PATCH_VERSION}
 )
 
-set(SYSTEM_TEST_TARGETS )
-set(SYSTEM_TEST_FILES )
-foreach(T core pp mdb pdb)
-  set(TARGET metashell_${T}_system_test)
+if (NOT DEFINED TESTS OR TESTS IN_LIST SYSTEM_TESTS)
+  set(SYSTEM_TEST_TARGETS )
+  set(SYSTEM_TEST_FILES )
+  foreach(T core pp mdb pdb)
+    set(TARGET metashell_${T}_system_test)
 
-  list(APPEND SYSTEM_TEST_TARGETS ${TARGET})
-  list(APPEND SYSTEM_TEST_FILES "$<TARGET_FILE:${TARGET}>")
-endforeach(T)
+    list(APPEND SYSTEM_TEST_TARGETS ${TARGET})
+    list(APPEND SYSTEM_TEST_FILES "$<TARGET_FILE:${TARGET}>")
+  endforeach(T)
 
-set(
-  SYSTEM_TEST_ARCHIVE
-  "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_system_test_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}${METASHELL_PACKAGE_PLATFORM}_${CMAKE_SYSTEM_PROCESSOR}.tar.gz"
-)
+  set(
+    SYSTEM_TEST_ARCHIVE
+    "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_system_test_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}${METASHELL_PACKAGE_PLATFORM}_${CMAKE_SYSTEM_PROCESSOR}.tar.gz"
+  )
 
-add_custom_target(
-  system_test_zip DEPENDS ${SYSTEM_TEST_TARGETS}
-  COMMAND
-    ${CMAKE_COMMAND} -E
-    tar "cfz" "${SYSTEM_TEST_ARCHIVE}" ${SYSTEM_TEST_FILES}
-)
+  add_custom_target(
+    system_test_zip DEPENDS ${SYSTEM_TEST_TARGETS}
+    COMMAND
+      ${CMAKE_COMMAND} -E
+      tar "cfz" "${SYSTEM_TEST_ARCHIVE}" ${SYSTEM_TEST_FILES}
+  )
+else()
+  add_custom_target(
+    system_test_zip
+    COMMAND echo "Skipping system_test_zip because TESTS=${TESTS}"
+  )
+
+  message(
+    STATUS
+    "Skipping system test archive generation because TESTS=${TESTS}"
+  )
+endif()
 
 # Recursing
 subdirs(tools)

@@ -27,8 +27,8 @@
 #include <metashell/iface/engine.hpp>
 #include <metashell/iface/environment.hpp>
 #include <metashell/iface/history.hpp>
+#include <metashell/iface/main_shell.hpp>
 #include <metashell/iface/pragma_handler.hpp>
-#include <metashell/iface/shell.hpp>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/optional.hpp>
@@ -43,7 +43,7 @@ namespace metashell
 {
   namespace main_shell
   {
-    class shell : public iface::shell
+    class shell : public iface::main_shell
     {
     public:
       shell(const data::config& config_,
@@ -98,6 +98,7 @@ namespace metashell
       data::config& get_config() override;
 
       iface::engine& engine() override;
+      void switch_to(const data::real_engine_name&) override;
 
       boost::filesystem::path env_path() const override;
 

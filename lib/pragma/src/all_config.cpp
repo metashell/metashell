@@ -28,7 +28,7 @@ namespace metashell
       return "Lists all available configs.";
     }
 
-    void all_config::run(iface::shell& shell_,
+    void all_config::run(iface::main_shell& shell_,
                          iface::displayer& displayer_) const
     {
       using boost::algorithm::join;
