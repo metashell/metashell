@@ -36,6 +36,19 @@ namespace metashell
       return *this;
     }
 
+    json_string::size_type json_string::size() const { return _json.size(); }
+
+    json_string::size_type json_string::find(const json_string& s_) const
+    {
+      return _json.find(s_._json);
+    }
+
+    json_string json_string::substr(json_string::size_type pos_,
+                                    json_string::size_type len_) const
+    {
+      return json_string(_json.substr(pos_, len_));
+    }
+
     bool operator==(const json_string& a_, const json_string& b_)
     {
       // Not testing point_of_event and source_location

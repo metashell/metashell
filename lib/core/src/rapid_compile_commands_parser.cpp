@@ -164,6 +164,10 @@ namespace metashell
         {
           _name = data::shell_config_name(str_.empty() ? "_" : str_);
         }
+        else if (*_key == "directory")
+        {
+          _data->cwd = str_;
+        }
 
         return true;
       }

@@ -31,11 +31,19 @@ namespace metashell
                         boost::addable<json_string>
     {
     public:
+      using size_type = std::string::size_type;
+
       explicit json_string(const std::string& json_ = std::string());
 
       const std::string& get() const;
 
       json_string& operator+=(const json_string&);
+
+      size_type size() const;
+
+      size_type find(const json_string&) const;
+
+      json_string substr(size_type pos_, size_type len_) const;
 
     private:
       std::string _json;
