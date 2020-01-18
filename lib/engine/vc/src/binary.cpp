@@ -117,10 +117,12 @@ namespace metashell
 
       binary::binary(data::executable_path cl_path_,
                      data::command_line_argument_list base_args_,
+                     boost::filesystem::path cwd_,
                      boost::filesystem::path temp_dir_,
                      core::logger* logger_)
         : _cl_path(std::move(cl_path_)),
           _base_args(std::move(base_args_)),
+          _cwd(std::move(cwd_)),
           _temp_dir(std::move(temp_dir_)),
           _logger(logger_)
       {

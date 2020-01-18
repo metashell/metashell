@@ -99,7 +99,8 @@ namespace metashell
               clang::find_clang(UseInternalTemplight, *config_.engine,
                                 metashell_binary_, env_detector_, displayer_,
                                 logger_),
-              extra_clang_args, internal_dir_, env_detector_, logger_);
+              extra_clang_args, config_.cwd, internal_dir_, env_detector_,
+              logger_);
 
           return core::make_engine(
               name(UseInternalTemplight), config_.engine->name,

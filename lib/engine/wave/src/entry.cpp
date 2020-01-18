@@ -67,7 +67,8 @@ namespace metashell
 
             return clang::header_discoverer(
                        clang::binary(true, *clang_path, extra_clang_args,
-                                     internal_dir_, env_detector_, logger_))
+                                     boost::filesystem::path(), internal_dir_,
+                                     env_detector_, logger_))
                 .include_path(data::include_type::sys);
           }
           return {};

@@ -15,15 +15,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/system_test/comment.hpp>
+#include <metashell/system_test/cpp_code.hpp>
 #include <metashell/system_test/error.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/metashell_terminated.hpp>
 #include <metashell/system_test/paragraph.hpp>
 #include <metashell/system_test/prompt.hpp>
+#include <metashell/system_test/system_test_config.hpp>
 #include <metashell/system_test/util.hpp>
 
+#include <metashell/core/rapid_json_writer.hpp>
+
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/filesystem/path.hpp>
+#include <boost/filesystem.hpp>
 
 #include <just/file.hpp>
 #include <just/temp.hpp>
@@ -34,6 +38,7 @@
 #include <tuple>
 #include <vector>
 
+using namespace metashell;
 using namespace metashell::system_test;
 using pattern::_;
 
@@ -42,12 +47,16 @@ namespace
   class config_parse_test
   {
   public:
+    explicit config_parse_test(boost::filesystem::path cwd_ = {})
+      : _cwd(std::move(cwd_))
+    {
+    }
+
     std::string error_with_configs(const std::vector<json_string>& configs_)
     {
       try
       {
-        metashell_instance(
-            write_configs(configs_), boost::filesystem::path(), false);
+        metashell_instance(write_configs(configs_), _cwd, false);
       }
       catch (const metashell_terminated& e_)
       {
@@ -61,7 +70,7 @@ namespace
     cmd_with_configs(const std::vector<json_string>& configs_,
                      const std::vector<std::string>& cmds_)
     {
-      metashell_instance mi(write_configs(configs_), {}, false);
+      metashell_instance mi(write_configs(configs_), _cwd, false);
       if (cmds_.empty())
       {
         return {};
@@ -78,6 +87,7 @@ namespace
 
   private:
     just::temp::directory _tmp;
+    boost::filesystem::path _cwd;
 
     metashell::data::command_line_argument_list
     write_configs(const std::vector<json_string>& configs_)
@@ -118,6 +128,48 @@ namespace
     }
     assert(!"This point should not be reached");
     return "";
+  }
+
+  void use_current_engine(iface::json_writer& out_)
+  {
+    out_.key("engine");
+    out_.string(current_engine());
+
+    out_.key("engine_args");
+    out_.start_array();
+    for (const data::command_line_argument& arg :
+         system_test_config::engine_args())
+    {
+      out_.string(to_string(arg));
+    }
+    out_.end_array();
+  }
+
+  json_string generate_cwd_related_configs(const boost::filesystem::path& cwd_)
+  {
+    std::ostringstream s;
+    core::rapid_json_writer w(s);
+
+    w.start_array();
+
+    w.start_object();
+    w.key("name");
+    w.string("no_cwd");
+    use_current_engine(w);
+    w.end_object();
+
+    w.start_object();
+    w.key("name");
+    w.string("with_cwd");
+    w.key("cwd");
+    w.string(cwd_.string());
+    use_current_engine(w);
+    w.end_object();
+
+    w.end_array();
+    w.end_document();
+
+    return json_string(s.str());
   }
 }
 
@@ -265,4 +317,44 @@ TEST(config_parsing, switching_config)
                  configs, {"#msh config load wave", "typedef foo bar;",
                            "#msh config load default", "#msh all config"})
                 .front());
+}
+
+TEST(config_parsing, cwd)
+{
+  just::temp::directory tmp;
+  const boost::filesystem::path d1 = tmp.path() + "/d1";
+  const boost::filesystem::path d2 = tmp.path() + "/d2";
+
+  create_directory(d1);
+  create_directory(d2);
+
+  just::file::write((d1 / "d1.hpp").string(), "#define FOO int");
+  just::file::write((d2 / "d2.hpp").string(), "#define FOO double");
+
+  const std::vector<json_string> configs{generate_cwd_related_configs(d2)};
+  config_parse_test t{d1};
+
+  ASSERT_EQ(cpp_code("int"),
+            t.cmd_with_configs(configs, {"#msh preprocessor mode",
+                                         "#include \"d1.hpp\"", "FOO"})
+                .front());
+
+  ASSERT_EQ(cpp_code("int"),
+            t.cmd_with_configs(
+                 configs, {"#msh preprocessor mode", "#msh config load no_cwd",
+                           "#include \"d1.hpp\"", "FOO"})
+                .front());
+
+  ASSERT_EQ(cpp_code("double"),
+            t.cmd_with_configs(configs, {"#msh preprocessor mode",
+                                         "#msh config load with_cwd",
+                                         "#include \"d2.hpp\"", "FOO"})
+                .front());
+
+  ASSERT_EQ(
+      cpp_code("int"),
+      t.cmd_with_configs(
+           configs, {"#msh preprocessor mode", "#msh config load with_cwd",
+                     "#msh config load no_cwd", "#include \"d1.hpp\"", "FOO"})
+          .front());
 }

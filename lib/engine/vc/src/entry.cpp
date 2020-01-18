@@ -128,7 +128,7 @@ namespace metashell
                   *config_.engine, env_detector_, metashell_binary_),
               data::command_line_argument_list{"/I" + internal_dir_.string()} +
                   extra_vc_args,
-              temp_dir_, logger_);
+              config_.cwd, temp_dir_, logger_);
 
           return make_engine(
               name(), config_.engine->name, not_supported(),

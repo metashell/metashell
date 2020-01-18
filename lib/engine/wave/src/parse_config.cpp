@@ -191,7 +191,8 @@ namespace metashell
           {
             return clang_macros(
                 clang::binary(true, *clang_path, extra_clang_args,
-                              internal_dir_, env_detector_, logger_),
+                              boost::filesystem::path(), internal_dir_,
+                              env_detector_, logger_),
                 internal_dir_);
           }
           return {};

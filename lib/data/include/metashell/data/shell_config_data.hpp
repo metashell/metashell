@@ -22,6 +22,8 @@
 #include <metashell/data/engine_name.hpp>
 #include <metashell/data/overridable.hpp>
 
+#include <boost/filesystem/path.hpp>
+
 namespace metashell
 {
   namespace data
@@ -32,6 +34,7 @@ namespace metashell
       bool use_precompiled_headers = false;
       bool preprocessor_mode = false;
       overridable<engine_arguments> engine;
+      boost::filesystem::path cwd;
     };
   }
 }

@@ -62,6 +62,8 @@ fields:
   headers to make the shell respond quicker.
 * `preprocessor_mode`: should the shell start in preprocessor mode. Setting to
   `true` has the same effect as starting Metashell with `--preprocessor`.
+* `cwd`: this overrides the working directory the compiler is run from. The
+  default is the directory, where Metashell was launched.
 
 You can create a JSON file with one or more such configs in it.
 Here is an example for such a config file:

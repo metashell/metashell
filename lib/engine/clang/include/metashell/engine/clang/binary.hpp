@@ -48,11 +48,13 @@ namespace metashell
       public:
         binary(data::executable_path clang_path_,
                data::command_line_argument_list base_args_,
+               boost::filesystem::path cwd_,
                core::logger* logger_);
 
         binary(bool use_internal_templight_,
                data::executable_path clang_path_,
                const data::command_line_argument_list& extra_clang_args_,
+               boost::filesystem::path cwd_,
                const boost::filesystem::path& internal_dir_,
                iface::environment_detector& env_detector_,
                core::logger* logger_);
@@ -67,6 +69,7 @@ namespace metashell
       private:
         data::executable_path _clang_path;
         data::command_line_argument_list _base_args;
+        boost::filesystem::path _cwd;
         core::logger* _logger;
       };
 
