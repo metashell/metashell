@@ -16,6 +16,7 @@
     * Support for switching between engines from the shell. This makes it
       possible to switch to a different compiler without leaving the shell.
       (The `#msh engine switch` pragma)
+    * Make it possible to override the working directory for each config.
 
 * Fixes
     * When multiple shell configs use the same engine with different engine

@@ -96,5 +96,16 @@ namespace metashell
     {
       return container_to_json(args_);
     }
+
+    json_string json_string_escape(const std::string& s_)
+    {
+      const json_string j = to_json(s_);
+      return j.substr(1, j.size() - 2);
+    }
+
+    json_string json_string_escape(const json_string& s_)
+    {
+      return json_string_escape(s_.get());
+    }
   }
 }

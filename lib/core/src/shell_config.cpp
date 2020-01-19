@@ -47,6 +47,8 @@ namespace metashell
       out_.key("preprocessor_mode");
       out_.bool_(cfg_.preprocessor_mode);
 
+      out_.key("cwd"), out_.string(cfg_.cwd.string());
+
       out_.end_object();
     }
   }

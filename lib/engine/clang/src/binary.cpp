@@ -328,9 +328,11 @@ namespace metashell
 
       binary::binary(data::executable_path clang_path_,
                      data::command_line_argument_list base_args_,
+                     boost::filesystem::path cwd_,
                      core::logger* logger_)
         : _clang_path(std::move(clang_path_)),
           _base_args(std::move(base_args_)),
+          _cwd(std::move(cwd_)),
           _logger(logger_)
       {
       }
@@ -338,6 +340,7 @@ namespace metashell
       binary::binary(bool use_internal_templight_,
                      data::executable_path clang_path_,
                      const data::command_line_argument_list& extra_clang_args_,
+                     boost::filesystem::path cwd_,
                      const boost::filesystem::path& internal_dir_,
                      iface::environment_detector& env_detector_,
                      core::logger* logger_)
@@ -348,6 +351,7 @@ namespace metashell
                             env_detector_,
                             logger_,
                             clang_path_),
+                 std::move(cwd_),
                  logger_)
       {
       }
@@ -358,9 +362,10 @@ namespace metashell
       {
         const data::command_line cmd(_clang_path, _base_args + args_);
 
-        METASHELL_LOG(_logger, "Running Clang: " + to_string(cmd));
+        METASHELL_LOG(_logger, "Running Clang: " + to_string(cmd) + " [cwd=" +
+                                   _cwd.string() + "]");
 
-        const data::process_output o = process::run(cmd, stdin_);
+        const data::process_output o = process::run(cmd, stdin_, _cwd);
 
         METASHELL_LOG(_logger, "Clang's exit code: " + to_string(o.exit_code));
         METASHELL_LOG(_logger, "Clang's stdout: " + o.standard_output);

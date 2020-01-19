@@ -28,21 +28,6 @@ namespace metashell
   {
     namespace
     {
-      std::string current_engine()
-      {
-        const auto& args = system_test_config::metashell_args();
-        auto engine = std::find(args.begin(), args.end(), "--engine");
-        if (engine != args.end())
-        {
-          ++engine;
-          if (engine != args.end())
-          {
-            return to_string(*engine);
-          }
-        }
-        return "internal";
-      }
-
       template <class Container, class T>
       bool contains(const Container& container_, const T& item_)
       {
@@ -192,6 +177,21 @@ namespace metashell
     metashell_instance::initial_responses() const
     {
       return _initial_responses;
+    }
+
+    std::string current_engine()
+    {
+      const auto& args = system_test_config::metashell_args();
+      auto engine = std::find(args.begin(), args.end(), "--engine");
+      if (engine != args.end())
+      {
+        ++engine;
+        if (engine != args.end())
+        {
+          return to_string(*engine);
+        }
+      }
+      return "internal";
     }
 
     std::string current_real_engine()

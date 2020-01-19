@@ -62,7 +62,8 @@ namespace metashell
             {"engine", field_type::string_},
             {"engine_args", field_type::list_},
             {"use_precompiled_headers", field_type::bool_},
-            {"preprocessor_mode", field_type::bool_}};
+            {"preprocessor_mode", field_type::bool_},
+            {"cwd", field_type::string_}};
 
         const auto i = fields.find(field_);
         return i == fields.end() ? boost::none :
@@ -195,6 +196,10 @@ namespace metashell
           else if (*_key == "engine")
           {
             _data->engine.default_value().name = data::parse_engine_name(str_);
+          }
+          else if (*_key == "cwd")
+          {
+            _data->cwd = str_;
           }
           else
           {

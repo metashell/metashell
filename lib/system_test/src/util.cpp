@@ -178,6 +178,9 @@ namespace metashell
       w.Key("preprocessor_mode");
       w.Bool(false);
 
+      w.Key("cwd");
+      w.String("");
+
       w.EndObject();
 
       return json_string(buff.GetString());

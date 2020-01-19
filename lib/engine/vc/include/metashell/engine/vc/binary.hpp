@@ -41,6 +41,7 @@ namespace metashell
       public:
         binary(data::executable_path cl_path_,
                data::command_line_argument_list base_args_,
+               boost::filesystem::path cwd_,
                boost::filesystem::path temp_dir_,
                core::logger* logger_);
 
@@ -54,6 +55,7 @@ namespace metashell
       private:
         data::executable_path _cl_path;
         data::command_line_argument_list _base_args;
+        boost::filesystem::path _cwd;
         boost::filesystem::path _temp_dir;
         core::logger* _logger;
       };

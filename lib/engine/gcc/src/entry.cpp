@@ -142,7 +142,8 @@ namespace metashell
 
           clang::binary cbin(extract_gcc_binary(*config_.engine, env_detector_,
                                                 metashell_binary_),
-                             gcc_args(extra_gcc_args, internal_dir_), logger_);
+                             gcc_args(extra_gcc_args, internal_dir_),
+                             config_.cwd, logger_);
 
           return core::make_engine(
               name(), config_.engine->name, not_supported(),

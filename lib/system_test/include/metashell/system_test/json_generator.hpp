@@ -34,6 +34,9 @@ namespace metashell
     json_string to_json(const std::string& s_);
     json_string to_json(const std::vector<std::string>& strings_);
     json_string to_json(const data::command_line_argument_list&);
+
+    json_string json_string_escape(const std::string&);
+    json_string json_string_escape(const json_string&);
   }
 }
 

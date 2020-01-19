@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/system_test/comment.hpp>
+#include <metashell/system_test/json_generator.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/util.hpp>
 
@@ -110,6 +111,9 @@ TEST(shell_compile_commands, creating_shell_configs)
       a_foo.front().get().find(
           "\\\"engine_args\\\":[\\\"/foo/bar/g++\\\",\\\"-Iasd\\\"],") !=
       std::string::npos);
+  ASSERT_TRUE(a_foo.front().find(json_string_escape(
+                  json_string("\"cwd\":") + to_json(bin_dir.string()))) !=
+              std::string::npos);
 }
 
 TEST(shell_compile_commands, existing_name)

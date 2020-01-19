@@ -72,6 +72,7 @@ namespace metashell
       std::vector<json_string> _initial_responses;
     };
 
+    std::string current_engine();
     std::string current_real_engine();
 
     bool using_msvc();
