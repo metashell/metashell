@@ -127,6 +127,68 @@ namespace metashell
         void operator()(const command_line_argument&) {}
         void operator()() {}
       };
+
+      template <size_t Len>
+      void append_with_suffixes(const char (&name_)[Len],
+                                const std::vector<std::string>& suffixes_,
+                                std::vector<std::string>& target_)
+      {
+        for (const std::string& suffix : suffixes_)
+        {
+          target_.push_back(name_ + suffix);
+        }
+      }
+
+      template <size_t Len>
+      void can_be_disabled(const char (&name_)[Len],
+                           std::vector<std::string>& target_)
+      {
+        target_.push_back(name_);
+        target_.push_back(std::string("no-") + name_);
+      }
+
+      std::vector<std::string> dash_g_suffixes()
+      {
+        const std::vector<std::string> debug_level{"", "0", "1", "2", "3"};
+        const std::vector<std::string> debug_level_plus{
+            "+", "0", "1", "2", "3"};
+
+        std::vector<std::string> result{
+            "en-decls",
+            "split-dwarf",
+            "pubnames",
+            "gnu-pubnames",
+            "toggle",
+            "used",
+            "full",
+            "line-directives-only",
+            "line-tables-only",
+            "mlt",
+            "modules",
+            "lldb",
+            "sce",
+            "dwarf-aranges",
+        };
+
+        can_be_disabled("record-gcc-switches", result);
+        can_be_disabled("strict-dwarf", result);
+        can_be_disabled("column-info", result);
+        can_be_disabled("embed-source", result);
+        can_be_disabled("gnu-pubnames", result);
+        can_be_disabled("record-command-line", result);
+
+        append_with_suffixes("", debug_level, result);
+        append_with_suffixes("gdb", debug_level, result);
+        append_with_suffixes(
+            "dwarf", {"", "-0", "-1", "-2", "-3", "-4", "-5"}, result);
+        append_with_suffixes("stabs", debug_level_plus, result);
+        append_with_suffixes("coff", debug_level, result);
+        append_with_suffixes("xcoff", debug_level_plus, result);
+        append_with_suffixes("vms", debug_level, result);
+        append_with_suffixes("z", {"", "=none", "=zlib", "=zlib-gnu"}, result);
+
+        return result;
+      }
     }
 
     engine_arguments convert_to(real_engine_name engine_,
@@ -260,6 +322,7 @@ namespace metashell
           "disable Visual C++ compatibility",
           ignore
         )
+        .flag("-g", dash_g_suffixes(), "Add debug symbols", ignore)
       ;
       // clang-format on
 

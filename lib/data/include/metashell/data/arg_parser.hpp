@@ -46,6 +46,20 @@ namespace metashell
         return *this;
       }
 
+      template <size_t Len>
+      arg_parser& flag(const char (&name_)[Len],
+                       const std::vector<std::string>& suffixes_,
+                       std::string desc_,
+                       std::function<void()> action_)
+      {
+        for (const std::string& suffix : suffixes_)
+        {
+          _flags.emplace_back(
+              command_line_argument(name_ + suffix), desc_, action_);
+        }
+        return flag(name_, std::move(desc_), std::move(action_));
+      }
+
       template <size_t Len1, size_t Len2>
       arg_parser& with_value(const char (&short_name_)[Len1],
                              const char (&long_name_)[Len2],
