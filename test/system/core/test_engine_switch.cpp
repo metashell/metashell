@@ -56,7 +56,8 @@ TEST(engine_switch, unused_arguments)
                          "-gz=zlib",
                          "-gz=zlib-gnu",
                          "-gused",
-                         "-gfull"},
+                         "-gfull",
+                         "-pedantic"},
                         {},
                         false};
 

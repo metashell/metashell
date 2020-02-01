@@ -323,6 +323,11 @@ namespace metashell
           ignore
         )
         .flag("-g", dash_g_suffixes(), "Add debug symbols", ignore)
+        .flag(
+          "-pedantic",
+          "Issue all the warnings demanded by strict IDO C and ISO C++",
+          ignore
+        )
       ;
       // clang-format on
 
