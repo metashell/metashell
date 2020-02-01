@@ -39,6 +39,7 @@ namespace metashell
       standard_headers_allowed use_standard_headers =
           standard_headers_allowed::all;
       int template_instantiation_depth = 900;
+      bool warnings_enabled = true;
     };
 
     engine_arguments convert_to(real_engine_name, const engine_config&);

@@ -127,6 +127,7 @@ add_subdirectory(app/stub/clang)
 add_subdirectory(app/stub/cl_de)
 add_subdirectory(app/stub/cl_en)
 add_subdirectory(app/stub/gcc)
+add_subdirectory(app/config_tester)
 
 if (NOT DEFINED TESTS OR TESTS STREQUAL "auto")
   add_subdirectory(test/system/auto_engine)

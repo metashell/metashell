@@ -28,6 +28,20 @@ namespace metashell
 {
   namespace system_test
   {
+    namespace
+    {
+      template <size_t Len, class Encoding, class Allocator>
+      std::string
+      get_member(const char (&name_)[Len],
+                 const rapidjson::GenericValue<Encoding, Allocator>& json_)
+      {
+        return (json_.IsObject() && json_.HasMember(name_) &&
+                json_[name_].IsString()) ?
+                   json_[name_].GetString() :
+                   std::string();
+      }
+    }
+
     comment::comment(std::string content_)
       : _paragraphs_specified(true), _paragraphs{paragraph(std::move(content_))}
     {
@@ -41,6 +55,32 @@ namespace metashell
     comment::comment(pattern::placeholder)
       : _paragraphs_specified(false), _paragraphs()
     {
+    }
+
+    comment::comment(const json_string& s_)
+      : _paragraphs_specified{true}, _paragraphs{}
+    {
+      rapidjson::Document d;
+      d.Parse(s_.get().c_str());
+
+      if (!members_are({"type", "paragraphs"}, d) ||
+          !is_string("comment", d["type"]) || !d["paragraphs"].IsArray())
+      {
+        throw std::runtime_error("Invalid comment: " + s_.get());
+      }
+
+      for (auto i = d["paragraphs"].Begin(), e = d["paragraphs"].End(); i != e;
+           ++i)
+      {
+        if (!i->IsObject())
+        {
+          throw std::runtime_error("Invalid comment: " + s_.get());
+        }
+
+        _paragraphs.emplace_back(get_member("content", *i),
+                                 get_member("rest_of_lines_indentation", *i),
+                                 get_member("first_line_indentation", *i));
+      }
     }
 
     bool comment::paragraphs_specified() const { return _paragraphs_specified; }

@@ -38,6 +38,7 @@ namespace metashell
       explicit comment(std::string);
       explicit comment(std::initializer_list<paragraph>);
       explicit comment(pattern::placeholder);
+      explicit comment(const json_string&);
 
       bool paragraphs_specified() const;
       const std::vector<paragraph>& paragraphs() const;

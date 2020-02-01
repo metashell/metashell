@@ -60,6 +60,11 @@ namespace metashell
           break;
         }
 
+        if (!cfg_.warnings_enabled)
+        {
+          result.push_back("-w");
+        }
+
         return result;
       }
 
@@ -204,6 +209,7 @@ namespace metashell
 
       engine_config result;
       result.standard = language_standard::cpp17;
+      result.warnings_enabled = true;
 
       arg_parser parser(unsupported_compiler_argument);
 
@@ -232,6 +238,11 @@ namespace metashell
           [&result]
           { result.use_standard_headers = standard_headers_allowed::none; }
         )
+        .flag(
+          "/w",
+          "Suppresses all compiler warnings.",
+          [&result] { result.warnings_enabled = false; }
+        )
         .with_value(
           "/EH",
           "exception handling model",
@@ -252,6 +263,7 @@ namespace metashell
       engine_config result;
       result.standard = language_standard::cpp11;
       result.use_standard_headers = standard_headers_allowed::all;
+      result.warnings_enabled = true;
 
       arg_parser parser(unsupported_compiler_argument);
 
@@ -346,6 +358,11 @@ namespace metashell
           "ignore standard C headers",
           [&result]
           { result.use_standard_headers = disable_cpp(result.use_standard_headers); }
+        )
+        .flag(
+          "-w",
+          "Inhibit all warning messages",
+          [&result] { result.warnings_enabled = false; }
         )
         .flag(
           "-fno-ms-compatibility",
