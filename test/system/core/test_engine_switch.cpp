@@ -75,7 +75,9 @@ TEST(engine_switch, unused_arguments)
                          "-Os",
                          "-Ofast",
                          "-Og",
-                         "-m32"},
+                         "-m32",
+                         "-fno-builtin",
+                         "-fno-builtin-function"},
                         {},
                         false};
 
