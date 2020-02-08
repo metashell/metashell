@@ -25,6 +25,7 @@
       first.
     * `.` is not on the sysinclude path in the Wave engine
     * Display all `-I` arguments with `#msh sysincludes` path in the Wave engine
+    * Support Clang and GCC preprocessor shell in C++98 mode
 
 * Changes to existing behaviour
     * **Breaking change** Regular expression syntax for breakpoints changes

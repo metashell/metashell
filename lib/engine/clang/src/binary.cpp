@@ -19,6 +19,7 @@
 
 #include <metashell/data/default_clang_search_path.hpp>
 #include <metashell/data/exception.hpp>
+#include <metashell/data/language_standard.hpp>
 
 #include <metashell/process/run.hpp>
 
@@ -35,6 +36,29 @@ namespace metashell
     {
       namespace
       {
+        bool uses_c(const data::command_line_argument_list& args_)
+        {
+          for (const data::command_line_argument& arg : args_)
+          {
+            if (const auto standard = arg.remove_prefix("-std="))
+            {
+              try
+              {
+                if (c_standard(parse_standard(
+                        data::real_engine_name::clang, standard->value())))
+                {
+                  return true;
+                }
+              }
+              catch (const std::exception&)
+              {
+                // skip
+              }
+            }
+          }
+          return false;
+        }
+
         data::executable_path
         extract_clang_binary(const data::engine_arguments& engine_,
                              iface::environment_detector& env_detector_,
@@ -212,7 +236,8 @@ namespace metashell
                    const data::executable_path& clang_path_)
         {
           data::command_line_argument_list args{
-              "-iquote", ".", "-x", "c++-header"};
+              "-iquote", ".", "-x",
+              uses_c(extra_clang_args_) ? "c-header" : "c++-header"};
 
           if (stdinc_allowed(extra_clang_args_))
           {
