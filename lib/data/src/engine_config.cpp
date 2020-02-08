@@ -373,6 +373,13 @@ namespace metashell
           ignore
         )
         .flag(
+          "-funwind-tables",
+          "Similar to -fexceptions, except that it just generates any"
+          " needed static data, but does not affect the generated code in any"
+          " other way.",
+          ignore
+        )
+        .flag(
           "-O0",
           "Reduce compilation time and make debugging"
           " produce the expected result",

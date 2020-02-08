@@ -78,7 +78,8 @@ TEST(engine_switch, unused_arguments)
                          "-m32",
                          "-fno-builtin",
                          "-fno-builtin-function",
-                         "-fomit-frame-pointer"},
+                         "-fomit-frame-pointer",
+                         "-funwind-tables"},
                         {},
                         false};
 
