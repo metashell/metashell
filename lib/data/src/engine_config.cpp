@@ -329,6 +329,13 @@ namespace metashell
           ignore
         )
         .flag("-fPIC", "Emit position-independent code", ignore)
+        .flag(
+          "-fvisibility-inlines-hidden",
+          "Declares that the user does not attempt to compare pointers to"
+          " inline functions or methods where the addresses of the two"
+          " functions are taken in different shared object.",
+          ignore
+        )
       ;
       // clang-format on
 

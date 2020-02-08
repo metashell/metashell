@@ -60,7 +60,8 @@ TEST(engine_switch, unused_arguments)
 #ifndef _WIN32
                          "-fPIC",
 #endif
-                         "-pedantic"},
+                         "-pedantic",
+                         "-fvisibility-inlines-hidden"},
                         {},
                         false};
 
