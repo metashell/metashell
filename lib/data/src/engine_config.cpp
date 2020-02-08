@@ -380,6 +380,34 @@ namespace metashell
           ignore
         )
         .flag(
+          "-fstack-protector",
+          "Emit extra code to check for buffer overflows for functions that"
+          " call alloca and functions with buffers larger than 8 bytes.",
+          ignore
+        )
+        .flag(
+          "-fstack-protector-all",
+          "Like -fstack-protector except that all functions are protected.",
+          ignore
+        )
+        .flag(
+          "-fstack-protector-strong",
+          "Like -fstack-protector but includes additional functions to be"
+          " protected.",
+          ignore
+        )
+        .flag(
+          "-fstack-protector-explicit",
+          "Like -fstack-protector but only protects those functions which"
+          " have the stack_protect attribute",
+          ignore
+        )
+        .flag(
+          "-fno-stack-protector",
+          "Disable the stack protector check",
+          ignore
+        )
+        .flag(
           "-O0",
           "Reduce compilation time and make debugging"
           " produce the expected result",

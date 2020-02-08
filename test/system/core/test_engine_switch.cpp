@@ -79,7 +79,11 @@ TEST(engine_switch, unused_arguments)
                          "-fno-builtin",
                          "-fno-builtin-function",
                          "-fomit-frame-pointer",
-                         "-funwind-tables"},
+                         "-funwind-tables",
+                         "-fstack-protector",
+                         "-fstack-protector-all",
+                         "-fstack-protector-strong",
+                         "-fno-stack-protector"},
                         {},
                         false};
 
