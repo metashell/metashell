@@ -346,6 +346,8 @@ namespace metashell
           "Place each data item into its own section in the output file",
           ignore
         )
+        .flag("-fexceptions", "Enable exception hanlding", ignore)
+        .flag("-fno-exceptions", "Disable exception hanlding", ignore)
         .flag(
           "-O0",
           "Reduce compilation time and make debugging"

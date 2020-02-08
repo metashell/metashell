@@ -64,6 +64,8 @@ TEST(engine_switch, unused_arguments)
                          "-fvisibility-inlines-hidden",
                          "-ffunction-sections",
                          "-fdata-sections",
+                         "-fexceptions",
+                         "-fno-exceptions",
                          "-O",
                          "-O0",
                          "-O1",
