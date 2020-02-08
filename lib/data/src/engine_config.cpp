@@ -336,6 +336,16 @@ namespace metashell
           " functions are taken in different shared object.",
           ignore
         )
+        .flag(
+          "-ffunction-sections",
+          "Place each function into its own section in the output file",
+          ignore
+        )
+        .flag(
+          "-fdata-sections",
+          "Place each data item into its own section in the output file",
+          ignore
+        )
       ;
       // clang-format on
 

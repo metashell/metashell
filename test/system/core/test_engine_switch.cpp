@@ -61,7 +61,9 @@ TEST(engine_switch, unused_arguments)
                          "-fPIC",
 #endif
                          "-pedantic",
-                         "-fvisibility-inlines-hidden"},
+                         "-fvisibility-inlines-hidden",
+                         "-ffunction-sections",
+                         "-fdata-sections"},
                         {},
                         false};
 
