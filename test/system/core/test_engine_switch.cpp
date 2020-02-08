@@ -63,7 +63,15 @@ TEST(engine_switch, unused_arguments)
                          "-pedantic",
                          "-fvisibility-inlines-hidden",
                          "-ffunction-sections",
-                         "-fdata-sections"},
+                         "-fdata-sections",
+                         "-O",
+                         "-O0",
+                         "-O1",
+                         "-O2",
+                         "-O3",
+                         "-Os",
+                         "-Ofast",
+                         "-Og"},
                         {},
                         false};
 

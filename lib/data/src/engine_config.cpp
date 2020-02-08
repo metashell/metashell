@@ -346,6 +346,19 @@ namespace metashell
           "Place each data item into its own section in the output file",
           ignore
         )
+        .flag(
+          "-O0",
+          "Reduce compilation time and make debugging"
+          " produce the expected result",
+          ignore
+        )
+        .flag("-O", "Optimize", ignore)
+        .flag("-O1", "Optimize", ignore)
+        .flag("-O2", "Optimize even more", ignore)
+        .flag("-O3", "Optimize yet more", ignore)
+        .flag("-Os", "Optimize for size", ignore)
+        .flag("-Ofast", "Disregard strict standards compliance", ignore)
+        .flag("-Og", "Optimize debugging experience", ignore)
       ;
       // clang-format on
 
