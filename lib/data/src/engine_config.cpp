@@ -412,6 +412,8 @@ namespace metashell
           "Disable the stack protector check",
           ignore
         )
+        .flag("-flto", "Enable link-time optimisation", ignore)
+        .flag("-fno-lto", "Disable link-time optimisation", ignore)
         .flag(
           "-O0",
           "Reduce compilation time and make debugging"

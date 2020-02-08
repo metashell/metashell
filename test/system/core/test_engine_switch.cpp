@@ -84,7 +84,9 @@ TEST(engine_switch, unused_arguments)
                          "-fstack-protector-all",
                          "-fstack-protector-strong",
                          "-fno-stack-protector",
-                         "-fvisibility=hidden"},
+                         "-fvisibility=hidden",
+                         "-flto",
+                         "-fno-lto"},
                         {},
                         false};
 
