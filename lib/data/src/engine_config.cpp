@@ -328,6 +328,7 @@ namespace metashell
           "Issue all the warnings demanded by strict IDO C and ISO C++",
           ignore
         )
+        .flag("-fPIC", "Emit position-independent code", ignore)
       ;
       // clang-format on
 

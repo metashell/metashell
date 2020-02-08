@@ -57,6 +57,9 @@ TEST(engine_switch, unused_arguments)
                          "-gz=zlib-gnu",
                          "-gused",
                          "-gfull",
+#ifndef _WIN32
+                         "-fPIC",
+#endif
                          "-pedantic"},
                         {},
                         false};
