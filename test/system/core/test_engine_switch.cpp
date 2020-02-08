@@ -77,7 +77,8 @@ TEST(engine_switch, unused_arguments)
                          "-Og",
                          "-m32",
                          "-fno-builtin",
-                         "-fno-builtin-function"},
+                         "-fno-builtin-function",
+                         "-fomit-frame-pointer"},
                         {},
                         false};
 

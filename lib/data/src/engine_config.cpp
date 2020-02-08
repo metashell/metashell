@@ -367,6 +367,12 @@ namespace metashell
           ignore
         )
         .flag(
+          "-fomit-frame-pointer",
+          "Don't keep the frame pointer in a register for"
+          " functions that don't need one.",
+          ignore
+        )
+        .flag(
           "-O0",
           "Reduce compilation time and make debugging"
           " produce the expected result",
