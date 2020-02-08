@@ -66,6 +66,7 @@ TEST(engine_switch, unused_arguments)
                          "-fdata-sections",
                          "-fexceptions",
                          "-fno-exceptions",
+                         "-fno-rtti",
                          "-O",
                          "-O0",
                          "-O1",

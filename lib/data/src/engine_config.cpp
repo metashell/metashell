@@ -349,6 +349,12 @@ namespace metashell
         .flag("-fexceptions", "Enable exception hanlding", ignore)
         .flag("-fno-exceptions", "Disable exception hanlding", ignore)
         .flag(
+          "-fno-rtti",
+          "Disable generation of information about every class"
+          " with virtual functions",
+          ignore
+        )
+        .flag(
           "-O0",
           "Reduce compilation time and make debugging"
           " produce the expected result",
