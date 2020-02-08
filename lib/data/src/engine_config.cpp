@@ -305,6 +305,11 @@ namespace metashell
           "Warning-related setting",
           ignore
         )
+        .with_value(
+          "-fvisibility",
+          "Set the default ELF image symbol visibility",
+          ignore
+        )
         .flag(
           "-nostdinc",
           "ignore standard C headers",
