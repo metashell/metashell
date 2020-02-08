@@ -367,6 +367,8 @@ namespace metashell
         .flag("-Os", "Optimize for size", ignore)
         .flag("-Ofast", "Disregard strict standards compliance", ignore)
         .flag("-Og", "Optimize debugging experience", ignore)
+        .flag("-m32", "Generate code for 32-bit ABI", ignore)
+        .flag("-m64", "Generate code for 64-bit ABI", ignore)
       ;
       // clang-format on
 

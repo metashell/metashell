@@ -74,7 +74,8 @@ TEST(engine_switch, unused_arguments)
                          "-O3",
                          "-Os",
                          "-Ofast",
-                         "-Og"},
+                         "-Og",
+                         "-m32"},
                         {},
                         false};
 
