@@ -305,6 +305,11 @@ namespace metashell
           "Warning-related setting",
           ignore
         )
+        .with_value(
+          "-fvisibility",
+          "Set the default ELF image symbol visibility",
+          ignore
+        )
         .flag(
           "-nostdinc",
           "ignore standard C headers",
@@ -323,6 +328,107 @@ namespace metashell
           ignore
         )
         .flag("-g", dash_g_suffixes(), "Add debug symbols", ignore)
+        .flag(
+          "-pedantic",
+          "Issue all the warnings demanded by strict IDO C and ISO C++",
+          ignore
+        )
+        .flag("-fPIC", "Emit position-independent code", ignore)
+        .flag(
+          "-fvisibility-inlines-hidden",
+          "Declares that the user does not attempt to compare pointers to"
+          " inline functions or methods where the addresses of the two"
+          " functions are taken in different shared object.",
+          ignore
+        )
+        .flag(
+          "-ffunction-sections",
+          "Place each function into its own section in the output file",
+          ignore
+        )
+        .flag(
+          "-fdata-sections",
+          "Place each data item into its own section in the output file",
+          ignore
+        )
+        .flag("-fexceptions", "Enable exception hanlding", ignore)
+        .flag("-fno-exceptions", "Disable exception hanlding", ignore)
+        .flag(
+          "-fno-rtti",
+          "Disable generation of information about every class"
+          " with virtual functions",
+          ignore
+        )
+        .flag(
+          "-fno-builtin",
+          "Don't recognize built-in functions that do not begin with"
+          " __builtin_ as prefix",
+          ignore
+        )
+        .flag(
+          "-fno-builtin-function",
+          "Don't recognize built-in functions that do not begin with"
+          " __builtin_ as prefix",
+          ignore
+        )
+        .flag(
+          "-fomit-frame-pointer",
+          "Don't keep the frame pointer in a register for"
+          " functions that don't need one.",
+          ignore
+        )
+        .flag(
+          "-funwind-tables",
+          "Similar to -fexceptions, except that it just generates any"
+          " needed static data, but does not affect the generated code in any"
+          " other way.",
+          ignore
+        )
+        .flag(
+          "-fstack-protector",
+          "Emit extra code to check for buffer overflows for functions that"
+          " call alloca and functions with buffers larger than 8 bytes.",
+          ignore
+        )
+        .flag(
+          "-fstack-protector-all",
+          "Like -fstack-protector except that all functions are protected.",
+          ignore
+        )
+        .flag(
+          "-fstack-protector-strong",
+          "Like -fstack-protector but includes additional functions to be"
+          " protected.",
+          ignore
+        )
+        .flag(
+          "-fstack-protector-explicit",
+          "Like -fstack-protector but only protects those functions which"
+          " have the stack_protect attribute",
+          ignore
+        )
+        .flag(
+          "-fno-stack-protector",
+          "Disable the stack protector check",
+          ignore
+        )
+        .flag("-flto", "Enable link-time optimisation", ignore)
+        .flag("-fno-lto", "Disable link-time optimisation", ignore)
+        .flag(
+          "-O0",
+          "Reduce compilation time and make debugging"
+          " produce the expected result",
+          ignore
+        )
+        .flag("-O", "Optimize", ignore)
+        .flag("-O1", "Optimize", ignore)
+        .flag("-O2", "Optimize even more", ignore)
+        .flag("-O3", "Optimize yet more", ignore)
+        .flag("-Os", "Optimize for size", ignore)
+        .flag("-Ofast", "Disregard strict standards compliance", ignore)
+        .flag("-Og", "Optimize debugging experience", ignore)
+        .flag("-m32", "Generate code for 32-bit ABI", ignore)
+        .flag("-m64", "Generate code for 64-bit ABI", ignore)
       ;
       // clang-format on
 
