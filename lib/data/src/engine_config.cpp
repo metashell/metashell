@@ -466,6 +466,24 @@ namespace metashell
       ;
       // clang-format on
 
+      for (std::string instr :
+           {"mmx",      "sse",      "sse2",     "sse3",       "ssse3",
+            "sse4",     "sse4a",    "sse4.1",   "sse4.2",     "avx",
+            "avx2",     "avx512f",  "avx512pf", "avx512er",   "avx512cd",
+            "avx512vl", "avx512bw", "avx512dq", "avx512ifma", "avx512vbmi",
+            "sha",      "aes",      "pclmul",   "clflushopt", "fsgsbase",
+            "rdrnd",    "f16c",     "fma",      "fma4",       "prefetchwt1",
+            "xop",      "lwp",      "3dnow",    "3dnowa",     "popcnt",
+            "abm",      "bmi",      "bmi2",     "lzcnt",      "fxsr",
+            "xsave",    "xsaveopt", "xsavec",   "xsaves",     "rtm",
+            "tbm",      "mpx",      "mwaitx",   "clzero",     "pku"})
+      {
+        parser.flag(data::command_line_argument("-m" + instr),
+                    "Enable " + instr + " instructions", ignore);
+        parser.flag(data::command_line_argument("-mno-" + instr),
+                    "Disable " + instr + " instructions", ignore);
+      }
+
       parser.parse(args_);
 
       return result;

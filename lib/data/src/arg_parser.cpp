@@ -36,6 +36,15 @@ namespace metashell
     {
     }
 
+    arg_parser& arg_parser::flag(command_line_argument name_,
+                                 std::string desc_,
+                                 std::function<void()> action_)
+    {
+      _flags.emplace_back(
+          std::move(name_), std::move(desc_), std::move(action_));
+      return *this;
+    }
+
     arg_parser::flag_definition::flag_definition(command_line_argument name_,
                                                  std::string description_,
                                                  std::function<void()> action_)
