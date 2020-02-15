@@ -354,6 +354,12 @@ namespace metashell
         .flag("-fexceptions", "Enable exception hanlding", ignore)
         .flag("-fno-exceptions", "Disable exception hanlding", ignore)
         .flag(
+          "-frtti",
+          "Enable generation of information about every class"
+          " with virtual functions",
+          ignore
+        )
+        .flag(
           "-fno-rtti",
           "Disable generation of information about every class"
           " with virtual functions",
