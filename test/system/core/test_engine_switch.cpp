@@ -59,6 +59,7 @@ TEST(engine_switch, unused_arguments)
                          "-gfull",
 #ifndef _WIN32
                          "-fPIC",
+                         "-fPIE",
 #endif
                          "-pedantic",
                          "-fvisibility-inlines-hidden",

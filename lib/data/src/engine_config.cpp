@@ -338,7 +338,25 @@ namespace metashell
           "Issue all the warnings demanded by strict IDO C and ISO C++",
           ignore
         )
+        .flag(
+          "-fpic",
+          "Generate position-independent code suitable for use in a shared"
+          " library.",
+          ignore
+        )
+        .flag(
+          "-fpie",
+          "Similar to -fpic, but generated position independent code"
+          " can be only linked into executables.",
+          ignore
+        )
         .flag("-fPIC", "Emit position-independent code", ignore)
+        .flag(
+          "-fPIE",
+          "Similar to -fPIC, but generated position independent code"
+          " can be only linked into executables.",
+          ignore
+        )
         .flag(
           "-fvisibility-inlines-hidden",
           "Declares that the user does not attempt to compare pointers to"
