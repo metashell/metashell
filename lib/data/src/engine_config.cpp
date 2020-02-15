@@ -481,6 +481,12 @@ namespace metashell
           "Assert that compilation targets a freestanding environment.",
           ignore
         )
+        .flag(
+          "-pthread",
+          "Define additional macros required for using the POSIX threads"
+          " library.",
+          ignore
+        )
       ;
       // clang-format on
 

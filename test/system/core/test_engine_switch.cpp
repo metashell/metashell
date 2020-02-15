@@ -141,7 +141,8 @@ TEST(engine_switch, unused_arguments)
                          "-mmpx",
                          "-mmwaitx",
                          "-mclzero",
-                         "-mpku"},
+                         "-mpku",
+                         "-pthread"},
                         {},
                         false};
 
