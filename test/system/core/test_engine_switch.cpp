@@ -62,6 +62,7 @@ TEST(engine_switch, unused_arguments)
                          "-fPIE",
 #endif
                          "-pedantic",
+                         "-pedantic-errors",
                          "-fvisibility-inlines-hidden",
                          "-ffunction-sections",
                          "-fdata-sections",

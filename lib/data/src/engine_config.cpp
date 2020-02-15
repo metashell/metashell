@@ -339,6 +339,11 @@ namespace metashell
           ignore
         )
         .flag(
+          "-pedantic-errors",
+          "Give an error whenever the base standard requires a diagnostic.",
+          ignore
+        )
+        .flag(
           "-fpic",
           "Generate position-independent code suitable for use in a shared"
           " library.",
