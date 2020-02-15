@@ -78,6 +78,7 @@ TEST(engine_switch, unused_arguments)
                          "-Ofast",
                          "-Og",
                          "-m32",
+                         "-fbuiltin",
                          "-fno-builtin",
                          "-fno-builtin-function",
                          "-fomit-frame-pointer",

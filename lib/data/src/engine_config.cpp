@@ -389,8 +389,20 @@ namespace metashell
           ignore
         )
         .flag(
+          "-fbuiltin",
+          "Recognize built-in functions that do not begin with"
+          " __builtin_ as prefix",
+          ignore
+        )
+        .flag(
           "-fno-builtin",
           "Don't recognize built-in functions that do not begin with"
+          " __builtin_ as prefix",
+          ignore
+        )
+        .flag(
+          "-fbuiltin-function",
+          "Recognize built-in functions that do not begin with"
           " __builtin_ as prefix",
           ignore
         )
