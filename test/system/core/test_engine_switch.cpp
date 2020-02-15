@@ -82,6 +82,7 @@ TEST(engine_switch, unused_arguments)
                          "-fno-builtin",
                          "-fno-builtin-function",
                          "-fomit-frame-pointer",
+                         "-fno-omit-frame-pointer",
                          "-funwind-tables",
                          "-fstack-protector",
                          "-fstack-protector-all",

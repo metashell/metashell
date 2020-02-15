@@ -419,6 +419,12 @@ namespace metashell
           ignore
         )
         .flag(
+          "-fno-omit-frame-pointer",
+          "Keep the frame pointer in a register for"
+          " functions that don't need one.",
+          ignore
+        )
+        .flag(
           "-funwind-tables",
           "Similar to -fexceptions, except that it just generates any"
           " needed static data, but does not affect the generated code in any"
