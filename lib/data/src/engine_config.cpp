@@ -482,6 +482,17 @@ namespace metashell
           ignore
         )
         .flag(
+          "-fcommon",
+          "Place uninitialized global variables in a common block.",
+          ignore
+        )
+        .flag(
+          "-fno-common",
+          "Place uninitialized global variables in the data section of the"
+          " object file.",
+          ignore
+        )
+        .flag(
           "-pthread",
           "Define additional macros required for using the POSIX threads"
           " library.",

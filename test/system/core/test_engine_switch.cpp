@@ -142,7 +142,8 @@ TEST(engine_switch, unused_arguments)
                          "-mmwaitx",
                          "-mclzero",
                          "-mpku",
-                         "-pthread"},
+                         "-pthread",
+                         "-fno-common"},
                         {},
                         false};
 
