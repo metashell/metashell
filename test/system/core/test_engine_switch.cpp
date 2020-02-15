@@ -143,7 +143,9 @@ TEST(engine_switch, unused_arguments)
                          "-mclzero",
                          "-mpku",
                          "-pthread",
-                         "-fno-common"},
+                         "-fno-common",
+                         "-fstrict-aliasing",
+                         "-fno-strict-aliasing"},
                         {},
                         false};
 

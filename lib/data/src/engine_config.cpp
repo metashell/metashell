@@ -493,6 +493,18 @@ namespace metashell
           ignore
         )
         .flag(
+          "-fstrict-aliasing",
+          "Allow the compiler to assume the strictest aliasing rules"
+          " applicable to the language being compiled.",
+          ignore
+        )
+        .flag(
+          "-fno-strict-aliasing",
+          "Don't allow the compiler to assume the strictest aliasing rules"
+          " applicable to the language being compiled.",
+          ignore
+        )
+        .flag(
           "-pthread",
           "Define additional macros required for using the POSIX threads"
           " library.",
