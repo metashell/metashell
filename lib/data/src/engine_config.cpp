@@ -310,6 +310,11 @@ namespace metashell
           "Set the default ELF image symbol visibility",
           ignore
         )
+        .with_value(
+          "-ftls-model",
+          "Alter the thread-local storage model to be used",
+          ignore
+        )
         .flag(
           "-nostdinc",
           "ignore standard C headers",

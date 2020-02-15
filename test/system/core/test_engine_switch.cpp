@@ -87,7 +87,8 @@ TEST(engine_switch, unused_arguments)
                          "-fno-stack-protector",
                          "-fvisibility=hidden",
                          "-flto",
-                         "-fno-lto"},
+                         "-fno-lto",
+                         "-ftls-model=local-exec"},
                         {},
                         false};
 
