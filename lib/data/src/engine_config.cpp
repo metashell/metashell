@@ -440,6 +440,11 @@ namespace metashell
         .flag("-Og", "Optimize debugging experience", ignore)
         .flag("-m32", "Generate code for 32-bit ABI", ignore)
         .flag("-m64", "Generate code for 64-bit ABI", ignore)
+        .flag(
+          "-ffreestanding",
+          "Assert that compilation targets a freestanding environment.",
+          ignore
+        )
       ;
       // clang-format on
 

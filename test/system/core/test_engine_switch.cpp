@@ -88,7 +88,8 @@ TEST(engine_switch, unused_arguments)
                          "-fvisibility=hidden",
                          "-flto",
                          "-fno-lto",
-                         "-ftls-model=local-exec"},
+                         "-ftls-model=local-exec",
+                         "-ffreestanding"},
                         {},
                         false};
 
