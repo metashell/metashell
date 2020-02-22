@@ -17,6 +17,7 @@
       possible to switch to a different compiler without leaving the shell.
       (The `#msh engine switch` pragma)
     * Make it possible to override the working directory for each config.
+    * Add `-isysroot` and `--sysroot` support to the Wave engine.
 
 * Fixes
     * When multiple shell configs use the same engine with different engine

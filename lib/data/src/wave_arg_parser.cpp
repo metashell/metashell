@@ -54,6 +54,25 @@ namespace metashell
           _includes.idirafter
         )
         .with_value(
+          "-isysroot",
+          "Specify the root of the includes",
+          [this](const command_line_argument& path_)
+          {
+            this->_includes.isysroot = path_.value();
+          }
+        )
+        .with_value(
+          "--sysroot",
+          "Specify the root of the includes",
+          [this](const command_line_argument& path_)
+          {
+            if (!this->_includes.isysroot)
+            {
+              this->_includes.isysroot = path_.value();
+            }
+          }
+        )
+        .with_value(
           "-D", "--define",
           "specify a macro to define (as `macro[=[value]]`)",
           [this](const command_line_argument& def_)

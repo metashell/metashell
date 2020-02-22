@@ -40,6 +40,20 @@ namespace metashell
     {
       namespace
       {
+        std::vector<boost::filesystem::path>
+        prefix_all(const boost::optional<boost::filesystem::path>& prefix_,
+                   std::vector<boost::filesystem::path> items_)
+        {
+          if (prefix_)
+          {
+            std::transform(items_.begin(), items_.end(), items_.begin(),
+                           [&prefix_](const boost::filesystem::path& path_) {
+                             return *prefix_ / path_;
+                           });
+          }
+          return items_;
+        }
+
         std::vector<data::feature> supported_features()
         {
           return {data::feature::preprocessor_shell(),
@@ -109,9 +123,10 @@ namespace metashell
               UseTemplightHeaders &&
                       cfg.config.use_standard_headers ==
                           data::standard_headers_allowed::all ?
-                  determine_clang_system_includes(metashell_binary_,
-                                                  internal_dir_, env_detector_,
-                                                  displayer_, logger_) :
+                  prefix_all(cfg.config.includes.isysroot,
+                             determine_clang_system_includes(
+                                 metashell_binary_, internal_dir_,
+                                 env_detector_, displayer_, logger_)) :
                   std::vector<boost::filesystem::path>();
 
           return make_engine(
