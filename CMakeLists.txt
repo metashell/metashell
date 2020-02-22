@@ -122,6 +122,7 @@ enable_testing()
 
 add_subdirectory(app/metashell)
 add_subdirectory(app/reference_gen)
+add_subdirectory(app/stub/apple_clang)
 add_subdirectory(app/stub/clang)
 add_subdirectory(app/stub/cl_de)
 add_subdirectory(app/stub/cl_en)

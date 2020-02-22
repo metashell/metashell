@@ -1,5 +1,5 @@
 # Metashell - Interactive C++ template metaprogramming shell
-# Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
+# Copyright (C) 2020, Abel Sinkovics (abel@sinkovics.hu)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,9 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-project(metashell_auto_engine_system_test)
-
-include(MetashellSystemTest)
+project(app_stub_apple_clang)
 
 aux_source_directory(. SOURCES)
 add_executable(${PROJECT_NAME} ${SOURCES})
@@ -26,24 +24,5 @@ enable_warnings(${PROJECT_NAME})
 target_link_libraries(
   ${PROJECT_NAME}
 
-  boost::filesystem
-  boost::program_options
-
-  metashell::process
-)
-
-templight_path(TEMPLIGHT_PATH)
-
-add_test(
-  NAME
-    metashell_auto_engine_system_test
-
-  COMMAND
-    ${PROJECT_NAME} --metashell "$<TARGET_FILE:metashell>"
-    --clang "$<TARGET_FILE:app_stub_clang>"
-    --clang "$<TARGET_FILE:app_stub_apple_clang>"
-    --templight "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
-    --gcc "$<TARGET_FILE:app_stub_gcc>"
-    --msvc "$<TARGET_FILE:app_stub_cl_en>"
-    --msvc "$<TARGET_FILE:app_stub_cl_de>"
+  metashell::compiler_stub
 )
