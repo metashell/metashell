@@ -57,15 +57,8 @@ namespace metashell
 
         if (!allow_standard_headers_ && !using_msvc())
         {
-          if (using_wave())
-          {
-            engine_args.push_back("--nostdinc++");
-          }
-          else
-          {
-            engine_args.push_back("-nostdinc");
-            engine_args.push_back("-nostdinc++");
-          }
+          engine_args.push_back("-nostdinc");
+          engine_args.push_back("-nostdinc++");
         }
 
         args.push_back("--");

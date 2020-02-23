@@ -40,7 +40,8 @@ namespace metashell
                iface::displayer& displayer_) const override
       {
         displayer_.show_filename_list(
-            shell_.engine().header_discoverer().include_path(Type));
+            shell_.engine().header_discoverer().include_path(
+                Type, data::standard_headers_allowed::all));
       }
     };
   }

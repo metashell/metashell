@@ -16,6 +16,8 @@
 
 #include <metashell/engine/constant/header_discoverer.hpp>
 
+#include <cassert>
+
 namespace metashell
 {
   namespace engine
@@ -30,8 +32,10 @@ namespace metashell
       }
 
       std::vector<boost::filesystem::path>
-      header_discoverer::include_path(data::include_type type_)
+      header_discoverer::include_path(data::include_type type_,
+                                      data::standard_headers_allowed allowed_)
       {
+        assert(allowed_ == data::standard_headers_allowed::all);
         return get(type_, _includes);
       }
 

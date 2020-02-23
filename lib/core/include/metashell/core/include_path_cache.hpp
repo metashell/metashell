@@ -20,11 +20,13 @@
 #include <metashell/core/cached.hpp>
 
 #include <metashell/data/include_type.hpp>
+#include <metashell/data/standard_headers_allowed.hpp>
 
 #include <metashell/iface/header_discoverer.hpp>
 
 #include <boost/filesystem/path.hpp>
 
+#include <map>
 #include <vector>
 
 namespace metashell
@@ -34,13 +36,15 @@ namespace metashell
     struct include_path_cache
     {
     public:
-      cached<std::vector<boost::filesystem::path>> sys;
-      cached<std::vector<boost::filesystem::path>> quote;
+      using key_type =
+          std::pair<data::include_type, data::standard_headers_allowed>;
 
       explicit include_path_cache(iface::header_discoverer& header_discoverer_);
 
-      const std::vector<boost::filesystem::path>&
-      operator[](data::include_type type_);
+      const std::vector<boost::filesystem::path>& operator[](key_type);
+
+    private:
+      std::map<key_type, cached<std::vector<boost::filesystem::path>>> _cache;
     };
   }
 }

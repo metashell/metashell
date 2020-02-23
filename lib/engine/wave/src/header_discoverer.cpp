@@ -17,6 +17,8 @@
 #include <metashell/engine/wave/context.hpp>
 #include <metashell/engine/wave/header_discoverer.hpp>
 
+#include <metashell/data/unsupported_standard_headers_allowed.hpp>
+
 namespace metashell
 {
   namespace engine
@@ -32,9 +34,25 @@ namespace metashell
       }
 
       std::vector<boost::filesystem::path>
-      header_discoverer::include_path(data::include_type type_)
+      header_discoverer::include_path(data::include_type type_,
+                                      data::standard_headers_allowed allowed_)
       {
-        return _config.config.includes.get(type_, _system_includes);
+        if (allowed_ == data::standard_headers_allowed::none)
+        {
+          return {};
+        }
+
+        const std::vector<boost::filesystem::path> result =
+            _config.config.includes.get(type_, _system_includes);
+        if (allowed_ == data::standard_headers_allowed::all || result.empty())
+        {
+          return result;
+        }
+        else
+        {
+          throw data::unsupported_standard_headers_allowed(
+              data::real_engine_name::wave, allowed_);
+        }
       }
 
       std::set<boost::filesystem::path>

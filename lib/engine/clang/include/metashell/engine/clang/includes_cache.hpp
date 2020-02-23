@@ -20,6 +20,7 @@
 #include <metashell/engine/clang/binary.hpp>
 
 #include <metashell/data/includes.hpp>
+#include <metashell/data/standard_headers_allowed.hpp>
 
 #include <metashell/core/cached.hpp>
 
@@ -29,7 +30,8 @@ namespace metashell
   {
     namespace clang
     {
-      core::cached<data::includes> includes_cache(binary binary_);
+      core::cached<data::includes>
+          includes_cache(binary, data::standard_headers_allowed);
     }
   }
 }

@@ -25,6 +25,8 @@
 
 #include <metashell/core/cached.hpp>
 
+#include <map>
+
 namespace metashell
 {
   namespace engine
@@ -37,14 +39,17 @@ namespace metashell
         explicit header_discoverer(binary binary_);
 
         virtual std::vector<boost::filesystem::path>
-        include_path(data::include_type type_) override;
+            include_path(data::include_type,
+                         data::standard_headers_allowed) override;
 
         virtual std::set<boost::filesystem::path>
         files_included_by(const data::cpp_code& exp_) override;
 
       private:
         binary _binary;
-        core::cached<data::includes> _includes;
+        core::cached<data::includes> _all_includes;
+        core::cached<data::includes> _c_includes;
+        core::cached<data::includes> _cpp_includes;
       };
     }
   }

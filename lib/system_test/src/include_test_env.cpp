@@ -188,10 +188,6 @@ namespace metashell
         {
           args.push_back("/X");
         }
-        else if (using_wave())
-        {
-          args.push_back("--nostdinc++");
-        }
         else
         {
           args.push_back("-nostdinc++");
@@ -204,11 +200,6 @@ namespace metashell
         {
           throw data::unsupported_standard_headers_allowed(
               data::real_engine_name::msvc, std_headers_);
-        }
-        else if (using_wave())
-        {
-          throw data::unsupported_standard_headers_allowed(
-              data::real_engine_name::wave, std_headers_);
         }
         else if (using_internal())
         {

@@ -74,9 +74,15 @@ namespace
 #else
     constexpr bool on_windows = false;
 #endif
+#ifdef __APPLE__
+    constexpr bool on_osx = true;
+#else
+    constexpr bool on_osx = false;
+#endif
 
-    return engine_ != "wave" && engine_ != "msvc" && engine_ != "internal" &&
-           !(uses_clang(engine_) && on_windows);
+    return engine_ != "msvc" && engine_ != "internal" &&
+           !((uses_clang(engine_) || engine_ == "wave") &&
+             (on_windows || on_osx));
   }
 
   void test_include_path_extensions(
