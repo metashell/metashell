@@ -36,14 +36,17 @@ namespace metashell
       explicit arg_parser(
           std::function<std::string(const command_line_argument&)>);
 
+      arg_parser& flag(command_line_argument name_,
+                       std::string desc_,
+                       std::function<void()> action_);
+
       template <size_t Len>
       arg_parser& flag(const char (&name_)[Len],
                        std::string desc_,
                        std::function<void()> action_)
       {
-        _flags.emplace_back(
+        return flag(
             command_line_argument(name_), std::move(desc_), std::move(action_));
-        return *this;
       }
 
       template <size_t Len>
@@ -54,10 +57,10 @@ namespace metashell
       {
         for (const std::string& suffix : suffixes_)
         {
-          _flags.emplace_back(
-              command_line_argument(name_ + suffix), desc_, action_);
+          flag(command_line_argument(name_ + suffix), desc_, action_);
         }
-        return flag(name_, std::move(desc_), std::move(action_));
+        return flag(
+            command_line_argument(name_), std::move(desc_), std::move(action_));
       }
 
       template <size_t Len1, size_t Len2>

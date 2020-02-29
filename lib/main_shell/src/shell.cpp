@@ -144,6 +144,8 @@ namespace metashell
 "#define __METASHELL_PATCH " TO_STRING(METASHELL_PATCH) "\n"
 
 R"(
+#if defined __cplusplus && __cplusplus > 200000
+
 namespace metashell {
   namespace impl {
     template <class T>
@@ -179,6 +181,8 @@ namespace metashell {
     >::template apply<T>
   {};
 } // namespace metashell
+
+#endif
 )";
 
       iface::type_shell* try_to_get_shell(iface::engine& engine_)

@@ -229,5 +229,50 @@ namespace metashell
       assert(!"Invalid language standard");
       return command_line_argument("");
     }
+
+    bool c_standard(language_standard std_)
+    {
+      switch (std_)
+      {
+      case language_standard::c89:
+      case language_standard::gnu89:
+      case language_standard::c90:
+      case language_standard::iso9899_199409:
+      case language_standard::gnu90:
+      case language_standard::c9x:
+      case language_standard::gnu9x:
+      case language_standard::c99:
+      case language_standard::gnu99:
+      case language_standard::c1x:
+      case language_standard::gnu1x:
+      case language_standard::c11:
+      case language_standard::gnu11:
+        return true;
+
+      case language_standard::cpp98:
+      case language_standard::gnu98:
+      case language_standard::cpp03:
+      case language_standard::gnu03:
+      case language_standard::cpp0x:
+      case language_standard::gnupp0x:
+      case language_standard::cpp11:
+      case language_standard::gnupp11:
+      case language_standard::cpp1y:
+      case language_standard::gnupp1y:
+      case language_standard::cpp14:
+      case language_standard::gnupp14:
+      case language_standard::cpp1z:
+      case language_standard::gnupp1z:
+      case language_standard::cpp17:
+      case language_standard::gnupp17:
+      case language_standard::cpp2a:
+      case language_standard::gnupp2a:
+      case language_standard::cpp20:
+      case language_standard::gnupp20:
+        return false;
+      }
+      assert(!"Invalid language standard");
+      return false;
+    }
   }
 }

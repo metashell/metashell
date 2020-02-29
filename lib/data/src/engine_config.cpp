@@ -310,6 +310,11 @@ namespace metashell
           "Set the default ELF image symbol visibility",
           ignore
         )
+        .with_value(
+          "-ftls-model",
+          "Alter the thread-local storage model to be used",
+          ignore
+        )
         .flag(
           "-nostdinc",
           "ignore standard C headers",
@@ -333,7 +338,30 @@ namespace metashell
           "Issue all the warnings demanded by strict IDO C and ISO C++",
           ignore
         )
+        .flag(
+          "-pedantic-errors",
+          "Give an error whenever the base standard requires a diagnostic.",
+          ignore
+        )
+        .flag(
+          "-fpic",
+          "Generate position-independent code suitable for use in a shared"
+          " library.",
+          ignore
+        )
+        .flag(
+          "-fpie",
+          "Similar to -fpic, but generated position independent code"
+          " can be only linked into executables.",
+          ignore
+        )
         .flag("-fPIC", "Emit position-independent code", ignore)
+        .flag(
+          "-fPIE",
+          "Similar to -fPIC, but generated position independent code"
+          " can be only linked into executables.",
+          ignore
+        )
         .flag(
           "-fvisibility-inlines-hidden",
           "Declares that the user does not attempt to compare pointers to"
@@ -354,14 +382,32 @@ namespace metashell
         .flag("-fexceptions", "Enable exception hanlding", ignore)
         .flag("-fno-exceptions", "Disable exception hanlding", ignore)
         .flag(
+          "-frtti",
+          "Enable generation of information about every class"
+          " with virtual functions",
+          ignore
+        )
+        .flag(
           "-fno-rtti",
           "Disable generation of information about every class"
           " with virtual functions",
           ignore
         )
         .flag(
+          "-fbuiltin",
+          "Recognize built-in functions that do not begin with"
+          " __builtin_ as prefix",
+          ignore
+        )
+        .flag(
           "-fno-builtin",
           "Don't recognize built-in functions that do not begin with"
+          " __builtin_ as prefix",
+          ignore
+        )
+        .flag(
+          "-fbuiltin-function",
+          "Recognize built-in functions that do not begin with"
           " __builtin_ as prefix",
           ignore
         )
@@ -374,6 +420,12 @@ namespace metashell
         .flag(
           "-fomit-frame-pointer",
           "Don't keep the frame pointer in a register for"
+          " functions that don't need one.",
+          ignore
+        )
+        .flag(
+          "-fno-omit-frame-pointer",
+          "Keep the frame pointer in a register for"
           " functions that don't need one.",
           ignore
         )
@@ -429,8 +481,60 @@ namespace metashell
         .flag("-Og", "Optimize debugging experience", ignore)
         .flag("-m32", "Generate code for 32-bit ABI", ignore)
         .flag("-m64", "Generate code for 64-bit ABI", ignore)
+        .flag(
+          "-ffreestanding",
+          "Assert that compilation targets a freestanding environment.",
+          ignore
+        )
+        .flag(
+          "-fcommon",
+          "Place uninitialized global variables in a common block.",
+          ignore
+        )
+        .flag(
+          "-fno-common",
+          "Place uninitialized global variables in the data section of the"
+          " object file.",
+          ignore
+        )
+        .flag(
+          "-fstrict-aliasing",
+          "Allow the compiler to assume the strictest aliasing rules"
+          " applicable to the language being compiled.",
+          ignore
+        )
+        .flag(
+          "-fno-strict-aliasing",
+          "Don't allow the compiler to assume the strictest aliasing rules"
+          " applicable to the language being compiled.",
+          ignore
+        )
+        .flag(
+          "-pthread",
+          "Define additional macros required for using the POSIX threads"
+          " library.",
+          ignore
+        )
       ;
       // clang-format on
+
+      for (std::string instr :
+           {"mmx",      "sse",      "sse2",     "sse3",       "ssse3",
+            "sse4",     "sse4a",    "sse4.1",   "sse4.2",     "avx",
+            "avx2",     "avx512f",  "avx512pf", "avx512er",   "avx512cd",
+            "avx512vl", "avx512bw", "avx512dq", "avx512ifma", "avx512vbmi",
+            "sha",      "aes",      "pclmul",   "clflushopt", "fsgsbase",
+            "rdrnd",    "f16c",     "fma",      "fma4",       "prefetchwt1",
+            "xop",      "lwp",      "3dnow",    "3dnowa",     "popcnt",
+            "abm",      "bmi",      "bmi2",     "lzcnt",      "fxsr",
+            "xsave",    "xsaveopt", "xsavec",   "xsaves",     "rtm",
+            "tbm",      "mpx",      "mwaitx",   "clzero",     "pku"})
+      {
+        parser.flag(data::command_line_argument("-m" + instr),
+                    "Enable " + instr + " instructions", ignore);
+        parser.flag(data::command_line_argument("-mno-" + instr),
+                    "Disable " + instr + " instructions", ignore);
+      }
 
       parser.parse(args_);
 

@@ -39,6 +39,13 @@ namespace metashell
       remove_prefix(const command_line_argument&) const;
 
       template <size_t Len>
+      boost::optional<command_line_argument>
+      remove_prefix(const char (&prefix_)[Len]) const
+      {
+        return remove_prefix(command_line_argument(prefix_));
+      }
+
+      template <size_t Len>
       bool starts_with(const char (&prefix_)[Len]) const
       {
         return starts_with_impl(prefix_);

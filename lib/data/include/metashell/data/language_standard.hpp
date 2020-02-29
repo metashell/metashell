@@ -80,6 +80,8 @@ namespace metashell
       gnupp20
     };
 
+    bool c_standard(language_standard);
+
     language_standard parse_standard(real_engine_name, const std::string&);
 
     command_line_argument gcc_name(language_standard);
