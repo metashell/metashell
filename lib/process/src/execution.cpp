@@ -210,7 +210,7 @@ namespace metashell
     input_file& execution::standard_error() { return _standard_error.input; }
 
 #ifdef _WIN32
-    data::exit_code_t execution::wait()
+    data::status execution::wait()
     {
       WaitForSingleObject(_process_information.hProcess, INFINITE);
 
@@ -219,16 +219,34 @@ namespace metashell
       {
         throw exception("Can't get exit code");
       }
-      return data::exit_code_t(exit_code);
+      return data::proc_exit{data::exit_status{exit_code}};
     }
 #endif
 
 #ifndef _WIN32
-    data::exit_code_t execution::wait()
+    data::status execution::wait()
     {
       int status;
       waitpid(_pid, &status, 0);
-      return data::exit_code_t(WIFEXITED(status) ? WEXITSTATUS(status) : -1);
+
+      if (WIFEXITED(status))
+      {
+        return data::proc_exit{
+            data::exit_status{static_cast<unsigned long>(WEXITSTATUS(status))}};
+      }
+
+      if (WIFSIGNALED(status))
+      {
+        return data::proc_termsig{data::signal(WTERMSIG(status)),
+                                  static_cast<bool>(WCOREDUMP(status))};
+      }
+
+      if (WIFSTOPPED(status))
+      {
+        return data::proc_stopsig{data::signal(WSTOPSIG(status))};
+      }
+
+      throw exception{"Invalid status " + std::to_string(status)};
     }
 #endif
   }

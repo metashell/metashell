@@ -147,7 +147,7 @@ namespace metashell
       {
         std::string err;
         read_all(std::tie(_child.standard_error(), err));
-        throw metashell_terminated(_process_execution, err);
+        throw metashell_terminated(_child.wait(), _process_execution, err);
       }
       else
       {

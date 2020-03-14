@@ -42,7 +42,7 @@ namespace metashell
       }
     }
 
-    data::exit_code_t stub::run(int argc_, const char* argv_[]) const
+    data::proc_exit stub::run(int argc_, const char* argv_[]) const
     {
       const auto action = argc_ > 0 ?
                               _actions.find({argv_ + 1, argv_ + argc_}) :
@@ -50,13 +50,21 @@ namespace metashell
       if (action == _actions.end())
       {
         std::cerr << "NOT SUPPORTED\n";
-        return data::exit_code_t(1);
+        return data::exit_failure();
       }
       else
       {
         std::cerr << action->second.standard_error;
         std::cout << action->second.standard_output;
-        return action->second.exit_code;
+        if (auto e = mpark::get_if<data::proc_exit>(&action->second.status))
+        {
+          return *e;
+        }
+        else
+        {
+          std::cerr << to_string(action->second.status) << "\n";
+          return data::exit_failure();
+        }
       }
     }
   }

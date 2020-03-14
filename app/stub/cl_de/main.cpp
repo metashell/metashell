@@ -35,5 +35,5 @@ int main(int argc_, const char* argv_[])
                "cl : Befehlszeile error D8003 : Name der Quelldatei fehlt.\n";
       });
 
-  return compiler.run(argc_, argv_).value();
+  return compiler.run(argc_, argv_).exit_status().value();
 }

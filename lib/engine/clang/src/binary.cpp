@@ -341,7 +341,7 @@ namespace metashell
                       dump_templight_to_file(dump_ast(), templight_dump_path_),
                       binary_);
 
-          const bool success = output.exit_code == data::exit_code_t(0);
+          const bool success = exit_success(output);
 
           return data::result{
               success, success && tmp_exp_ ?
@@ -392,7 +392,7 @@ namespace metashell
 
         const data::process_output o = process::run(cmd, stdin_, _cwd);
 
-        METASHELL_LOG(_logger, "Clang's exit code: " + to_string(o.exit_code));
+        METASHELL_LOG(_logger, "Clang's exit code: " + to_string(o.status));
         METASHELL_LOG(_logger, "Clang's stdout: " + o.standard_output);
         METASHELL_LOG(_logger, "Clang's stderr: " + o.standard_error);
 
@@ -407,7 +407,7 @@ namespace metashell
         const data::process_output output =
             run_clang(*this, std::move(args_), exp_);
 
-        const bool success = output.exit_code == data::exit_code_t(0);
+        const bool success = exit_success(output);
 
         return data::result{success, success ? output.standard_output : "",
                             success ? "" : output.standard_error, ""};
@@ -444,7 +444,7 @@ namespace metashell
               binary_);
 
           return std::make_tuple(
-              templight_output.exit_code == data::exit_code_t(0) ?
+              exit_success(templight_output) ?
                   compile(tmp_exp_, precompiled_code, boost::none, binary_) :
                   data::result{false, "", templight_output.standard_error, ""},
               templight_output.standard_output);

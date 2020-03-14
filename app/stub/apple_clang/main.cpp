@@ -23,11 +23,11 @@ int main(int argc_, const char* argv_[])
   compiler_stub::stub compiler;
 
   compiler.on_args(
-      {}, {data::exit_code_t(1), "", "clang: error: no input files\n"});
+      {}, {data::exit_failure(), "", "clang: error: no input files\n"});
 
   compiler.on_args(
       {"-v"},
-      {data::exit_code_t(0), "",
+      {data::exit_success(), "",
        R"EOS(Configured with: --prefix=/Applications/Xcode.app/Contents/Developer/usr --with-gxx-include-dir=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/4.2.1
 Apple clang version 11.0.0 (clang-1100.0.33.17)
 Target: x86_64-apple-darwin19.2.0
@@ -36,7 +36,7 @@ InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault
 )EOS"});
 
   compiler.on_args(
-      {"--help"}, {data::exit_code_t(0), R"EOS(OVERVIEW: clang LLVM compiler
+      {"--help"}, {data::exit_success(), R"EOS(OVERVIEW: clang LLVM compiler
 
 USAGE: clang [options] <inputs>
 
@@ -470,5 +470,5 @@ OPTIONS:
 )EOS",
                    ""});
 
-  return compiler.run(argc_, argv_).value();
+  return compiler.run(argc_, argv_).exit_status().value();
 }

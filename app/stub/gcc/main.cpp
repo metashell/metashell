@@ -23,10 +23,10 @@ int main(int argc_, const char* argv_[])
   compiler_stub::stub compiler;
 
   compiler.on_args(
-      {}, {data::exit_code_t(1), "",
+      {}, {data::exit_failure(), "",
            "gcc: fatal error: no input files\ncompilation terminated.\n"});
 
-  compiler.on_args({"-v"}, {data::exit_code_t(1), "",
+  compiler.on_args({"-v"}, {data::exit_failure(), "",
                             R"EOS(Using built-in specs.
 COLLECT_GCC=gcc
 COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/5/lto-wrapper
@@ -36,7 +36,7 @@ Thread model: posix
 gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.11)
 )EOS"});
 
-  compiler.on_args({"--help"}, {data::exit_code_t(0),
+  compiler.on_args({"--help"}, {data::exit_success(),
                                 R"EOS(Usage: gcc [options] file...
 Options:
   -pass-exit-codes         Exit with highest error code from a phase
@@ -100,5 +100,5 @@ For bug reporting instructions, please see:
 )EOS",
                                 ""});
 
-  return compiler.run(argc_, argv_).value();
+  return compiler.run(argc_, argv_).exit_status().value();
 }

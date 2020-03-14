@@ -29,7 +29,7 @@ namespace metashell
         const data::process_output output =
             run_clang(_binary, {"-dM", "-E"}, env_.get_all());
 
-        if (output.exit_code == data::exit_code_t(0))
+        if (exit_success(output))
         {
           return data::cpp_code(output.standard_output);
         }

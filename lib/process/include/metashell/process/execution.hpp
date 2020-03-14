@@ -18,8 +18,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/command_line.hpp>
-#include <metashell/data/exit_code_t.hpp>
 #include <metashell/data/process_output.hpp>
+#include <metashell/data/status.hpp>
 
 #include <metashell/process/pipe.hpp>
 
@@ -52,7 +52,7 @@ namespace metashell
       input_file& standard_output();
       input_file& standard_error();
 
-      data::exit_code_t wait();
+      data::status wait();
 
     private:
       pipe _standard_input;

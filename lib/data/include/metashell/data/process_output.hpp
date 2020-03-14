@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/exit_code_t.hpp>
+#include <metashell/data/status.hpp>
 
 #include <string>
 
@@ -27,12 +27,14 @@ namespace metashell
   {
     struct process_output
     {
-      exit_code_t exit_code;
+      data::status status;
       std::string standard_output;
       std::string standard_error;
     };
 
     process_output dos2unix(process_output o_);
+
+    bool exit_success(const process_output&);
   }
 }
 

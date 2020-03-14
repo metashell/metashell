@@ -19,6 +19,8 @@
 
 #include <metashell/system_test/process_execution.hpp>
 
+#include <metashell/data/status.hpp>
+
 #include <stdexcept>
 #include <string>
 
@@ -29,7 +31,9 @@ namespace metashell
     class metashell_terminated : public std::runtime_error
     {
     public:
-      metashell_terminated(const process_execution& pe_, std::string stderr_);
+      metashell_terminated(const data::status& status_,
+                           const process_execution& pe_,
+                           std::string stderr_);
 
       const std::string& standard_error() const;
 

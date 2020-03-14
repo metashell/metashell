@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2020, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,30 +14,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/process/execution.hpp>
-#include <metashell/process/run.hpp>
+#include <metashell/data/status.hpp>
+
+#include <iostream>
 
 namespace metashell
 {
-  namespace process
+  namespace data
   {
-    data::process_output run(const data::command_line& cmd_,
-                             const std::string& input_,
-                             const boost::filesystem::path& cwd_)
+    bool exit_success(const status& s_)
     {
-      execution child(cmd_, cwd_);
+      if (auto e = mpark::get_if<proc_exit>(&s_))
+      {
+        return exit_success(*e);
+      }
+      else
+      {
+        return false;
+      }
+    }
 
-      child.standard_input().write(input_);
-      child.standard_input().close();
+    std::string to_string(const status& s_)
+    {
+      return mpark::visit([](const auto& x_) { return to_string(x_); }, s_);
+    }
 
-      data::process_output result{data::exit_success(), "", ""};
-
-      read_all(std::tie(child.standard_output(), result.standard_output),
-               std::tie(child.standard_error(), result.standard_error));
-
-      result.status = child.wait();
-
-      return result;
+    std::ostream& operator<<(std::ostream& out_, const status& s_)
+    {
+      return out_ << to_string(s_);
     }
   }
 }

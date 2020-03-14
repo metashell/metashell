@@ -23,10 +23,10 @@ int main(int argc_, const char* argv_[])
   compiler_stub::stub compiler;
 
   compiler.on_args(
-      {}, {data::exit_code_t(1), "", "clang: error: no input files\n"});
+      {}, {data::exit_failure(), "", "clang: error: no input files\n"});
 
   compiler.on_args(
-      {"-v"}, {data::exit_code_t(0), "",
+      {"-v"}, {data::exit_success(), "",
                R"EOS(clang version 3.8.0-2ubuntu4 (tags/RELEASE_380/final)
 Target: x86_64-pc-linux-gnu
 Thread model: posix
@@ -41,7 +41,7 @@ Selected multilib: .;@m64
 )EOS"});
 
   compiler.on_args(
-      {"--help"}, {data::exit_code_t(0), R"EOS(OVERVIEW: clang LLVM compiler
+      {"--help"}, {data::exit_success(), R"EOS(OVERVIEW: clang LLVM compiler
 
 USAGE: clang [options] <inputs>
 
@@ -475,5 +475,5 @@ OPTIONS:
 )EOS",
                    ""});
 
-  return compiler.run(argc_, argv_).value();
+  return compiler.run(argc_, argv_).exit_status().value();
 }

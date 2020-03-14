@@ -26,7 +26,7 @@ namespace
 {
   std::pair<std::string, std::string> report_for(const std::string& err_)
   {
-    const metashell::data::exit_code_t e{1};
+    const auto e = metashell::data::exit_failure();
     return {metashell::engine::vc::error_report_on_stdout({e, err_, ""}),
             metashell::engine::vc::error_report_on_stderr(
                 {e, "", "Compiler info\nin multiple lines\n\n" + err_})};

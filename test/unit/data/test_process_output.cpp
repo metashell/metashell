@@ -25,8 +25,8 @@ TEST(process_output, dos2unix)
   const std::string dos_str = "hello\r\ndos\rworld\n";
   const std::string unix_str = "hello\ndos\rworld\n";
 
-  const process_output result1 = dos2unix({exit_code_t(1), dos_str, ""});
-  const process_output result2 = dos2unix({exit_code_t(1), "", dos_str});
+  const process_output result1 = dos2unix({exit_failure(), dos_str, ""});
+  const process_output result2 = dos2unix({exit_failure(), "", dos_str});
 
   ASSERT_EQ(unix_str, result1.standard_output);
   ASSERT_EQ("", result1.standard_error);
