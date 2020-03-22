@@ -29,26 +29,79 @@
 #include <algorithm>
 #include <sstream>
 
-namespace
-{
-#ifdef _WIN32
-  void clear(PROCESS_INFORMATION& pi_)
-  {
-    pi_.hProcess = 0;
-    pi_.hThread = 0;
-    pi_.dwProcessId = 0;
-    pi_.dwThreadId = 0;
-  }
-#endif
-}
-
 namespace metashell
 {
   namespace process
   {
+    namespace
+    {
+#ifdef _WIN32
+      PROCESS_INFORMATION no_process()
+      {
+        PROCESS_INFORMATION result;
+        result.hProcess = 0;
+        result.hThread = 0;
+        result.dwProcessId = 0;
+        result.dwThreadId = 0;
+        return result;
+      }
+#endif
+
+#ifndef _WIN32
+      pid_t no_process() { return 0; }
+#endif
+
+#ifdef _WIN32
+      data::status wait_process(const PROCESS_INFORMATION& process_information_)
+      {
+        WaitForSingleObject(process_information_.hProcess, INFINITE);
+
+        DWORD exit_code;
+        if (!GetExitCodeProcess(process_information_.hProcess, &exit_code))
+        {
+          throw exception("Can't get exit code");
+        }
+        return data::proc_exit{data::exit_status{exit_code}};
+      }
+#endif
+
+#ifndef _WIN32
+      data::status wait_process(pid_t pid_)
+      {
+        int status;
+        if (waitpid(pid_, &status, 0) == -1)
+        {
+          const int err = errno;
+          throw exception{"Error waiting for process " + std::to_string(pid_) +
+                          ": " + std::string(strerror(err))};
+        }
+
+        if (WIFEXITED(status))
+        {
+          return data::proc_exit{data::exit_status{
+              static_cast<unsigned long>(WEXITSTATUS(status))}};
+        }
+
+        if (WIFSIGNALED(status))
+        {
+          return data::proc_termsig{data::signal(WTERMSIG(status)),
+                                    static_cast<bool>(WCOREDUMP(status))};
+        }
+
+        if (WIFSTOPPED(status))
+        {
+          return data::proc_stopsig{data::signal(WSTOPSIG(status))};
+        }
+
+        throw exception{"Invalid status " + std::to_string(status)};
+      }
+#endif
+    }
+
 #ifdef _WIN32
     execution::execution(const data::command_line& cmd_,
                          const boost::filesystem::path& cwd_)
+      : _process(no_process())
     {
       const std::string cmds = to_string(cmd_);
       std::vector<char> cmd(cmds.begin(), cmds.end());
@@ -74,11 +127,10 @@ namespace metashell
       si.hStdOutput = copy_handle(_standard_output.output);
       si.hStdError = copy_handle(_standard_error.output);
 
-      clear(_process_information);
-
+      PROCESS_INFORMATION process_information;
       if (CreateProcess(NULL, &cmd[0], NULL, NULL, TRUE, 0, NULL,
                         cwd_.empty() ? NULL : cwd_.string().c_str(), &si,
-                        &_process_information))
+                        &process_information))
       {
         CloseHandle(si.hStdInput);
         CloseHandle(si.hStdOutput);
@@ -88,6 +140,8 @@ namespace metashell
 
         _standard_output.output.close();
         _standard_error.output.close();
+
+        _process = process_information;
       }
       else
       {
@@ -115,7 +169,9 @@ namespace metashell
 
       pipe error_reporting;
 
-      switch (_pid = fork())
+      const pid_t pid = fork();
+      _process = pid;
+      switch (pid)
       {
       case -1:
         throw exception("Failed to fork");
@@ -154,8 +210,7 @@ namespace metashell
 
         if (!err.empty())
         {
-          int status;
-          waitpid(_pid, &status, 0);
+          wait();
           throw exception(err);
         }
       }
@@ -166,17 +221,9 @@ namespace metashell
       : _standard_input(std::move(e_._standard_input)),
         _standard_output(std::move(e_._standard_output)),
         _standard_error(std::move(e_._standard_error)),
-#ifdef _WIN32
-        _process_information(e_._process_information)
-#else
-        _pid(e_._pid)
-#endif
+        _process(e_._process)
     {
-#ifdef _WIN32
-      clear(e_._process_information);
-#else
-      e_._pid = 0;
-#endif
+      e_._process = no_process();
     }
 
     execution& execution::operator=(execution&& e_)
@@ -186,13 +233,8 @@ namespace metashell
         _standard_input = std::move(e_._standard_input);
         _standard_output = std::move(e_._standard_output);
         _standard_error = std::move(e_._standard_error);
-#ifdef _WIN32
-        _process_information = e_._process_information;
-        clear(e_._process_information);
-#else
-        _pid = e_._pid;
-        e_._pid = 0;
-#endif
+        _process = e_._process;
+        e_._process = no_process();
       }
       return *this;
     }
@@ -209,45 +251,14 @@ namespace metashell
 
     input_file& execution::standard_error() { return _standard_error.input; }
 
-#ifdef _WIN32
     data::status execution::wait()
     {
-      WaitForSingleObject(_process_information.hProcess, INFINITE);
-
-      DWORD exit_code;
-      if (!GetExitCodeProcess(_process_information.hProcess, &exit_code))
+      if (auto* proc = mpark::get_if<running_process>(&_process))
       {
-        throw exception("Can't get exit code");
+        _process = wait_process(*proc);
       }
-      return data::proc_exit{data::exit_status{exit_code}};
+
+      return mpark::get<data::status>(_process);
     }
-#endif
-
-#ifndef _WIN32
-    data::status execution::wait()
-    {
-      int status;
-      waitpid(_pid, &status, 0);
-
-      if (WIFEXITED(status))
-      {
-        return data::proc_exit{
-            data::exit_status{static_cast<unsigned long>(WEXITSTATUS(status))}};
-      }
-
-      if (WIFSIGNALED(status))
-      {
-        return data::proc_termsig{data::signal(WTERMSIG(status)),
-                                  static_cast<bool>(WCOREDUMP(status))};
-      }
-
-      if (WIFSTOPPED(status))
-      {
-        return data::proc_stopsig{data::signal(WSTOPSIG(status))};
-      }
-
-      throw exception{"Invalid status " + std::to_string(status)};
-    }
-#endif
   }
 }

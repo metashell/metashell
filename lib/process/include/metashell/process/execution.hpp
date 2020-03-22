@@ -25,6 +25,8 @@
 
 #include <boost/filesystem/path.hpp>
 
+#include <variant.hpp>
+
 #include <string>
 #include <vector>
 
@@ -60,10 +62,12 @@ namespace metashell
       pipe _standard_error;
 
 #ifdef _WIN32
-      PROCESS_INFORMATION _process_information;
+      using running_process = PROCESS_INFORMATION;
 #else
-      pid_t _pid;
+      using running_process = pid_t;
 #endif
+
+      mpark::variant<running_process, data::status> _process;
     };
   }
 }
