@@ -33,8 +33,13 @@ namespace metashell
   {
     process_output dos2unix(process_output o_)
     {
-      return {o_.exit_code, ::dos2unix(move(o_.standard_output)),
+      return {o_.status, ::dos2unix(move(o_.standard_output)),
               ::dos2unix(move(o_.standard_error))};
+    }
+
+    bool exit_success(const process_output& o_)
+    {
+      return exit_success(o_.status);
     }
   }
 }

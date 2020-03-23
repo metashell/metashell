@@ -22,6 +22,7 @@
 
 #include <boost/filesystem/path.hpp>
 #include <boost/operators.hpp>
+#include <boost/optional.hpp>
 
 #include <vector>
 
@@ -31,6 +32,8 @@ namespace metashell
   {
     struct include_config : private boost::addable<include_config>
     {
+      boost::optional<boost::filesystem::path> isysroot;
+
       std::vector<boost::filesystem::path> iquote;
       std::vector<boost::filesystem::path> capital_i;
       std::vector<boost::filesystem::path> isystem;

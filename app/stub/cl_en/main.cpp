@@ -34,5 +34,5 @@ int main(int argc_, const char* argv_[])
                "cl : Command line error D8003 : missing source filename\n";
       });
 
-  return compiler.run(argc_, argv_).value();
+  return compiler.run(argc_, argv_).exit_status().value();
 }

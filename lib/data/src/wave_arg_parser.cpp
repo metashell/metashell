@@ -54,6 +54,25 @@ namespace metashell
           _includes.idirafter
         )
         .with_value(
+          "-isysroot",
+          "Specify the root of the includes",
+          [this](const command_line_argument& path_)
+          {
+            this->_includes.isysroot = path_.value();
+          }
+        )
+        .with_value(
+          "--sysroot",
+          "Specify the root of the includes",
+          [this](const command_line_argument& path_)
+          {
+            if (!this->_includes.isysroot)
+            {
+              this->_includes.isysroot = path_.value();
+            }
+          }
+        )
+        .with_value(
           "-D", "--define",
           "specify a macro to define (as `macro[=[value]]`)",
           [this](const command_line_argument& def_)
@@ -94,11 +113,24 @@ namespace metashell
           }
         )
         .flag(
-          "--nostdinc++",
+          "-nostdinc++",
           use_templight_headers_ ?
-            "don't add standard headers to the include path" :
+            "don't add C++ standard headers to the include path" :
             "ignored (accepted to be compatible with the `wave` engine)",
-          [this] { this->_config.config.use_standard_headers = data::standard_headers_allowed::none; }
+          [this] {
+            this->_config.config.use_standard_headers =
+              disable_cpp(this->_config.config.use_standard_headers);
+          }
+        )
+        .flag(
+          "-nostdinc",
+          use_templight_headers_ ?
+            "don't add C standard headers to the include path" :
+            "ignored (accepted to be compatible with the `wave` engine)",
+          [this] {
+            this->_config.config.use_standard_headers =
+              disable_c(this->_config.config.use_standard_headers);
+          }
         )
       ;
       // clang-format on

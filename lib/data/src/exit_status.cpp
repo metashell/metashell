@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2020, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/exit_code_t.hpp>
+#include <metashell/data/exit_status.hpp>
 
 #include <iostream>
 
@@ -22,20 +22,23 @@ namespace metashell
 {
   namespace data
   {
-    exit_code_t::exit_code_t(int value_) : _value(value_) {}
+    exit_status::exit_status(unsigned long value_) : _value(value_) {}
 
-    int exit_code_t::value() const { return _value; }
+    unsigned long exit_status::value() const { return _value; }
 
-    bool operator==(exit_code_t a_, exit_code_t b_)
+    bool operator==(const exit_status& lhs_, const exit_status& rhs_)
     {
-      return a_.value() == b_.value();
+      return lhs_.value() == rhs_.value();
     }
 
-    std::ostream& operator<<(std::ostream& out_, exit_code_t e_)
+    std::string to_string(const exit_status& e_)
     {
-      return out_ << "exit_code(" << e_.value() << ")";
+      return std::to_string(e_.value());
     }
 
-    std::string to_string(exit_code_t e_) { return std::to_string(e_.value()); }
+    std::ostream& operator<<(std::ostream& out_, const exit_status& e_)
+    {
+      return out_ << e_.value();
+    }
   }
 }

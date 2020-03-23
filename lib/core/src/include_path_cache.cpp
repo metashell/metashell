@@ -16,25 +16,35 @@
 
 #include <metashell/core/include_path_cache.hpp>
 
+#include <cassert>
+
 namespace metashell
 {
   namespace core
   {
     include_path_cache::include_path_cache(
         iface::header_discoverer& header_discoverer_)
-      : sys([&header_discoverer_]() {
-          return header_discoverer_.include_path(data::include_type::sys);
-        }),
-        quote([&header_discoverer_]() {
-          return header_discoverer_.include_path(data::include_type::quote);
-        })
     {
+      for (auto inc : data::all_include_types)
+      {
+        for (auto allowed : data::all_standard_headers_alloweds)
+        {
+          _cache.insert({{inc, allowed},
+                         cached<std::vector<boost::filesystem::path>>{
+                             [&header_discoverer_, inc, allowed] {
+                               return header_discoverer_.include_path(
+                                   inc, allowed);
+                             }}});
+        }
+      }
     }
 
     const std::vector<boost::filesystem::path>& include_path_cache::
-    operator[](data::include_type type_)
+    operator[](include_path_cache::key_type key_)
     {
-      return type_ == data::include_type::sys ? *sys : *quote;
+      const auto i = _cache.find(key_);
+      assert(i != _cache.end());
+      return *i->second;
     }
   }
 }

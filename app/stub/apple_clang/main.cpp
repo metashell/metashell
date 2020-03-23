@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2019, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2020, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,18 +26,13 @@ int main(int argc_, const char* argv_[])
       {}, {data::exit_failure(), "", "clang: error: no input files\n"});
 
   compiler.on_args(
-      {"-v"}, {data::exit_success(), "",
-               R"EOS(clang version 3.8.0-2ubuntu4 (tags/RELEASE_380/final)
-Target: x86_64-pc-linux-gnu
+      {"-v"},
+      {data::exit_success(), "",
+       R"EOS(Configured with: --prefix=/Applications/Xcode.app/Contents/Developer/usr --with-gxx-include-dir=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/4.2.1
+Apple clang version 11.0.0 (clang-1100.0.33.17)
+Target: x86_64-apple-darwin19.2.0
 Thread model: posix
-InstalledDir: /usr/bin
-Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-linux-gnu/5.4.0
-Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-linux-gnu/6.0.0
-Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/5.4.0
-Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/6.0.0
-Selected GCC installation: /usr/bin/../lib/gcc/x86_64-linux-gnu/5.4.0
-Candidate multilib: .;@m64
-Selected multilib: .;@m64
+InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
 )EOS"});
 
   compiler.on_args(

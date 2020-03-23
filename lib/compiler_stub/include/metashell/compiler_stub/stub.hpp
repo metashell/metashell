@@ -32,7 +32,7 @@ namespace metashell
     public:
       stub& on_args(std::vector<std::string>, data::process_output);
 
-      data::exit_code_t run(int argc_, const char* argv_[]) const;
+      data::proc_exit run(int argc_, const char* argv_[]) const;
 
     private:
       std::map<std::vector<std::string>, data::process_output> _actions;

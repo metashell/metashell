@@ -25,16 +25,16 @@ namespace metashell
         std::string usage_,
         const std::function<std::string(const std::string&)>& invalid_arg_)
     {
-      _stub.on_args({}, {data::exit_code_t(1), usage_, version_});
+      _stub.on_args({}, {data::exit_failure(), usage_, version_});
 
       for (const std::string& arg : std::vector<std::string>{"-v", "--help"})
       {
         _stub.on_args(
-            {arg}, {data::exit_code_t(1), "", version_ + invalid_arg_(arg)});
+            {arg}, {data::exit_failure(), "", version_ + invalid_arg_(arg)});
       }
     }
 
-    data::exit_code_t cl_stub::run(int argc_, const char* argv_[]) const
+    data::proc_exit cl_stub::run(int argc_, const char* argv_[]) const
     {
       return _stub.run(argc_, argv_);
     }

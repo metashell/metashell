@@ -33,7 +33,7 @@ namespace metashell
           std::string usage_,
           const std::function<std::string(const std::string&)>& invalid_arg_);
 
-      data::exit_code_t run(int argc_, const char* argv_[]) const;
+      data::proc_exit run(int argc_, const char* argv_[]) const;
 
     private:
       stub _stub;

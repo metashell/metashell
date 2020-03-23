@@ -29,7 +29,6 @@
 #include <metashell/core/engine.hpp>
 #include <metashell/core/not_supported.hpp>
 
-#include <metashell/data/unsupported_standard_headers_allowed.hpp>
 #include <metashell/data/wave_arg_parser.hpp>
 
 namespace metashell
@@ -40,6 +39,20 @@ namespace metashell
     {
       namespace
       {
+        std::vector<boost::filesystem::path>
+        prefix_all(const boost::optional<boost::filesystem::path>& prefix_,
+                   std::vector<boost::filesystem::path> items_)
+        {
+          if (prefix_)
+          {
+            std::transform(items_.begin(), items_.end(), items_.begin(),
+                           [&prefix_](const boost::filesystem::path& path_) {
+                             return *prefix_ / path_;
+                           });
+          }
+          return items_;
+        }
+
         std::vector<data::feature> supported_features()
         {
           return {data::feature::preprocessor_shell(),
@@ -50,13 +63,18 @@ namespace metashell
         }
 
         std::vector<boost::filesystem::path> determine_clang_system_includes(
+            data::standard_headers_allowed allowed_,
             const data::executable_path& metashell_binary_,
             const boost::filesystem::path& internal_dir_,
             iface::environment_detector& env_detector_,
             iface::displayer& displayer_,
             core::logger* logger_)
         {
-          std::vector<boost::filesystem::path> result;
+          if (allowed_ == data::standard_headers_allowed::none)
+          {
+            return {};
+          }
+
           const data::command_line_argument_list extra_clang_args;
           if (const auto clang_path = clang::find_clang_nothrow(
                   true,
@@ -69,7 +87,7 @@ namespace metashell
                        clang::binary(true, *clang_path, extra_clang_args,
                                      boost::filesystem::path(), internal_dir_,
                                      env_detector_, logger_))
-                .include_path(data::include_type::sys);
+                .include_path(data::include_type::sys, allowed_);
           }
           return {};
         }
@@ -89,29 +107,13 @@ namespace metashell
               UseTemplightHeaders, config_.engine->args, metashell_binary_,
               internal_dir_, env_detector_, displayer_, logger_);
 
-          if (UseTemplightHeaders)
-          {
-            switch (cfg.config.use_standard_headers)
-            {
-            case data::standard_headers_allowed::none:
-            case data::standard_headers_allowed::all:
-              break;
-            case data::standard_headers_allowed::c:
-            case data::standard_headers_allowed::cpp:
-              throw data::unsupported_standard_headers_allowed(
-                  data::real_engine_name::wave,
-                  cfg.config.use_standard_headers);
-              break;
-            }
-          }
-
           const std::vector<boost::filesystem::path> system_includes =
-              UseTemplightHeaders &&
-                      cfg.config.use_standard_headers ==
-                          data::standard_headers_allowed::all ?
-                  determine_clang_system_includes(metashell_binary_,
-                                                  internal_dir_, env_detector_,
-                                                  displayer_, logger_) :
+              UseTemplightHeaders ?
+                  prefix_all(
+                      cfg.config.includes.isysroot,
+                      determine_clang_system_includes(
+                          cfg.config.use_standard_headers, metashell_binary_,
+                          internal_dir_, env_detector_, displayer_, logger_)) :
                   std::vector<boost::filesystem::path>();
 
           return make_engine(

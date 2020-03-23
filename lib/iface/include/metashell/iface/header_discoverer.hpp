@@ -20,6 +20,7 @@
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/feature.hpp>
 #include <metashell/data/include_type.hpp>
+#include <metashell/data/standard_headers_allowed.hpp>
 
 #include <boost/filesystem/path.hpp>
 
@@ -37,7 +38,7 @@ namespace metashell
       virtual ~header_discoverer() {}
 
       virtual std::vector<boost::filesystem::path>
-      include_path(data::include_type type_) = 0;
+          include_path(data::include_type, data::standard_headers_allowed) = 0;
 
       virtual std::set<boost::filesystem::path>
       files_included_by(const data::cpp_code& exp_) = 0;

@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/comment.hpp>
+#include <metashell/system_test/cpp_code.hpp>
 #include <metashell/system_test/filename_list.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/system_test_config.hpp>
@@ -24,11 +26,13 @@
 #include <boost/range/adaptors.hpp>
 
 #include <gtest/gtest.h>
+#include <just/file.hpp>
 #include <just/temp.hpp>
 
 #include <algorithm>
 
 using namespace metashell::system_test;
+using pattern::_;
 
 namespace
 {
@@ -139,3 +143,20 @@ TEST(includes, tests)
     ASSERT_EQ((pv{".", a, b}), quoteincludes({b}, {a}));
   }
 }
+
+#ifndef _WIN32
+TEST(includes, sysroot)
+{
+  just::temp::directory tmp_dir;
+  const boost::filesystem::path tmp(tmp_dir.path());
+
+  const auto dir = tmp / "usr" / "include";
+  create_directories(dir);
+  just::file::write((dir / "test.hpp").string(), "typedef int x;");
+
+  metashell_instance mi{{"--preprocessor", "--", "--sysroot", tmp.string()}};
+  ASSERT_EQ(cpp_code(_), mi.command("#include <test.hpp>").front());
+  ASSERT_EQ(comment(_), mi.command("#msh engine switch internal").front());
+  ASSERT_EQ(comment(_), mi.command("#msh engine switch pure_wave").front());
+}
+#endif

@@ -52,7 +52,8 @@ namespace metashell
           data::tokens_to_string(name_begin_, name_end_).value(), args_begin_,
           args_end_);
       const auto include_path =
-          shell_.engine().header_discoverer().include_path(args.header.type);
+          shell_.engine().header_discoverer().include_path(
+              args.header.type, data::standard_headers_allowed::all);
       const auto files =
           include_path |
           transformed(std::function<path(const path&)>([&args](

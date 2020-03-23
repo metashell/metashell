@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2020, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,30 +14,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/process/execution.hpp>
-#include <metashell/process/run.hpp>
+#include <metashell/data/proc_stopsig.hpp>
+
+#include <iostream>
 
 namespace metashell
 {
-  namespace process
+  namespace data
   {
-    data::process_output run(const data::command_line& cmd_,
-                             const std::string& input_,
-                             const boost::filesystem::path& cwd_)
+    proc_stopsig::proc_stopsig(data::signal signal_) : _signal(signal_) {}
+
+    data::signal proc_stopsig::signal() const { return _signal; }
+
+    bool operator==(const proc_stopsig& lhs_, const proc_stopsig& rhs_)
     {
-      execution child(cmd_, cwd_);
+      return lhs_.signal() == rhs_.signal();
+    }
 
-      child.standard_input().write(input_);
-      child.standard_input().close();
+    std::string to_string(const proc_stopsig& p_)
+    {
+      return "Process stopped by signal " + to_string(p_.signal());
+    }
 
-      data::process_output result{data::exit_success(), "", ""};
-
-      read_all(std::tie(child.standard_output(), result.standard_output),
-               std::tie(child.standard_error(), result.standard_error));
-
-      result.status = child.wait();
-
-      return result;
+    std::ostream& operator<<(std::ostream& out_, const proc_stopsig& p_)
+    {
+      return out_ << to_string(p_);
     }
   }
 }

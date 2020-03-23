@@ -47,8 +47,7 @@ namespace metashell
           const data::process_output output = run(_binary, {"/c"}, src);
           const std::string error = error_report_on_stdout(output);
 
-          const bool accept =
-              output.exit_code == data::exit_code_t(0) && error.empty();
+          const bool accept = exit_success(output) && error.empty();
 
           return data::result{
               accept, "", error, accept && config_.verbose ? src.value() : ""};

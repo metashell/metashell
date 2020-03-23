@@ -17,7 +17,6 @@
 #include <metashell/data/arg_parser.hpp>
 #include <metashell/data/engine_config.hpp>
 #include <metashell/data/exception.hpp>
-#include <metashell/data/unsupported_standard_headers_allowed.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -78,12 +77,14 @@ namespace metashell
         switch (cfg_.use_standard_headers)
         {
         case standard_headers_allowed::none:
-          result.push_back("--nostdinc++");
+          result.push_back("-nostdinc");
+          result.push_back("-nostdinc++");
           break;
         case standard_headers_allowed::c:
+          result.push_back("-nostdinc++");
+          break;
         case standard_headers_allowed::cpp:
-          throw unsupported_standard_headers_allowed(
-              real_engine_name::wave, cfg_.use_standard_headers);
+          result.push_back("-nostdinc");
           break;
         case standard_headers_allowed::all:
           break;
@@ -275,6 +276,25 @@ namespace metashell
           "-idirafter",
           "specify an additional include directory to be checked after system headers",
           result.includes.idirafter
+        )
+        .with_value(
+          "-isysroot",
+          "Specify the root of the includes",
+          [&result](const command_line_argument& path_)
+          {
+            result.includes.isysroot = path_.value();
+          }
+        )
+        .with_value(
+          "--sysroot",
+          "Specify the root of the includes",
+          [&result](const command_line_argument& path_)
+          {
+            if (!result.includes.isysroot)
+            {
+              result.includes.isysroot = path_.value();
+            }
+          }
         )
         .with_value(
           "-D",

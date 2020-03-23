@@ -17,6 +17,10 @@
       possible to switch to a different compiler without leaving the shell.
       (The `#msh engine switch` pragma)
     * Make it possible to override the working directory for each config.
+    * Add `-isysroot` and `--sysroot` support to the Wave engine.
+    * Support `--nostdinc` and `--nostdinc++` arguments in the `wave` engine
+      removing the corresponding standard headers from the standard include
+      path.
 
 * Fixes
     * When multiple shell configs use the same engine with different engine
@@ -46,6 +50,9 @@
     * Using the Visual C++ system headers on Windows instead of the MinGW ones.
     * Use the relative order of user provided and system include
       directories in the `wave` engine, that GCC is using.
+    * **Breaking change** The Wave argument `--nostdinc++` has been replaced
+      with `-nostdinc++` and `-nostdinc`. Using both provides the same behaviour
+      as `--nostdinc++` did.
 
 ## Version 4.0.0
 

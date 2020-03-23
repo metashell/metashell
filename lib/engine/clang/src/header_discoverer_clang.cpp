@@ -22,6 +22,7 @@
 
 #include <just/lines.hpp>
 
+#include <cassert>
 #include <regex>
 
 namespace metashell
@@ -53,14 +54,33 @@ namespace metashell
       }
 
       header_discoverer::header_discoverer(binary binary_)
-        : _binary(binary_), _includes(includes_cache(_binary))
+        : _binary(binary_),
+          _all_includes(
+              includes_cache(_binary, data::standard_headers_allowed::all)),
+          _c_includes(
+              includes_cache(_binary, data::standard_headers_allowed::c)),
+          _cpp_includes(
+              includes_cache(_binary, data::standard_headers_allowed::cpp))
       {
       }
 
       std::vector<boost::filesystem::path>
-      header_discoverer::include_path(data::include_type type_)
+      header_discoverer::include_path(data::include_type type_,
+                                      data::standard_headers_allowed allowed_)
       {
-        return get(type_, *_includes);
+        switch (allowed_)
+        {
+        case data::standard_headers_allowed::all:
+          return get(type_, *_all_includes);
+        case data::standard_headers_allowed::c:
+          return get(type_, *_c_includes);
+        case data::standard_headers_allowed::cpp:
+          return get(type_, *_cpp_includes);
+        case data::standard_headers_allowed::none:
+          return {};
+        }
+        assert(!"Invalid standard_headers_allowed");
+        return {};
       }
 
       std::set<boost::filesystem::path>

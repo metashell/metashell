@@ -138,7 +138,7 @@ namespace metashell
 
         const data::process_output o = dos2unix(process::run(cmd, stdin_));
 
-        METASHELL_LOG(_logger, "cl.exe's exit code: " + to_string(o.exit_code));
+        METASHELL_LOG(_logger, "cl.exe's exit code: " + to_string(o.status));
         METASHELL_LOG(_logger, "cl.exe's stdout: " + o.standard_output);
         METASHELL_LOG(_logger, "cl.exe's stderr: " + o.standard_error);
 

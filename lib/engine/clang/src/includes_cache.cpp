@@ -102,20 +102,40 @@ namespace metashell
         }
 
         data::includes
-        determine_includes(const iface::executable& clang_binary_)
+        determine_includes(const iface::executable& clang_binary_,
+                           data::standard_headers_allowed allowed_)
         {
+          data::command_line_argument_list args{"-v", "-xc++", "-E"};
+          switch (allowed_)
+          {
+          case data::standard_headers_allowed::all:
+            break;
+          case data::standard_headers_allowed::c:
+            args.push_back("-nostdinc++");
+            break;
+          case data::standard_headers_allowed::cpp:
+            args.push_back("-nostdinc");
+            break;
+          case data::standard_headers_allowed::none:
+            args.push_back("-nostdinc");
+            args.push_back("-nostdinc++");
+            break;
+          }
+
           const data::process_output o =
-              run_clang(clang_binary_, {"-v", "-xc++", "-E"}, data::cpp_code());
+              run_clang(clang_binary_, args, data::cpp_code());
 
           const std::string s = o.standard_output + o.standard_error;
           return determine_clang_includes(just::lines::view_of(s));
         }
       }
 
-      core::cached<data::includes> includes_cache(binary binary_)
+      core::cached<data::includes>
+      includes_cache(binary binary_, data::standard_headers_allowed allowed_)
       {
-        return core::cached<data::includes>(
-            [binary_]() { return determine_includes(binary_); });
+        return core::cached<data::includes>([binary_, allowed_]() {
+          return determine_includes(binary_, allowed_);
+        });
       }
     }
   }

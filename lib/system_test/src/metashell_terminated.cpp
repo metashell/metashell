@@ -20,13 +20,14 @@ namespace metashell
 {
   namespace system_test
   {
-    metashell_terminated::metashell_terminated(const process_execution& pe_,
+    metashell_terminated::metashell_terminated(const data::status& status_,
+                                               const process_execution& pe_,
                                                std::string stderr_)
       : std::runtime_error("Metashell terminated. Command:\n" +
                            to_string(pe_.args()) + "\n\nStandard input:\n" +
                            pe_.standard_input() + "\n\nStandard output:\n" +
                            pe_.standard_output() + "\n\nStandard error:\n" +
-                           stderr_),
+                           stderr_ + "\n\nExit code: " + to_string(status_)),
         _stderr(std::move(stderr_))
     {
     }

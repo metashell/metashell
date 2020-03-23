@@ -134,7 +134,8 @@ namespace metashell
                data::tokens_to_string(name_begin_, name_end_).value(),
                args_begin_, args_end_))
       {
-        for (const boost::filesystem::path& p : paths[arg.type])
+        for (const boost::filesystem::path& p :
+             paths[{arg.type, data::standard_headers_allowed::all}])
         {
           const boost::filesystem::path path = resolve_symlink(p / arg.path);
 

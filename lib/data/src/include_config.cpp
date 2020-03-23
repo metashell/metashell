@@ -54,6 +54,11 @@ namespace metashell
 
     include_config& include_config::operator+=(const include_config& rhs_)
     {
+      if (rhs_.isysroot)
+      {
+        isysroot = rhs_.isysroot;
+      }
+
       append(iquote, rhs_.iquote);
       append(capital_i, rhs_.capital_i);
       append(isystem, rhs_.isystem);
@@ -64,6 +69,11 @@ namespace metashell
     command_line_argument_list to_clang_arguments(const include_config& cfg_)
     {
       command_line_argument_list result;
+      if (cfg_.isysroot)
+      {
+        result.push_back("--sysroot");
+        result.push_back(*cfg_.isysroot);
+      }
       result.append_with_prefix("-iquote", cfg_.iquote);
       result.append_with_prefix("-I", cfg_.capital_i);
       result.append_with_prefix("-isystem", cfg_.isystem);
@@ -74,6 +84,11 @@ namespace metashell
     command_line_argument_list to_wave_arguments(const include_config& cfg_)
     {
       command_line_argument_list result;
+      if (cfg_.isysroot)
+      {
+        result.push_back("--sysroot");
+        result.push_back(*cfg_.isysroot);
+      }
       result.append_with_prefix("-iquote", cfg_.iquote);
       result.append_with_prefix("-I", cfg_.capital_i);
       result.append_with_prefix("-S", cfg_.isystem);

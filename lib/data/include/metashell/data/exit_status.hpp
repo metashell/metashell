@@ -1,8 +1,8 @@
-#ifndef METASHELL_DATA_EXIT_CODE_T_HPP
-#define METASHELL_DATA_EXIT_CODE_T_HPP
+#ifndef METASHELL_DATA_EXIT_STATUS_HPP
+#define METASHELL_DATA_EXIT_STATUS_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2020, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,20 +26,21 @@ namespace metashell
 {
   namespace data
   {
-    class exit_code_t : boost::equality_comparable<exit_code_t>
+    class exit_status : boost::equality_comparable<exit_status>
     {
     public:
-      explicit exit_code_t(int value_);
+      explicit exit_status(unsigned long);
 
-      int value() const;
+      unsigned long value() const;
 
     private:
-      int _value;
+      unsigned long _value;
     };
 
-    bool operator==(exit_code_t a_, exit_code_t b_);
-    std::ostream& operator<<(std::ostream& out_, exit_code_t e_);
-    std::string to_string(exit_code_t e_);
+    bool operator==(const exit_status&, const exit_status&);
+
+    std::string to_string(const exit_status&);
+    std::ostream& operator<<(std::ostream&, const exit_status&);
   }
 }
 

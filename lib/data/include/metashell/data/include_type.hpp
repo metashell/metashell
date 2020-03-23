@@ -19,6 +19,7 @@
 
 #include <boost/filesystem/path.hpp>
 
+#include <array>
 #include <string>
 
 namespace metashell
@@ -30,6 +31,9 @@ namespace metashell
       sys = 0,
       quote = 1
     };
+
+    constexpr std::array<include_type, 2> all_include_types{
+        {include_type::sys, include_type::quote}};
 
     std::string to_string(include_type type_);
     std::string include_code(include_type type_,

@@ -57,15 +57,8 @@ namespace metashell
 
         if (!allow_standard_headers_ && !using_msvc())
         {
-          if (using_wave())
-          {
-            engine_args.push_back("--nostdinc++");
-          }
-          else
-          {
-            engine_args.push_back("-nostdinc");
-            engine_args.push_back("-nostdinc++");
-          }
+          engine_args.push_back("-nostdinc");
+          engine_args.push_back("-nostdinc++");
         }
 
         args.push_back("--");
@@ -147,7 +140,7 @@ namespace metashell
       {
         std::string err;
         read_all(std::tie(_child.standard_error(), err));
-        throw metashell_terminated(_process_execution, err);
+        throw metashell_terminated(_child.wait(), _process_execution, err);
       }
       else
       {

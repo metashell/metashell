@@ -18,12 +18,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/command_line.hpp>
-#include <metashell/data/exit_code_t.hpp>
 #include <metashell/data/process_output.hpp>
+#include <metashell/data/status.hpp>
 
 #include <metashell/process/pipe.hpp>
 
 #include <boost/filesystem/path.hpp>
+
+#include <variant.hpp>
 
 #include <string>
 #include <vector>
@@ -52,7 +54,7 @@ namespace metashell
       input_file& standard_output();
       input_file& standard_error();
 
-      data::exit_code_t wait();
+      data::status wait();
 
     private:
       pipe _standard_input;
@@ -60,10 +62,12 @@ namespace metashell
       pipe _standard_error;
 
 #ifdef _WIN32
-      PROCESS_INFORMATION _process_information;
+      using running_process = PROCESS_INFORMATION;
 #else
-      pid_t _pid;
+      using running_process = pid_t;
 #endif
+
+      mpark::variant<running_process, data::status> _process;
     };
   }
 }

@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <array>
 #include <iosfwd>
 #include <string>
 
@@ -31,6 +32,11 @@ namespace metashell
       cpp,
       all
     };
+
+    constexpr std::array<standard_headers_allowed, 4>
+        all_standard_headers_alloweds{
+            {standard_headers_allowed::none, standard_headers_allowed::c,
+             standard_headers_allowed::cpp, standard_headers_allowed::all}};
 
     standard_headers_allowed disable_c(standard_headers_allowed);
     standard_headers_allowed disable_cpp(standard_headers_allowed);

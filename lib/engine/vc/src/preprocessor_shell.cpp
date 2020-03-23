@@ -30,7 +30,7 @@ namespace metashell
       {
         const data::process_output output = run(_binary, {"/E"}, exp_);
 
-        const bool success = output.exit_code == data::exit_code_t(0);
+        const bool success = exit_success(output);
 
         return data::result{success, success ? output.standard_output : "",
                             success ? "" : error_report_on_stderr(output), ""};

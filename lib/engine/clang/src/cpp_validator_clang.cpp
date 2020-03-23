@@ -55,8 +55,8 @@ namespace metashell
           const data::process_output output =
               run_clang(_binary, std::move(clang_args), src);
 
-          const bool accept = output.exit_code == data::exit_code_t(0) &&
-                              output.standard_error.empty();
+          const bool accept =
+              exit_success(output) && output.standard_error.empty();
 
           return data::result{accept, "", output.standard_error,
                               accept && config_.verbose ? src.value() : ""};

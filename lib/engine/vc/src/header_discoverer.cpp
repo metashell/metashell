@@ -16,6 +16,8 @@
 
 #include <metashell/engine/vc/header_discoverer.hpp>
 
+#include <metashell/data/unsupported_standard_headers_allowed.hpp>
+
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/optional.hpp>
@@ -90,9 +92,22 @@ namespace metashell
       }
 
       std::vector<boost::filesystem::path>
-      header_discoverer::include_path(data::include_type type_)
+      header_discoverer::include_path(data::include_type type_,
+                                      data::standard_headers_allowed allowed_)
       {
-        return get(type_, _includes);
+        switch (allowed_)
+        {
+        case data::standard_headers_allowed::all:
+          return get(type_, _includes);
+        case data::standard_headers_allowed::none:
+          return {};
+        case data::standard_headers_allowed::c:
+          break;
+        case data::standard_headers_allowed::cpp:
+          break;
+        }
+        throw data::unsupported_standard_headers_allowed(
+            data::real_engine_name::msvc, allowed_);
       }
 
       std::set<boost::filesystem::path>

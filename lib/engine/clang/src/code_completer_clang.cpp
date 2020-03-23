@@ -163,7 +163,7 @@ namespace metashell
 
         const data::process_output o = _binary.run(clang_args, "");
 
-        METASHELL_LOG(_logger, "Exit code of clang: " + to_string(o.exit_code));
+        METASHELL_LOG(_logger, "Exit code of clang: " + to_string(o.status));
 
         const std::string out = o.standard_output;
         out_.clear();

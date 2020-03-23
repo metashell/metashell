@@ -33,7 +33,8 @@ namespace metashell
                           std::vector<boost::filesystem::path> quoteincludes_);
 
         virtual std::vector<boost::filesystem::path>
-        include_path(data::include_type type_) override;
+            include_path(data::include_type,
+                         data::standard_headers_allowed) override;
 
         virtual std::set<boost::filesystem::path>
         files_included_by(const data::cpp_code&) override;
