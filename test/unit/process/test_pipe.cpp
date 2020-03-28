@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2020, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,25 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/process/exception.hpp>
+#include <metashell/process/pipe.hpp>
 
-#include <errno.h>
-#include <string.h>
+#include <gtest/gtest.h>
 
-namespace metashell
+using namespace metashell;
+
+TEST(process, sigpipe)
 {
-  namespace process
-  {
-    exception::exception(const std::string& reason_)
-      : std::runtime_error(reason_)
-    {
-    }
+  process::pipe p;
+  p.input.close();
 
-    exception exception::from_errno() { return from_errno(errno); }
-
-    exception exception::from_errno(int errno_)
-    {
-      return exception{strerror(errno_)};
-    }
-  }
+  // Checking that the below does not crash the test process
+  p.output.write("hello");
 }

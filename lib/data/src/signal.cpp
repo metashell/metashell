@@ -22,7 +22,11 @@ namespace metashell
 {
   namespace data
   {
-    std::string to_string(const signal& s_)
+    int signum(signal s_) { return static_cast<int>(s_); }
+
+    signal from_signum(int s_) { return static_cast<signal>(s_); }
+
+    std::string to_string(signal s_)
     {
       switch (s_)
       {
@@ -68,7 +72,7 @@ namespace metashell
       return "";
     }
 
-    std::ostream& operator<<(std::ostream& out_, const signal& s_)
+    std::ostream& operator<<(std::ostream& out_, signal s_)
     {
       return out_ << to_string(s_);
     }

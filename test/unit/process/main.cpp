@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,25 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/process/exception.hpp>
+#include <gtest/gtest.h>
 
-#include <errno.h>
-#include <string.h>
-
-namespace metashell
+int main(int argc_, char* argv_[])
 {
-  namespace process
-  {
-    exception::exception(const std::string& reason_)
-      : std::runtime_error(reason_)
-    {
-    }
-
-    exception exception::from_errno() { return from_errno(errno); }
-
-    exception exception::from_errno(int errno_)
-    {
-      return exception{strerror(errno_)};
-    }
-  }
+  ::testing::InitGoogleTest(&argc_, argv_);
+  return RUN_ALL_TESTS();
 }
