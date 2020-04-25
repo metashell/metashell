@@ -21,6 +21,7 @@
     * Support `--nostdinc` and `--nostdinc++` arguments in the `wave` engine
       removing the corresponding standard headers from the standard include
       path.
+    * Support for user defined warnings in configs.
 
 * Fixes
     * When multiple shell configs use the same engine with different engine

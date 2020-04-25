@@ -33,6 +33,12 @@ namespace metashell
       {
         command_line_argument_list result = to_clang_arguments(cfg_.includes);
 
+        for (const clang_arch& arch : cfg_.archs)
+        {
+          result.push_back("-arch");
+          result.push_back(arch.value());
+        }
+
         for (const auto& macro : cfg_.macros)
         {
           result.push_back(clang_argument(macro));
@@ -331,6 +337,12 @@ namespace metashell
           "specify the languge standard to use",
           [&result](const command_line_argument& arg_)
           { result.standard = parse_standard(data::real_engine_name::clang, arg_.value()); }
+        )
+        .with_value(
+          "-arch",
+          "specify the architecture to use",
+          [&result](const command_line_argument& arch_)
+          { result.archs.push_back(clang_arch{arch_}); }
         )
         .with_value(
           "-W",

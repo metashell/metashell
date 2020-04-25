@@ -158,5 +158,72 @@ namespace metashell
       return boost::algorithm::join(
           l_ | boost::adaptors::transformed(&quote), " ");
     }
+
+    bool operator==(const command_line_argument_list& lhs_,
+                    const command_line_argument_list& rhs_)
+    {
+      return lhs_.size() == rhs_.size() &&
+             std::equal(lhs_.begin(), lhs_.end(), rhs_.begin());
+    }
+
+    std::pair<boost::optional<std::string>, command_line_argument_list>
+    remove_multiple_arch_arguments(const command_line_argument_list& args_)
+    {
+      const command_line_argument arch{"-arch"};
+
+      command_line_argument_list result;
+      bool was_arch = false;
+      boost::optional<command_line_argument> first_arch;
+      std::vector<command_line_argument> removed;
+      for (const command_line_argument& arg : args_)
+      {
+        if (was_arch)
+        {
+          if (first_arch)
+          {
+            removed.push_back(arg);
+          }
+          else
+          {
+            result.push_back(arch);
+            result.push_back(arg);
+            first_arch = arg;
+          }
+          was_arch = false;
+        }
+        else if (arg == arch)
+        {
+          was_arch = true;
+        }
+        else
+        {
+          result.push_back(arg);
+        }
+      }
+      if (was_arch)
+      {
+        result.push_back(arch);
+      }
+
+      if (removed.empty())
+      {
+        return {boost::none, result};
+      }
+      else
+      {
+        std::string warning = "Removed argument";
+        if (removed.size() > 1)
+        {
+          warning += "s";
+        }
+        for (const command_line_argument& arg : removed)
+        {
+          warning += " " + to_string(arch) + " " + to_string(arg);
+        }
+        warning += " because of earlier argument: " + to_string(arch) + " " +
+                   to_string(*first_arch) + ".";
+        return {warning, result};
+      }
+    }
   }
 }

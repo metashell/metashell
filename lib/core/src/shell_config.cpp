@@ -49,6 +49,17 @@ namespace metashell
 
       out_.key("cwd"), out_.string(cfg_.cwd.string());
 
+      if (!cfg_.warnings.empty())
+      {
+        out_.key("warnings");
+        out_.start_array();
+        for (const std::string& warning : cfg_.warnings)
+        {
+          out_.string(warning);
+        }
+        out_.end_array();
+      }
+
       out_.end_object();
     }
   }

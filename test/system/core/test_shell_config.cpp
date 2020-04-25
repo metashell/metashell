@@ -38,7 +38,8 @@ namespace
       metashell::iface::json_writer& out_,
       const std::string& name_,
       const std::string& engine_,
-      const boost::optional<std::string>& engine_arg_ = boost::none)
+      const boost::optional<std::string>& engine_arg_ = boost::none,
+      const std::vector<std::string>& warnings_ = {})
   {
     out_.start_object();
 
@@ -61,6 +62,14 @@ namespace
 
     out_.key("preprocessor_mode");
     out_.bool_(false);
+
+    out_.key("warnings");
+    out_.start_array();
+    for (const std::string& warning : warnings_)
+    {
+      out_.string(warning);
+    }
+    out_.end_array();
 
     out_.end_object();
   }
@@ -97,10 +106,11 @@ TEST(shell_config, engine_arguments)
 TEST(shell_config, warning_about_null)
 {
   just::temp::directory temp_dir;
-  const boost::filesystem::path temp(temp_dir.path());
+  const boost::filesystem::path shell_config =
+      boost::filesystem::path{temp_dir.path()} / "shell_config.json";
 
   {
-    std::ofstream f((temp / "shell_config.json").string());
+    std::ofstream f(shell_config.string());
     metashell::core::rapid_json_writer out(f);
 
     out.start_array();
@@ -108,9 +118,8 @@ TEST(shell_config, warning_about_null)
     out.end_array();
   }
 
-  metashell_instance mi(
-      {"--load_configs", (temp / "shell_config.json").string()},
-      boost::filesystem::path(), false);
+  metashell_instance mi({"--load_configs", shell_config.string()},
+                        boost::filesystem::path(), false);
 
   const std::vector<json_string> load = mi.command("#msh config load foo");
   ASSERT_GT(load.size(), 1);
@@ -120,4 +129,40 @@ TEST(shell_config, warning_about_null)
                               "means that you can not debug anything. "
                               "Metashell supports different features if you "
                               "use different compilers.") != std::string::npos);
+}
+
+TEST(shell_config, user_defined_warning)
+{
+  just::temp::directory temp_dir;
+  const boost::filesystem::path shell_config =
+      boost::filesystem::path{temp_dir.path()} / "shell_config.json";
+
+  {
+    std::ofstream f(shell_config.string());
+    metashell::core::rapid_json_writer out(f);
+
+    out.start_array();
+    write_shell_config(out, "w1", "auto", boost::none, {"This is a warning."});
+    write_shell_config(
+        out, "w2", "auto", boost::none,
+        {"This is the first warning.", "This is the second warning."});
+    out.end_array();
+  }
+
+  metashell_instance mi({"--load_configs", shell_config.string()},
+                        boost::filesystem::path{}, false);
+
+  const std::vector<json_string> w1 = mi.command("#msh config show w1");
+  ASSERT_GT(w1.size(), 1);
+  ASSERT_EQ(comment(_), w1.front());
+  ASSERT_TRUE(
+      w1.front().get().find("\\\"warnings\\\":[\\\"This is a warning.\\\"]") !=
+      std::string::npos);
+
+  const std::vector<json_string> w2 = mi.command("#msh config show w2");
+  ASSERT_GT(w2.size(), 1);
+  ASSERT_EQ(comment(_), w2.front());
+  ASSERT_TRUE(w2.front().get().find("\\\"warnings\\\":[\\\"This is the first "
+                                    "warning.\\\",\\\"This is the second "
+                                    "warning.\\\"]") != std::string::npos);
 }

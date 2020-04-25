@@ -17,9 +17,15 @@
 #include <metashell/system_test/comment.hpp>
 #include <metashell/system_test/json_generator.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/system_test_config.hpp>
 #include <metashell/system_test/util.hpp>
 
 #include <metashell/core/rapid_json_writer.hpp>
+
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptor/transformed.hpp>
+
+#include <boost/filesystem.hpp>
 
 #include <gtest/gtest.h>
 #include <just/temp.hpp>
@@ -124,6 +130,9 @@ TEST(shell_compile_commands, existing_name)
   const boost::filesystem::path src_dir = temp / "src";
   const boost::filesystem::path bin_dir = temp / "bin";
 
+  create_directory(src_dir);
+  create_directory(bin_dir);
+
   {
     std::ofstream f((temp / "compile_commands.json").string());
     metashell::core::rapid_json_writer out(f);
@@ -217,4 +226,59 @@ TEST(shell_compile_commands, test_path_simplification)
       comment(" * default\n   bar/baz/a.hpp\n   bar/b.hpp\n   bar\n   bar/_"),
       config_names(temp, {"/foo/bar/baz/a.hpp", "/foo/bar/b.hpp", "/foo/bar",
                           "/foo/bar/"}));
+}
+
+TEST(shell_compile_commands, test_multiple_arch_args)
+{
+  if (using_internal() || !using_clang())
+  {
+    return;
+  }
+
+  just::temp::directory temp_dir;
+  const boost::filesystem::path temp = temp_dir.path();
+
+  const boost::filesystem::path src_dir = temp / "src";
+  const boost::filesystem::path bin_dir = temp / "bin";
+
+  create_directory(src_dir);
+  create_directory(bin_dir);
+
+  const boost::filesystem::path compile_commands_json =
+      temp / "compile_commands.json";
+
+  {
+    std::ofstream f{compile_commands_json.string()};
+    metashell::core::rapid_json_writer out{f};
+
+    out.start_array();
+    write_compile_commands(
+        out, "foo.cpp", bin_dir,
+        boost::algorithm::join(
+            system_test_config::engine_args() |
+                boost::adaptors::transformed(
+                    [](const auto& arg_) { return to_string(arg_); }),
+            " ") +
+            " -arch armv7 -arch armv7s -c foo.cpp");
+    out.end_array();
+  }
+
+  metashell_instance mi{
+      {"--load_compile_commands", compile_commands_json.string()},
+      boost::filesystem::path(),
+      false};
+
+  {
+    const std::vector<json_string> load =
+        mi.command("#msh config load foo.cpp");
+    ASSERT_EQ(2, load.size());
+    ASSERT_EQ(comment(_), load.front());
+    ASSERT_TRUE(load.front().get().find("Removed argument -arch armv7s because "
+                                        "of earlier argument: -arch armv7.") !=
+                std::string::npos);
+  }
+
+  ASSERT_EQ(json_string{}, mi.command_fails("#msh config load foo.cpp"));
+  ASSERT_EQ(json_string{}, mi.command_fails("#msh engine switch wave"));
+  ASSERT_EQ(json_string{}, mi.command_fails("#msh engine switch internal"));
 }

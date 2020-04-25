@@ -24,6 +24,7 @@
 #include <boost/optional.hpp>
 
 #include <iosfwd>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -32,7 +33,8 @@ namespace metashell
   namespace data
   {
     class command_line_argument_list
-        : boost::addable<command_line_argument_list>
+        : boost::addable<command_line_argument_list>,
+          boost::equality_comparable<command_line_argument_list>
     {
     public:
       using container = std::vector<command_line_argument>;
@@ -146,6 +148,12 @@ namespace metashell
 
     std::ostream& operator<<(std::ostream&, const command_line_argument_list&);
     std::string to_string(const command_line_argument_list&);
+
+    bool operator==(const command_line_argument_list&,
+                    const command_line_argument_list&);
+
+    std::pair<boost::optional<std::string>, command_line_argument_list>
+    remove_multiple_arch_arguments(const command_line_argument_list&);
   }
 }
 

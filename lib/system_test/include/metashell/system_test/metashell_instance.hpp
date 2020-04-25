@@ -55,6 +55,8 @@ namespace metashell
       std::vector<json_string> code_completion(const std::string& cmd_);
       void close_stdin();
 
+      json_string command_fails(const std::string& cmd_);
+
       json_string next_response();
       std::vector<json_string> responses_until_prompt();
 

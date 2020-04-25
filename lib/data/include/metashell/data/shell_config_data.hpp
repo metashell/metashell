@@ -24,6 +24,8 @@
 
 #include <boost/filesystem/path.hpp>
 
+#include <vector>
+
 namespace metashell
 {
   namespace data
@@ -35,6 +37,8 @@ namespace metashell
       bool preprocessor_mode = false;
       overridable<engine_arguments> engine;
       boost::filesystem::path cwd;
+
+      std::vector<std::string> warnings;
     };
   }
 }

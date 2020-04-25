@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/clang_arch.hpp>
 #include <metashell/data/command_line_argument_list.hpp>
 #include <metashell/data/engine_arguments.hpp>
 #include <metashell/data/include_config.hpp>
@@ -40,11 +41,13 @@ namespace metashell
           standard_headers_allowed::all;
       int template_instantiation_depth = 900;
       bool warnings_enabled = true;
+      std::vector<clang_arch> archs;
     };
 
     engine_arguments convert_to(real_engine_name, const engine_config&);
 
     engine_config parse_vc_arguments(const command_line_argument_list&);
+
     engine_config parse_clang_arguments(const command_line_argument_list&);
   }
 }
