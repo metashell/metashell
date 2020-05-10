@@ -428,7 +428,8 @@ namespace metashell
           const iface::environment& env_,
           const boost::optional<data::cpp_code>& tmp_exp_,
           const boost::optional<boost::filesystem::path>& env_path_,
-          binary& binary_)
+          binary& binary_,
+          data::metaprogram_mode mode_)
       {
         data::result precompile_result =
             preprocess(env_, tmp_exp_, env_path_, binary_);
@@ -438,10 +439,14 @@ namespace metashell
           const data::cpp_code precompiled_code(
               std::move(precompile_result.output));
 
-          const data::process_output templight_output = compile(
-              precompiled_code,
-              data::command_line_argument_list{"-Xclang", "-templight-dump"},
-              binary_);
+          data::command_line_argument_list args{"-Xclang", "-templight-dump"};
+          if (mode_ == data::metaprogram_mode::profile)
+          {
+            args += {"-Xclang", "-templight-profile"};
+          }
+
+          const data::process_output templight_output =
+              compile(precompiled_code, args, binary_);
 
           return std::make_tuple(
               exit_success(templight_output) ?

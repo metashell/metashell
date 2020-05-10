@@ -129,4 +129,18 @@ const std::string make_unique_sfinae_mp =
   make_unique(Args&&...) = delete;
 )";
 
+const std::string slow_mp =
+    "template<int N>"
+    "static constexpr double heavy(int i, double r) {"
+    "while (i--) r /= 1.1;"
+    "return r;"
+    "}"
+    ""
+    "template<int N>"
+    "struct iter : iter<int(heavy<N>(N * N, N) / N) + N - 1> {};"
+    "template<>"
+    "struct iter<0> { enum { value = 42 }; };"
+    ""
+    "template<int X>"
+    "struct slow_mp { enum { value = iter<X + 123>::value }; };";
 #endif

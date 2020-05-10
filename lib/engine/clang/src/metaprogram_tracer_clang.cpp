@@ -60,7 +60,7 @@ namespace metashell
           iface::displayer& displayer_)
       {
         const auto out = eval_with_templight_dump_on_stdout(
-            env_, expression_, boost::none, _binary);
+            env_, expression_, boost::none, _binary, mode_);
 
         const data::result& res = std::get<0>(out);
         const std::string& trace = std::get<1>(out);
