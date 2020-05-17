@@ -142,7 +142,7 @@ class Config(object):
         return [
             include_path_of(root, 'metashell', self.metashell_branch)
         ] + [
-            include_path_of(root, l, v) for l, v in self.libs.items()
+            include_path_of(root, t, v) for t, v in self.libs.items()
         ]
 
     def include_args(self, root):

@@ -101,12 +101,12 @@ def main():
             else:
                 print 'Invalid type: {0}'.format(val)
                 sys.exit(1)
-        elif opt in('-h', '--help'):
+        elif opt in ('-h', '--help'):
             print __doc__
             sys.exit(0)
-        elif opt in('-g', '--gcc'):
+        elif opt in ('-g', '--gcc'):
             gcc = val
-        elif opt in('-f', '--format'):
+        elif opt in ('-f', '--format'):
             out_format = val
 
     (normal, system) = get_standard_gcc_includes(gcc)
