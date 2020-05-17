@@ -206,7 +206,7 @@ def git_repo(src_repository, out_dir, local_name, log):
 def origin_branches(src_repository, out_dir, log):
     """Returns the list of branches in origin"""
     return [
-        remove_prefix('refs/heads/', l.split()[1]) for l in
+        remove_prefix('refs/heads/', x.split()[1]) for x in
         git(out_dir, ['ls-remote', '--heads', src_repository], log)
         .splitlines()
     ]
@@ -373,8 +373,8 @@ def files_not_symlinked_to(path, log):
     full_paths = [os.path.join(path, f) for f in os.listdir(path)]
 
     symlink_targets = [
-        os.path.basename(os.path.realpath(l))
-        for l in full_paths if os.path.islink(l)
+        os.path.basename(os.path.realpath(p))
+        for p in full_paths if os.path.islink(p)
     ]
     result = []
     for full_path in full_paths:

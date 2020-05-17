@@ -99,7 +99,7 @@ def remove_nested(libs):
     """Removes nested libs (eg. when x is in libs, x/y gets removed)"""
     result = set()
     for lib in sorted(libs, key=len):
-        if not any(sublib_of(lib, l) for l in result):
+        if not any(sublib_of(lib, s) for s in result):
             result.add(lib)
     return result
 
@@ -128,7 +128,7 @@ def collect_dependencies(source_root):
         )
     )))
     return (
-        {l: set(dependencies_of_lib(source_root, libs, l)) for l in libs},
+        {s: set(dependencies_of_lib(source_root, libs, s)) for s in libs},
         {a: set(dependencies_of_lib(source_root, libs, a)) for a in apps}
     )
 

@@ -138,7 +138,7 @@ def main():
     formatter = LogFormatter(args.deploy_events, not args.hide_time)
 
     with open(os.path.join(args.root, 'log.txt'), 'r') as log_file:
-        for msg in (LogMessage(l) for l in read_lines(log_file, args.follow)):
+        for msg in (LogMessage(m) for m in read_lines(log_file, args.follow)):
             if msg.valid() and formatter.keep_message(msg):
                 print formatter.format_message(msg)
 
