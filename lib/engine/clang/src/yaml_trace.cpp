@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <chrono>
 #include <metashell/engine/clang/yaml_trace.hpp>
 
 #include <yaml-cpp/yaml.h>
@@ -108,18 +109,31 @@ namespace metashell
                   node["kind"].as<std::string>()))
           {
             const std::string event = node["event"].as<std::string>();
+
+            double timestamp;
+            if (const auto stamp = node["stamp"])
+            {
+              using namespace std::chrono;
+              timestamp = (double)stamp.as<high_resolution_clock::rep>() *
+                          nanoseconds::period::num / nanoseconds::period::den;
+            }
+            else
+            {
+              timestamp = 0;
+            }
+
             if (event == "Begin")
             {
               result = template_begin(
                   *kind, data::type(node["name"].as<std::string>()),
                   data::file_location::parse(node["poi"].as<std::string>()),
                   data::file_location::parse(node["orig"].as<std::string>()),
-                  0);
+                  timestamp);
             }
             else if (event == "End")
             {
-              result =
-                  data::event_details<data::event_kind::template_end>{{}, 0};
+              result = data::event_details<data::event_kind::template_end>{
+                  {}, timestamp};
             }
           }
 

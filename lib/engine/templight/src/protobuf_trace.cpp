@@ -121,7 +121,7 @@ namespace metashell
           }
           case ::templight::ProtobufReader::EndEntry:
           {
-            auto end_entry = _reader.LastBeginEntry;
+            auto end_entry = _reader.LastEndEntry;
             _reader.next();
             return data::event_data(
                 data::event_details<data::event_kind::template_end>{

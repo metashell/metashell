@@ -22,6 +22,7 @@
 #include <metashell/data/engine_arguments.hpp>
 #include <metashell/data/engine_name.hpp>
 #include <metashell/data/executable_path.hpp>
+#include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/data/result.hpp>
 
 #include <metashell/iface/displayer.hpp>
@@ -105,7 +106,8 @@ namespace metashell
           const iface::environment& env_,
           const boost::optional<data::cpp_code>& tmp_exp_,
           const boost::optional<boost::filesystem::path>& env_path_,
-          binary& clang_binary_);
+          binary& clang_binary_,
+          data::metaprogram_mode mode_);
     }
   }
 }
