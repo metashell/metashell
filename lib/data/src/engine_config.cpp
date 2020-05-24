@@ -39,6 +39,12 @@ namespace metashell
           result.push_back(arch.value());
         }
 
+        if (cfg_.target)
+        {
+          result.push_back("-target");
+          result.push_back(cfg_.target->value());
+        }
+
         for (const auto& macro : cfg_.macros)
         {
           result.push_back(clang_argument(macro));
@@ -64,6 +70,12 @@ namespace metashell
           break;
         case standard_headers_allowed::all:
           break;
+        }
+
+        if (cfg_.standard_lib)
+        {
+          result.push_back(command_line_argument{"-stdlib="} +
+                           cfg_.standard_lib->value());
         }
 
         if (!cfg_.warnings_enabled)
@@ -341,8 +353,17 @@ namespace metashell
         .with_value(
           "-arch",
           "specify the architecture to use",
-          [&result](const command_line_argument& arch_)
-          { result.archs.push_back(clang_arch{arch_}); }
+          result.archs
+        )
+        .with_value(
+          "-target",
+          "specify the target to use",
+          result.target
+        )
+        .with_value(
+          "-stdlib",
+          "specify the standard lib to use",
+          result.standard_lib
         )
         .with_value(
           "-W",
@@ -357,6 +378,28 @@ namespace metashell
         .with_value(
           "-ftls-model",
           "Alter the thread-local storage model to be used",
+          ignore
+        )
+        .with_value(
+          "-miphoneos-version-min",
+          "Minimum iPhone OS version",
+          ignore
+        )
+        .with_value(
+          "-mmacosx-version-min",
+          "Minimum iPhone OS version",
+          ignore
+        )
+        .with_value(
+          "-fno-sanitize",
+          "Disable sanitizers",
+          ignore
+        )
+        .with_value(
+          "-mfloat-abi",
+          "Use hardware or software instructions for floating point"
+          " operations and specify registers to use for floating point"
+          " parameter passing and return values.",
           ignore
         )
         .flag(
@@ -526,6 +569,7 @@ namespace metashell
         .flag("-O2", "Optimize even more", ignore)
         .flag("-O3", "Optimize yet more", ignore)
         .flag("-Os", "Optimize for size", ignore)
+        .flag("-Oz", "Optimize for size further", ignore)
         .flag("-Ofast", "Disregard strict standards compliance", ignore)
         .flag("-Og", "Optimize debugging experience", ignore)
         .flag("-m32", "Generate code for 32-bit ABI", ignore)
@@ -562,6 +606,21 @@ namespace metashell
           "-pthread",
           "Define additional macros required for using the POSIX threads"
           " library.",
+          ignore
+        )
+        .flag(
+          "-static",
+          "Prevent linking with the static libraries.",
+          ignore
+        )
+        .flag(
+          "-mkernel",
+          "Enable kernel development mode.",
+          ignore
+        )
+        .flag(
+          "-fobjc-arc",
+          "Synthesize retain and release calls for Objective-C pointers",
           ignore
         )
       ;

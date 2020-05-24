@@ -18,13 +18,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/clang_arch.hpp>
+#include <metashell/data/clang_target.hpp>
 #include <metashell/data/command_line_argument_list.hpp>
 #include <metashell/data/engine_arguments.hpp>
 #include <metashell/data/include_config.hpp>
 #include <metashell/data/language_standard.hpp>
 #include <metashell/data/macro_def_or_undef.hpp>
 #include <metashell/data/standard_headers_allowed.hpp>
+#include <metashell/data/stdlib.hpp>
 
+#include <optional>
 #include <vector>
 
 namespace metashell
@@ -42,6 +45,8 @@ namespace metashell
       int template_instantiation_depth = 900;
       bool warnings_enabled = true;
       std::vector<clang_arch> archs;
+      std::optional<clang_target> target;
+      std::optional<stdlib> standard_lib = std::nullopt;
     };
 
     engine_arguments convert_to(real_engine_name, const engine_config&);
