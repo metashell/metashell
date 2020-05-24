@@ -387,7 +387,7 @@ namespace metashell
         )
         .with_value(
           "-mmacosx-version-min",
-          "Minimum iPhone OS version",
+          "Minimum macOS version",
           ignore
         )
         .with_value(
