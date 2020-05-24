@@ -361,7 +361,7 @@ namespace metashell
           result.target
         )
         .with_value(
-          "-stdlib",
+          "-stdlib=",
           "specify the standard lib to use",
           result.standard_lib
         )
@@ -387,7 +387,7 @@ namespace metashell
         )
         .with_value(
           "-mmacosx-version-min",
-          "Minimum iPhone OS version",
+          "Minimum macOS version",
           ignore
         )
         .with_value(
@@ -400,6 +400,11 @@ namespace metashell
           "Use hardware or software instructions for floating point"
           " operations and specify registers to use for floating point"
           " parameter passing and return values.",
+          ignore
+        )
+        .with_value(
+          "-march",
+          "Target CPU architecture",
           ignore
         )
         .flag(
