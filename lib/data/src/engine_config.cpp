@@ -402,6 +402,11 @@ namespace metashell
           " parameter passing and return values.",
           ignore
         )
+        .with_value(
+          "-march",
+          "Target CPU architecture",
+          ignore
+        )
         .flag(
           "-nostdinc",
           "ignore standard C headers",
