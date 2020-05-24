@@ -361,7 +361,7 @@ namespace metashell
           result.target
         )
         .with_value(
-          "-stdlib",
+          "-stdlib=",
           "specify the standard lib to use",
           result.standard_lib
         )
