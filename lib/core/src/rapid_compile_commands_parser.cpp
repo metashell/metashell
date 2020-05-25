@@ -157,8 +157,13 @@ namespace metashell
       {
         if (*_key == "command")
         {
-          _data->engine.default_value().args =
-              parse_compiler_command(data::shell_command_view(str_));
+          const auto removed = remove_multiple_arch_arguments(
+              parse_compiler_command(data::shell_command_view(str_)));
+          if (removed.first)
+          {
+            _data->warnings.push_back(*removed.first);
+          }
+          _data->engine.default_value().args = removed.second;
         }
         else if (*_key == "file")
         {

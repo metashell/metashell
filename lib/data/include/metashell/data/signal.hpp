@@ -60,8 +60,11 @@ namespace metashell
 
 #undef METASHELL_SIGNAL_VALUE
 
-    std::string to_string(const signal&);
-    std::ostream& operator<<(std::ostream&, const signal&);
+    int signum(signal);
+    signal from_signum(int);
+
+    std::string to_string(signal);
+    std::ostream& operator<<(std::ostream&, signal);
   }
 }
 

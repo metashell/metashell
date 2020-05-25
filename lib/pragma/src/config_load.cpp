@@ -83,6 +83,13 @@ namespace metashell
             comment.paragraphs.emplace_back(*limit);
           }
 
+          for (const auto warning :
+               shell_.get_config().active_shell_config().warnings)
+          {
+            comment.paragraphs.emplace_back();
+            comment.paragraphs.emplace_back(warning);
+          }
+
           displayer_.show_comment(comment);
         }
         catch (const std::exception& e)

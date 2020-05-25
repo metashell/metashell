@@ -64,6 +64,8 @@ fields:
   `true` has the same effect as starting Metashell with `--preprocessor`.
 * `cwd`: this overrides the working directory the compiler is run from. The
   default is the directory, where Metashell was launched.
+* `warnings`: list of strings, which are warnings displayed when the config is
+  loaded.
 
 You can create a JSON file with one or more such configs in it.
 Here is an example for such a config file:

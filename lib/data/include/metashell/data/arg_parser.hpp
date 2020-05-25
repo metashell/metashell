@@ -22,6 +22,7 @@
 #include <metashell/data/exception.hpp>
 
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -105,6 +106,29 @@ namespace metashell
         return with_value(
             short_name_, desc_, [&out_](const command_line_argument& item_) {
               out_.emplace_back(item_.value());
+            });
+      }
+
+      template <size_t Len1, size_t Len2, class ValueType>
+      arg_parser& with_value(const char (&short_name_)[Len1],
+                             const char (&long_name_)[Len2],
+                             std::string desc_,
+                             std::optional<ValueType>& out_)
+      {
+        return with_value(short_name_, long_name_, desc_,
+                          [&out_](const command_line_argument& item_) {
+                            out_ = ValueType(item_);
+                          });
+      }
+
+      template <size_t Len, class ValueType>
+      arg_parser& with_value(const char (&short_name_)[Len],
+                             std::string desc_,
+                             std::optional<ValueType>& out_)
+      {
+        return with_value(
+            short_name_, desc_, [&out_](const command_line_argument& item_) {
+              out_ = ValueType(item_);
             });
       }
 

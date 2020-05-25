@@ -63,6 +63,7 @@ namespace metashell
             {"engine_args", field_type::list_},
             {"use_precompiled_headers", field_type::bool_},
             {"preprocessor_mode", field_type::bool_},
+            {"warnings", field_type::list_},
             {"cwd", field_type::string_}};
 
         const auto i = fields.find(field_);
@@ -85,7 +86,7 @@ namespace metashell
       {
         const auto t = type_of_field(*_key);
 
-        if (_in_engine_args)
+        if (_in_value_list)
         {
           fail("A list containing a list is not a valid value for " + *_key +
                ", which should be a " + to_string(t));
@@ -93,7 +94,7 @@ namespace metashell
         }
         else if (t == field_type::list_)
         {
-          _in_engine_args = true;
+          _in_value_list = true;
           return true;
         }
         else
@@ -103,14 +104,14 @@ namespace metashell
           return false;
         }
       }
-      else if (_in_list || _data)
+      else if (_in_main_list || _data)
       {
         fail("Unexpected array");
         return false;
       }
       else
       {
-        _in_list = true;
+        _in_main_list = true;
         return true;
       }
     }
@@ -119,8 +120,14 @@ namespace metashell
     {
       not_empty();
 
-      _in_list = false;
-      _in_engine_args = false;
+      if (_in_value_list)
+      {
+        _in_value_list = false;
+      }
+      else
+      {
+        _in_main_list = false;
+      }
       _key = boost::none;
 
       return true;
@@ -130,7 +137,7 @@ namespace metashell
     {
       not_empty();
 
-      if (_data || _in_engine_args)
+      if (_data || _in_value_list)
       {
         fail("Unexpected object");
         return false;
@@ -208,10 +215,17 @@ namespace metashell
 
           return true;
         }
-        else if (t == field_type::list_ && _in_engine_args)
+        else if (t == field_type::list_ && _in_value_list)
         {
-          _data->engine.default_value().args.push_back(
-              data::command_line_argument(str_));
+          if (_key == std::string{"engine_args"})
+          {
+            _data->engine.default_value().args.push_back(
+                data::command_line_argument(str_));
+          }
+          else if (_key == std::string{"warnings"})
+          {
+            _data->warnings.push_back(str_);
+          }
           return true;
         }
         else

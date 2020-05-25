@@ -48,11 +48,11 @@ namespace metashell
       bool string(const std::string& str_);
 
     private:
-      bool _in_list = false;
+      bool _in_main_list = false;
+      bool _in_value_list = false;
       boost::optional<data::shell_config_name> _name = boost::none;
       boost::optional<data::shell_config_data> _data = boost::none;
       boost::optional<std::string> _key = boost::none;
-      bool _in_engine_args = false;
     };
   }
 }

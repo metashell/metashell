@@ -28,6 +28,9 @@ namespace metashell
     {
     public:
       explicit exception(const std::string& reason_);
+
+      static exception from_errno();
+      static exception from_errno(int);
     };
   }
 }

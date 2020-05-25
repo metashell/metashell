@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/error.hpp>
 #include <metashell/system_test/json_generator.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/metashell_terminated.hpp>
@@ -21,6 +22,8 @@
 #include <metashell/system_test/system_test_config.hpp>
 
 #include <algorithm>
+
+using pattern::_;
 
 namespace metashell
 {
@@ -158,6 +161,13 @@ namespace metashell
     metashell_instance::command(const std::string& cmd_)
     {
       return send(system_test::command(cmd_));
+    }
+
+    json_string metashell_instance::command_fails(const std::string& cmd_)
+    {
+      const std::vector<json_string> response = command(cmd_);
+      const auto err = std::find(response.begin(), response.end(), error{_});
+      return err == response.end() ? json_string{} : *err;
     }
 
     std::vector<json_string>
