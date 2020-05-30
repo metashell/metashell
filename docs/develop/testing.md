@@ -21,5 +21,12 @@ manually:
 * Press `q` and `Enter`
 * **Expected:** you get Metashell's prompt back
 
+#### Tab completion results are not mixed up
+
+* Type `#inclu` and press Tab.
+* **Expected:** it gets completed to `#include`
+* Delete the `clude` part, so it remains `#in` and press Tab again.
+* **Expected:** it gets completed to `#include` again.
+
 <p>&nbsp;</p>
 

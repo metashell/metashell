@@ -80,6 +80,7 @@ namespace metashell
           const std::string edited_text = get_edited_text();
 
           const auto eb = edited_text.begin();
+          values.clear();
           completer(data::user_input(eb, eb + completion_end), values);
           pos = values.begin();
         }
