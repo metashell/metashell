@@ -196,6 +196,33 @@ namespace metashell {
           return nullptr;
         }
       }
+
+      void code_complete_pp_directive(const data::cpp_code& prefix_,
+                                      std::set<data::user_input>& out_)
+      {
+        for (const auto& directive :
+             {data::cpp_code{"define"}, data::cpp_code{"if"},
+              data::cpp_code{"ifdef"}, data::cpp_code{"ifndef"},
+              data::cpp_code{"include"}, data::cpp_code{"else"},
+              data::cpp_code{"elif"}, data::cpp_code{"endif"},
+              data::cpp_code{"error"}, data::cpp_code{"line"},
+              data::cpp_code{"msh"}, data::cpp_code{"pragma"},
+              data::cpp_code{"undef"}, data::cpp_code{"warning"}})
+        {
+          if (starts_with(directive, prefix_))
+          {
+            out_.insert(data::user_input{substr(directive, size(prefix_))});
+          }
+        }
+      }
+
+      template <data::token_category... Cs>
+      bool any_of(data::token_category category_)
+      {
+        const data::token_category cats[] = {Cs...};
+        return std::find(std::begin(cats), std::end(cats), category_) !=
+               std::end(cats);
+      }
     }
 
     shell::shell(
@@ -381,6 +408,192 @@ namespace metashell {
     {
       try
       {
+        const data::command cmd = core::to_command(data::cpp_code{s_});
+        const auto e = cmd.end();
+        auto i = data::skip_all_whitespace(cmd.begin(), e);
+        if (i != e)
+        {
+          const auto ttype = type_of(*i);
+          switch (ttype)
+          {
+          case data::token_type::p_define:
+          case data::token_type::p_if:
+          case data::token_type::p_ifdef:
+          case data::token_type::p_ifndef:
+          case data::token_type::p_else:
+          case data::token_type::p_elif:
+          case data::token_type::p_endif:
+          case data::token_type::p_error:
+          case data::token_type::p_line:
+          case data::token_type::p_pragma:
+          case data::token_type::p_undef:
+          case data::token_type::p_warning:
+          case data::token_type::p_include:
+          {
+            data::cpp_code directive{format_token(*i).substr(1)};
+
+            for (++i;
+                 i != e && any_of<data::token_category::identifier,
+                                  data::token_category::keyword>(category(*i));
+                 ++i)
+            {
+              directive += data::cpp_code{format_token(*i)};
+            }
+
+            if (i == e)
+            {
+              code_complete_pp_directive(directive, out_);
+              return;
+            }
+          }
+          break;
+          case data::token_type::operator_pound:
+          {
+            ++i;
+            i = data::skip_all_whitespace(i, e);
+
+            const auto directive = i == e ? data::cpp_code{} : value(*i);
+
+            if (i != e)
+            {
+              ++i;
+            }
+            if (i == e)
+            {
+              code_complete_pp_directive(directive, out_);
+              return;
+            }
+          }
+          break;
+          case data::token_type::unknown:
+          case data::token_type::identifier:
+          case data::token_type::character_literal:
+          case data::token_type::floating_literal:
+          case data::token_type::integer_literal:
+          case data::token_type::string_literal:
+          case data::token_type::bool_literal:
+          case data::token_type::c_comment:
+          case data::token_type::cpp_comment:
+          case data::token_type::whitespace:
+          case data::token_type::continue_line:
+          case data::token_type::new_line:
+          case data::token_type::keyword_asm:
+          case data::token_type::keyword_auto:
+          case data::token_type::keyword_bool:
+          case data::token_type::keyword_break:
+          case data::token_type::keyword_case:
+          case data::token_type::keyword_catch:
+          case data::token_type::keyword_char:
+          case data::token_type::keyword_class:
+          case data::token_type::keyword_const:
+          case data::token_type::keyword_constexpr:
+          case data::token_type::keyword_const_cast:
+          case data::token_type::keyword_continue:
+          case data::token_type::keyword_default:
+          case data::token_type::keyword_delete:
+          case data::token_type::keyword_do:
+          case data::token_type::keyword_double:
+          case data::token_type::keyword_dynamic_cast:
+          case data::token_type::keyword_else:
+          case data::token_type::keyword_enum:
+          case data::token_type::keyword_explicit:
+          case data::token_type::keyword_export:
+          case data::token_type::keyword_extern:
+          case data::token_type::keyword_float:
+          case data::token_type::keyword_for:
+          case data::token_type::keyword_friend:
+          case data::token_type::keyword_goto:
+          case data::token_type::keyword_if:
+          case data::token_type::keyword_inline:
+          case data::token_type::keyword_int:
+          case data::token_type::keyword_long:
+          case data::token_type::keyword_mutable:
+          case data::token_type::keyword_namespace:
+          case data::token_type::keyword_new:
+          case data::token_type::keyword_operator:
+          case data::token_type::keyword_private:
+          case data::token_type::keyword_protected:
+          case data::token_type::keyword_public:
+          case data::token_type::keyword_register:
+          case data::token_type::keyword_reinterpret_cast:
+          case data::token_type::keyword_return:
+          case data::token_type::keyword_short:
+          case data::token_type::keyword_signed:
+          case data::token_type::keyword_sizeof:
+          case data::token_type::keyword_static:
+          case data::token_type::keyword_static_cast:
+          case data::token_type::keyword_struct:
+          case data::token_type::keyword_switch:
+          case data::token_type::keyword_template:
+          case data::token_type::keyword_this:
+          case data::token_type::keyword_throw:
+          case data::token_type::keyword_try:
+          case data::token_type::keyword_typedef:
+          case data::token_type::keyword_typeid:
+          case data::token_type::keyword_typename:
+          case data::token_type::keyword_union:
+          case data::token_type::keyword_unsigned:
+          case data::token_type::keyword_using:
+          case data::token_type::keyword_virtual:
+          case data::token_type::keyword_void:
+          case data::token_type::keyword_volatile:
+          case data::token_type::keyword_wchar_t:
+          case data::token_type::keyword_while:
+          case data::token_type::operator_bitwise_and:
+          case data::token_type::operator_logical_and:
+          case data::token_type::operator_assign:
+          case data::token_type::operator_bitwise_and_assign:
+          case data::token_type::operator_bitwise_or:
+          case data::token_type::operator_bitwise_or_assign:
+          case data::token_type::operator_bitwise_xor:
+          case data::token_type::operator_bitwise_xor_assign:
+          case data::token_type::operator_comma:
+          case data::token_type::operator_colon:
+          case data::token_type::operator_divide:
+          case data::token_type::operator_divide_assign:
+          case data::token_type::operator_dot:
+          case data::token_type::operator_dotstar:
+          case data::token_type::operator_ellipsis:
+          case data::token_type::operator_equal:
+          case data::token_type::operator_greater:
+          case data::token_type::operator_greater_equal:
+          case data::token_type::operator_left_brace:
+          case data::token_type::operator_less:
+          case data::token_type::operator_less_equal:
+          case data::token_type::operator_left_paren:
+          case data::token_type::operator_left_bracket:
+          case data::token_type::operator_minus:
+          case data::token_type::operator_minus_assign:
+          case data::token_type::operator_minus_minus:
+          case data::token_type::operator_modulo:
+          case data::token_type::operator_modulo_assign:
+          case data::token_type::operator_logical_not:
+          case data::token_type::operator_not_equal:
+          case data::token_type::operator_logical_or:
+          case data::token_type::operator_plus:
+          case data::token_type::operator_plus_assign:
+          case data::token_type::operator_plus_plus:
+          case data::token_type::operator_arrow:
+          case data::token_type::operator_arrow_star:
+          case data::token_type::operator_question_mark:
+          case data::token_type::operator_right_brace:
+          case data::token_type::operator_right_paren:
+          case data::token_type::operator_right_bracket:
+          case data::token_type::operator_colon_colon:
+          case data::token_type::operator_semicolon:
+          case data::token_type::operator_left_shift:
+          case data::token_type::operator_left_shift_assign:
+          case data::token_type::operator_right_shift:
+          case data::token_type::operator_right_shift_assign:
+          case data::token_type::operator_star:
+          case data::token_type::operator_bitwise_not:
+          case data::token_type::operator_star_assign:
+          case data::token_type::operator_pound_pound:
+            // ignore
+            break;
+          }
+        }
+
         engine().code_completer().code_complete(
             *_env, s_, out_,
             enabled(data::shell_flag::use_precompiled_headers));

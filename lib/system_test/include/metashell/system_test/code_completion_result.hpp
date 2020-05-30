@@ -19,6 +19,8 @@
 
 #include <metashell/system_test/json_string.hpp>
 
+#include <boost/operators.hpp>
+
 #include <iosfwd>
 #include <set>
 #include <string>
@@ -28,6 +30,7 @@ namespace metashell
   namespace system_test
   {
     class code_completion_result
+        : boost::equality_comparable<code_completion_result, json_string>
     {
     public:
       explicit code_completion_result(
@@ -56,7 +59,6 @@ namespace metashell
     json_string to_json_string(const code_completion_result& r_);
 
     bool operator==(const code_completion_result& r_, const json_string& s_);
-    bool operator!=(const code_completion_result& r_, const json_string& s_);
   }
 }
 

@@ -114,10 +114,5 @@ namespace metashell
         return false;
       }
     }
-
-    bool operator!=(const code_completion_result& r_, const json_string& s_)
-    {
-      return !(r_ == s_);
-    }
   }
 }
