@@ -19,12 +19,12 @@
 #include <metashell/data/shell_command_view.hpp>
 #include <metashell/data/shell_config_name.hpp>
 
-#include <boost/optional.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 
 #include <algorithm>
 #include <cassert>
 #include <map>
+#include <optional>
 
 namespace metashell
 {
@@ -132,8 +132,8 @@ namespace metashell
       else
       {
         _configs.emplace_back(*_name, *_data);
-        _name = boost::none;
-        _data = boost::none;
+        _name = std::nullopt;
+        _data = std::nullopt;
 
         return true;
       }

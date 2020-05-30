@@ -18,12 +18,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
 #include <algorithm>
 #include <cassert>
 #include <iosfwd>
 #include <numeric>
+#include <optional>
 #include <string>
 
 namespace metashell
@@ -41,13 +41,13 @@ namespace metashell
         element(std::string, char);
 
         const std::string& value() const;
-        boost::optional<char> separator() const;
+        std::optional<char> separator() const;
 
       private:
         std::string _value;
-        boost::optional<char> _separator;
+        std::optional<char> _separator;
 
-        element(std::string, boost::optional<char>);
+        element(std::string, std::optional<char>);
       };
 
       class iterator : public boost::forward_iterator_helper<iterator,
@@ -72,7 +72,7 @@ namespace metashell
       private:
         const std::string* _str;
         std::string::size_type _next_from;
-        boost::optional<element> _value;
+        std::optional<element> _value;
         std::ptrdiff_t _index;
       };
 
@@ -117,8 +117,8 @@ namespace metashell
 
     std::size_t size(const shell_config_name&);
 
-    boost::optional<shell_config_name> remove_prefix(const shell_config_name&,
-                                                     std::size_t);
+    std::optional<shell_config_name> remove_prefix(const shell_config_name&,
+                                                   std::size_t);
 
     shell_config_name substr(const shell_config_name& s_,
                              std::string::size_type pos_ = 0,

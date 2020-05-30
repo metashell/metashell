@@ -31,10 +31,10 @@
 #include <metashell/iface/pragma_handler.hpp>
 
 #include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <stack>
 #include <string>

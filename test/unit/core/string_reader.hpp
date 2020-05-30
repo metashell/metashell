@@ -19,8 +19,7 @@
 
 #include <metashell/data/user_input.hpp>
 
-#include <boost/optional.hpp>
-
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -30,7 +29,7 @@ public:
   explicit string_reader(
       std::initializer_list<metashell::data::user_input> strings_);
 
-  boost::optional<metashell::data::user_input> operator()(const std::string&);
+  std::optional<metashell::data::user_input> operator()(const std::string&);
 
 private:
   std::vector<metashell::data::user_input> _strings;

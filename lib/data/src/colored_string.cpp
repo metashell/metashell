@@ -88,14 +88,14 @@ namespace metashell
     colored_string& colored_string::operator+=(const char* rhs)
     {
       string += rhs;
-      colors.resize(string.size(), boost::none);
+      colors.resize(string.size(), std::nullopt);
       return *this;
     }
 
     colored_string& colored_string::operator+=(const std::string& rhs)
     {
       string += rhs;
-      colors.resize(string.size(), boost::none);
+      colors.resize(string.size(), std::nullopt);
       return *this;
     }
 
@@ -121,7 +121,7 @@ namespace metashell
 
     void print_to_cout(const colored_string& s_)
     {
-      colored_string::color_t prev_color = boost::none;
+      colored_string::color_t prev_color = std::nullopt;
       auto color_it = s_.get_colors().begin();
 
       for (auto char_it = s_.get_string().begin(), e = s_.get_string().end();

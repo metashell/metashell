@@ -59,7 +59,7 @@ namespace metashell
 
     void running_at(frame_stack& stack_,
                     std::vector<debugger_event>& events_,
-                    const boost::optional<double>& timestamp_,
+                    const std::optional<double>& timestamp_,
                     metaprogram_mode mode_)
     {
       if (mode_ == metaprogram_mode::profile && timestamp_)

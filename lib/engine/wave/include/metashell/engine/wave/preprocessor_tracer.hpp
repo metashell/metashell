@@ -36,7 +36,7 @@ namespace metashell
 
         virtual std::unique_ptr<iface::event_data_sequence>
         eval(iface::environment&,
-             const boost::optional<data::cpp_code>&,
+             const std::optional<data::cpp_code>&,
              data::metaprogram_mode) override;
 
       private:

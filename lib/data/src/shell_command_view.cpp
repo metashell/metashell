@@ -26,7 +26,7 @@ namespace metashell
     shell_command_view::iterator::iterator(
         std::string_view::const_iterator begin_,
         std::string_view::const_iterator end_)
-      : _begin(begin_), _end(end_), _value(boost::none)
+      : _begin(begin_), _end(end_), _value(std::nullopt)
     {
       ++*this;
     }
@@ -50,9 +50,8 @@ namespace metashell
         }
       }
 
-      _value = value.empty() ?
-                   boost::none :
-                   boost::make_optional(command_line_argument(value));
+      _value = value.empty() ? std::nullopt :
+                               std::make_optional(command_line_argument(value));
 
       _begin =
           std::find_if(_begin, _end, [](char c_) { return !std::isspace(c_); });

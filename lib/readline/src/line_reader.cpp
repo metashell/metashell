@@ -108,7 +108,7 @@ namespace metashell
         return rl_completion_matches(const_cast<char*>(text_), &tab_generator);
       }
 
-      boost::optional<data::user_input>
+      std::optional<data::user_input>
       read_next_line(const std::string& prompt_,
                      const data::code_completer& completer_)
       {
@@ -130,7 +130,7 @@ namespace metashell
         }
         else
         {
-          return boost::none;
+          return std::nullopt;
         }
       }
     }

@@ -20,7 +20,8 @@
 #include <boost/filesystem/path.hpp>
 
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
+
+#include <optional>
 
 namespace metashell
 {
@@ -65,7 +66,7 @@ namespace metashell
 
       private:
         const char** _pos;
-        mutable boost::optional<boost::filesystem::path> _value;
+        mutable std::optional<boost::filesystem::path> _value;
       };
 
       typedef const_iterator iterator;

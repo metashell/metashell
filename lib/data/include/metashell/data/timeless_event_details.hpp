@@ -26,8 +26,8 @@
 #include <metashell/data/type_or_code_or_error.hpp>
 
 #include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -56,10 +56,10 @@ namespace metashell
 
     template <event_kind Kind>
     typename std::enable_if<!non_end_template_event(Kind),
-                            boost::optional<type>>::type
+                            std::optional<type>>::type
     type_of(const timeless_event_details<Kind>&)
     {
-      return boost::none;
+      return std::nullopt;
     }
 
     template <event_kind Kind>
@@ -84,7 +84,7 @@ namespace metashell
 
     template <event_kind Kind>
     typename std::enable_if<non_end_template_event(Kind),
-                            boost::optional<type>>::type
+                            std::optional<type>>::type
     type_of(const timeless_event_details<Kind>& details_)
     {
       return details_.full_name;
@@ -133,7 +133,7 @@ namespace metashell
         timeless_event_details,
 
         ((cpp_code, name))
-        ((boost::optional<std::vector<cpp_code>>, args))
+        ((std::optional<std::vector<cpp_code>>, args))
         ((file_location, point_of_event))
         ((file_location, source_location))
       )
@@ -165,7 +165,7 @@ namespace metashell
         timeless_event_details,
 
         ((cpp_code, name))
-        ((boost::optional<std::vector<cpp_code>>, args))
+        ((std::optional<std::vector<cpp_code>>, args))
         ((cpp_code, body))
         ((file_location, point_of_event))
       )

@@ -310,8 +310,7 @@ namespace metashell {
 
             if (!is_empty_line(cmd))
             {
-              if (boost::optional<data::command::iterator> p =
-                      parse_pragma(cmd))
+              if (std::optional<data::command::iterator> p = parse_pragma(cmd))
               {
                 process_pragma(
                     _pragma_handlers, *p, cmd.end(), *this, displayer_);

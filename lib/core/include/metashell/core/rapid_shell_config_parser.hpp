@@ -21,9 +21,8 @@
 
 #include <metashell/core/rapid_handler.hpp>
 
-#include <boost/optional.hpp>
-
 #include <functional>
+#include <optional>
 
 namespace metashell
 {
@@ -50,9 +49,9 @@ namespace metashell
     private:
       bool _in_main_list = false;
       bool _in_value_list = false;
-      boost::optional<data::shell_config_name> _name = boost::none;
-      boost::optional<data::shell_config_data> _data = boost::none;
-      boost::optional<std::string> _key = boost::none;
+      std::optional<data::shell_config_name> _name = std::nullopt;
+      std::optional<data::shell_config_data> _data = std::nullopt;
+      std::optional<std::string> _key = std::nullopt;
     };
   }
 }

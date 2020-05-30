@@ -26,9 +26,9 @@
 #include <metashell/data/whitespace.hpp>
 
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
 #include <iosfwd>
+#include <optional>
 #include <string>
 #include <tuple>
 
@@ -121,7 +121,7 @@ namespace metashell
 
         explicit operator int() const;
         explicit operator regex() const;
-        explicit operator boost::optional<mdb_command>() const;
+        explicit operator std::optional<mdb_command>() const;
       };
 
       using tuple_t =
@@ -136,7 +136,7 @@ namespace metashell
 
       const tuple_t tuple() const;
 
-      static boost::optional<mdb_command> parse(const std::string&);
+      static std::optional<mdb_command> parse(const std::string&);
 
     private:
       tuple_t _val;

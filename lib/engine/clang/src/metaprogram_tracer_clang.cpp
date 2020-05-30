@@ -33,7 +33,7 @@ namespace metashell
       {
         data::type_or_code_or_error type_or_code_or_error_from_result(
             const data::result& res_,
-            const boost::optional<data::cpp_code>& expression_)
+            const std::optional<data::cpp_code>& expression_)
         {
           if (res_.successful)
           {
@@ -52,15 +52,15 @@ namespace metashell
       {
       }
 
-      std::unique_ptr<iface::event_data_sequence> metaprogram_tracer::eval(
-          iface::environment& env_,
-          const boost::filesystem::path&,
-          const boost::optional<data::cpp_code>& expression_,
-          data::metaprogram_mode mode_,
-          iface::displayer& displayer_)
+      std::unique_ptr<iface::event_data_sequence>
+      metaprogram_tracer::eval(iface::environment& env_,
+                               const boost::filesystem::path&,
+                               const std::optional<data::cpp_code>& expression_,
+                               data::metaprogram_mode mode_,
+                               iface::displayer& displayer_)
       {
         const auto out = eval_with_templight_dump_on_stdout(
-            env_, expression_, boost::none, _binary, mode_);
+            env_, expression_, std::nullopt, _binary, mode_);
 
         const data::result& res = std::get<0>(out);
         const std::string& trace = std::get<1>(out);

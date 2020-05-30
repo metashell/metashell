@@ -202,7 +202,7 @@ namespace metashell
       return regex(value());
     }
 
-    mdb_command::arguments_type::operator boost::optional<mdb_command>() const
+    mdb_command::arguments_type::operator std::optional<mdb_command>() const
     {
       return mdb_command::parse(value());
     }
@@ -218,7 +218,7 @@ namespace metashell
     {
     }
 
-    boost::optional<mdb_command> mdb_command::parse(const std::string& value_)
+    std::optional<mdb_command> mdb_command::parse(const std::string& value_)
     {
       const auto e = value_.end();
 
@@ -226,7 +226,7 @@ namespace metashell
       auto command_end = std::find_if(command_begin, e, is_space);
       if (command_begin == command_end)
       {
-        return boost::none;
+        return std::nullopt;
       }
       else
       {

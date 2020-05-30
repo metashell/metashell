@@ -25,7 +25,8 @@
 #include <metashell/data/metaprogram_node.hpp>
 
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
+
+#include <optional>
 
 namespace metashell
 {
@@ -39,12 +40,12 @@ namespace metashell
       explicit frame(metaprogram_node node_);
 
       frame(bool flat_,
-            boost::optional<double> running_at_,
+            std::optional<double> running_at_,
             const metaprogram_node& node_,
             const file_location& source_location_);
 
       frame(bool flat_,
-            boost::optional<double> running_at_,
+            std::optional<double> running_at_,
             const metaprogram_node& node_,
             const file_location& source_location_,
             const file_location& point_of_event_,
@@ -61,8 +62,8 @@ namespace metashell
       event_kind kind() const;
       const file_location& point_of_event() const;
 
-      boost::optional<double> time_taken() const;
-      boost::optional<double> time_taken_ratio() const;
+      std::optional<double> time_taken() const;
+      std::optional<double> time_taken_ratio() const;
 
       void running_at(double t);
       void full_time_taken(double t);
@@ -71,18 +72,18 @@ namespace metashell
 
       void add_child();
 
-      boost::optional<int> number_of_children() const;
+      std::optional<int> number_of_children() const;
 
       void finished();
 
     private:
       metaprogram_node _node;
       file_location _source_location;
-      boost::optional<file_location> _point_of_event;
-      boost::optional<data::event_kind> _kind;
-      boost::optional<double> _started_at;
-      boost::optional<double> _finished_at;
-      boost::optional<double> _time_taken_ratio;
+      std::optional<file_location> _point_of_event;
+      std::optional<data::event_kind> _kind;
+      std::optional<double> _started_at;
+      std::optional<double> _finished_at;
+      std::optional<double> _time_taken_ratio;
       bool _flat;
       finalisable_counter _number_of_children;
 

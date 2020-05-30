@@ -38,13 +38,13 @@ namespace metashell
 
       // Unspecified result for unrealistic cases (eg. type_tracer works but
       // type_shell does not).
-      boost::optional<std::string> limitation_impl(const iface::engine& engine_)
+      std::optional<std::string> limitation_impl(const iface::engine& engine_)
       {
         if (supports<iface::type_shell>(engine_))
         {
           if (supports<iface::preprocessor_tracer>(engine_))
           {
-            return boost::none;
+            return std::nullopt;
           }
           else
           {
@@ -73,7 +73,7 @@ namespace metashell
       }
     }
 
-    boost::optional<std::string> limitation(const iface::engine& engine_)
+    std::optional<std::string> limitation(const iface::engine& engine_)
     {
       if (const auto limit = limitation_impl(engine_))
       {
@@ -84,7 +84,7 @@ namespace metashell
       }
       else
       {
-        return boost::none;
+        return std::nullopt;
       }
     }
   }

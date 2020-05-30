@@ -62,17 +62,17 @@ namespace metashell
     }
 
     shell_config_name::element::element(std::string value_)
-      : element(std::move(value_), boost::none)
+      : element(std::move(value_), std::nullopt)
     {
     }
 
     shell_config_name::element::element(std::string value_, char sep_)
-      : element(std::move(value_), boost::make_optional(sep_))
+      : element(std::move(value_), std::make_optional(sep_))
     {
     }
 
     shell_config_name::element::element(std::string value_,
-                                        boost::optional<char> sep_)
+                                        std::optional<char> sep_)
       : _value(std::move(value_)), _separator(sep_)
     {
       if (std::find_if(_value.begin(), _value.end(), path_separator) !=
@@ -94,7 +94,7 @@ namespace metashell
       return _value;
     }
 
-    boost::optional<char> shell_config_name::element::separator() const
+    std::optional<char> shell_config_name::element::separator() const
     {
       return _separator;
     }
@@ -125,7 +125,7 @@ namespace metashell
     shell_config_name::iterator::iterator(const std::string* str_,
                                           std::string::size_type next_from_,
                                           std::ptrdiff_t index_)
-      : _str(str_), _next_from(next_from_), _value(boost::none), _index(index_)
+      : _str(str_), _next_from(next_from_), _value(std::nullopt), _index(index_)
     {
       assert(_str);
       ++*this;
@@ -278,12 +278,12 @@ namespace metashell
 
     std::size_t size(const shell_config_name& name_) { return name_.size(); }
 
-    boost::optional<shell_config_name>
+    std::optional<shell_config_name>
     remove_prefix(const shell_config_name& name_, std::size_t len_)
     {
       if (len_ >= size(name_))
       {
-        return boost::none;
+        return std::nullopt;
       }
 
       auto i = name_.begin();
@@ -294,7 +294,7 @@ namespace metashell
       if (i->value().empty() && !i->separator())
       {
         assert(++i == e); // assert changes i, but its value is not read later
-        return boost::none;
+        return std::nullopt;
       }
 
       shell_config_name first(*i);

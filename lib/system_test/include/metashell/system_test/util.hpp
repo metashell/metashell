@@ -22,31 +22,31 @@
 #include <metashell/data/command_line_argument.hpp>
 
 #include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
 
+#include <optional>
 #include <string>
 
 namespace metashell
 {
   namespace system_test
   {
-    boost::optional<std::string>
-    try_to_remove_prefix(const std::string& prefix_, const std::string& s_);
+    std::optional<std::string> try_to_remove_prefix(const std::string& prefix_,
+                                                    const std::string& s_);
     std::string remove_prefix(const std::string& prefix_,
                               const std::string& s_);
 
-    boost::optional<std::string>
+    std::optional<std::string>
     try_to_remove_prefix_suffix(const std::string& prefix_,
                                 const std::string& s_,
                                 const std::string& suffix_);
 
-    boost::optional<boost::filesystem::path>
+    std::optional<boost::filesystem::path>
     include_path_addition(const data::command_line_argument& arg_);
 
     std::string c_string_literal(const std::string& s_);
 
     template <class T1, class T2>
-    bool matches(const boost::optional<T1>& a_, const boost::optional<T2>& b_)
+    bool matches(const std::optional<T1>& a_, const std::optional<T2>& b_)
     {
       return !a_ || !b_ || *a_ == *b_;
     }

@@ -20,12 +20,12 @@
 #include <metashell/data/color.hpp>
 #include <metashell/data/visual_cpp_workaround.hpp>
 
+#include <boost/operators.hpp>
+
+#include <optional>
 #include <ostream>
 #include <string>
 #include <vector>
-
-#include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
 namespace metashell
 {
@@ -36,15 +36,15 @@ namespace metashell
                            boost::equality_comparable<colored_string>
     {
     public:
-      typedef boost::optional<color> color_t;
+      typedef std::optional<color> color_t;
       typedef std::vector<color_t> colors_t;
 
       typedef std::string::size_type size_type;
 
       colored_string() = default;
-      colored_string(const char* string, const color_t& color = boost::none);
+      colored_string(const char* string, const color_t& color = std::nullopt);
       colored_string(const std::string& string,
-                     const color_t& color = boost::none);
+                     const color_t& color = std::nullopt);
 
       colored_string& operator+=(const char* rhs);
       colored_string& operator+=(const std::string& rhs);

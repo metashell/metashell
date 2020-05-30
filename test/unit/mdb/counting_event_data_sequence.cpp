@@ -23,8 +23,7 @@ counting_event_data_sequence::counting_event_data_sequence(
 {
 }
 
-boost::optional<metashell::data::event_data>
-counting_event_data_sequence::next()
+std::optional<metashell::data::event_data> counting_event_data_sequence::next()
 {
   if (_next_called_times < _events.size())
   {
@@ -32,7 +31,7 @@ counting_event_data_sequence::next()
   }
   else
   {
-    return boost::none;
+    return std::nullopt;
   }
 }
 

@@ -27,12 +27,12 @@ namespace metashell
   {
     backtrace::backtrace(bool buffered_)
       : _frames(),
-        _buffered_pop_count(buffered_ ? boost::make_optional(0) : boost::none)
+        _buffered_pop_count(buffered_ ? std::make_optional(0) : std::nullopt)
     {
     }
 
     backtrace::backtrace(std::initializer_list<frame> frames_)
-      : _frames(std::move(frames_)), _buffered_pop_count(boost::none)
+      : _frames(std::move(frames_)), _buffered_pop_count(std::nullopt)
     {
       std::reverse(_frames.begin(), _frames.end());
     }
@@ -83,7 +83,7 @@ namespace metashell
 
     int backtrace::buffered_pop_count() const
     {
-      return boost::get_optional_value_or(_buffered_pop_count, 0);
+      return _buffered_pop_count.value_or(0);
     }
 
     bool backtrace::flushed_empty() const

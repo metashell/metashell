@@ -26,7 +26,7 @@ using namespace metashell;
 
 TEST(readme, continue_abbreviated_as_c)
 {
-  const boost::optional<data::mdb_command> c = data::mdb_command::parse("c");
+  const std::optional<data::mdb_command> c = data::mdb_command::parse("c");
   ASSERT_TRUE(c);
 
   const mdb::command command =

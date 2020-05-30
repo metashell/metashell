@@ -26,9 +26,10 @@
 #include <metashell/data/token_category.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/optional.hpp>
 #include <boost/range/adaptor/sliced.hpp>
 #include <boost/range/adaptor/transformed.hpp>
+
+#include <optional>
 
 namespace metashell
 {
@@ -38,8 +39,8 @@ namespace metashell
     {
       namespace
       {
-        boost::optional<std::string> remove_prefix(const std::string& s_,
-                                                   const std::string& prefix_)
+        std::optional<std::string> remove_prefix(const std::string& s_,
+                                                 const std::string& prefix_)
         {
           if (boost::starts_with(s_, prefix_))
           {
@@ -47,11 +48,11 @@ namespace metashell
           }
           else
           {
-            return boost::none;
+            return std::nullopt;
           }
         }
 
-        boost::optional<data::cpp_code> parse_completion(std::string line_)
+        std::optional<data::cpp_code> parse_completion(std::string line_)
         {
           if (const auto without_completion =
                   remove_prefix(line_, "COMPLETION: "))
@@ -74,7 +75,7 @@ namespace metashell
           }
           else
           {
-            return boost::none;
+            return std::nullopt;
           }
         }
 

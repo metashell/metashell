@@ -17,9 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/optional.hpp>
-
 #include <functional>
+#include <optional>
 
 namespace metashell
 {
@@ -47,7 +46,7 @@ namespace metashell
 
       const ValueType* operator->() { return &**this; }
     private:
-      boost::optional<ValueType> _value;
+      std::optional<ValueType> _value;
       std::function<ValueType()> _getter;
     };
   }

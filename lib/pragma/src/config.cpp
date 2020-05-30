@@ -21,9 +21,8 @@
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/adaptor/uniqued.hpp>
 
-#include <boost/optional.hpp>
-
 #include <algorithm>
+#include <optional>
 #include <set>
 
 namespace metashell
@@ -32,8 +31,8 @@ namespace metashell
   {
     namespace
     {
-      boost::optional<std::string>
-      element_to_show(const boost::optional<data::shell_config_name>& prefix_,
+      std::optional<std::string>
+      element_to_show(const std::optional<data::shell_config_name>& prefix_,
                       const data::shell_config_name& name_)
       {
         if (!prefix_)
@@ -43,7 +42,7 @@ namespace metashell
 
         if (size(name_) <= size(*prefix_))
         {
-          return boost::none;
+          return std::nullopt;
         }
 
         auto i = name_.begin();
@@ -51,7 +50,7 @@ namespace metashell
         {
           if (e.value() != i->value())
           {
-            return boost::none;
+            return std::nullopt;
           }
           ++i;
         }
@@ -83,10 +82,9 @@ namespace metashell
       const data::shell_config_name active = cfg.active_shell_config().name;
 
       const auto arg = tokens_to_string(args_begin_, args_end_);
-      const boost::optional<data::shell_config_name> prefix =
-          empty(arg) ?
-              boost::none :
-              boost::make_optional(data::shell_config_name(arg.value()));
+      const std::optional<data::shell_config_name> prefix =
+          empty(arg) ? std::nullopt :
+                       std::make_optional(data::shell_config_name(arg.value()));
 
       const auto active_to_show = element_to_show(prefix, active);
 

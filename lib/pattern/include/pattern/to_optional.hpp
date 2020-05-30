@@ -19,16 +19,16 @@
 
 #include <pattern/placeholder.hpp>
 
-#include <boost/optional.hpp>
+#include <optional>
 
 namespace pattern
 {
-  inline boost::none_t to_optional(placeholder) { return boost::none; }
+  inline std::nullopt_t to_optional(placeholder) { return std::nullopt; }
 
   template <class T>
-  boost::optional<T> to_optional(T value_)
+  std::optional<T> to_optional(T value_)
   {
-    return boost::optional<T>(std::move(value_));
+    return std::optional<T>(std::move(value_));
   }
 }
 

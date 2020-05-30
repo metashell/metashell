@@ -21,9 +21,8 @@
 #include <metashell/data/event_data.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
 
-#include <boost/optional.hpp>
-
 #include <deque>
+#include <optional>
 
 namespace metashell
 {
@@ -37,9 +36,9 @@ namespace metashell
       {
       }
 
-      boost::optional<data::event_data> next()
+      std::optional<data::event_data> next()
       {
-        boost::optional<data::event_data> result =
+        std::optional<data::event_data> result =
             _queue.empty() ? _events.next() : std::move(_queue.front());
         if (!_queue.empty())
         {

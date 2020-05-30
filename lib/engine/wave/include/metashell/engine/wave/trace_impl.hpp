@@ -25,9 +25,8 @@
 
 #include <metashell/engine/wave/context.hpp>
 
-#include <boost/optional.hpp>
-
 #include <deque>
+#include <optional>
 #include <sstream>
 #include <vector>
 
@@ -42,11 +41,11 @@ namespace metashell
       public:
         trace_impl(
             const data::cpp_code& env_,
-            const boost::optional<data::cpp_code>& exp_,
+            const std::optional<data::cpp_code>& exp_,
             const data::wave_config& config_,
             const std::vector<boost::filesystem::path>& system_includes_);
 
-        boost::optional<data::event_data> next();
+        std::optional<data::event_data> next();
 
       private:
         data::cpp_code _env;
@@ -60,14 +59,14 @@ namespace metashell
         int _num_tokens_from_macro_call;
 
         context _ctx;
-        boost::optional<context::iterator_type> _pos;
+        std::optional<context::iterator_type> _pos;
 
         std::ostringstream _output;
         std::deque<data::event_data> _events;
 
         void on_macro_expansion_begin(
             const data::cpp_code& name_,
-            const boost::optional<std::vector<data::cpp_code>>& args_,
+            const std::optional<std::vector<data::cpp_code>>& args_,
             const data::file_location& point_of_event_,
             const data::file_location& source_location_);
 
@@ -86,11 +85,10 @@ namespace metashell
 
         void on_include_end();
 
-        void
-        on_define(const data::cpp_code& name_,
-                  const boost::optional<std::vector<data::cpp_code>>& args_,
-                  const data::cpp_code& body_,
-                  const data::file_location& point_of_event_);
+        void on_define(const data::cpp_code& name_,
+                       const std::optional<std::vector<data::cpp_code>>& args_,
+                       const data::cpp_code& body_,
+                       const data::file_location& point_of_event_);
 
         void on_undefine(const data::cpp_code& name_,
                          const data::file_location& point_of_event_);

@@ -26,7 +26,7 @@
 #include <gtest/gtest.h>
 #include <just/temp.hpp>
 
-#include <boost/optional.hpp>
+#include <optional>
 
 using namespace metashell::system_test;
 
@@ -38,7 +38,7 @@ namespace
       metashell::iface::json_writer& out_,
       const std::string& name_,
       const std::string& engine_,
-      const boost::optional<std::string>& engine_arg_ = boost::none,
+      const std::optional<std::string>& engine_arg_ = std::nullopt,
       const std::vector<std::string>& warnings_ = {})
   {
     out_.start_object();
@@ -142,9 +142,9 @@ TEST(shell_config, user_defined_warning)
     metashell::core::rapid_json_writer out(f);
 
     out.start_array();
-    write_shell_config(out, "w1", "auto", boost::none, {"This is a warning."});
+    write_shell_config(out, "w1", "auto", std::nullopt, {"This is a warning."});
     write_shell_config(
-        out, "w2", "auto", boost::none,
+        out, "w2", "auto", std::nullopt,
         {"This is the first warning.", "This is the second warning."});
     out.end_array();
   }

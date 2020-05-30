@@ -30,7 +30,7 @@ using namespace metashell;
 
 namespace
 {
-  boost::optional<data::command_line_argument>
+  std::optional<data::command_line_argument>
   extends_include_path(const data::command_line_argument& arg_)
   {
     for (const char* prefix : {"-I", "-iquote", "-S", "-isystem", "-idirafter"})
@@ -41,7 +41,7 @@ namespace
         return result;
       }
     }
-    return boost::none;
+    return std::nullopt;
   }
 
   bool on_include_path(include_test_env::test_filename header_)
@@ -87,7 +87,7 @@ namespace
 
   void test_include_path_extensions(
       include_test_env& env_,
-      const boost::optional<std::string>& engine_override_ = boost::none)
+      const std::optional<std::string>& engine_override_ = std::nullopt)
   {
     using data::standard_headers_allowed;
 

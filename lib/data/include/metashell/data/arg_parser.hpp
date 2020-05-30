@@ -151,7 +151,7 @@ namespace metashell
       struct arg_with_value_definition
       {
         command_line_argument short_name;
-        boost::optional<command_line_argument> long_name;
+        std::optional<command_line_argument> long_name;
         std::string description;
         std::function<void(command_line_argument)> action;
 
@@ -174,8 +174,8 @@ namespace metashell
       std::function<std::string(const command_line_argument&)>
           _invalid_argument;
 
-      boost::optional<std::vector<arg_with_value_definition>::iterator>
-      parse(boost::optional<std::vector<arg_with_value_definition>::iterator>,
+      std::optional<std::vector<arg_with_value_definition>::iterator>
+      parse(std::optional<std::vector<arg_with_value_definition>::iterator>,
             const command_line_argument&);
     };
   }

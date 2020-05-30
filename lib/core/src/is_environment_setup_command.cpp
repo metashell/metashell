@@ -25,10 +25,10 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/optional.hpp>
 
 #include <fstream>
 #include <memory>
+#include <optional>
 #include <regex>
 
 namespace metashell

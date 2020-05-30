@@ -32,7 +32,7 @@ public:
       metashell::data::metaprogram_mode mode_ =
           metashell::data::metaprogram_mode::normal);
 
-  virtual boost::optional<metashell::data::event_data> next() override;
+  virtual std::optional<metashell::data::event_data> next() override;
 
   virtual metashell::data::cpp_code root_name() const override;
 

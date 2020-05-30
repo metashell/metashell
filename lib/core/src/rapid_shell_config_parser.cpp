@@ -16,11 +16,10 @@
 
 #include <metashell/core/rapid_shell_config_parser.hpp>
 
-#include <boost/optional.hpp>
-
 #include <algorithm>
 #include <cassert>
 #include <map>
+#include <optional>
 
 namespace metashell
 {
@@ -50,12 +49,12 @@ namespace metashell
         return "";
       }
 
-      std::string to_string(boost::optional<field_type> v_)
+      std::string to_string(std::optional<field_type> v_)
       {
         return v_ ? to_string(*v_) : "";
       }
 
-      boost::optional<field_type> type_of_field(const std::string& field_)
+      std::optional<field_type> type_of_field(const std::string& field_)
       {
         static const std::map<std::string, field_type> fields{
             {"name", field_type::string_},
@@ -67,8 +66,7 @@ namespace metashell
             {"cwd", field_type::string_}};
 
         const auto i = fields.find(field_);
-        return i == fields.end() ? boost::none :
-                                   boost::make_optional(i->second);
+        return i == fields.end() ? std::nullopt : std::make_optional(i->second);
       }
 
       template <class T>
@@ -128,7 +126,7 @@ namespace metashell
       {
         _in_main_list = false;
       }
-      _key = boost::none;
+      _key = std::nullopt;
 
       return true;
     }
@@ -161,8 +159,8 @@ namespace metashell
       else
       {
         parsed_config_callback(data::shell_config(*_name, *_data));
-        _name = boost::none;
-        _data = boost::none;
+        _name = std::nullopt;
+        _data = std::nullopt;
 
         return true;
       }

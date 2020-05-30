@@ -50,7 +50,7 @@ namespace metashell
       }
     }
 
-    boost::optional<data::command::iterator>
+    std::optional<data::command::iterator>
     parse_pragma(const data::command& cmd_)
     {
       data::command::iterator i = skip_whitespace(cmd_.begin(), cmd_.end());
@@ -82,7 +82,7 @@ namespace metashell
         }
       }
 
-      return boost::none;
+      return std::nullopt;
     }
 
     data::command::iterator

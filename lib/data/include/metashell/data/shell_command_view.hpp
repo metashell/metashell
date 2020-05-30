@@ -20,8 +20,8 @@
 #include <metashell/data/command_line_argument.hpp>
 
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -52,7 +52,7 @@ namespace metashell
       private:
         std::string_view::const_iterator _begin;
         std::string_view::const_iterator _end;
-        boost::optional<command_line_argument> _value;
+        std::optional<command_line_argument> _value;
       };
 
       explicit shell_command_view(std::string_view);

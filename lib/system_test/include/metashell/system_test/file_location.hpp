@@ -24,9 +24,9 @@
 
 #include <boost/filesystem/path.hpp>
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
 #include <iosfwd>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -51,7 +51,7 @@ namespace metashell
 
       template <class JsonDocument>
       file_location(const JsonDocument& d_)
-        : _filename(boost::none), _row(boost::none), _column(boost::none)
+        : _filename(std::nullopt), _row(std::nullopt), _column(std::nullopt)
       {
         init(d_);
       }
@@ -68,9 +68,9 @@ namespace metashell
       bool operator==(const file_location& l_) const;
 
     private:
-      boost::optional<boost::filesystem::path> _filename;
-      boost::optional<int> _row;
-      boost::optional<int> _column;
+      std::optional<boost::filesystem::path> _filename;
+      std::optional<int> _row;
+      std::optional<int> _column;
 
       void init(const std::string& s_);
 

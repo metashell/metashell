@@ -71,7 +71,7 @@ namespace metashell
         std::string description_,
         std::function<void(command_line_argument)> action_)
       : short_name(std::move(short_name_)),
-        long_name(boost::none),
+        long_name(std::nullopt),
         description(std::move(description_)),
         action(std::move(action_))
     {
@@ -90,7 +90,7 @@ namespace metashell
     void arg_parser::parse(const command_line_argument_list& args_)
     {
       using prev_t =
-          boost::optional<std::vector<arg_with_value_definition>::iterator>;
+          std::optional<std::vector<arg_with_value_definition>::iterator>;
 
       if (const prev_t prev = std::accumulate(
               args_.begin(), args_.end(), prev_t(),
@@ -102,16 +102,15 @@ namespace metashell
       }
     }
 
-    boost::optional<
-        std::vector<arg_parser::arg_with_value_definition>::iterator>
+    std::optional<std::vector<arg_parser::arg_with_value_definition>::iterator>
     arg_parser::parse(
-        boost::optional<std::vector<arg_with_value_definition>::iterator> prev_,
+        std::optional<std::vector<arg_with_value_definition>::iterator> prev_,
         const command_line_argument& arg_)
     {
       if (prev_)
       {
         (*prev_)->action(arg_);
-        return boost::none;
+        return std::nullopt;
       }
 
       const auto flag = std::find_if(
@@ -120,7 +119,7 @@ namespace metashell
       if (flag != _flags.end())
       {
         flag->action();
-        return boost::none;
+        return std::nullopt;
       }
 
       for (auto i = _args_with_value.begin(); i != _args_with_value.end(); ++i)
@@ -132,7 +131,7 @@ namespace metashell
         else if (const auto value = arg_.remove_prefix(i->short_name))
         {
           i->action(*value);
-          return boost::none;
+          return std::nullopt;
         }
       }
 

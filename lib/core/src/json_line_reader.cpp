@@ -63,7 +63,7 @@ namespace metashell
         writer_.end_document();
       }
 
-      boost::optional<data::user_input>
+      std::optional<data::user_input>
       read_next_line(const data::line_reader& line_reader_,
                      iface::json_writer& json_writer_,
                      const std::string& prompt_)
@@ -72,7 +72,7 @@ namespace metashell
         return line_reader_("");
       }
 
-      boost::optional<data::user_input>
+      std::optional<data::user_input>
       json_line_reader(const data::line_reader& line_reader_,
                        iface::displayer& displayer_,
                        iface::json_writer& json_writer_,
@@ -133,7 +133,7 @@ namespace metashell
             }
           }
         }
-        return boost::none;
+        return std::nullopt;
       }
     }
 

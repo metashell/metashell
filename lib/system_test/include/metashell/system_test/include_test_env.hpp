@@ -26,12 +26,12 @@
 
 #include <boost/filesystem/path.hpp>
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
 #include <variant.hpp>
 
 #include <array>
 #include <iosfwd>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -96,7 +96,7 @@ namespace metashell
 
     private:
       just::temp::directory _tmp_dir;
-      boost::optional<std::string> _init_command;
+      std::optional<std::string> _init_command;
 
       boost::filesystem::path tmp() const;
 

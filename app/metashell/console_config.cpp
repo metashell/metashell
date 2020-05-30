@@ -33,8 +33,7 @@ using namespace metashell;
 
 namespace
 {
-  boost::optional<data::user_input>
-  plain_line_reader(const std::string& prompt_)
+  std::optional<data::user_input> plain_line_reader(const std::string& prompt_)
   {
     if (!prompt_.empty())
     {
@@ -48,7 +47,7 @@ namespace
     }
     else
     {
-      return boost::none;
+      return std::nullopt;
     }
   }
 

@@ -29,7 +29,7 @@ namespace metashell
 
     void debugger_history::add_event(data::debugger_event event_,
                                      data::relative_depth rdepth_,
-                                     const boost::optional<double>& timestamp_)
+                                     const std::optional<double>& timestamp_)
     {
       assert(!_frame_stack.empty());
 

@@ -25,7 +25,7 @@
 #include <metashell/core/event_cache.hpp>
 #include <metashell/core/filter_with_queue.hpp>
 
-#include <boost/optional.hpp>
+#include <optional>
 
 namespace metashell
 {
@@ -40,9 +40,9 @@ namespace metashell
       {
       }
 
-      boost::optional<data::event_data> next()
+      std::optional<data::event_data> next()
       {
-        boost::optional<data::event_data> event = _events.next();
+        std::optional<data::event_data> event = _events.next();
 
         if (_enabled && event)
         {

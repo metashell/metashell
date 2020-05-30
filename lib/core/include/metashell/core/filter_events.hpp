@@ -31,7 +31,7 @@ namespace metashell
   {
     template <class Events>
     std::unique_ptr<iface::event_data_sequence>
-    filter_events(Events&& events_, boost::optional<data::file_location> from_)
+    filter_events(Events&& events_, std::optional<data::file_location> from_)
     {
       const bool full = events_.mode() == data::metaprogram_mode::full;
       return make_event_data_sequence_ptr(filter_expand_memoizations(

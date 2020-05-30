@@ -37,7 +37,7 @@ namespace metashell
       case data::token_category::comment:
         return data::color::green;
       default:
-        return boost::none;
+        return std::nullopt;
       }
     }
 

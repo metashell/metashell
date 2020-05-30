@@ -84,13 +84,13 @@ namespace metashell
       return true;
     }
 
-    boost::optional<std::string>
+    std::optional<std::string>
     rapid_object_handler::field(const std::string& name_) const
     {
       const auto i = _fields.find(name_);
       if (i == _fields.end())
       {
-        return boost::none;
+        return std::nullopt;
       }
       else
       {

@@ -50,7 +50,7 @@ namespace metashell
         default_clang_search_path::const_iterator::operator++()
     {
       ++_pos;
-      _value = boost::none;
+      _value = std::nullopt;
       return *this;
     }
 
@@ -58,7 +58,7 @@ namespace metashell
     default_clang_search_path::const_iterator::operator+=(difference_type n_)
     {
       _pos += n_;
-      _value = boost::none;
+      _value = std::nullopt;
       return *this;
     }
 
@@ -66,7 +66,7 @@ namespace metashell
         default_clang_search_path::const_iterator::operator--()
     {
       --_pos;
-      _value = boost::none;
+      _value = std::nullopt;
       return *this;
     }
 
@@ -74,7 +74,7 @@ namespace metashell
     default_clang_search_path::const_iterator::operator-=(difference_type n_)
     {
       _pos -= n_;
-      _value = boost::none;
+      _value = std::nullopt;
       return *this;
     }
 

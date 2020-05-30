@@ -44,19 +44,19 @@ namespace metashell
       return value().find(substr_) != std::string::npos;
     }
 
-    boost::optional<command_line_argument> command_line_argument::remove_prefix(
+    std::optional<command_line_argument> command_line_argument::remove_prefix(
         const command_line_argument& prefix_) const
     {
       return starts_with_impl(prefix_.value().c_str()) ?
-                 boost::make_optional(substr(*this, size(prefix_))) :
-                 boost::none;
+                 std::make_optional(substr(*this, size(prefix_))) :
+                 std::nullopt;
     }
 
-    boost::optional<int> command_line_argument::as_int() const
+    std::optional<int> command_line_argument::as_int() const
     {
       if (value().empty())
       {
-        return boost::none;
+        return std::nullopt;
       }
 
       int result = 0;
@@ -68,7 +68,7 @@ namespace metashell
         }
         else
         {
-          return boost::none;
+          return std::nullopt;
         }
       }
       return result;

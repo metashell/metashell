@@ -30,7 +30,6 @@ target_link_libraries(
   INTERFACE
     boost::filesystem
     boost::iterator
-    boost::optional
     boost::range
 
     metashell::data

@@ -22,9 +22,8 @@
 #include <metashell/iface/environment.hpp>
 #include <metashell/iface/event_data_sequence.hpp>
 
-#include <boost/optional.hpp>
-
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace metashell
@@ -38,7 +37,7 @@ namespace metashell
 
       virtual std::unique_ptr<iface::event_data_sequence>
       eval(iface::environment& env_,
-           const boost::optional<data::cpp_code>& expression_,
+           const std::optional<data::cpp_code>& expression_,
            data::metaprogram_mode mode_) = 0;
 
       static data::feature name_of_feature()

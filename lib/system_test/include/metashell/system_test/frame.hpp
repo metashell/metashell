@@ -26,9 +26,9 @@
 #include <pattern/to_optional.hpp>
 
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
 #include <iosfwd>
+#include <optional>
 #include <stdexcept>
 
 namespace metashell
@@ -81,10 +81,10 @@ namespace metashell
       bool operator==(const frame& f_) const;
 
     private:
-      boost::optional<type> _name;
-      boost::optional<file_location> _source_location;
-      boost::optional<file_location> _point_of_event;
-      boost::optional<event_kind> _kind;
+      std::optional<type> _name;
+      std::optional<file_location> _source_location;
+      std::optional<file_location> _point_of_event;
+      std::optional<event_kind> _kind;
 
       template <class JsonDocument>
       void init(const JsonDocument& d_, bool check_type_)

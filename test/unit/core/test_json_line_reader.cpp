@@ -37,7 +37,7 @@ TEST(json_line_reader, end_of_input)
   const data::line_reader r =
       build_json_line_reader(string_reader{}, d, jw, cpq);
 
-  ASSERT_TRUE(boost::none == r(">"));
+  ASSERT_TRUE(std::nullopt == r(">"));
 }
 
 TEST(json_line_reader, empty_json)
@@ -48,9 +48,9 @@ TEST(json_line_reader, empty_json)
   const data::line_reader r =
       build_json_line_reader(string_reader{data::user_input()}, d, jw, cpq);
 
-  const boost::optional<data::user_input> l = r(">");
+  const std::optional<data::user_input> l = r(">");
 
-  ASSERT_TRUE(boost::none != l);
+  ASSERT_TRUE(std::nullopt != l);
   ASSERT_EQ(data::user_input(), *l);
 }
 
@@ -63,9 +63,9 @@ TEST(json_line_reader, getting_line)
       string_reader{data::user_input("{\"type\":\"cmd\",\"cmd\":\"int\"}")}, d,
       jw, cpq);
 
-  const boost::optional<data::user_input> l = r(">");
+  const std::optional<data::user_input> l = r(">");
 
-  ASSERT_TRUE(boost::none != l);
+  ASSERT_TRUE(std::nullopt != l);
   ASSERT_EQ(data::user_input("int"), *l);
 }
 
@@ -79,9 +79,9 @@ TEST(json_line_reader, rejected_json_is_skipped)
                     data::user_input("{\"type\":\"cmd\",\"cmd\":\"int\"}")},
       d, jw, cpq);
 
-  const boost::optional<data::user_input> l = r(">");
+  const std::optional<data::user_input> l = r(">");
 
-  ASSERT_TRUE(boost::none != l);
+  ASSERT_TRUE(std::nullopt != l);
   ASSERT_EQ(data::user_input("int"), *l);
 }
 
@@ -95,7 +95,7 @@ TEST(json_line_reader, command_without_type)
                     data::user_input("{\"type\":\"cmd\",\"cmd\":\"int\"}")},
       d, jw, cpq);
 
-  const boost::optional<data::user_input> l = r(">");
+  const std::optional<data::user_input> l = r(">");
 
   // generates an error
   ASSERT_EQ(std::vector<std::string>{"Command without a type: {}"}, d.errors());
@@ -115,14 +115,14 @@ TEST(json_line_reader, command_of_unknown_type)
                     data::user_input("{\"type\":\"cmd\",\"cmd\":\"int\"}")},
       d, jw, cpq);
 
-  const boost::optional<data::user_input> l = r(">");
+  const std::optional<data::user_input> l = r(">");
 
   // generates an error
   ASSERT_EQ(std::vector<std::string>{"Unknown command type: some unknown type"},
             d.errors());
 
   // skipped
-  ASSERT_TRUE(boost::none != l);
+  ASSERT_TRUE(std::nullopt != l);
   ASSERT_EQ(data::user_input("int"), *l);
 }
 
@@ -136,7 +136,7 @@ TEST(json_line_reader, cmd_command_without_cmd_field)
                     data::user_input("{\"type\":\"cmd\",\"cmd\":\"int\"}")},
       d, jw, cpq);
 
-  const boost::optional<data::user_input> l = r(">");
+  const std::optional<data::user_input> l = r(">");
 
   // generates an error
   ASSERT_EQ(
@@ -144,7 +144,7 @@ TEST(json_line_reader, cmd_command_without_cmd_field)
       d.errors());
 
   // skipped
-  ASSERT_TRUE(boost::none != l);
+  ASSERT_TRUE(std::nullopt != l);
   ASSERT_EQ(data::user_input("int"), *l);
 }
 
@@ -182,7 +182,7 @@ TEST(json_line_reader, code_completion_without_code)
                     data::user_input("{\"type\":\"cmd\",\"cmd\":\"int\"}")},
       d, jw, cpq);
 
-  const boost::optional<data::user_input> l = r(">");
+  const std::optional<data::user_input> l = r(">");
 
   // generates an error
   ASSERT_EQ(
@@ -191,7 +191,7 @@ TEST(json_line_reader, code_completion_without_code)
       d.errors());
 
   // skipped
-  ASSERT_TRUE(boost::none != l);
+  ASSERT_TRUE(std::nullopt != l);
   ASSERT_EQ(data::user_input("int"), *l);
 }
 

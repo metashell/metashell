@@ -32,9 +32,9 @@ namespace metashell
         current_frame(data::frame(event_source->root_name())),
         current_bt(data::backtrace()),
         mode(event_source->mode()),
-        history(caching_enabled ? boost::make_optional(
+        history(caching_enabled ? std::make_optional(
                                       debugger_history(mode, **current_frame)) :
-                                  boost::none),
+                                  std::nullopt),
         result("Internal Metashell error: metaprogram not finished yet")
     {
       assert(event_source);
@@ -160,7 +160,7 @@ namespace metashell
 
       if (!cached_ahead_of(next_event))
       {
-        boost::optional<data::debugger_event> last = boost::none;
+        std::optional<data::debugger_event> last = std::nullopt;
         do
         {
           ++next_event;
@@ -194,7 +194,7 @@ namespace metashell
           --next_event;
         } while (next_event != 0 &&
                  mpark::get_if<data::pop_frame>(&(*history)[next_event]));
-        current_bt = boost::none;
+        current_bt = std::nullopt;
 
         cache_current_frame();
       }
@@ -260,7 +260,7 @@ namespace metashell
       }
     }
 
-    boost::optional<data::debugger_event> metaprogram::read_next_event()
+    std::optional<data::debugger_event> metaprogram::read_next_event()
     {
       assert(bool(history) || read_event_count <= next_event);
 
@@ -303,16 +303,16 @@ namespace metashell
       else
       {
         has_unread_event = false;
-        return boost::none;
+        return std::nullopt;
       }
     }
 
     bool metaprogram::try_reading_until(
-        size_type pos, boost::optional<data::debugger_event>* last_event_read_)
+        size_type pos, std::optional<data::debugger_event>* last_event_read_)
     {
       if (last_event_read_)
       {
-        *last_event_read_ = boost::none;
+        *last_event_read_ = std::nullopt;
       }
       while (pos >= read_event_count && has_unread_event)
       {
@@ -338,7 +338,7 @@ namespace metashell
     bool metaprogram::caching_enabled() const { return bool(history); }
 
     metaprogram::iterator::iterator(metaprogram& mp_)
-      : mp(&mp_), at(boost::none)
+      : mp(&mp_), at(std::nullopt)
     {
     }
 
@@ -413,7 +413,7 @@ namespace metashell
 
       if (!mp->try_reading_until(*at, nullptr))
       {
-        at = boost::none;
+        at = std::nullopt;
       }
 
       return *this;

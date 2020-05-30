@@ -23,9 +23,9 @@
 #include <pattern/placeholder.hpp>
 
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
 #include <iosfwd>
+#include <optional>
 #include <string>
 
 namespace metashell
@@ -45,7 +45,7 @@ namespace metashell
       bool operator==(const type& t_) const;
 
     private:
-      boost::optional<std::string> _name;
+      std::optional<std::string> _name;
     };
 
     std::ostream& operator<<(std::ostream& out_, const type& type_);

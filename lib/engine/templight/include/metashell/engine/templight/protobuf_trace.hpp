@@ -25,10 +25,10 @@
 #include <templight/ProtobufReader.h>
 
 #include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
 
 #include <iosfwd>
 #include <memory>
+#include <optional>
 
 namespace metashell
 {
@@ -44,7 +44,7 @@ namespace metashell
                        data::cpp_code root_name_,
                        data::metaprogram_mode mode_);
 
-        boost::optional<data::event_data> next();
+        std::optional<data::event_data> next();
 
         const data::cpp_code& root_name() const;
 
@@ -53,7 +53,7 @@ namespace metashell
       private:
         std::unique_ptr<std::istream> _src;
         ::templight::ProtobufReader _reader;
-        boost::optional<data::event_data> _evaluation_result;
+        std::optional<data::event_data> _evaluation_result;
         data::cpp_code _root_name;
         data::metaprogram_mode _mode;
       };

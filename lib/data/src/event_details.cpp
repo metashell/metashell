@@ -20,10 +20,10 @@ namespace metashell
 {
   namespace data
   {
-    boost::optional<double>
+    std::optional<double>
     timestamp(const event_details<event_kind::evaluation_end>&)
     {
-      return boost::none;
+      return std::nullopt;
     }
 
     std::ostream&

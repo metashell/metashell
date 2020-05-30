@@ -25,9 +25,9 @@
 #include <metashell/iface/event_data_sequence.hpp>
 
 #include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace metashell
@@ -42,7 +42,7 @@ namespace metashell
       virtual std::unique_ptr<event_data_sequence>
       eval(iface::environment& env_,
            const boost::filesystem::path& temp_dir_,
-           const boost::optional<data::cpp_code>& expression_,
+           const std::optional<data::cpp_code>& expression_,
            data::metaprogram_mode mode_,
            iface::displayer& displayer_) = 0;
 
