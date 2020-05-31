@@ -37,6 +37,11 @@ namespace metashell
                iface::displayer& displayer_) const override;
 
       virtual void run(iface::main_shell&, iface::displayer&) const = 0;
+
+      void code_complete(data::command::const_iterator,
+                         data::command::const_iterator,
+                         iface::main_shell&,
+                         std::set<data::user_input>&) const override;
     };
   }
 }

@@ -57,6 +57,8 @@ namespace metashell
       // Avoid warning about not returning a value...
       return token_category::unknown;
     }
+
+    bool whitespace_or_comment(token_category);
   }
 }
 

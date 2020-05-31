@@ -29,7 +29,7 @@ namespace metashell
     {
       if (!empty())
       {
-        _items.back().first->code_complete(s_, out_);
+        _items.back().first->code_complete(s_, true, out_);
       }
     }
 

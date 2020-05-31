@@ -19,6 +19,10 @@
 
 #include <metashell/system_test/json_string.hpp>
 
+#include <metashell/data/command_line_argument_list.hpp>
+
+#include <boost/filesystem/path.hpp>
+
 #include <string>
 
 namespace metashell
@@ -28,12 +32,16 @@ namespace metashell
     class code_completer
     {
     public:
-      code_completer(const std::string& init_code_ = std::string());
+      code_completer(std::string init_code_ = std::string{},
+                     data::command_line_argument_list extra_args_ = {},
+                     boost::filesystem::path cwd_ = {});
 
       json_string operator()(const std::string& code_) const;
 
     private:
       std::string _init_code;
+      data::command_line_argument_list _extra_args;
+      boost::filesystem::path _cwd;
     };
   }
 }

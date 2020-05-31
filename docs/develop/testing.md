@@ -28,5 +28,10 @@ manually:
 * Delete the `clude` part, so it remains `#in` and press Tab again.
 * **Expected:** it gets completed to `#include` again.
 
+#### Tab completion of string literal
+
+* Type `#msh ls "vecto and press Tab.
+* **Expected:** it gets completed to `#msh ls "vector"`.
+
 <p>&nbsp;</p>
 

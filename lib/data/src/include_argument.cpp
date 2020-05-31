@@ -26,11 +26,6 @@ namespace metashell
   {
     namespace
     {
-      bool include_quote_token(const token& token_)
-      {
-        return type_of(token_) == token_type::unknown && value(token_) == "\"";
-      }
-
       template <char Closing, class Pred>
       std::pair<boost::filesystem::path, command::iterator>
       parse_path_until_token(command::iterator begin_,

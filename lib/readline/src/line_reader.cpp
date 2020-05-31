@@ -68,6 +68,23 @@ namespace metashell
         return std::string(rl_line_buffer, rl_line_buffer + line_length());
       }
 
+      void string_literal_workaround(const data::user_input& to_complete_,
+                                     std::set<data::user_input>& values_)
+      {
+        if (values_.size() == 1 &&
+            std::count(begin(to_complete_), end(to_complete_), '\"') % 2 == 1)
+        {
+          const data::user_input& completion = *values_.begin();
+          if (!empty(completion) && *(end(completion) - 1) == '\"')
+          {
+            data::user_input replacement =
+                substr(completion, 0, size(completion) - 1);
+            values_.clear();
+            values_.insert(std::move(replacement));
+          }
+        }
+      }
+
       char* tab_generator(const char* text_, int state_)
       {
         assert(bool(completer));
@@ -81,7 +98,9 @@ namespace metashell
 
           const auto eb = edited_text.begin();
           values.clear();
-          completer(data::user_input(eb, eb + completion_end), values);
+          const data::user_input to_complete{eb, eb + completion_end};
+          completer(to_complete, values);
+          string_literal_workaround(to_complete, values);
           pos = values.begin();
         }
 

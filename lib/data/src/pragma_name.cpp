@@ -41,6 +41,11 @@ namespace metashell
       return _tokens;
     }
 
+    void pragma_name::push_back(identifier element_)
+    {
+      _tokens.push_back(std::move(element_));
+    }
+
     bool operator<(const pragma_name& lhs_, const pragma_name& rhs_)
     {
       return lhs_.tokens() < rhs_.tokens();

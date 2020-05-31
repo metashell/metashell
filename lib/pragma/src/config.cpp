@@ -16,6 +16,8 @@
 
 #include <metashell/pragma/config.hpp>
 
+#include <metashell/core/code_complete.hpp>
+
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/filtered.hpp>
 #include <boost/range/adaptor/transformed.hpp>
@@ -104,6 +106,20 @@ namespace metashell
                  return (element_ == active_to_show ? " * " : "   ") + element_;
                }),
                "\n")));
+    }
+
+    void config::code_complete(data::command::const_iterator begin_,
+                               data::command::const_iterator end_,
+                               iface::main_shell& shell_,
+                               std::set<data::user_input>& out_) const
+    {
+      core::code_complete::fixed_values(
+          begin_, end_,
+          shell_.get_config().shell_configs() |
+              boost::adaptors::transformed([](const data::shell_config& cfg_) {
+                return cfg_.name.value();
+              }),
+          out_);
     }
   }
 }

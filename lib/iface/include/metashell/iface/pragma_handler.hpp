@@ -21,7 +21,9 @@
 #include <metashell/iface/main_shell.hpp>
 
 #include <metashell/data/command.hpp>
+#include <metashell/data/user_input.hpp>
 
+#include <set>
 #include <string>
 
 namespace metashell
@@ -42,6 +44,11 @@ namespace metashell
                        const data::command::iterator& args_end_,
                        main_shell& shell_,
                        displayer& displayer_) const = 0;
+
+      virtual void code_complete(data::command::const_iterator,
+                                 data::command::const_iterator,
+                                 main_shell&,
+                                 std::set<data::user_input>&) const = 0;
     };
   }
 }

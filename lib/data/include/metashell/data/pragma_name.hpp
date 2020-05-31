@@ -44,6 +44,8 @@ namespace metashell
 
       const std::vector<identifier>& tokens() const;
 
+      void push_back(identifier);
+
     private:
       std::vector<identifier> _tokens;
     };

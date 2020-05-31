@@ -27,14 +27,18 @@ namespace metashell
 {
   namespace system_test
   {
-    code_completer::code_completer(const std::string& init_code_)
-      : _init_code(init_code_)
+    code_completer::code_completer(std::string init_code_,
+                                   data::command_line_argument_list extra_args_,
+                                   boost::filesystem::path cwd_)
+      : _init_code{std::move(init_code_)},
+        _extra_args{std::move(extra_args_)},
+        _cwd{std::move(cwd_)}
     {
     }
 
     json_string code_completer::operator()(const std::string& code_) const
     {
-      metashell_instance mi;
+      metashell_instance mi{_extra_args, _cwd};
 
       for (const json_string& init_result : mi.command(_init_code))
       {

@@ -16,6 +16,7 @@
 
 #include <metashell/pragma/config_show.hpp>
 
+#include <metashell/core/code_complete.hpp>
 #include <metashell/core/comment_json_writer.hpp>
 #include <metashell/core/shell_config.hpp>
 
@@ -60,6 +61,20 @@ namespace metashell
         core::comment_json_writer w(displayer_);
         core::display(w, *cfg);
       }
+    }
+
+    void config_show::code_complete(data::command::const_iterator begin_,
+                                    data::command::const_iterator end_,
+                                    iface::main_shell& shell_,
+                                    std::set<data::user_input>& out_) const
+    {
+      core::code_complete::fixed_values(
+          begin_, end_,
+          shell_.get_config().shell_configs() |
+              boost::adaptors::transformed([](const data::shell_config& cfg_) {
+                return cfg_.name.value();
+              }),
+          out_);
     }
   }
 }

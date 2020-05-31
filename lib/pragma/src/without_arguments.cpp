@@ -41,5 +41,17 @@ namespace metashell
             tokens_to_string(args_begin_, args_end_).value());
       }
     }
+
+    void
+    without_arguments::code_complete(data::command::const_iterator begin_,
+                                     data::command::const_iterator end_,
+                                     iface::main_shell&,
+                                     std::set<data::user_input>& out_) const
+    {
+      if (begin_ == end_)
+      {
+        out_.insert(data::user_input{});
+      }
+    }
   }
 }

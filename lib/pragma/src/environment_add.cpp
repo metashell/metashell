@@ -27,9 +27,7 @@ namespace metashell
     std::string environment_add::description() const
     {
       return "Appends code to the environment. Use this if Metashell thinks "
-             "about "
-             "the"
-             " code that it is an evaluation.";
+             "about the code that it is an evaluation.";
     }
 
     void environment_add::run(const data::command::iterator&,
@@ -62,6 +60,15 @@ namespace metashell
             ") at"
             " https://github.com/metashell/metashell/issues. Thank you."));
       }
+    }
+
+    void environment_add::code_complete(data::command::const_iterator begin_,
+                                        data::command::const_iterator end_,
+                                        iface::main_shell& shell_,
+                                        std::set<data::user_input>& out_) const
+    {
+      shell_.code_complete(
+          data::user_input{data::join_tokens(begin_, end_)}, false, out_);
     }
   }
 }
