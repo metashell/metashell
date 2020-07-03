@@ -19,7 +19,7 @@
 #include <metashell/system_test/error.hpp>
 #include <metashell/system_test/prompt.hpp>
 
-#include <metashell/system_test/metashell_instance.hpp>
+#include <stdexcept>
 
 using pattern::_;
 
@@ -27,28 +27,35 @@ namespace metashell
 {
   namespace system_test
   {
-    code_completer::code_completer(std::string init_code_,
+    code_completer::code_completer() : _instance{}, _mi{default_()} {}
+
+    code_completer::code_completer(const std::string& init_code_,
                                    data::command_line_argument_list extra_args_,
                                    boost::filesystem::path cwd_)
-      : _init_code{std::move(init_code_)},
-        _extra_args{std::move(extra_args_)},
-        _cwd{std::move(cwd_)}
+      : _instance{std::make_unique<metashell_instance>(
+            std::move(extra_args_), std::move(cwd_))},
+        _mi{*_instance}
     {
-    }
-
-    json_string code_completer::operator()(const std::string& code_) const
-    {
-      metashell_instance mi{_extra_args, _cwd};
-
-      for (const json_string& init_result : mi.command(_init_code))
+      for (const json_string& init_result : _instance->command(init_code_))
       {
         if (error(_) == init_result)
         {
-          return init_result;
+          throw std::runtime_error{
+              "Failed to initialise test shell for code completion: " +
+              init_result.get()};
         }
       }
+    }
 
-      return mi.code_completion(code_).front();
+    json_string code_completer::operator()(const std::string& code_)
+    {
+      return _mi.code_completion(code_).front();
+    }
+
+    metashell_instance& code_completer::default_()
+    {
+      static metashell_instance result{};
+      return result;
     }
   }
 }
