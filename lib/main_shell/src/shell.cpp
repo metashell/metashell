@@ -203,7 +203,7 @@ namespace metashell {
                                       data::command::const_iterator begin_,
                                       data::command::const_iterator end_,
                                       iface::main_shell& shell_,
-                                      std::set<data::user_input>& out_)
+                                      data::code_completion& out_)
       {
         if (begin_ == end_)
         {
@@ -460,7 +460,7 @@ namespace metashell {
 
     void shell::code_complete(const data::user_input& s_,
                               bool metashell_extensions_,
-                              std::set<data::user_input>& out_)
+                              data::code_completion& out_)
     {
       try
       {

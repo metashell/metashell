@@ -24,7 +24,7 @@ namespace metashell
     {
       void code_completer::code_complete(const iface::environment&,
                                          const data::user_input&,
-                                         std::set<data::user_input>&,
+                                         data::code_completion&,
                                          bool)
       {
         // ignore

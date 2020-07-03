@@ -71,7 +71,7 @@ namespace metashell
     void included_headers::code_complete(data::command::const_iterator begin_,
                                          data::command::const_iterator end_,
                                          iface::main_shell& shell_,
-                                         std::set<data::user_input>& out_) const
+                                         data::code_completion& out_) const
     {
       shell_.code_complete(
           data::user_input{data::join_tokens(begin_, end_)}, false, out_);

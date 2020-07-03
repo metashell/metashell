@@ -126,7 +126,7 @@ namespace
       return plain_line_reader;
     case data::console_type::readline:
       return metashell::readline::line_reader([&processor_queue_](
-          const data::user_input& s_, std::set<data::user_input>& out_) {
+          const data::user_input& s_, data::code_completion& out_) {
         processor_queue_.code_complete(s_, out_);
       });
     case data::console_type::json:

@@ -35,7 +35,6 @@
 #include <map>
 #include <memory>
 #include <optional>
-#include <set>
 #include <stack>
 #include <string>
 
@@ -78,7 +77,7 @@ namespace metashell
 
       virtual void code_complete(const data::user_input& s_,
                                  bool metashell_extensions_,
-                                 std::set<data::user_input>& out_) override;
+                                 data::code_completion& out_) override;
 
       const std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>&
       pragma_handlers() const override;

@@ -28,9 +28,8 @@ namespace metashell
   {
     namespace
     {
-      void
-      show_code_complete_result(iface::json_writer& writer_,
-                                const std::set<data::user_input>& completions_)
+      void show_code_complete_result(iface::json_writer& writer_,
+                                     data::code_completion&& completions_)
       {
         writer_.start_object();
 
@@ -39,9 +38,9 @@ namespace metashell
 
         writer_.key("completions");
         writer_.start_array();
-        for (const data::user_input& c : completions_)
+        while (const std::optional<data::user_input> c = completions_.pop())
         {
-          writer_.string(c.value());
+          writer_.string(c->value());
         }
         writer_.end_array();
 
@@ -110,10 +109,10 @@ namespace metashell
               {
                 if (const auto code = handler.field("code"))
                 {
-                  std::set<data::user_input> cc;
+                  data::code_completion cc;
                   command_processor_queue_.code_complete(
                       data::user_input(*code), cc);
-                  show_code_complete_result(json_writer_, cc);
+                  show_code_complete_result(json_writer_, std::move(cc));
                 }
                 else
                 {

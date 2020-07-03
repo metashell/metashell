@@ -28,7 +28,6 @@
 
 #include <functional>
 #include <map>
-#include <set>
 #include <vector>
 
 namespace metashell
@@ -51,12 +50,12 @@ namespace metashell
       void files(const data::user_input& to_complete_,
                  const data::user_input& prefix_,
                  const std::function<bool(const boost::filesystem::path&)>&,
-                 std::set<data::user_input>&);
+                 data::code_completion&);
 
       void include(data::command::const_iterator,
                    data::command::const_iterator,
                    iface::header_discoverer&,
-                   std::set<data::user_input>&);
+                   data::code_completion&);
 
       std::vector<
           std::pair<iface::pragma_handler*, data::command::const_iterator>>
@@ -64,14 +63,14 @@ namespace metashell
                        data::command::const_iterator,
                        const std::map<data::pragma_name,
                                       std::unique_ptr<iface::pragma_handler>>&,
-                       std::set<data::user_input>&);
+                       data::code_completion&);
 
       template <class InputIt>
       void fixed_values(data::command::const_iterator begin_,
                         data::command::const_iterator end_,
                         InputIt values_begin_,
                         InputIt values_end_,
-                        std::set<data::user_input>& out_)
+                        data::code_completion& out_)
       {
         if (begin_ == end_)
         {
@@ -100,7 +99,7 @@ namespace metashell
       void fixed_values(data::command::const_iterator begin_,
                         data::command::const_iterator end_,
                         const Container& values_,
-                        std::set<data::user_input>& out_)
+                        data::code_completion& out_)
       {
         using std::begin;
         using std::end;

@@ -135,7 +135,7 @@ namespace metashell
     void help::code_complete(data::command::const_iterator begin_,
                              data::command::const_iterator end_,
                              iface::main_shell& shell_,
-                             std::set<data::user_input>& out_) const
+                             data::code_completion& out_) const
     {
       core::code_complete::pragma_metashell(
           begin_, end_, shell_.pragma_handlers(), out_);

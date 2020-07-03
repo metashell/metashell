@@ -897,9 +897,8 @@ namespace metashell
       // TODO
     }
 
-    void shell::code_complete(const data::user_input&,
-                              bool,
-                              std::set<data::user_input>&)
+    void
+    shell::code_complete(const data::user_input&, bool, data::code_completion&)
     {
       // TODO
     }

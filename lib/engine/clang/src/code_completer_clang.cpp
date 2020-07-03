@@ -129,7 +129,7 @@ namespace metashell
 
       void code_completer::code_complete(const iface::environment& env_,
                                          const data::user_input& src_,
-                                         std::set<data::user_input>& out_,
+                                         data::code_completion& out_,
                                          bool use_precompiled_headers_)
       {
         using boost::starts_with;
@@ -167,7 +167,6 @@ namespace metashell
         METASHELL_LOG(_logger, "Exit code of clang: " + to_string(o.status));
 
         const std::string out = o.standard_output;
-        out_.clear();
         const auto prefix_len = size(completion_start.second);
         core::for_each_line(out, [&out_, &completion_start,
                                   prefix_len](const std::string& line_) {

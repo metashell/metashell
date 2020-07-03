@@ -209,7 +209,7 @@ namespace metashell
     void ls::code_complete(data::command::const_iterator begin_,
                            data::command::const_iterator end_,
                            iface::main_shell& shell_,
-                           std::set<data::user_input>& out_) const
+                           data::code_completion& out_) const
     {
       core::code_complete::include(last_include_start(begin_, end_), end_,
                                    shell_.engine().header_discoverer(), out_);

@@ -24,8 +24,9 @@ namespace metashell
   {
     bool command_processor_queue::empty() const { return _items.empty(); }
 
-    void command_processor_queue::code_complete(
-        const data::user_input& s_, std::set<data::user_input>& out_) const
+    void
+    command_processor_queue::code_complete(const data::user_input& s_,
+                                           data::code_completion& out_) const
     {
       if (!empty())
       {

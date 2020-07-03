@@ -101,7 +101,7 @@ namespace metashell
     void switch_::code_complete(data::command::const_iterator begin_,
                                 data::command::const_iterator end_,
                                 iface::main_shell&,
-                                std::set<data::user_input>& out_) const
+                                data::code_completion& out_) const
     {
       core::code_complete::fixed_values(begin_, end_, true_values, out_);
       core::code_complete::fixed_values(begin_, end_, false_values, out_);

@@ -51,21 +51,19 @@ namespace metashell
       else
       {
         displayer_.show_comment(data::text(
-            "Metashell (incorrectly) thinks that this command should execute a"
-            " metaprogram and would not add it to the environment without using"
-            " the \"environment add\" pragma. Please file a bug report "
-            "containing"
-            " this command (" +
+            "Metashell (incorrectly) thinks that this command should execute a "
+            "metaprogram and would not add it to the environment without using "
+            "the \"environment add\" pragma. Please file a bug report "
+            "containing this command (" +
             cmd.value() +
-            ") at"
-            " https://github.com/metashell/metashell/issues. Thank you."));
+            ") at https://github.com/metashell/metashell/issues. Thank you."));
       }
     }
 
     void environment_add::code_complete(data::command::const_iterator begin_,
                                         data::command::const_iterator end_,
                                         iface::main_shell& shell_,
-                                        std::set<data::user_input>& out_) const
+                                        data::code_completion& out_) const
     {
       shell_.code_complete(
           data::user_input{data::join_tokens(begin_, end_)}, false, out_);

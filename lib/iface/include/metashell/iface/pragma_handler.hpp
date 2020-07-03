@@ -23,7 +23,6 @@
 #include <metashell/data/command.hpp>
 #include <metashell/data/user_input.hpp>
 
-#include <set>
 #include <string>
 
 namespace metashell
@@ -48,7 +47,7 @@ namespace metashell
       virtual void code_complete(data::command::const_iterator,
                                  data::command::const_iterator,
                                  main_shell&,
-                                 std::set<data::user_input>&) const = 0;
+                                 data::code_completion&) const = 0;
     };
   }
 }

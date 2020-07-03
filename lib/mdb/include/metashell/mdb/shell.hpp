@@ -89,7 +89,7 @@ namespace metashell
 
       virtual void code_complete(const data::user_input& s_,
                                  bool metashell_extensions_,
-                                 std::set<data::user_input>& out_) override;
+                                 data::code_completion& out_) override;
 
       static command_handler_map build_command_handler(bool preprocessor_);
 

@@ -222,7 +222,7 @@ TEST(json_line_reader, code_completion_result)
 
   mock::command_processor* cp = new mock::command_processor;
   EXPECT_CALL(*cp, code_complete(data::user_input("foo"), true, ::testing::_))
-      .WillOnce(testing::SetArgReferee<2>(std::set<data::user_input>{
+      .WillOnce(testing::SetArgReferee<2>(data::code_completion{
           data::user_input("hello"), data::user_input("world")}));
 
   core::command_processor_queue cpq;

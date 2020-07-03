@@ -153,7 +153,7 @@ namespace metashell
                 result_,
             const data::user_input& suffix_,
             const std::function<bool(const boost::filesystem::path&)>& filter_,
-            std::set<data::user_input>& out_)
+            data::code_completion& out_)
         {
           while (result_.size() == 1 &&
                  std::any_of(result_.begin()->second.begin(),
@@ -202,7 +202,7 @@ namespace metashell
                    const data::user_input& prefix_,
                    const data::user_input& suffix_,
                    const std::vector<boost::filesystem::path>& bases_,
-                   std::set<data::user_input>& out_)
+                   data::code_completion& out_)
         {
           std::map<data::user_input, std::vector<data::file_completion_entry>>
               out;
@@ -226,7 +226,7 @@ namespace metashell
       files(const data::user_input& to_complete_,
             const data::user_input& prefix_,
             const std::function<bool(const boost::filesystem::path&)>& filter_,
-            std::set<data::user_input>& out_)
+            data::code_completion& out_)
       {
         std::map<data::user_input, std::vector<data::file_completion_entry>>
             out;
@@ -239,7 +239,7 @@ namespace metashell
       void include(data::command::const_iterator begin_,
                    data::command::const_iterator end_,
                    iface::header_discoverer& header_discoverer_,
-                   std::set<data::user_input>& out_)
+                   data::code_completion& out_)
       {
         if (begin_ == end_)
         {
@@ -289,7 +289,7 @@ namespace metashell
           data::command::const_iterator end_,
           const std::map<data::pragma_name,
                          std::unique_ptr<iface::pragma_handler>>& handlers_,
-          std::set<data::user_input>& out_)
+          data::code_completion& out_)
       {
         std::set<data::pragma_name> possible_commands;
         for (const auto& cmd : handlers_)

@@ -42,7 +42,7 @@ namespace metashell
 
         virtual void code_complete(const iface::environment& env_,
                                    const data::user_input& src_,
-                                   std::set<data::user_input>& out_,
+                                   data::code_completion& out_,
                                    bool use_precompiled_headers_) override;
 
       private:

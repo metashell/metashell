@@ -1,8 +1,8 @@
-#ifndef METASHELL_MOCK_COMMAND_PROCESSOR_HPP
-#define METASHELL_MOCK_COMMAND_PROCESSOR_HPP
+#ifndef METASHELL_DATA_CODE_COMPLETION_HPP
+#define METASHELL_DATA_CODE_COMPLETION_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2020, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,28 +17,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/command_processor.hpp>
+#include <metashell/data/user_input.hpp>
 
-#include <gmock/gmock.h>
+#include <optional>
+#include <set>
 
 namespace metashell
 {
-  namespace mock
+  namespace data
   {
-    class command_processor : public iface::command_processor
+    class code_completion
     {
     public:
-      MOCK_METHOD3(line_available,
-                   void(const data::user_input&,
-                        iface::displayer&,
-                        iface::history&));
-      MOCK_METHOD0(cancel_operation, void());
+      using container = std::set<user_input>;
+      using size_type = container::size_type;
 
-      MOCK_CONST_METHOD0(prompt, std::string());
-      MOCK_CONST_METHOD0(stopped, bool());
+      code_completion() = default;
+      code_completion(std::initializer_list<user_input>);
 
-      MOCK_METHOD3(code_complete,
-                   void(const data::user_input&, bool, data::code_completion&));
+      void insert(user_input);
+
+      // The operation is expected to throw due to running out of memory in
+      // which case it is acceptable to loose a code completion result.
+      std::optional<user_input> pop();
+
+      size_type size() const;
+      bool empty() const;
+
+    private:
+      container _completions;
     };
   }
 }

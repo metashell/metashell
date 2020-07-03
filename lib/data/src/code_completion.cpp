@@ -1,8 +1,5 @@
-#ifndef METASHELL_IFACE_CODE_COMPLETER_HPP
-#define METASHELL_IFACE_CODE_COMPLETER_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2020, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,31 +15,39 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/code_completion.hpp>
-#include <metashell/data/feature.hpp>
-#include <metashell/data/user_input.hpp>
-
-#include <metashell/iface/environment.hpp>
 
 namespace metashell
 {
-  namespace iface
+  namespace data
   {
-    class code_completer
+    code_completion::code_completion(std::initializer_list<user_input> vals_)
+      : _completions{vals_}
     {
-    public:
-      virtual ~code_completer() = default;
+    }
 
-      virtual void code_complete(const environment& env_,
-                                 const data::user_input& src_,
-                                 data::code_completion& out_,
-                                 bool use_precompiled_headers_) = 0;
+    void code_completion::insert(user_input completion_)
+    {
+      _completions.insert(std::move(completion_));
+    }
 
-      static data::feature name_of_feature()
+    std::optional<user_input> code_completion::pop()
+    {
+      std::optional<user_input> result;
+
+      if (const auto i = _completions.begin(); i != _completions.end())
       {
-        return data::feature::code_completer();
+        result = std::move(*i);
+        _completions.erase(i);
       }
-    };
+
+      return result;
+    }
+
+    code_completion::size_type code_completion::size() const
+    {
+      return _completions.size();
+    }
+
+    bool code_completion::empty() const { return _completions.empty(); }
   }
 }
-
-#endif

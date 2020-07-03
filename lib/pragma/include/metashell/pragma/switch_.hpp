@@ -43,7 +43,7 @@ namespace metashell
       void code_complete(data::command::const_iterator,
                          data::command::const_iterator,
                          iface::main_shell&,
-                         std::set<data::user_input>&) const override;
+                         data::code_completion&) const override;
 
     private:
       data::shell_flag _flag;
