@@ -44,10 +44,9 @@ namespace metashell
                        main_shell& shell_,
                        displayer& displayer_) const = 0;
 
-      virtual void code_complete(data::command::const_iterator,
-                                 data::command::const_iterator,
-                                 main_shell&,
-                                 data::code_completion&) const = 0;
+      virtual data::code_completion code_complete(data::command::const_iterator,
+                                                  data::command::const_iterator,
+                                                  main_shell&) const = 0;
     };
   }
 }

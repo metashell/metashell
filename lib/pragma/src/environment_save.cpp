@@ -111,15 +111,15 @@ namespace metashell
       }
     }
 
-    void environment_save::code_complete(data::command::const_iterator begin_,
-                                         data::command::const_iterator end_,
-                                         iface::main_shell&,
-                                         data::code_completion& out_) const
+    data::code_completion
+    environment_save::code_complete(data::command::const_iterator begin_,
+                                    data::command::const_iterator end_,
+                                    iface::main_shell&) const
     {
-      core::code_complete::files(
+      return core::code_complete::files(
           data::user_input{
               tokens_to_string(data::skip_all_whitespace(begin_, end_), end_)},
-          data::user_input{begin_ == end_ ? " " : ""}, cpp_source, out_);
+          data::user_input{begin_ == end_ ? " " : ""}, cpp_source);
     }
   }
 }

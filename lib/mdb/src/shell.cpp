@@ -897,10 +897,10 @@ namespace metashell
       // TODO
     }
 
-    void
-    shell::code_complete(const data::user_input&, bool, data::code_completion&)
+    data::code_completion shell::code_complete(const data::user_input&, bool)
     {
       // TODO
+      return data::code_completion{};
     }
 
     void shell::line_available(const data::user_input& line,

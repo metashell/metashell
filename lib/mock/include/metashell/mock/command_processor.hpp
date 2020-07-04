@@ -37,8 +37,8 @@ namespace metashell
       MOCK_CONST_METHOD0(prompt, std::string());
       MOCK_CONST_METHOD0(stopped, bool());
 
-      MOCK_METHOD3(code_complete,
-                   void(const data::user_input&, bool, data::code_completion&));
+      MOCK_METHOD2(code_complete,
+                   data::code_completion(const data::user_input&, bool));
     };
   }
 }

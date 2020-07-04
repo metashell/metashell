@@ -249,11 +249,14 @@ namespace metashell {
             if (val == metashell_)
             {
               ++begin_;
-              for (const auto& p : core::code_complete::pragma_metashell(
-                       data::skip_all_whitespace(begin_, end_), end_,
-                       shell_.pragma_handlers(), out_))
+              auto[completions, pragmas] =
+                  core::code_complete::pragma_metashell(
+                      data::skip_all_whitespace(begin_, end_), end_,
+                      shell_.pragma_handlers());
+              out_.insert(std::move(completions));
+              for (const auto& p : pragmas)
               {
-                p.first->code_complete(p.second, end_, shell_, out_);
+                out_.insert(p.first->code_complete(p.second, end_, shell_));
               }
               return true;
             }
@@ -458,10 +461,11 @@ namespace metashell {
       return r.successful;
     }
 
-    void shell::code_complete(const data::user_input& s_,
-                              bool metashell_extensions_,
-                              data::code_completion& out_)
+    data::code_completion shell::code_complete(const data::user_input& s_,
+                                               bool metashell_extensions_)
     {
+      data::code_completion result;
+
       try
       {
         const data::command cmd = core::to_command(data::cpp_code{s_});
@@ -496,9 +500,9 @@ namespace metashell {
             }
 
             if (code_complete_pp_directive(
-                    directive, metashell_extensions_, i, e, *this, out_))
+                    directive, metashell_extensions_, i, e, *this, result))
             {
-              return;
+              return result;
             }
           }
           break;
@@ -514,19 +518,22 @@ namespace metashell {
             }
 
             if (code_complete_pp_directive(
-                    directive, metashell_extensions_, i, e, *this, out_))
+                    directive, metashell_extensions_, i, e, *this, result))
             {
-              return;
+              return result;
             }
             else if (metashell_extensions_ &&
                      directive == data::cpp_code{"msh"})
             {
-              for (const auto& p : core::code_complete::pragma_metashell(
-                       i, e, pragma_handlers(), out_))
+              auto[completions, pragmas] =
+                  core::code_complete::pragma_metashell(
+                      i, e, pragma_handlers());
+              result.insert(std::move(completions));
+              for (const auto& p : pragmas)
               {
-                p.first->code_complete(p.second, e, *this, out_);
+                result.insert(p.first->code_complete(p.second, e, *this));
               }
-              return;
+              return result;
             }
           }
           break;
@@ -659,14 +666,15 @@ namespace metashell {
           }
         }
 
-        engine().code_completer().code_complete(
-            *_env, s_, out_,
-            enabled(data::shell_flag::use_precompiled_headers));
+        result.insert(engine().code_completer().code_complete(
+            *_env, s_, enabled(data::shell_flag::use_precompiled_headers)));
       }
       catch (...)
       {
         // ignore
       }
+
+      return result;
     }
 
     const std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>&

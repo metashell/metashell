@@ -26,8 +26,7 @@ namespace metashell
 {
   namespace data
   {
-    typedef std::function<void(const user_input&, code_completion&)>
-        code_completer;
+    using code_completer = std::function<code_completion(const user_input&)>;
   }
 }
 

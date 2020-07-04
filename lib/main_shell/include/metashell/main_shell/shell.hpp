@@ -75,9 +75,9 @@ namespace metashell
       void run_metaprogram(const data::cpp_code& s_,
                            iface::displayer& displayer_) override;
 
-      virtual void code_complete(const data::user_input& s_,
-                                 bool metashell_extensions_,
-                                 data::code_completion& out_) override;
+      virtual data::code_completion
+      code_complete(const data::user_input& s_,
+                    bool metashell_extensions_) override;
 
       const std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>&
       pragma_handlers() const override;

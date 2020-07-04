@@ -20,6 +20,23 @@ namespace metashell
 {
   namespace data
   {
+    namespace
+    {
+      // Workaround until we can upgrade the compiler on OS X.
+      template <class Set>
+      decltype(Set{}.merge(Set{})) merge_maybe_missing_workaround(Set& this_,
+                                                                  Set&& set_)
+      {
+        this_.merge(std::move(set_));
+      }
+
+      template <class Set>
+      void merge_maybe_missing_workaround(Set& this_, const Set& set_)
+      {
+        this_.insert(set_.begin(), set_.end());
+      }
+    }
+
     code_completion::code_completion(std::initializer_list<user_input> vals_)
       : _completions{vals_}
     {
@@ -28,6 +45,12 @@ namespace metashell
     void code_completion::insert(user_input completion_)
     {
       _completions.insert(std::move(completion_));
+    }
+
+    void code_completion::insert(code_completion&& comp_)
+    {
+      merge_maybe_missing_workaround(
+          _completions, std::move(comp_._completions));
     }
 
     std::optional<user_input> code_completion::pop()

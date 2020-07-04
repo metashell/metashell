@@ -87,9 +87,9 @@ namespace metashell
       void command_quit(const data::mdb_command::arguments_type& arg,
                         iface::displayer& displayer_);
 
-      virtual void code_complete(const data::user_input& s_,
-                                 bool metashell_extensions_,
-                                 data::code_completion& out_) override;
+      virtual data::code_completion
+      code_complete(const data::user_input& s_,
+                    bool metashell_extensions_) override;
 
       static command_handler_map build_command_handler(bool preprocessor_);
 

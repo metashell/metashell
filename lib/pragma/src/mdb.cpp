@@ -99,10 +99,10 @@ namespace metashell
       _cpq->push(move(sh), move(restore));
     }
 
-    void mdb::code_complete(data::command::const_iterator begin_,
-                            data::command::const_iterator end_,
-                            iface::main_shell& shell_,
-                            data::code_completion& out_) const
+    data::code_completion
+    mdb::code_complete(data::command::const_iterator begin_,
+                       data::command::const_iterator end_,
+                       iface::main_shell& shell_) const
     {
       using data::token_type;
       using data::token_category;
@@ -115,21 +115,23 @@ namespace metashell
 
       if (begin_ == end_)
       {
+        data::code_completion result;
         for (const std::string& all : allowed)
         {
-          out_.insert(data::user_input{" -" + all});
+          result.insert(data::user_input{" -" + all});
         }
-        return;
+        return result;
       }
 
       auto beg = skip_all_whitespace(begin_, end_);
       if (beg == end_)
       {
+        data::code_completion result;
         for (const std::string& all : allowed)
         {
-          out_.insert(data::user_input{"-" + all});
+          result.insert(data::user_input{"-" + all});
         }
-        return;
+        return result;
       }
 
       while (beg != end_ && type_of(*beg) == token_type::operator_minus &&
@@ -140,11 +142,12 @@ namespace metashell
         ++beg;
         if (beg == end_)
         {
+          data::code_completion result;
           for (const std::string& all : allowed)
           {
-            out_.insert(data::user_input{all});
+            result.insert(data::user_input{all});
           }
-          return;
+          return result;
         }
 
         if (type_of(*beg) == token_type::identifier)
@@ -157,8 +160,8 @@ namespace metashell
             {
               if (boost::algorithm::starts_with(all, val))
               {
-                out_.insert(data::user_input{all.substr(val.size())});
-                return;
+                return data::code_completion{
+                    data::user_input{all.substr(val.size())}};
               }
             }
           }
@@ -179,7 +182,7 @@ namespace metashell
         }
         else if (category(*beg) == token_category::whitespace)
         {
-          return;
+          return data::code_completion{};
         }
         else
         {
@@ -190,10 +193,14 @@ namespace metashell
         beg = skip_whitespace(beg, end_);
       }
 
-      if (skip_whitespace(beg, end_) != end_)
+      if (skip_whitespace(beg, end_) == end_)
       {
-        shell_.code_complete(
-            data::user_input{data::join_tokens(beg, end_)}, false, out_);
+        return data::code_completion{};
+      }
+      else
+      {
+        return shell_.code_complete(
+            data::user_input{data::join_tokens(beg, end_)}, false);
       }
     }
   }

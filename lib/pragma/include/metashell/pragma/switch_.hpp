@@ -40,10 +40,9 @@ namespace metashell
                iface::main_shell& shell_,
                iface::displayer& displayer_) const override;
 
-      void code_complete(data::command::const_iterator,
-                         data::command::const_iterator,
-                         iface::main_shell&,
-                         data::code_completion&) const override;
+      data::code_completion code_complete(data::command::const_iterator,
+                                          data::command::const_iterator,
+                                          iface::main_shell&) const override;
 
     private:
       data::shell_flag _flag;

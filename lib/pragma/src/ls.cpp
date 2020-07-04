@@ -206,13 +206,14 @@ namespace metashell
       display(displayer_, "Header files", headers);
     }
 
-    void ls::code_complete(data::command::const_iterator begin_,
-                           data::command::const_iterator end_,
-                           iface::main_shell& shell_,
-                           data::code_completion& out_) const
+    data::code_completion
+    ls::code_complete(data::command::const_iterator begin_,
+                      data::command::const_iterator end_,
+                      iface::main_shell& shell_) const
     {
-      core::code_complete::include(last_include_start(begin_, end_), end_,
-                                   shell_.engine().header_discoverer(), out_);
+      return core::code_complete::include(last_include_start(begin_, end_),
+                                          end_,
+                                          shell_.engine().header_discoverer());
     }
   }
 }

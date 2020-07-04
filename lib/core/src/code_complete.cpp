@@ -147,13 +147,12 @@ namespace metashell
           }
         }
 
-        void post_process(
+        data::code_completion post_process(
             const data::user_input& to_complete_,
             std::map<data::user_input, std::vector<data::file_completion_entry>>
                 result_,
             const data::user_input& suffix_,
-            const std::function<bool(const boost::filesystem::path&)>& filter_,
-            data::code_completion& out_)
+            const std::function<bool(const boost::filesystem::path&)>& filter_)
         {
           while (result_.size() == 1 &&
                  std::any_of(result_.begin()->second.begin(),
@@ -188,21 +187,24 @@ namespace metashell
             result_.swap(new_result);
           }
 
+          data::code_completion result;
           for (auto& p : result_)
           {
             for (const data::file_completion_entry& e : p.second)
             {
-              out_.insert(p.first +
-                          (e.is_directory() ? data::user_input{"/"} : suffix_));
+              result.insert(p.first + (e.is_directory() ?
+                                           data::user_input{"/"} :
+                                           suffix_));
             }
           }
+          return result;
         }
 
-        void files(const data::user_input& to_complete_,
-                   const data::user_input& prefix_,
-                   const data::user_input& suffix_,
-                   const std::vector<boost::filesystem::path>& bases_,
-                   data::code_completion& out_)
+        data::code_completion
+        files(const data::user_input& to_complete_,
+              const data::user_input& prefix_,
+              const data::user_input& suffix_,
+              const std::vector<boost::filesystem::path>& bases_)
         {
           std::map<data::user_input, std::vector<data::file_completion_entry>>
               out;
@@ -210,7 +212,7 @@ namespace metashell
           {
             complete_files(base_path, to_complete_, prefix_, keep_all, out);
           }
-          post_process(to_complete_, std::move(out), suffix_, keep_all, out_);
+          return post_process(to_complete_, std::move(out), suffix_, keep_all);
         }
       }
 
@@ -222,30 +224,28 @@ namespace metashell
         }
       }
 
-      void
+      data::code_completion
       files(const data::user_input& to_complete_,
             const data::user_input& prefix_,
-            const std::function<bool(const boost::filesystem::path&)>& filter_,
-            data::code_completion& out_)
+            const std::function<bool(const boost::filesystem::path&)>& filter_)
       {
         std::map<data::user_input, std::vector<data::file_completion_entry>>
             out;
         complete_files(boost::filesystem::current_path(), to_complete_, prefix_,
                        filter_, out);
-        post_process(
-            to_complete_, std::move(out), data::user_input{}, filter_, out_);
+        return post_process(
+            to_complete_, std::move(out), data::user_input{}, filter_);
       }
 
-      void include(data::command::const_iterator begin_,
-                   data::command::const_iterator end_,
-                   iface::header_discoverer& header_discoverer_,
-                   data::code_completion& out_)
+      data::code_completion
+      include(data::command::const_iterator begin_,
+              data::command::const_iterator end_,
+              iface::header_discoverer& header_discoverer_)
       {
         if (begin_ == end_)
         {
-          out_.insert(data::user_input{" <"});
-          out_.insert(data::user_input{" \""});
-          return;
+          return data::code_completion{
+              data::user_input{" <"}, data::user_input{" \""}};
         }
 
         core::include_path_cache paths{header_discoverer_};
@@ -256,40 +256,42 @@ namespace metashell
 
         if (start == end_)
         {
-          out_.insert(data::user_input{"<"});
-          out_.insert(data::user_input{"\""});
+          return data::code_completion{
+              data::user_input{"<"}, data::user_input{"\""}};
         }
         else if (type_of(*start) == data::token_type::operator_less &&
                  std::find_if(start + 1, end_, [](const data::token& token_) {
                    return type_of(token_) == data::token_type::operator_greater;
                  }) == end_)
         {
-          files(data::user_input{tokens_to_string(start + 1, end_)},
-                data::user_input{}, data::user_input{">"},
-                paths[{data::include_type::sys,
-                       data::standard_headers_allowed::all}],
-                out_);
+          return files(data::user_input{tokens_to_string(start + 1, end_)},
+                       data::user_input{}, data::user_input{">"},
+                       paths[{data::include_type::sys,
+                              data::standard_headers_allowed::all}]);
         }
         else if (data::include_quote_token(*start) &&
                  std::find_if(start + 1, end_, data::include_quote_token) ==
                      end_)
         {
-          files(data::user_input{tokens_to_string(start + 1, end_)},
-                data::user_input{}, data::user_input{"\""},
-                paths[{data::include_type::quote,
-                       data::standard_headers_allowed::all}],
-                out_);
+          return files(data::user_input{tokens_to_string(start + 1, end_)},
+                       data::user_input{}, data::user_input{"\""},
+                       paths[{data::include_type::quote,
+                              data::standard_headers_allowed::all}]);
+        }
+        else
+        {
+          return data::code_completion{};
         }
       }
 
-      std::vector<
-          std::pair<iface::pragma_handler*, data::command::const_iterator>>
+      std::pair<data::code_completion,
+                std::vector<std::pair<iface::pragma_handler*,
+                                      data::command::const_iterator>>>
       pragma_metashell(
           data::command::const_iterator begin_,
           data::command::const_iterator end_,
           const std::map<data::pragma_name,
-                         std::unique_ptr<iface::pragma_handler>>& handlers_,
-          data::code_completion& out_)
+                         std::unique_ptr<iface::pragma_handler>>& handlers_)
       {
         std::set<data::pragma_name> possible_commands;
         for (const auto& cmd : handlers_)
@@ -299,15 +301,16 @@ namespace metashell
 
         std::set<data::pragma_name> prefixes = real_prefixes(possible_commands);
 
-        std::vector<
-            std::pair<iface::pragma_handler*, data::command::const_iterator>>
+        std::pair<data::code_completion,
+                  std::vector<std::pair<iface::pragma_handler*,
+                                        data::command::const_iterator>>>
             result;
 
         if (begin_ == end_)
         {
           for (const auto& handler : handlers_)
           {
-            out_.insert(
+            result.first.insert(
                 data::user_input{" "} +
                 join_with_space(handler.first.tokens().begin(),
                                 handler.first.tokens().end()) +
@@ -340,7 +343,7 @@ namespace metashell
               {
                 const auto& handler = handlers_.find(*c);
                 assert(handler != handlers_.end());
-                result.push_back({handler->second.get(), next});
+                result.second.push_back({handler->second.get(), next});
                 c = possible_commands.erase(c);
               }
               else if (next == end_)
@@ -351,7 +354,7 @@ namespace metashell
 
                 if (starts_with(code_in_cmd, code_in_code_to_complete))
                 {
-                  out_.insert(
+                  result.first.insert(
                       data::user_input{
                           substr(code_in_cmd, size(code_in_code_to_complete)) +
                           data::cpp_code{
@@ -381,10 +384,11 @@ namespace metashell
         {
           assert(prefix_len < name.tokens().size());
 
-          out_.insert(join_with_space(name.tokens().begin() + prefix_len,
-                                      name.tokens().end()) +
-                      data::user_input{
-                          prefixes.find(name) == prefixes.end() ? "" : " "});
+          result.first.insert(
+              join_with_space(
+                  name.tokens().begin() + prefix_len, name.tokens().end()) +
+              data::user_input{prefixes.find(name) == prefixes.end() ? "" :
+                                                                       " "});
         }
 
         return result;

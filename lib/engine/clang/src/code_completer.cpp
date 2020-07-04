@@ -127,10 +127,10 @@ namespace metashell
       {
       }
 
-      void code_completer::code_complete(const iface::environment& env_,
-                                         const data::user_input& src_,
-                                         data::code_completion& out_,
-                                         bool use_precompiled_headers_)
+      data::code_completion
+      code_completer::code_complete(const iface::environment& env_,
+                                    const data::user_input& src_,
+                                    bool use_precompiled_headers_)
       {
         using boost::starts_with;
 
@@ -168,17 +168,19 @@ namespace metashell
 
         const std::string out = o.standard_output;
         const auto prefix_len = size(completion_start.second);
-        core::for_each_line(out, [&out_, &completion_start,
+        data::code_completion result;
+        core::for_each_line(out, [&result, &completion_start,
                                   prefix_len](const std::string& line_) {
           if (const auto comp = parse_completion(line_))
           {
             if (starts_with(*comp, completion_start.second) &&
                 *comp != completion_start.second)
             {
-              out_.insert(data::user_input(substr(*comp, prefix_len)));
+              result.insert(data::user_input{substr(*comp, prefix_len)});
             }
           }
         });
+        return result;
       }
     }
   }

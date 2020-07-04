@@ -42,15 +42,13 @@ namespace metashell
       }
     }
 
-    void without_arguments::code_complete(data::command::const_iterator begin_,
-                                          data::command::const_iterator end_,
-                                          iface::main_shell&,
-                                          data::code_completion& out_) const
+    data::code_completion
+    without_arguments::code_complete(data::command::const_iterator begin_,
+                                     data::command::const_iterator end_,
+                                     iface::main_shell&) const
     {
-      if (begin_ == end_)
-      {
-        out_.insert(data::user_input{});
-      }
+      return begin_ == end_ ? data::code_completion{data::user_input{}} :
+                              data::code_completion{};
     }
   }
 }

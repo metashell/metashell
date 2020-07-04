@@ -132,13 +132,14 @@ namespace metashell
       }
     }
 
-    void help::code_complete(data::command::const_iterator begin_,
-                             data::command::const_iterator end_,
-                             iface::main_shell& shell_,
-                             data::code_completion& out_) const
+    data::code_completion
+    help::code_complete(data::command::const_iterator begin_,
+                        data::command::const_iterator end_,
+                        iface::main_shell& shell_) const
     {
-      core::code_complete::pragma_metashell(
-          begin_, end_, shell_.pragma_handlers(), out_);
+      return core::code_complete::pragma_metashell(
+                 begin_, end_, shell_.pragma_handlers())
+          .first;
     }
   }
 }

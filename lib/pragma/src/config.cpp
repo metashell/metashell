@@ -108,18 +108,17 @@ namespace metashell
                "\n")));
     }
 
-    void config::code_complete(data::command::const_iterator begin_,
-                               data::command::const_iterator end_,
-                               iface::main_shell& shell_,
-                               data::code_completion& out_) const
+    data::code_completion
+    config::code_complete(data::command::const_iterator begin_,
+                          data::command::const_iterator end_,
+                          iface::main_shell& shell_) const
     {
-      core::code_complete::fixed_values(
+      return core::code_complete::fixed_values(
           begin_, end_,
           shell_.get_config().shell_configs() |
               boost::adaptors::transformed([](const data::shell_config& cfg_) {
                 return cfg_.name.value();
-              }),
-          out_);
+              }));
     }
   }
 }

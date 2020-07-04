@@ -29,6 +29,8 @@
 
 using namespace metashell;
 
+using ::testing::Return;
+
 TEST(json_line_reader, end_of_input)
 {
   core::null_json_writer jw;
@@ -202,7 +204,7 @@ TEST(json_line_reader, code_completion_gets_code_completion)
 
   mock::command_processor* cp =
       new ::testing::StrictMock<mock::command_processor>;
-  EXPECT_CALL(*cp, code_complete(data::user_input("foo"), true, ::testing::_));
+  EXPECT_CALL(*cp, code_complete(data::user_input("foo"), true));
 
   core::command_processor_queue cpq;
   cpq.push(std::unique_ptr<iface::command_processor>(cp));
@@ -221,8 +223,8 @@ TEST(json_line_reader, code_completion_result)
   core::null_displayer d;
 
   mock::command_processor* cp = new mock::command_processor;
-  EXPECT_CALL(*cp, code_complete(data::user_input("foo"), true, ::testing::_))
-      .WillOnce(testing::SetArgReferee<2>(data::code_completion{
+  EXPECT_CALL(*cp, code_complete(data::user_input("foo"), true))
+      .WillOnce(Return(data::code_completion{
           data::user_input("hello"), data::user_input("world")}));
 
   core::command_processor_queue cpq;

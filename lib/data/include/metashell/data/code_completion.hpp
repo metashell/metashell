@@ -36,6 +36,7 @@ namespace metashell
       code_completion(std::initializer_list<user_input>);
 
       void insert(user_input);
+      void insert(code_completion&&);
 
       // The operation is expected to throw due to running out of memory in
       // which case it is acceptable to loose a code completion result.

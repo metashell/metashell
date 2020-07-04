@@ -109,10 +109,9 @@ namespace metashell
               {
                 if (const auto code = handler.field("code"))
                 {
-                  data::code_completion cc;
-                  command_processor_queue_.code_complete(
-                      data::user_input(*code), cc);
-                  show_code_complete_result(json_writer_, std::move(cc));
+                  show_code_complete_result(
+                      json_writer_, command_processor_queue_.code_complete(
+                                        data::user_input{*code}));
                 }
                 else
                 {

@@ -24,14 +24,11 @@ namespace metashell
   {
     bool command_processor_queue::empty() const { return _items.empty(); }
 
-    void
-    command_processor_queue::code_complete(const data::user_input& s_,
-                                           data::code_completion& out_) const
+    data::code_completion
+    command_processor_queue::code_complete(const data::user_input& s_) const
     {
-      if (!empty())
-      {
-        _items.back().first->code_complete(s_, true, out_);
-      }
+      return empty() ? data::code_completion{} :
+                       _items.back().first->code_complete(s_, true);
     }
 
     void command_processor_queue::pop(iface::displayer& displayer_)

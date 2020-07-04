@@ -42,9 +42,8 @@ namespace metashell
       virtual std::string prompt() const = 0;
       virtual bool stopped() const = 0;
 
-      virtual void code_complete(const data::user_input& s_,
-                                 bool metashell_extensions_,
-                                 data::code_completion& out_) = 0;
+      virtual data::code_completion
+      code_complete(const data::user_input& s_, bool metashell_extensions_) = 0;
     };
   }
 }

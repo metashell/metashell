@@ -38,15 +38,13 @@ namespace metashell
           data::text(data::tokens_to_string(args_begin_, args_end_).value()));
     }
 
-    void echo::code_complete(data::command::const_iterator begin_,
-                             data::command::const_iterator end_,
-                             iface::main_shell&,
-                             data::code_completion& out_) const
+    data::code_completion
+    echo::code_complete(data::command::const_iterator begin_,
+                        data::command::const_iterator end_,
+                        iface::main_shell&) const
     {
-      if (begin_ == end_)
-      {
-        out_.insert(data::user_input{});
-      }
+      return begin_ == end_ ? data::code_completion{data::user_input{}} :
+                              data::code_completion{};
     }
   }
 }

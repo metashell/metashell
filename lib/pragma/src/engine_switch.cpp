@@ -86,13 +86,13 @@ namespace metashell
       }
     }
 
-    void engine_switch::code_complete(data::command::const_iterator begin_,
-                                      data::command::const_iterator end_,
-                                      iface::main_shell& shell_,
-                                      data::code_completion& out_) const
+    data::code_completion
+    engine_switch::code_complete(data::command::const_iterator begin_,
+                                 data::command::const_iterator end_,
+                                 iface::main_shell& shell_) const
     {
-      core::code_complete::fixed_values(
-          begin_, end_, shell_.available_engines(), out_);
+      return core::code_complete::fixed_values(
+          begin_, end_, shell_.available_engines());
     }
   }
 }

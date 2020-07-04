@@ -38,10 +38,9 @@ namespace metashell
 
       virtual void run(iface::main_shell&, iface::displayer&) const = 0;
 
-      void code_complete(data::command::const_iterator,
-                         data::command::const_iterator,
-                         iface::main_shell&,
-                         data::code_completion&) const override;
+      data::code_completion code_complete(data::command::const_iterator,
+                                          data::command::const_iterator,
+                                          iface::main_shell&) const override;
     };
   }
 }

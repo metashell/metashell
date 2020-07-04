@@ -69,8 +69,9 @@ namespace metashell
         return std::string(rl_line_buffer, rl_line_buffer + line_length());
       }
 
-      void string_literal_workaround(const data::user_input& to_complete_,
-                                     data::code_completion& values_)
+      data::code_completion
+      string_literal_workaround(const data::user_input& to_complete_,
+                                data::code_completion values_)
       {
         if (values_.size() == 1 &&
             std::count(begin(to_complete_), end(to_complete_), '\"') % 2 == 1)
@@ -84,6 +85,7 @@ namespace metashell
             values_.insert(substr(completion, 0, size(completion) - 1));
           }
         }
+        return values_;
       }
 
       char* tab_generator(const char* text_, int state_)
@@ -98,8 +100,8 @@ namespace metashell
 
           const auto eb = edited_text.begin();
           const data::user_input to_complete{eb, eb + completion_end};
-          completer(to_complete, values);
-          string_literal_workaround(to_complete, values);
+          values =
+              string_literal_workaround(to_complete, completer(to_complete));
         }
 
         if (const std::optional<data::user_input> val = values.pop())

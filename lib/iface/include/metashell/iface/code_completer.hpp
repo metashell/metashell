@@ -32,10 +32,10 @@ namespace metashell
     public:
       virtual ~code_completer() = default;
 
-      virtual void code_complete(const environment& env_,
-                                 const data::user_input& src_,
-                                 data::code_completion& out_,
-                                 bool use_precompiled_headers_) = 0;
+      virtual data::code_completion
+      code_complete(const environment& env_,
+                    const data::user_input& src_,
+                    bool use_precompiled_headers_) = 0;
 
       static data::feature name_of_feature()
       {

@@ -150,30 +150,26 @@ namespace metashell
     {
     }
 
-    void which::code_complete(data::command::const_iterator begin_,
-                              data::command::const_iterator end_,
-                              iface::main_shell& shell_,
-                              data::code_completion& out_) const
+    data::code_completion
+    which::code_complete(data::command::const_iterator begin_,
+                         data::command::const_iterator end_,
+                         iface::main_shell& shell_) const
     {
       using data::token_type;
 
       if (begin_ == end_)
       {
-        out_.insert(data::user_input{" -all <"});
-        out_.insert(data::user_input{" -all \""});
-        out_.insert(data::user_input{" <"});
-        out_.insert(data::user_input{" \""});
-        return;
+        return data::code_completion{
+            data::user_input{" -all <"}, data::user_input{" -all \""},
+            data::user_input{" <"}, data::user_input{" \""}};
       }
 
       auto beg = skip_all_whitespace(begin_, end_);
       if (beg == end_)
       {
-        out_.insert(data::user_input{"-all <"});
-        out_.insert(data::user_input{"-all \""});
-        out_.insert(data::user_input{"<"});
-        out_.insert(data::user_input{"\""});
-        return;
+        return data::code_completion{
+            data::user_input{"-all <"}, data::user_input{"-all \""},
+            data::user_input{"<"}, data::user_input{"\""}};
       }
 
       if (type_of(*beg) == token_type::operator_minus)
@@ -181,9 +177,8 @@ namespace metashell
         ++beg;
         if (beg == end_)
         {
-          out_.insert(data::user_input{"all <"});
-          out_.insert(data::user_input{"all \""});
-          return;
+          return data::code_completion{
+              data::user_input{"all <"}, data::user_input{"all \""}};
         }
 
         if (type_of(*beg) == token_type::identifier)
@@ -196,29 +191,31 @@ namespace metashell
             if (boost::algorithm::starts_with(all, val))
             {
               const std::string ext = all.substr(val.size());
-              out_.insert(data::user_input{ext + " <"});
-              out_.insert(data::user_input{ext + " \""});
+              return data::code_completion{
+                  data::user_input{ext + " <"}, data::user_input{ext + " \""}};
             }
-            return;
+            else
+            {
+              return data::code_completion{};
+            }
           }
 
           if (val != all)
           {
-            return;
+            return data::code_completion{};
           }
         }
 
         beg = skip_all_whitespace(beg, end_);
         if (beg == end_)
         {
-          out_.insert(data::user_input{"<"});
-          out_.insert(data::user_input{"\""});
-          return;
+          return data::code_completion{
+              data::user_input{"<"}, data::user_input{"\""}};
         }
       }
 
-      core::code_complete::include(
-          beg, end_, shell_.engine().header_discoverer(), out_);
+      return core::code_complete::include(
+          beg, end_, shell_.engine().header_discoverer());
     }
 
     std::ostream& operator<<(std::ostream& out_,

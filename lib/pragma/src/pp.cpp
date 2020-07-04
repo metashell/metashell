@@ -38,13 +38,13 @@ namespace metashell
           displayer_, tokens_to_string(args_begin_, args_end_), false);
     }
 
-    void pp::code_complete(data::command::const_iterator begin_,
-                           data::command::const_iterator end_,
-                           iface::main_shell& shell_,
-                           data::code_completion& out_) const
+    data::code_completion
+    pp::code_complete(data::command::const_iterator begin_,
+                      data::command::const_iterator end_,
+                      iface::main_shell& shell_) const
     {
-      shell_.code_complete(
-          data::user_input{data::join_tokens(begin_, end_)}, false, out_);
+      return shell_.code_complete(
+          data::user_input{data::join_tokens(begin_, end_)}, false);
     }
   }
 }

@@ -98,13 +98,16 @@ namespace metashell
           to_string(_flag) + " is " + (shell_.enabled(_flag) ? "on" : "off")));
     }
 
-    void switch_::code_complete(data::command::const_iterator begin_,
-                                data::command::const_iterator end_,
-                                iface::main_shell&,
-                                data::code_completion& out_) const
+    data::code_completion
+    switch_::code_complete(data::command::const_iterator begin_,
+                           data::command::const_iterator end_,
+                           iface::main_shell&) const
     {
-      core::code_complete::fixed_values(begin_, end_, true_values, out_);
-      core::code_complete::fixed_values(begin_, end_, false_values, out_);
+      data::code_completion result =
+          core::code_complete::fixed_values(begin_, end_, true_values);
+      result.insert(
+          core::code_complete::fixed_values(begin_, end_, false_values));
+      return result;
     }
   }
 }
