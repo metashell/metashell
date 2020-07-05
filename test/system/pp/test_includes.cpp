@@ -144,7 +144,7 @@ TEST(includes, tests)
   }
 }
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__APPLE__)
 TEST(includes, sysroot)
 {
   just::temp::directory tmp_dir;
