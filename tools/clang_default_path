@@ -68,7 +68,8 @@ def get_standard_gcc_includes(gcc):
                 elif line.startswith('#include <'):
                     current = sysincludes
             else:
-                if line.startswith(' '):
+                # Apple Clang has framework directories mixed in with includes
+                if line.startswith(' ') and not line.endswith(' (framework directory)'):
                     current.append(line.strip())
                 else:
                     current = None

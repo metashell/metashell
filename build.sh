@@ -69,6 +69,10 @@ then
   then
     # The default Templight include path seems to be empty on Tumbleweed
     C_INCLUDE_DIRS="-DC_INCLUDE_DIRS=$(tools/clang_default_path --gcc g++ -f shell)"
+  elif [ "${PLATFORM}" = "osx" ]
+  then
+    # osx has the standard headers within XCode's installation directory
+    C_INCLUDE_DIRS="-DC_INCLUDE_DIRS=$(tools/clang_default_path --gcc clang++ -f shell)"
   else
     C_INCLUDE_DIRS=""
   fi
