@@ -31,11 +31,10 @@
 #include <metashell/iface/pragma_handler.hpp>
 
 #include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
 
 #include <map>
 #include <memory>
-#include <set>
+#include <optional>
 #include <stack>
 #include <string>
 
@@ -51,6 +50,7 @@ namespace metashell
             const boost::filesystem::path& env_filename_,
             std::function<std::unique_ptr<iface::engine>(
                 const data::shell_config&)> engine_builder_,
+            std::vector<data::real_engine_name> available_engines_ = {},
             std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>
                 pragma_handlers_ = {},
             core::logger* logger_ = nullptr,
@@ -75,8 +75,9 @@ namespace metashell
       void run_metaprogram(const data::cpp_code& s_,
                            iface::displayer& displayer_) override;
 
-      virtual void code_complete(const data::user_input& s_,
-                                 std::set<data::user_input>& out_) override;
+      virtual data::code_completion
+      code_complete(const data::user_input& s_,
+                    bool metashell_extensions_) override;
 
       const std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>&
       pragma_handlers() const override;
@@ -99,6 +100,9 @@ namespace metashell
 
       iface::engine& engine() override;
       void switch_to(const data::real_engine_name&) override;
+
+      const std::vector<data::real_engine_name>&
+      available_engines() const override;
 
       boost::filesystem::path env_path() const override;
 
@@ -125,6 +129,7 @@ namespace metashell
           _engine_builder;
       std::map<data::shell_config_name, std::unique_ptr<iface::engine>>
           _engines;
+      std::vector<data::real_engine_name> _available_engines;
       bool _echo = false;
       bool _show_cpp_errors = true;
       bool _evaluate_metaprograms = true;

@@ -26,9 +26,10 @@
 #include <metashell/data/token_category.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/optional.hpp>
 #include <boost/range/adaptor/sliced.hpp>
 #include <boost/range/adaptor/transformed.hpp>
+
+#include <optional>
 
 namespace metashell
 {
@@ -38,8 +39,8 @@ namespace metashell
     {
       namespace
       {
-        boost::optional<std::string> remove_prefix(const std::string& s_,
-                                                   const std::string& prefix_)
+        std::optional<std::string> remove_prefix(const std::string& s_,
+                                                 const std::string& prefix_)
         {
           if (boost::starts_with(s_, prefix_))
           {
@@ -47,11 +48,11 @@ namespace metashell
           }
           else
           {
-            return boost::none;
+            return std::nullopt;
           }
         }
 
-        boost::optional<data::cpp_code> parse_completion(std::string line_)
+        std::optional<data::cpp_code> parse_completion(std::string line_)
         {
           if (const auto without_completion =
                   remove_prefix(line_, "COMPLETION: "))
@@ -74,7 +75,7 @@ namespace metashell
           }
           else
           {
-            return boost::none;
+            return std::nullopt;
           }
         }
 
@@ -126,10 +127,10 @@ namespace metashell
       {
       }
 
-      void code_completer::code_complete(const iface::environment& env_,
-                                         const data::user_input& src_,
-                                         std::set<data::user_input>& out_,
-                                         bool use_precompiled_headers_)
+      data::code_completion
+      code_completer::code_complete(const iface::environment& env_,
+                                    const data::user_input& src_,
+                                    bool use_precompiled_headers_)
       {
         using boost::starts_with;
 
@@ -166,19 +167,20 @@ namespace metashell
         METASHELL_LOG(_logger, "Exit code of clang: " + to_string(o.status));
 
         const std::string out = o.standard_output;
-        out_.clear();
         const auto prefix_len = size(completion_start.second);
-        core::for_each_line(out, [&out_, &completion_start,
+        data::code_completion result;
+        core::for_each_line(out, [&result, &completion_start,
                                   prefix_len](const std::string& line_) {
           if (const auto comp = parse_completion(line_))
           {
             if (starts_with(*comp, completion_start.second) &&
                 *comp != completion_start.second)
             {
-              out_.insert(data::user_input(substr(*comp, prefix_len)));
+              result.insert(data::user_input{substr(*comp, prefix_len)});
             }
           }
         });
+        return result;
       }
     }
   }

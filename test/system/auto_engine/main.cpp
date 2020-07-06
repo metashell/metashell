@@ -66,7 +66,7 @@ int main(int argc_, char* argv_[])
 
     test.test_engine_selection({}, std::string("internal"));
     test.test_engine_selection({"-I."}, std::string("internal"));
-    test.test_engine_selection({"asd"}, boost::none);
+    test.test_engine_selection({"asd"}, std::nullopt);
 
     for (const std::string engine : {"clang", "gcc", "msvc", "templight"})
     {

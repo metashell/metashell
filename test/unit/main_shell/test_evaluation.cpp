@@ -210,7 +210,7 @@ TEST(evaluation, throwing_environment_update_not_breaking_shell)
 
   auto e = new NiceMock<mock::environment>();
   core::in_memory_displayer d;
-  main_shell::shell sh(cfg, "", "", engine::constant::create_failing(), {},
+  main_shell::shell sh(cfg, "", "", engine::constant::create_failing(), {}, {},
                        nullptr, std::unique_ptr<iface::environment>(e));
   ON_CALL(*e, append(_)).WillByDefault(Throw(std::runtime_error("some error")));
 

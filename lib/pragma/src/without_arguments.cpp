@@ -41,5 +41,14 @@ namespace metashell
             tokens_to_string(args_begin_, args_end_).value());
       }
     }
+
+    data::code_completion
+    without_arguments::code_complete(data::command::const_iterator begin_,
+                                     data::command::const_iterator end_,
+                                     iface::main_shell&) const
+    {
+      return begin_ == end_ ? data::code_completion{data::user_input{}} :
+                              data::code_completion{};
+    }
   }
 }

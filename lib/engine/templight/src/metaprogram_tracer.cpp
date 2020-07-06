@@ -31,15 +31,15 @@ namespace metashell
       {
         data::type_or_code_or_error
         run_metaprogram(clang::binary& clang_binary_,
-                        const boost::optional<data::cpp_code>& expression_,
+                        const std::optional<data::cpp_code>& expression_,
                         const boost::filesystem::path& output_path_,
                         iface::environment& env_,
                         iface::displayer& displayer_)
         {
           using data::type_or_code_or_error;
 
-          const data::result res =
-              eval(env_, expression_, boost::none, output_path_, clang_binary_);
+          const data::result res = eval(
+              env_, expression_, std::nullopt, output_path_, clang_binary_);
 
           if (!res.info.empty())
           {
@@ -66,12 +66,12 @@ namespace metashell
       {
       }
 
-      std::unique_ptr<iface::event_data_sequence> metaprogram_tracer::eval(
-          iface::environment& env_,
-          const boost::filesystem::path& temp_dir_,
-          const boost::optional<data::cpp_code>& expression_,
-          data::metaprogram_mode mode_,
-          iface::displayer& displayer_)
+      std::unique_ptr<iface::event_data_sequence>
+      metaprogram_tracer::eval(iface::environment& env_,
+                               const boost::filesystem::path& temp_dir_,
+                               const std::optional<data::cpp_code>& expression_,
+                               data::metaprogram_mode mode_,
+                               iface::displayer& displayer_)
       {
         const boost::filesystem::path output_path = temp_dir_ / "templight.pb";
 

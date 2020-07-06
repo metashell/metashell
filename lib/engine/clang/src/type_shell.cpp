@@ -38,15 +38,15 @@ namespace metashell
 
       data::result
       type_shell::eval(const iface::environment& env_,
-                       const boost::optional<data::cpp_code>& tmp_exp_,
+                       const std::optional<data::cpp_code>& tmp_exp_,
                        bool use_precompiled_headers_)
       {
         return clang::eval(
             env_, tmp_exp_,
             use_precompiled_headers_ ?
-                boost::optional<boost::filesystem::path>(_env_path) :
-                boost::none,
-            boost::none, _binary);
+                std::optional<boost::filesystem::path>(_env_path) :
+                std::nullopt,
+            std::nullopt, _binary);
       }
 
       void type_shell::generate_precompiled_header(

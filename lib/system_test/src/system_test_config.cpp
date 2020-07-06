@@ -16,9 +16,8 @@
 
 #include <metashell/system_test/system_test_config.hpp>
 
-#include <boost/optional.hpp>
-
 #include <cassert>
+#include <optional>
 
 namespace metashell
 {
@@ -26,7 +25,7 @@ namespace metashell
   {
     namespace
     {
-      boost::optional<data::executable_path> metashell_binary_path;
+      std::optional<data::executable_path> metashell_binary_path;
       data::command_line_argument_list metashell_args_impl;
       data::command_line_argument_list engine_args_impl;
     }

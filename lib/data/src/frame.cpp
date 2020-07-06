@@ -29,7 +29,7 @@ namespace metashell
     {
       file_location source_location_of(const event_data& event_)
       {
-        if (boost::optional<file_location> l = source_location(event_))
+        if (std::optional<file_location> l = source_location(event_))
         {
           return *l;
         }
@@ -42,7 +42,7 @@ namespace metashell
 
       file_location point_of_event_of(const event_data& event_)
       {
-        if (boost::optional<file_location> p = point_of_event(event_))
+        if (std::optional<file_location> p = point_of_event(event_))
         {
           return *p;
         }
@@ -59,7 +59,7 @@ namespace metashell
     }
 
     frame::frame(bool flat_,
-                 boost::optional<double> running_at_,
+                 std::optional<double> running_at_,
                  const metaprogram_node& node_,
                  const file_location& source_location_)
       : _node(node_),
@@ -71,7 +71,7 @@ namespace metashell
     }
 
     frame::frame(bool flat_,
-                 boost::optional<double> running_at_,
+                 std::optional<double> running_at_,
                  const metaprogram_node& node_,
                  const file_location& source_location_,
                  const file_location& point_of_event_,
@@ -91,14 +91,14 @@ namespace metashell
         _source_location(source_location_of(event_)),
         _point_of_event((mode_ == metaprogram_mode::normal ||
                          mode_ == metaprogram_mode::profile) ?
-                            boost::make_optional(point_of_event_of(event_)) :
-                            boost::none),
+                            std::make_optional(point_of_event_of(event_)) :
+                            std::nullopt),
         _kind((mode_ == metaprogram_mode::normal ||
                mode_ == metaprogram_mode::profile) ?
-                  boost::make_optional(kind_of(event_)) :
-                  boost::none),
+                  std::make_optional(kind_of(event_)) :
+                  std::nullopt),
         _started_at(mode_ == metaprogram_mode::profile ? timestamp(event_) :
-                                                         boost::none),
+                                                         std::nullopt),
         _finished_at(_started_at),
         _flat(relative_depth_of(event_) == relative_depth::flat)
     {
@@ -129,14 +129,14 @@ namespace metashell
       return *_point_of_event;
     }
 
-    boost::optional<double> frame::time_taken() const
+    std::optional<double> frame::time_taken() const
     {
       return (_finished_at && _started_at) ?
-                 boost::make_optional(*_finished_at - *_started_at) :
-                 boost::none;
+                 std::make_optional(*_finished_at - *_started_at) :
+                 std::nullopt;
     }
 
-    boost::optional<double> frame::time_taken_ratio() const
+    std::optional<double> frame::time_taken_ratio() const
     {
       return _time_taken_ratio;
     }
@@ -145,7 +145,7 @@ namespace metashell
 
     void frame::add_child() { ++_number_of_children; }
 
-    boost::optional<int> frame::number_of_children() const
+    std::optional<int> frame::number_of_children() const
     {
       return *_number_of_children;
     }

@@ -21,6 +21,8 @@
 
 #include <metashell/data/mdb_usage.hpp>
 
+#include <boost/algorithm/string/predicate.hpp>
+
 #include <cassert>
 
 namespace metashell
@@ -95,6 +97,111 @@ namespace metashell
       }
 
       _cpq->push(move(sh), move(restore));
+    }
+
+    data::code_completion
+    mdb::code_complete(data::command::const_iterator begin_,
+                       data::command::const_iterator end_,
+                       iface::main_shell& shell_) const
+    {
+      using data::token_type;
+      using data::token_category;
+
+      std::set<std::string> allowed{"", "profile", "nocache"};
+      if (!_preprocessor)
+      {
+        allowed.insert("full");
+      }
+
+      if (begin_ == end_)
+      {
+        data::code_completion result;
+        for (const std::string& all : allowed)
+        {
+          result.insert(data::user_input{" -" + all});
+        }
+        return result;
+      }
+
+      auto beg = skip_all_whitespace(begin_, end_);
+      if (beg == end_)
+      {
+        data::code_completion result;
+        for (const std::string& all : allowed)
+        {
+          result.insert(data::user_input{"-" + all});
+        }
+        return result;
+      }
+
+      while (beg != end_ && type_of(*beg) == token_type::operator_minus &&
+             !allowed.empty())
+      {
+        const auto dash_at = beg;
+
+        ++beg;
+        if (beg == end_)
+        {
+          data::code_completion result;
+          for (const std::string& all : allowed)
+          {
+            result.insert(data::user_input{all});
+          }
+          return result;
+        }
+
+        if (type_of(*beg) == token_type::identifier)
+        {
+          const std::string val = to_string(value(*beg));
+          ++beg;
+          if (beg == end_)
+          {
+            for (const std::string& all : allowed)
+            {
+              if (boost::algorithm::starts_with(all, val))
+              {
+                return data::code_completion{
+                    data::user_input{all.substr(val.size())}};
+              }
+            }
+          }
+          else if (allowed.find(val) == allowed.end())
+          {
+            beg = dash_at;
+            break;
+          }
+          else if (val == "profile" || (val == "full" && !_preprocessor))
+          {
+            allowed.erase("profile");
+            allowed.erase("full");
+          }
+          else
+          {
+            allowed.erase(val);
+          }
+        }
+        else if (category(*beg) == token_category::whitespace)
+        {
+          return data::code_completion{};
+        }
+        else
+        {
+          beg = dash_at;
+          break;
+        }
+
+        beg = skip_whitespace(beg, end_);
+      }
+
+      if (skip_whitespace(beg, end_) == end_)
+      {
+        return data::code_completion{};
+      }
+      else
+      {
+        return shell_.code_complete(
+            data::user_input{data::join_tokens(beg, end_)}, false);
+      }
     }
   }
 }

@@ -22,7 +22,7 @@
 #include <metashell/data/frame_stack.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
 
-#include <boost/optional.hpp>
+#include <optional>
 
 namespace metashell
 {
@@ -37,7 +37,7 @@ namespace metashell
 
       void add_event(data::debugger_event event_,
                      data::relative_depth rdepth_,
-                     const boost::optional<double>& timestamp_);
+                     const std::optional<double>& timestamp_);
 
       const data::debugger_event& operator[](size_type n_) const;
 

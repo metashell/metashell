@@ -16,10 +16,9 @@
 
 #include <metashell/data/file_location.hpp>
 
-#include <boost/optional.hpp>
-
 #include <cassert>
 #include <cctype>
+#include <optional>
 #include <sstream>
 #include <tuple>
 
@@ -40,23 +39,23 @@ namespace
                        [](char c_) { return std::isdigit(c_); });
   }
 
-  boost::optional<number_at_end> parse_last_number(const std::string& s_,
-                                                   std::size_t from_)
+  std::optional<number_at_end> parse_last_number(const std::string& s_,
+                                                 std::size_t from_)
   {
     assert(from_ != std::string::npos);
 
     if (from_ == 0)
     {
-      return boost::none;
+      return std::nullopt;
     }
     else
     {
       const auto colon = s_.rfind(':', from_ - 1);
       return is_number(s_, colon, from_) ?
-                 boost::make_optional(number_at_end{
+                 std::make_optional(number_at_end{
                      std::stoi(s_.substr(colon + 1, from_ - colon - 1)),
                      colon}) :
-                 boost::none;
+                 std::nullopt;
     }
   }
 }
@@ -120,14 +119,14 @@ namespace metashell
       return ss.str();
     }
 
-    boost::optional<file_location>
+    std::optional<file_location>
     determine_from_line(const cpp_code& env,
-                        const boost::optional<cpp_code>& expression,
+                        const std::optional<cpp_code>& expression,
                         const std::string& stdin_name)
     {
-      return expression ? boost::make_optional(
+      return expression ? std::make_optional(
                               file_location{stdin_name, lines_in(env) + 1, 1}) :
-                          boost::none;
+                          std::nullopt;
     }
   }
 }

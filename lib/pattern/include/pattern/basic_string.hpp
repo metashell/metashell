@@ -20,10 +20,9 @@
 #include <pattern/basic_regex.hpp>
 #include <pattern/placeholder.hpp>
 
-#include <boost/optional.hpp>
-
 #include <variant.hpp>
 
+#include <optional>
 #include <regex>
 #include <string>
 
@@ -76,7 +75,7 @@ namespace pattern
       }
     }
 
-    boost::optional<std::basic_string<CharT>> value() const
+    std::optional<std::basic_string<CharT>> value() const
     {
       if (const std::basic_string<CharT>* p =
               mpark::get_if<std::basic_string<CharT>>(&_pattern))
@@ -88,7 +87,7 @@ namespace pattern
       {
         if (re->value().empty())
         {
-          return boost::none;
+          return std::nullopt;
         }
         else
         {
@@ -97,7 +96,7 @@ namespace pattern
       }
       else
       {
-        return boost::none;
+        return std::nullopt;
       }
     }
 

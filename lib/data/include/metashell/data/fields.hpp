@@ -23,9 +23,8 @@
 #include <boost/preprocessor/seq/for_each_i.hpp>
 #include <boost/preprocessor/tuple/elem.hpp>
 
-#include <boost/optional.hpp>
-
 #include <iostream>
+#include <optional>
 #include <tuple>
 #include <vector>
 
@@ -62,7 +61,7 @@ namespace metashell
       }
 
       template <class T>
-      void display(std::ostream& out_, const boost::optional<T>& t_)
+      void display(std::ostream& out_, const std::optional<T>& t_)
       {
         if (t_)
         {

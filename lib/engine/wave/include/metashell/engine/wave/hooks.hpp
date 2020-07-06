@@ -25,7 +25,6 @@
 #include <metashell/data/include_argument.hpp>
 #include <metashell/data/token.hpp>
 
-#include <boost/optional.hpp>
 #include <boost/wave.hpp>
 
 #include <boost/filesystem/path.hpp>
@@ -34,6 +33,7 @@
 #include <cassert>
 #include <functional>
 #include <iterator>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <vector>
@@ -53,7 +53,7 @@ namespace metashell
         boost::filesystem::path env_path;
 
         std::function<void(const data::cpp_code&,
-                           const boost::optional<std::vector<data::cpp_code>>&,
+                           const std::optional<std::vector<data::cpp_code>>&,
                            const data::file_location&,
                            const data::file_location&)>
             on_macro_expansion_begin;
@@ -72,7 +72,7 @@ namespace metashell
         std::function<void()> on_include_end;
 
         std::function<void(data::cpp_code,
-                           boost::optional<std::vector<data::cpp_code>>,
+                           std::optional<std::vector<data::cpp_code>>,
                            data::cpp_code,
                            data::file_location)>
             on_define;
@@ -176,7 +176,7 @@ namespace metashell
             const auto source_location = to_file_location(macrodef_);
             trigger_event([this, name, point_of_event, source_location] {
               this->on_macro_expansion_begin(
-                  name, boost::none, point_of_event, source_location);
+                  name, std::nullopt, point_of_event, source_location);
             });
           }
           return false;
@@ -257,7 +257,7 @@ namespace metashell
         {
           if (on_define)
           {
-            boost::optional<std::vector<data::cpp_code>> args;
+            std::optional<std::vector<data::cpp_code>> args;
             if (is_functionlike_)
             {
               args = std::vector<data::cpp_code>();
@@ -349,7 +349,7 @@ namespace metashell
       private:
         std::set<boost::filesystem::path>* _included_files;
         data::file_location _last_directive_location;
-        boost::optional<std::vector<std::function<void()>>> _event_queue;
+        std::optional<std::vector<std::function<void()>>> _event_queue;
         data::counter _include_depth;
 
         template <class String>
@@ -425,7 +425,7 @@ namespace metashell
             {
               event();
             }
-            _event_queue = boost::none;
+            _event_queue = std::nullopt;
           }
         }
       };

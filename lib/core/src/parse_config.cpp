@@ -26,7 +26,6 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -38,6 +37,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -125,7 +125,7 @@ namespace metashell
                                 const std::string& suggestion_,
                                 const std::string& msg_)
           : _long_form(long_form_),
-            _short_form(boost::none),
+            _short_form(std::nullopt),
             _type(type_),
             _suggestion(suggestion_),
             _msg(msg_)
@@ -133,12 +133,12 @@ namespace metashell
         }
 
         decommissioned_argument(const std::string& long_form_, type type_)
-          : _long_form(long_form_), _short_form(boost::none), _type(type_)
+          : _long_form(long_form_), _short_form(std::nullopt), _type(type_)
         {
         }
 
         decommissioned_argument(char short_form_, type type_)
-          : _long_form(boost::none),
+          : _long_form(std::nullopt),
             _short_form(std::string(1, short_form_)),
             _type(type_)
         {
@@ -182,8 +182,8 @@ namespace metashell
         }
 
       private:
-        boost::optional<std::string> _long_form;
-        boost::optional<std::string> _short_form;
+        std::optional<std::string> _long_form;
+        std::optional<std::string> _short_form;
         type _type;
 
         std::string _ignore;
@@ -200,7 +200,7 @@ namespace metashell
           const boost::program_options::variables_map& vm_,
           const char** extra_args_begin_,
           const char** extra_args_end_,
-          const boost::optional<data::engine_name>& engine_)
+          const std::optional<data::engine_name>& engine_)
       {
         data::shell_config result(
             data::shell_config_name("default"), data::shell_config_data());
@@ -387,8 +387,8 @@ namespace metashell
         const auto default_shell_config = parse_default_shell_config(
             vm, extra_args_begin, args_end,
             vm.count("engine") ?
-                boost::make_optional(data::parse_engine_name(engine)) :
-                boost::none);
+                std::make_optional(data::parse_engine_name(engine)) :
+                std::nullopt);
 
         cfg.push_back(default_shell_config);
 

@@ -44,7 +44,7 @@ namespace metashell
     }
 
     file_location::file_location(const json_string& s_)
-      : _filename(boost::none), _row(boost::none), _column(boost::none)
+      : _filename(std::nullopt), _row(std::nullopt), _column(std::nullopt)
     {
       rapidjson::Document d;
       d.Parse(s_.get().c_str());
@@ -74,7 +74,7 @@ namespace metashell
 
     bool file_location::filename_specified() const
     {
-      return _filename != boost::none;
+      return _filename != std::nullopt;
     }
 
     const boost::filesystem::path& file_location::filename() const
@@ -83,7 +83,7 @@ namespace metashell
       return *_filename;
     }
 
-    bool file_location::row_specified() const { return _row != boost::none; }
+    bool file_location::row_specified() const { return _row != std::nullopt; }
 
     int file_location::row() const
     {
@@ -93,7 +93,7 @@ namespace metashell
 
     bool file_location::column_specified() const
     {
-      return _column != boost::none;
+      return _column != std::nullopt;
     }
 
     int file_location::column() const

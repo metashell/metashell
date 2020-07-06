@@ -36,16 +36,16 @@ namespace metashell
       _final = true;
     }
 
-    boost::optional<int> finalisable_counter::operator*() const
+    std::optional<int> finalisable_counter::operator*() const
     {
-      return _final ? boost::make_optional(_value) : boost::none;
+      return _final ? std::make_optional(_value) : std::nullopt;
     }
 
     int finalisable_counter::current_value() const { return _value; }
 
     std::string to_string(const finalisable_counter& c_)
     {
-      if (const boost::optional<int> v = *c_)
+      if (const std::optional<int> v = *c_)
       {
         return std::to_string(*v) + " (final)";
       }

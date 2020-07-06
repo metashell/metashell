@@ -28,8 +28,5 @@ target_link_libraries(
   ${PROJECT_NAME}
 
   INTERFACE
-
-    boost::optional
-
     mpark::variant
 )

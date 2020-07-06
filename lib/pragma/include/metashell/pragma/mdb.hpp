@@ -48,6 +48,10 @@ namespace metashell
                iface::main_shell& shell_,
                iface::displayer& displayer_) const override;
 
+      data::code_completion code_complete(data::command::const_iterator,
+                                          data::command::const_iterator,
+                                          iface::main_shell&) const override;
+
     private:
       bool _preprocessor;
       core::command_processor_queue* _cpq;

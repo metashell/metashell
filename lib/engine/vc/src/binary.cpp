@@ -22,12 +22,12 @@
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/optional.hpp>
 
 #include <just/lines.hpp>
 
 #include <algorithm>
 #include <fstream>
+#include <optional>
 #include <regex>
 #include <sstream>
 
@@ -54,8 +54,8 @@ namespace metashell
           }
         }
 
-        boost::optional<std::string>
-        output_line_of(const std::string& filename_, const std::string& line_)
+        std::optional<std::string> output_line_of(const std::string& filename_,
+                                                  const std::string& line_)
         {
           const std::regex error_report("^\\([0-9]+\\): ");
 
@@ -73,7 +73,7 @@ namespace metashell
               }
             }
           }
-          return boost::none;
+          return std::nullopt;
         }
 
         template <class LineIt>
@@ -99,7 +99,7 @@ namespace metashell
                                         ", " + *i + ") in Visual C++ output.");
                 }
               }
-              else if (const boost::optional<std::string> l =
+              else if (const std::optional<std::string> l =
                            output_line_of(filename, *i))
               {
                 o << *l;

@@ -22,11 +22,10 @@
 #include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/data/type_or_code_or_error.hpp>
 
-#include <boost/optional.hpp>
-
 #include <yaml-cpp/node/node.h>
 #include <yaml-cpp/yaml.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -44,7 +43,7 @@ namespace metashell
                    data::cpp_code root_name_,
                    data::metaprogram_mode mode_);
 
-        boost::optional<data::event_data> next();
+        std::optional<data::event_data> next();
 
         const data::cpp_code& root_name() const;
 
@@ -53,7 +52,7 @@ namespace metashell
       private:
         std::vector<YAML::Node> _nodes;
         std::vector<YAML::Node>::const_iterator _next;
-        boost::optional<data::event_data> _evaluation_result;
+        std::optional<data::event_data> _evaluation_result;
         data::cpp_code _root_name;
         data::metaprogram_mode _mode;
       };

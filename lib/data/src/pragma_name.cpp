@@ -41,6 +41,11 @@ namespace metashell
       return _tokens;
     }
 
+    void pragma_name::push_back(identifier element_)
+    {
+      _tokens.push_back(std::move(element_));
+    }
+
     bool operator<(const pragma_name& lhs_, const pragma_name& rhs_)
     {
       return lhs_.tokens() < rhs_.tokens();
@@ -61,7 +66,7 @@ namespace metashell
       return out_ << to_string(n_);
     }
 
-    boost::optional<command::iterator>
+    std::optional<command::iterator>
     is_this_pragma(const pragma_name& name_,
                    command::iterator begin_,
                    const command::iterator& end_)
@@ -70,14 +75,14 @@ namespace metashell
       {
         if (begin_ == end_ || value(*begin_) != value(token))
         {
-          return boost::none;
+          return std::nullopt;
         }
         else
         {
           begin_ = skip_whitespace(skip(begin_), end_);
         }
       }
-      return boost::make_optional(begin_);
+      return std::make_optional(begin_);
     }
   }
 }

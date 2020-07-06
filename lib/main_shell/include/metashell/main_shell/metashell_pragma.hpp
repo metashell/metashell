@@ -19,15 +19,14 @@
 
 #include <metashell/data/command.hpp>
 
-#include <boost/optional.hpp>
-
+#include <optional>
 #include <string>
 
 namespace metashell
 {
   namespace main_shell
   {
-    boost::optional<data::command::iterator>
+    std::optional<data::command::iterator>
     parse_pragma(const data::command& cmd_);
 
     data::command::iterator

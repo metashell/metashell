@@ -40,7 +40,7 @@ namespace metashell
       namespace
       {
         std::vector<boost::filesystem::path>
-        prefix_all(const boost::optional<boost::filesystem::path>& prefix_,
+        prefix_all(const std::optional<boost::filesystem::path>& prefix_,
                    std::vector<boost::filesystem::path> items_)
         {
           if (prefix_)

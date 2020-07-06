@@ -30,23 +30,23 @@ namespace metashell
     frame::frame(const type& name_) : _name(name_) {}
 
     frame::frame(const json_string& s_)
-      : _name(boost::none),
-        _source_location(boost::none),
-        _point_of_event(boost::none),
-        _kind(boost::none)
+      : _name(std::nullopt),
+        _source_location(std::nullopt),
+        _point_of_event(std::nullopt),
+        _kind(std::nullopt)
     {
       rapidjson::Document d;
       d.Parse(s_.get().c_str());
       init(d, true);
     }
 
-    bool frame::has_name() const { return _name != boost::none; }
+    bool frame::has_name() const { return _name != std::nullopt; }
 
     const type& frame::name() const { return *_name; }
 
     bool frame::has_source_location() const
     {
-      return _source_location != boost::none;
+      return _source_location != std::nullopt;
     }
 
     const file_location& frame::source_location() const
@@ -56,7 +56,7 @@ namespace metashell
 
     bool frame::has_point_of_event() const
     {
-      return _point_of_event != boost::none;
+      return _point_of_event != std::nullopt;
     }
 
     const file_location& frame::point_of_event() const
@@ -64,7 +64,7 @@ namespace metashell
       return *_point_of_event;
     }
 
-    bool frame::has_kind() const { return _kind != boost::none; }
+    bool frame::has_kind() const { return _kind != std::nullopt; }
 
     event_kind frame::kind() const
     {

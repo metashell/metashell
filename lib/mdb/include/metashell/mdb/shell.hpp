@@ -32,8 +32,7 @@
 
 #include <metashell/data/mdb_command.hpp>
 
-#include <boost/optional.hpp>
-
+#include <optional>
 #include <string>
 
 namespace metashell
@@ -88,8 +87,9 @@ namespace metashell
       void command_quit(const data::mdb_command::arguments_type& arg,
                         iface::displayer& displayer_);
 
-      virtual void code_complete(const data::user_input& s_,
-                                 std::set<data::user_input>& out_) override;
+      virtual data::code_completion
+      code_complete(const data::user_input& s_,
+                    bool metashell_extensions_) override;
 
       static command_handler_map build_command_handler(bool preprocessor_);
 
@@ -101,7 +101,7 @@ namespace metashell
       bool require_running_or_errored_metaprogram(iface::displayer& displayer_);
 
       bool run_metaprogram_with_templight(
-          const boost::optional<data::cpp_code>& expression,
+          const std::optional<data::cpp_code>& expression,
           data::metaprogram_mode mode,
           bool caching_enabled,
           iface::displayer& displayer_);
@@ -115,7 +115,7 @@ namespace metashell
       void display_frame(const data::frame& frame,
                          iface::displayer& displayer_) const;
       void display_current_frame(iface::displayer& displayer_) const;
-      void display_current_forwardtrace(boost::optional<int> max_depth,
+      void display_current_forwardtrace(std::optional<int> max_depth,
                                         iface::displayer& displayer_);
       void display_backtrace(iface::displayer& displayer_);
       void display_metaprogram_reached_the_beginning(
@@ -123,22 +123,22 @@ namespace metashell
       void display_metaprogram_finished(iface::displayer& displayer_);
       void display_movement_info(bool moved, iface::displayer& displayer_);
 
-      boost::optional<data::mdb_command>
+      std::optional<data::mdb_command>
       command_to_execute(const data::user_input&, iface::history&);
 
       iface::environment& env;
 
-      boost::optional<metaprogram> mp;
+      std::optional<metaprogram> mp;
 
       int next_breakpoint_id = 1;
       breakpoints_t breakpoints;
 
-      boost::optional<data::mdb_command> prev_line;
+      std::optional<data::mdb_command> prev_line;
       bool last_command_repeatable = false;
 
       // It is empty if evaluate was called with "-".
       // mp is empty when there were no evaluations at all
-      boost::optional<data::cpp_code> last_evaluated_expression;
+      std::optional<data::cpp_code> last_evaluated_expression;
 
       bool is_stopped = false;
       core::logger* _logger;

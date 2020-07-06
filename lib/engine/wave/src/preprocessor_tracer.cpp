@@ -37,7 +37,7 @@ namespace metashell
 
       std::unique_ptr<iface::event_data_sequence>
       preprocessor_tracer::eval(iface::environment& env_,
-                                const boost::optional<data::cpp_code>& exp_,
+                                const std::optional<data::cpp_code>& exp_,
                                 data::metaprogram_mode mode_)
       {
         return core::filter_events(

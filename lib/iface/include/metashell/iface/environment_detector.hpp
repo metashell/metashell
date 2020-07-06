@@ -20,7 +20,8 @@
 #include <metashell/data/executable_path.hpp>
 
 #include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
+
+#include <optional>
 
 namespace metashell
 {
@@ -31,7 +32,7 @@ namespace metashell
     public:
       virtual ~environment_detector() {}
 
-      virtual boost::optional<data::executable_path> search_clang_binary() = 0;
+      virtual std::optional<data::executable_path> search_clang_binary() = 0;
       virtual bool file_exists(const boost::filesystem::path& path_) = 0;
 
       bool file_exists(const data::executable_path& exe_)

@@ -27,7 +27,7 @@ namespace metashell
     {
       namespace
       {
-        boost::optional<data::event_kind>
+        std::optional<data::event_kind>
         instantiation_kind_from_yaml_dump(const std::string& s_)
         {
           using data::event_kind;
@@ -78,7 +78,7 @@ namespace metashell
           }
           else
           {
-            return boost::none;
+            return std::nullopt;
           }
         }
       }
@@ -97,9 +97,9 @@ namespace metashell
       {
       }
 
-      boost::optional<data::event_data> yaml_trace::next()
+      std::optional<data::event_data> yaml_trace::next()
       {
-        boost::optional<data::event_data> result;
+        std::optional<data::event_data> result;
 
         if (_next != _nodes.end())
         {
@@ -142,7 +142,7 @@ namespace metashell
         else if (_evaluation_result)
         {
           result = *_evaluation_result;
-          _evaluation_result = boost::none;
+          _evaluation_result = std::nullopt;
         }
 
         return result;

@@ -22,12 +22,12 @@ string_reader::string_reader(
 {
 }
 
-boost::optional<metashell::data::user_input> string_reader::
+std::optional<metashell::data::user_input> string_reader::
 operator()(const std::string&)
 {
   if (_next == _strings.size())
   {
-    return boost::none;
+    return std::nullopt;
   }
   else
   {

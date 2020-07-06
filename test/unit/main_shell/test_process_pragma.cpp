@@ -49,6 +49,13 @@ namespace
       _run_flag = true;
     }
 
+    data::code_completion code_complete(data::command::const_iterator,
+                                        data::command::const_iterator,
+                                        iface::main_shell&) const override
+    {
+      return data::code_completion{};
+    }
+
   private:
     bool& _run_flag;
   };

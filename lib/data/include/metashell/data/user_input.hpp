@@ -23,7 +23,7 @@
 #include <metashell/data/mdb_command.hpp>
 #include <metashell/data/string.hpp>
 
-#include <boost/optional.hpp>
+#include <optional>
 
 namespace metashell
 {
@@ -41,7 +41,7 @@ namespace metashell
       explicit user_input(const cpp_code&);
 
       explicit operator cpp_code() const;
-      explicit operator boost::optional<mdb_command>() const;
+      explicit operator std::optional<mdb_command>() const;
     };
 
     bool has_non_whitespace(const user_input&);

@@ -28,6 +28,8 @@ namespace metashell
 {
   namespace system_test
   {
+    const code_completion_result::factory code_completion_result::create;
+
     code_completion_result::code_completion_result(
         const std::initializer_list<std::string>& results_)
       : _results(results_)
@@ -51,12 +53,11 @@ namespace metashell
       return _results.find(result_) != _results.end();
     }
 
-    code_completion_result code_completion_result::with(
-        const std::initializer_list<std::string>& members_) const
+    code_completion_result& code_completion_result::
+    operator+=(const code_completion_result& rhs_)
     {
-      code_completion_result r(*this);
-      r._results.insert(members_.begin(), members_.end());
-      return r;
+      _results.insert(rhs_._results.begin(), rhs_._results.end());
+      return *this;
     }
 
     std::ostream& operator<<(std::ostream& out_,
@@ -113,11 +114,6 @@ namespace metashell
       {
         return false;
       }
-    }
-
-    bool operator!=(const code_completion_result& r_, const json_string& s_)
-    {
-      return !(r_ == s_);
     }
   }
 }

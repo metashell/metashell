@@ -33,8 +33,8 @@
 #include <metashell/core/logger.hpp>
 
 #include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
 
+#include <optional>
 #include <string>
 #include <tuple>
 
@@ -74,7 +74,7 @@ namespace metashell
         core::logger* _logger;
       };
 
-      boost::optional<data::executable_path>
+      std::optional<data::executable_path>
       find_clang_nothrow(bool use_internal_templight_,
                          const data::engine_arguments& engine_,
                          const data::executable_path& metashell_binary_,
@@ -97,15 +97,15 @@ namespace metashell
 
       data::result
       eval(const iface::environment& env_,
-           const boost::optional<data::cpp_code>& tmp_exp_,
-           const boost::optional<boost::filesystem::path>& env_path_,
-           const boost::optional<boost::filesystem::path>& templight_dump_path_,
+           const std::optional<data::cpp_code>& tmp_exp_,
+           const std::optional<boost::filesystem::path>& env_path_,
+           const std::optional<boost::filesystem::path>& templight_dump_path_,
            binary& clang_binary_);
 
       std::tuple<data::result, std::string> eval_with_templight_dump_on_stdout(
           const iface::environment& env_,
-          const boost::optional<data::cpp_code>& tmp_exp_,
-          const boost::optional<boost::filesystem::path>& env_path_,
+          const std::optional<data::cpp_code>& tmp_exp_,
+          const std::optional<boost::filesystem::path>& env_path_,
           binary& clang_binary_,
           data::metaprogram_mode mode_);
     }

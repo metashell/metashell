@@ -25,7 +25,7 @@
 
 namespace
 {
-  boost::optional<std::string>
+  std::optional<std::string>
   engine_selected(const metashell::data::command_line& cmd_)
   {
     const std::string out = metashell::process::run(cmd_, "").standard_output;
@@ -38,7 +38,7 @@ namespace
     }
     else
     {
-      return boost::none;
+      return std::nullopt;
     }
   }
 }
@@ -50,7 +50,7 @@ auto_engine_test::auto_engine_test(metashell::data::executable_path metashell_)
 
 void auto_engine_test::test_engine_selection(
     const metashell::data::command_line_argument_list& args_,
-    const boost::optional<std::string>& expected_engine_)
+    const std::optional<std::string>& expected_engine_)
 {
   using boost::algorithm::join;
 
@@ -60,7 +60,7 @@ void auto_engine_test::test_engine_selection(
           "--engine", "auto", "--log", "-", "--console", "plain", "--"} +
           args_);
 
-  const boost::optional<std::string> actual_engine = engine_selected(cmd);
+  const std::optional<std::string> actual_engine = engine_selected(cmd);
 
   if (expected_engine_ && !actual_engine)
   {

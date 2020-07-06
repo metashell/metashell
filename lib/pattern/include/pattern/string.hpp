@@ -26,7 +26,7 @@ namespace pattern
   template <class Writer>
   void write(const string& pattern_, Writer& writer_)
   {
-    if (const boost::optional<std::string> value = pattern_.value())
+    if (const std::optional<std::string> value = pattern_.value())
     {
       writer_.String(value->c_str());
     }

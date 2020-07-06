@@ -16,8 +16,11 @@
 
 #include <metashell/pragma/which.hpp>
 
+#include <metashell/core/code_complete.hpp>
+
 #include <metashell/data/exception.hpp>
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptors.hpp>
 
@@ -33,8 +36,8 @@ namespace metashell
     std::string which::description() const
     {
       return "Searches the given include file on the include path. When -all "
-             "is "
-             "provided, it displays all headers found, not just the first one.";
+             "is provided, it displays all headers found, not just the first "
+             "one.";
     }
 
     void which::run(const data::command::iterator& name_begin_,
@@ -145,6 +148,74 @@ namespace metashell
         const data::include_argument& header_, bool all_)
       : header(header_), all(all_)
     {
+    }
+
+    data::code_completion
+    which::code_complete(data::command::const_iterator begin_,
+                         data::command::const_iterator end_,
+                         iface::main_shell& shell_) const
+    {
+      using data::token_type;
+
+      if (begin_ == end_)
+      {
+        return data::code_completion{
+            data::user_input{" -all <"}, data::user_input{" -all \""},
+            data::user_input{" <"}, data::user_input{" \""}};
+      }
+
+      auto beg = skip_all_whitespace(begin_, end_);
+      if (beg == end_)
+      {
+        return data::code_completion{
+            data::user_input{"-all <"}, data::user_input{"-all \""},
+            data::user_input{"<"}, data::user_input{"\""}};
+      }
+
+      if (type_of(*beg) == token_type::operator_minus)
+      {
+        ++beg;
+        if (beg == end_)
+        {
+          return data::code_completion{
+              data::user_input{"all <"}, data::user_input{"all \""}};
+        }
+
+        if (type_of(*beg) == token_type::identifier)
+        {
+          const std::string all{"all"};
+          const std::string val = to_string(value(*beg));
+          ++beg;
+          if (beg == end_)
+          {
+            if (boost::algorithm::starts_with(all, val))
+            {
+              const std::string ext = all.substr(val.size());
+              return data::code_completion{
+                  data::user_input{ext + " <"}, data::user_input{ext + " \""}};
+            }
+            else
+            {
+              return data::code_completion{};
+            }
+          }
+
+          if (val != all)
+          {
+            return data::code_completion{};
+          }
+        }
+
+        beg = skip_all_whitespace(beg, end_);
+        if (beg == end_)
+        {
+          return data::code_completion{
+              data::user_input{"<"}, data::user_input{"\""}};
+        }
+      }
+
+      return core::code_complete::include(
+          beg, end_, shell_.engine().header_discoverer());
     }
 
     std::ostream& operator<<(std::ostream& out_,

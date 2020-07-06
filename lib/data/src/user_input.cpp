@@ -29,7 +29,7 @@ namespace metashell
 
     user_input::operator cpp_code() const { return cpp_code(value()); }
 
-    user_input::operator boost::optional<mdb_command>() const
+    user_input::operator std::optional<mdb_command>() const
     {
       return mdb_command::parse(value());
     }

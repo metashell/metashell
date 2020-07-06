@@ -27,7 +27,7 @@ namespace metashell
     {
       namespace
       {
-        boost::optional<boost::filesystem::path>
+        std::optional<boost::filesystem::path>
         canonical_path(const boost::filesystem::path& path)
         {
           boost::system::error_code ec;
@@ -36,7 +36,7 @@ namespace metashell
           {
             return res;
           }
-          return boost::none;
+          return std::nullopt;
         }
 
         void apply(context& ctx_,

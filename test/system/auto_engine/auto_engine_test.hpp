@@ -20,8 +20,7 @@
 #include <metashell/data/command_line_argument_list.hpp>
 #include <metashell/data/executable_path.hpp>
 
-#include <boost/optional.hpp>
-
+#include <optional>
 #include <vector>
 
 class auto_engine_test
@@ -31,7 +30,7 @@ public:
 
   void test_engine_selection(
       const metashell::data::command_line_argument_list& args_,
-      const boost::optional<std::string>& expected_engine_);
+      const std::optional<std::string>& expected_engine_);
 
 private:
   metashell::data::executable_path _metashell;

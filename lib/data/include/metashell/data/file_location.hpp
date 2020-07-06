@@ -20,12 +20,12 @@
 
 #include <metashell/data/cpp_code.hpp>
 
-#include <ostream>
-#include <string>
-
 #include <boost/filesystem/path.hpp>
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
+
+#include <optional>
+#include <ostream>
+#include <string>
 
 namespace metashell
 {
@@ -49,9 +49,9 @@ namespace metashell
 
     std::string to_string(const file_location& location);
 
-    boost::optional<file_location>
+    std::optional<file_location>
     determine_from_line(const cpp_code& env,
-                        const boost::optional<cpp_code>& expression,
+                        const std::optional<cpp_code>& expression,
                         const std::string& stdin_name);
   }
 }

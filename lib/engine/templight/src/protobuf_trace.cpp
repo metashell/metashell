@@ -99,7 +99,7 @@ namespace metashell
         _reader.startOnBuffer(*_src);
       }
 
-      boost::optional<data::event_data> protobuf_trace::next()
+      std::optional<data::event_data> protobuf_trace::next()
       {
         while (true)
         {
@@ -131,12 +131,12 @@ namespace metashell
             if (_evaluation_result)
             {
               data::event_data result = *_evaluation_result;
-              _evaluation_result = boost::none;
+              _evaluation_result = std::nullopt;
               return result;
             }
             else
             {
-              return boost::none;
+              return std::nullopt;
             }
           case ::templight::ProtobufReader::Other:
           case ::templight::ProtobufReader::Header:

@@ -18,9 +18,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
 #include <iosfwd>
+#include <optional>
 #include <string>
 
 namespace metashell
@@ -36,7 +36,7 @@ namespace metashell
       // precondition: !_finalised
       void value_is_final();
 
-      boost::optional<int> operator*() const;
+      std::optional<int> operator*() const;
 
       int current_value() const;
 

@@ -19,6 +19,8 @@
 
 #include <metashell/system_test/json_string.hpp>
 
+#include <boost/operators.hpp>
+
 #include <iosfwd>
 #include <set>
 #include <string>
@@ -28,6 +30,8 @@ namespace metashell
   namespace system_test
   {
     class code_completion_result
+        : boost::equality_comparable<code_completion_result, json_string>,
+          boost::addable<code_completion_result>
     {
     public:
       explicit code_completion_result(
@@ -43,8 +47,29 @@ namespace metashell
 
       int size() const;
 
-      code_completion_result
-      with(const std::initializer_list<std::string>& members_) const;
+      code_completion_result& operator+=(const code_completion_result&);
+
+      template <size_t Len>
+      code_completion_result prefixed_with(const char (&prefix_)[Len]) const
+      {
+        code_completion_result result{};
+        for (const std::string& s : _results)
+        {
+          result._results.insert(prefix_ + s);
+        }
+        return result;
+      }
+
+      struct factory
+      {
+        template <class... Ts>
+        code_completion_result operator()(Ts... ts_) const
+        {
+          return code_completion_result{ts_...};
+        }
+      };
+
+      static const factory create;
 
     private:
       std::set<std::string> _results;
@@ -56,7 +81,6 @@ namespace metashell
     json_string to_json_string(const code_completion_result& r_);
 
     bool operator==(const code_completion_result& r_, const json_string& s_);
-    bool operator!=(const code_completion_result& r_, const json_string& s_);
   }
 }
 

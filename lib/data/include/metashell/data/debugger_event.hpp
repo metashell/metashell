@@ -22,11 +22,10 @@
 #include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/data/pop_frame.hpp>
 
-#include <boost/optional.hpp>
-
 #include <variant.hpp>
 
 #include <iosfwd>
+#include <optional>
 #include <string>
 
 namespace metashell
@@ -40,7 +39,7 @@ namespace metashell
     std::string to_string(const debugger_event& event_);
     std::ostream& operator<<(std::ostream& out_, const debugger_event& event_);
 
-    boost::optional<double> time_taken(const debugger_event& event_);
+    std::optional<double> time_taken(const debugger_event& event_);
     void full_time_taken(debugger_event& event_, double full_time_);
   }
 }

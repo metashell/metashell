@@ -20,9 +20,8 @@
 #include <metashell/data/event_kind.hpp>
 #include <metashell/data/timeless_event_details.hpp>
 
-#include <boost/optional.hpp>
-
 #include <iostream>
+#include <optional>
 
 namespace metashell
 {
@@ -36,7 +35,7 @@ namespace metashell
     };
 
     template <event_kind Kind>
-    boost::optional<double> timestamp(const event_details<Kind>& details_)
+    std::optional<double> timestamp(const event_details<Kind>& details_)
     {
       return details_.timestamp;
     }
@@ -55,7 +54,7 @@ namespace metashell
       timeless_event_details<event_kind::evaluation_end> what;
     };
 
-    boost::optional<double>
+    std::optional<double>
     timestamp(const event_details<event_kind::evaluation_end>& details_);
 
     std::ostream&

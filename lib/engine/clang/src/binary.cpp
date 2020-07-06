@@ -101,7 +101,7 @@ namespace metashell
                                             "/templight_metashell"));
         }
 
-        boost::optional<data::executable_path>
+        std::optional<data::executable_path>
         detect_clang_binary(iface::environment_detector& env_detector_,
                             iface::displayer& displayer_,
                             core::logger* logger_)
@@ -128,7 +128,7 @@ namespace metashell
                 "Clang binary shipped with Metashell is missing. Searching for"
                 " another Clang binary at the following locations: " +
                     join(data::default_clang_search_path(), ", "));
-            const boost::optional<data::executable_path> clang =
+            const std::optional<data::executable_path> clang =
                 env_detector_.search_clang_binary();
 
             if (clang)
@@ -185,7 +185,7 @@ namespace metashell
         }
 
         std::vector<boost::filesystem::path> determine_include_path(
-            const boost::optional<data::executable_path>& clang_binary_path_,
+            const std::optional<data::executable_path>& clang_binary_path_,
             iface::environment_detector& env_detector_,
             core::logger* logger_)
         {
@@ -277,8 +277,8 @@ namespace metashell
 
         data::result
         preprocess(const iface::environment& env_,
-                   const boost::optional<data::cpp_code>& tmp_exp_,
-                   const boost::optional<boost::filesystem::path>& env_path_,
+                   const std::optional<data::cpp_code>& tmp_exp_,
+                   const std::optional<boost::filesystem::path>& env_path_,
                    binary& binary_)
         {
           return binary_.precompile(
@@ -299,10 +299,9 @@ namespace metashell
           return data::command_line_argument_list{"-Xclang", "-ast-dump"};
         }
 
-        data::command_line_argument_list
-        dump_templight_to_file(data::command_line_argument_list clang_args_,
-                               const boost::optional<boost::filesystem::path>&
-                                   templight_dump_path_)
+        data::command_line_argument_list dump_templight_to_file(
+            data::command_line_argument_list clang_args_,
+            const std::optional<boost::filesystem::path>& templight_dump_path_)
         {
           if (templight_dump_path_)
           {
@@ -330,11 +329,11 @@ namespace metashell
           return run_clang(binary_, std::move(clang_args_), preprocessed_code_);
         }
 
-        data::result compile(const boost::optional<data::cpp_code>& tmp_exp_,
-                             data::cpp_code precompiled_exp_,
-                             const boost::optional<boost::filesystem::path>&
-                                 templight_dump_path_,
-                             binary& binary_)
+        data::result compile(
+            const std::optional<data::cpp_code>& tmp_exp_,
+            data::cpp_code precompiled_exp_,
+            const std::optional<boost::filesystem::path>& templight_dump_path_,
+            binary& binary_)
         {
           const data::process_output output =
               compile(std::move(precompiled_exp_),
@@ -426,8 +425,8 @@ namespace metashell
 
       std::tuple<data::result, std::string> eval_with_templight_dump_on_stdout(
           const iface::environment& env_,
-          const boost::optional<data::cpp_code>& tmp_exp_,
-          const boost::optional<boost::filesystem::path>& env_path_,
+          const std::optional<data::cpp_code>& tmp_exp_,
+          const std::optional<boost::filesystem::path>& env_path_,
           binary& binary_,
           data::metaprogram_mode mode_)
       {
@@ -450,7 +449,7 @@ namespace metashell
 
           return std::make_tuple(
               exit_success(templight_output) ?
-                  compile(tmp_exp_, precompiled_code, boost::none, binary_) :
+                  compile(tmp_exp_, precompiled_code, std::nullopt, binary_) :
                   data::result{false, "", templight_output.standard_error, ""},
               templight_output.standard_output);
         }
@@ -462,9 +461,9 @@ namespace metashell
 
       data::result
       eval(const iface::environment& env_,
-           const boost::optional<data::cpp_code>& tmp_exp_,
-           const boost::optional<boost::filesystem::path>& env_path_,
-           const boost::optional<boost::filesystem::path>& templight_dump_path_,
+           const std::optional<data::cpp_code>& tmp_exp_,
+           const std::optional<boost::filesystem::path>& env_path_,
+           const std::optional<boost::filesystem::path>& templight_dump_path_,
            binary& binary_)
       {
         const data::result precompile_result =
@@ -476,7 +475,7 @@ namespace metashell
                    precompile_result;
       }
 
-      boost::optional<data::executable_path>
+      std::optional<data::executable_path>
       find_clang_nothrow(bool use_internal_templight_,
                          const data::engine_arguments& engine_,
                          const data::executable_path& metashell_binary_,

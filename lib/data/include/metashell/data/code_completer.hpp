@@ -17,17 +17,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/code_completion.hpp>
 #include <metashell/data/user_input.hpp>
 
 #include <functional>
-#include <set>
 
 namespace metashell
 {
   namespace data
   {
-    typedef std::function<void(const user_input&, std::set<user_input>&)>
-        code_completer;
+    using code_completer = std::function<code_completion(const user_input&)>;
   }
 }
 

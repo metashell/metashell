@@ -24,11 +24,10 @@
 #include <metashell/data/timeless_event_data.hpp>
 #include <metashell/data/type.hpp>
 
-#include <boost/optional.hpp>
-
 #include <variant.hpp>
 
 #include <iosfwd>
+#include <optional>
 #include <string>
 
 namespace metashell
@@ -74,19 +73,19 @@ namespace metashell
 
     event_name name(const event_data& data);
 
-    boost::optional<file_location> point_of_event(const event_data& data);
+    std::optional<file_location> point_of_event(const event_data& data);
 
-    boost::optional<file_location> source_location(const event_data& data);
+    std::optional<file_location> source_location(const event_data& data);
 
-    boost::optional<double> timestamp(const event_data& data);
+    std::optional<double> timestamp(const event_data& data);
 
-    boost::optional<type> type_of(const event_data& data);
+    std::optional<type> type_of(const event_data& data);
 
     void set_type(event_data& data, type t);
 
     timeless_event_data what(const event_data& data);
 
-    boost::optional<type_or_code_or_error> result_of(const event_data& data);
+    std::optional<type_or_code_or_error> result_of(const event_data& data);
 
     bool from_line(const event_data& event, const file_location& line);
 

@@ -21,9 +21,9 @@
 #include <metashell/data/identifier.hpp>
 
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
 #include <iosfwd>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -44,6 +44,8 @@ namespace metashell
 
       const std::vector<identifier>& tokens() const;
 
+      void push_back(identifier);
+
     private:
       std::vector<identifier> _tokens;
     };
@@ -54,9 +56,9 @@ namespace metashell
     std::string to_string(const pragma_name&);
     std::ostream& operator<<(std::ostream&, const pragma_name&);
 
-    boost::optional<command::iterator> is_this_pragma(const pragma_name&,
-                                                      command::iterator,
-                                                      const command::iterator&);
+    std::optional<command::iterator> is_this_pragma(const pragma_name&,
+                                                    command::iterator,
+                                                    const command::iterator&);
 
     template <class Sequence>
     bool prefix_of(Sequence prefix_, const pragma_name& n_)

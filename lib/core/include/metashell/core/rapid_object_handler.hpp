@@ -21,9 +21,8 @@
 
 #include <metashell/core/rapid_handler.hpp>
 
-#include <boost/optional.hpp>
-
 #include <map>
+#include <optional>
 
 namespace metashell
 {
@@ -37,7 +36,7 @@ namespace metashell
 
       bool StartObject();
 
-      boost::optional<std::string> field(const std::string& name_) const;
+      std::optional<std::string> field(const std::string& name_) const;
 
       void fail(const std::string& msg_);
 

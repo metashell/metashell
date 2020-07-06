@@ -29,7 +29,7 @@ namespace metashell
       std::unique_ptr<iface::event_data_sequence>
       metaprogram_tracer::eval(iface::environment&,
                                const boost::filesystem::path&,
-                               const boost::optional<data::cpp_code>&,
+                               const std::optional<data::cpp_code>&,
                                data::metaprogram_mode mode_,
                                iface::displayer&)
       {

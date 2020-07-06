@@ -27,9 +27,9 @@ namespace
 {
   struct expected_removal_result
   {
-    std::pair<boost::optional<std::string>, command_line_argument_list> values;
+    std::pair<std::optional<std::string>, command_line_argument_list> values;
 
-    expected_removal_result(boost::optional<std::string> warning_,
+    expected_removal_result(std::optional<std::string> warning_,
                             command_line_argument_list args_)
       : values{std::move(warning_), std::move(args_)}
     {
@@ -52,7 +52,7 @@ namespace
   }
 
   bool operator==(const expected_removal_result& lhs_,
-                  const std::pair<boost::optional<std::string>,
+                  const std::pair<std::optional<std::string>,
                                   command_line_argument_list>& rhs_)
   {
     return lhs_.values == rhs_;
@@ -61,22 +61,23 @@ namespace
 
 TEST(command_line_argument_list, arch_removal)
 {
-  ASSERT_EQ(expected_removal_result(boost::none, command_line_argument_list{}),
+  ASSERT_EQ(expected_removal_result(std::nullopt, command_line_argument_list{}),
             remove_multiple_arch_arguments(command_line_argument_list{}));
 
   ASSERT_EQ(expected_removal_result(
-                boost::none, command_line_argument_list{"foo", "bar", "baz"}),
+                std::nullopt, command_line_argument_list{"foo", "bar", "baz"}),
             remove_multiple_arch_arguments(
                 command_line_argument_list{"foo", "bar", "baz"}));
 
-  ASSERT_EQ(expected_removal_result(
-                boost::none, command_line_argument_list{"foo", "bar", "-arch"}),
-            remove_multiple_arch_arguments(
-                command_line_argument_list{"foo", "bar", "-arch"}));
+  ASSERT_EQ(
+      expected_removal_result(
+          std::nullopt, command_line_argument_list{"foo", "bar", "-arch"}),
+      remove_multiple_arch_arguments(
+          command_line_argument_list{"foo", "bar", "-arch"}));
 
   ASSERT_EQ(expected_removal_result(
-                boost::none, command_line_argument_list{"foo", "bar", "-arch",
-                                                        "armv7", "baz"}),
+                std::nullopt, command_line_argument_list{"foo", "bar", "-arch",
+                                                         "armv7", "baz"}),
             remove_multiple_arch_arguments(command_line_argument_list{
                 "foo", "bar", "-arch", "armv7", "baz"}));
 

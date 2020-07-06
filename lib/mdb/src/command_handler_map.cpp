@@ -36,12 +36,12 @@ namespace metashell
       key_command_map.insert(key_command_vec.begin(), key_command_vec.end());
     }
 
-    boost::optional<command> command_handler_map::get_command(
+    std::optional<command> command_handler_map::get_command(
         const data::mdb_command::name_type& name) const
     {
       if (empty(name))
       {
-        return boost::none;
+        return std::nullopt;
       }
 
       key_command_map_t::const_iterator lower =
@@ -49,7 +49,7 @@ namespace metashell
 
       if (lower == key_command_map.end() || !starts_with(lower->first, name))
       {
-        return boost::none;
+        return std::nullopt;
       }
 
       // Check if the found command is unambiguous
@@ -64,7 +64,7 @@ namespace metashell
           // For example forwardtrace and ft with line "f"
           if (it->second != command_index)
           {
-            return boost::none;
+            return std::nullopt;
           }
         }
       }

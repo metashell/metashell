@@ -163,7 +163,7 @@ TEST(engine, limitation_results)
 
   // complete
   ASSERT_EQ(
-      boost::none,
+      std::nullopt,
       core::limitation(
           test_engine<type_shell, preprocessor_shell, code_completer,
                       header_discoverer, metaprogram_tracer, cpp_validator,

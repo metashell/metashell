@@ -20,10 +20,10 @@ namespace metashell
 {
   namespace data
   {
-    boost::optional<type>
+    std::optional<type>
     type_of(const timeless_event_details<event_kind::template_end>&)
     {
-      return boost::none;
+      return std::nullopt;
     }
 
     cpp_code

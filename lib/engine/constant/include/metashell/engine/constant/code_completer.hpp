@@ -28,10 +28,9 @@ namespace metashell
       class code_completer : public iface::code_completer
       {
       public:
-        virtual void code_complete(const iface::environment&,
-                                   const data::user_input&,
-                                   std::set<data::user_input>&,
-                                   bool) override;
+        virtual data::code_completion code_complete(const iface::environment&,
+                                                    const data::user_input&,
+                                                    bool) override;
       };
     }
   }

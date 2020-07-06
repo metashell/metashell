@@ -63,17 +63,16 @@ namespace metashell
       return _items.size();
     }
 
-    boost::optional<command_line_argument>
+    std::optional<command_line_argument>
     command_line_argument_list::front() const
     {
-      return _items.empty() ? boost::none :
-                              boost::make_optional(_items.front());
+      return _items.empty() ? std::nullopt : std::make_optional(_items.front());
     }
 
-    boost::optional<command_line_argument>
+    std::optional<command_line_argument>
     command_line_argument_list::back() const
     {
-      return _items.empty() ? boost::none : boost::make_optional(_items.back());
+      return _items.empty() ? std::nullopt : std::make_optional(_items.back());
     }
 
     command_line_argument_list::iterator
@@ -166,14 +165,14 @@ namespace metashell
              std::equal(lhs_.begin(), lhs_.end(), rhs_.begin());
     }
 
-    std::pair<boost::optional<std::string>, command_line_argument_list>
+    std::pair<std::optional<std::string>, command_line_argument_list>
     remove_multiple_arch_arguments(const command_line_argument_list& args_)
     {
       const command_line_argument arch{"-arch"};
 
       command_line_argument_list result;
       bool was_arch = false;
-      boost::optional<command_line_argument> first_arch;
+      std::optional<command_line_argument> first_arch;
       std::vector<command_line_argument> removed;
       for (const command_line_argument& arg : args_)
       {
@@ -207,7 +206,7 @@ namespace metashell
 
       if (removed.empty())
       {
-        return {boost::none, result};
+        return {std::nullopt, result};
       }
       else
       {

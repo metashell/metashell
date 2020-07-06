@@ -16,9 +16,8 @@
 
 #include <metashell/data/config.hpp>
 
-#include <boost/optional.hpp>
-
 #include <algorithm>
+#include <optional>
 #include <stdexcept>
 
 namespace metashell
@@ -27,7 +26,7 @@ namespace metashell
   {
     namespace
     {
-      boost::optional<std::vector<shell_config>::size_type>
+      std::optional<std::vector<shell_config>::size_type>
       find(const shell_config_name& name_,
            const std::vector<shell_config>& configs_)
       {
@@ -39,7 +38,7 @@ namespace metashell
             [&name_](const shell_config& c_) { return c_.name == name_; });
         if (i == end)
         {
-          return boost::none;
+          return std::nullopt;
         }
         else
         {

@@ -270,6 +270,13 @@ namespace metashell
       return args_;
     }
 
+    data::command_line_argument_list
+    with_includes(data::command_line_argument_list args_,
+                  const std::vector<boost::filesystem::path>& paths_)
+    {
+      return with_quoteincludes(with_sysincludes(args_, paths_), paths_);
+    }
+
     bool using_msvc()
     {
       const auto engine = current_engine();

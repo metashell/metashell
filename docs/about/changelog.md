@@ -22,6 +22,8 @@
       removing the corresponding standard headers from the standard include
       path.
     * Support for user defined warnings in configs.
+    * Code completion for Metashell commands
+      (`#msh ...` and `#pragma metashell`)
 
 * Fixes
     * When multiple shell configs use the same engine with different engine

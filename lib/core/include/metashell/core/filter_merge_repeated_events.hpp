@@ -23,8 +23,7 @@
 
 #include <metashell/core/filter_with_queue.hpp>
 
-#include <boost/optional.hpp>
-
+#include <optional>
 #include <vector>
 
 namespace metashell
@@ -40,26 +39,26 @@ namespace metashell
       {
       }
 
-      boost::optional<data::event_data> next()
+      std::optional<data::event_data> next()
       {
-        while (boost::optional<data::event_data> event = _events.next())
+        while (std::optional<data::event_data> event = _events.next())
         {
           switch (relative_depth_of(*event))
           {
           case data::relative_depth::open:
             _last_open.back() = event;
-            _last_open.emplace_back(boost::none);
+            _last_open.emplace_back(std::nullopt);
             return event;
           case data::relative_depth::flat:
             return event;
           case data::relative_depth::close:
           case data::relative_depth::end:
             _last_open.pop_back();
-            if (boost::optional<data::event_data> ahead = _events.next())
+            if (std::optional<data::event_data> ahead = _events.next())
             {
               if (what(*ahead) == what(*_last_open.back()))
               {
-                _last_open.emplace_back(boost::none);
+                _last_open.emplace_back(std::nullopt);
               }
               else
               {
@@ -74,7 +73,7 @@ namespace metashell
             break;
           }
         }
-        return boost::none;
+        return std::nullopt;
       }
 
       data::cpp_code root_name() const { return _events.root_name(); }
@@ -84,7 +83,7 @@ namespace metashell
     private:
       filter_with_queue<Events> _events;
 
-      std::vector<boost::optional<data::event_data>> _last_open{boost::none};
+      std::vector<std::optional<data::event_data>> _last_open{std::nullopt};
     };
 
     template <class Events>

@@ -16,6 +16,7 @@
 
 #include <metashell/pragma/engine_switch.hpp>
 
+#include <metashell/core/code_complete.hpp>
 #include <metashell/core/engine.hpp>
 
 #include <stdexcept>
@@ -83,6 +84,15 @@ namespace metashell
         displayer_.show_error("Error switching to engine " + name +
                               ": unknown exception");
       }
+    }
+
+    data::code_completion
+    engine_switch::code_complete(data::command::const_iterator begin_,
+                                 data::command::const_iterator end_,
+                                 iface::main_shell& shell_) const
+    {
+      return core::code_complete::fixed_values(
+          begin_, end_, shell_.available_engines());
     }
   }
 }

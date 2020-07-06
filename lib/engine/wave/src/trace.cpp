@@ -23,7 +23,7 @@ namespace metashell
     namespace wave
     {
       trace::trace(const data::cpp_code& env_,
-                   const boost::optional<data::cpp_code>& exp_,
+                   const std::optional<data::cpp_code>& exp_,
                    const data::wave_config& config_,
                    data::metaprogram_mode mode_,
                    const std::vector<boost::filesystem::path>& system_includes_)
@@ -33,7 +33,7 @@ namespace metashell
       {
       }
 
-      boost::optional<data::event_data> trace::next() { return _impl->next(); }
+      std::optional<data::event_data> trace::next() { return _impl->next(); }
 
       const data::cpp_code& trace::root_name() const { return _root_name; }
 

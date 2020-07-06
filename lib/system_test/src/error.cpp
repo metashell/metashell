@@ -30,9 +30,9 @@ namespace metashell
   {
     error::error(const std::string& msg_) : _msg(msg_) {}
 
-    error::error(pattern::placeholder) : _msg(boost::none) {}
+    error::error(pattern::placeholder) : _msg(std::nullopt) {}
 
-    error::error(const json_string& s_) : _msg(boost::none)
+    error::error(const json_string& s_) : _msg(std::nullopt)
     {
       rapidjson::Document d;
       d.Parse(s_.get().c_str());
@@ -48,7 +48,7 @@ namespace metashell
       }
     }
 
-    bool error::message_specified() const { return _msg != boost::none; }
+    bool error::message_specified() const { return _msg != std::nullopt; }
 
     const std::string& error::message() const
     {

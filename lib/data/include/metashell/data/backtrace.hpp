@@ -21,9 +21,9 @@
 #include <metashell/data/frame.hpp>
 
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
 #include <iosfwd>
+#include <optional>
 #include <vector>
 
 namespace metashell
@@ -57,7 +57,7 @@ namespace metashell
 
     private:
       std::vector<frame> _frames;
-      boost::optional<int> _buffered_pop_count;
+      std::optional<int> _buffered_pop_count;
 
       void flush();
       bool flushed_empty() const;

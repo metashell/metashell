@@ -24,7 +24,7 @@ TEST(string_reader, empty)
 
   const auto s = r(">");
 
-  ASSERT_TRUE(boost::none == s);
+  ASSERT_TRUE(std::nullopt == s);
 }
 
 TEST(string_reader, one_element)
@@ -34,9 +34,9 @@ TEST(string_reader, one_element)
   const auto s1 = r(">");
   const auto s2 = r(">");
 
-  ASSERT_TRUE(boost::none != s1);
+  ASSERT_TRUE(std::nullopt != s1);
   ASSERT_EQ(metashell::data::user_input("foo"), *s1);
-  ASSERT_TRUE(boost::none == s2);
+  ASSERT_TRUE(std::nullopt == s2);
 }
 
 TEST(string_reader, two_elements)
@@ -48,9 +48,9 @@ TEST(string_reader, two_elements)
   const auto s2 = r(">");
   const auto s3 = r(">");
 
-  ASSERT_TRUE(boost::none != s1);
+  ASSERT_TRUE(std::nullopt != s1);
   ASSERT_EQ(metashell::data::user_input("foo"), *s1);
-  ASSERT_TRUE(boost::none != s2);
+  ASSERT_TRUE(std::nullopt != s2);
   ASSERT_EQ(metashell::data::user_input("bar"), *s2);
-  ASSERT_TRUE(boost::none == s3);
+  ASSERT_TRUE(std::nullopt == s3);
 }

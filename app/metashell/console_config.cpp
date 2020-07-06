@@ -33,8 +33,7 @@ using namespace metashell;
 
 namespace
 {
-  boost::optional<data::user_input>
-  plain_line_reader(const std::string& prompt_)
+  std::optional<data::user_input> plain_line_reader(const std::string& prompt_)
   {
     if (!prompt_.empty())
     {
@@ -48,7 +47,7 @@ namespace
     }
     else
     {
-      return boost::none;
+      return std::nullopt;
     }
   }
 
@@ -126,10 +125,10 @@ namespace
     case data::console_type::plain:
       return plain_line_reader;
     case data::console_type::readline:
-      return metashell::readline::line_reader([&processor_queue_](
-          const data::user_input& s_, std::set<data::user_input>& out_) {
-        processor_queue_.code_complete(s_, out_);
-      });
+      return metashell::readline::line_reader(
+          [&processor_queue_](const data::user_input& s_) {
+            return processor_queue_.code_complete(s_);
+          });
     case data::console_type::json:
       return build_json_line_reader(
           plain_line_reader, *displayer_, *json_writer_, processor_queue_);
