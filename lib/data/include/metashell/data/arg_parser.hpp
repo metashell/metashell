@@ -44,7 +44,10 @@ namespace metashell
       arg_parser();
 
       explicit arg_parser(
-          std::function<std::string(const command_line_argument&)>);
+          std::function<std::string(const command_line_argument&)>,
+          std::function<bool(const command_line_argument&)>
+              unknown_arg_handler_ =
+                  [](const command_line_argument&) { return false; });
 
       arg_parser& flag(command_line_argument short_name_,
                        std::string desc_,
@@ -319,6 +322,7 @@ namespace metashell
       std::vector<arg_with_value_definition> _args_with_value;
       std::function<std::string(const command_line_argument&)>
           _invalid_argument;
+      std::function<bool(const command_line_argument&)> _unknown_arg_handler;
 
       const arg_with_value_definition* parse(const arg_with_value_definition*,
                                              const command_line_argument&,

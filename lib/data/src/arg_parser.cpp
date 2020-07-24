@@ -84,15 +84,18 @@ namespace metashell
     }
 
     arg_parser::arg_parser()
-      : _invalid_argument([](const command_line_argument& arg_) {
+      : arg_parser{[](const command_line_argument& arg_) {
           return "Invalid argument: " + arg_;
-        })
+        }}
     {
     }
 
-    arg_parser::arg_parser(std::function<std::string(
-                               const command_line_argument&)> invalid_argument_)
-      : _invalid_argument(std::move(invalid_argument_))
+    arg_parser::arg_parser(
+        std::function<std::string(const command_line_argument&)>
+            invalid_argument_,
+        std::function<bool(const command_line_argument&)> unknown_arg_handler_)
+      : _invalid_argument{std::move(invalid_argument_)},
+        _unknown_arg_handler{std::move(unknown_arg_handler_)}
     {
     }
 
@@ -184,7 +187,14 @@ namespace metashell
         ++with_value_i;
       }
 
-      throw exception(_invalid_argument(arg_));
+      if (_unknown_arg_handler(arg_))
+      {
+        return nullptr;
+      }
+      else
+      {
+        throw exception{_invalid_argument(arg_)};
+      }
     }
 
     markdown_string arg_parser::description(int console_width_) const

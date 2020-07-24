@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/arg_parser.hpp>
+#include <metashell/data/exception.hpp>
 #include <metashell/data/markdown_string.hpp>
 
 #include <metashell/core/engine_entry.hpp>
@@ -134,7 +135,10 @@ namespace metashell
               just::file::read<std::string>(path_.string());
           rapidjson::StringStream string_stream(json.c_str());
           rapidjson::Reader reader;
-          reader.Parse(string_stream, handler);
+          if (!reader.Parse(string_stream, handler))
+          {
+            throw data::exception{"Invalid JSON document: " + path_.string()};
+          }
         }
 
         for (data::shell_config scfg : handler.configs())
@@ -161,7 +165,10 @@ namespace metashell
             cfg_.push_back(std::move(config_));
           }
         };
-        reader.Parse(string_stream, handler);
+        if (!reader.Parse(string_stream, handler))
+        {
+          throw data::exception{"Invalid JSON document: " + path_.string()};
+        }
       }
     }
 
@@ -204,7 +211,31 @@ namespace metashell
       constexpr char default_suggestion[] =
           "Please provide it as a compiler argument after --";
 
-      data::arg_parser parser{};
+      data::arg_parser parser{[](const data::command_line_argument& arg_) {
+                                return "Invalid argument: " + arg_;
+                              },
+                              [&cfg](const data::command_line_argument& arg_) {
+                                try
+                                {
+                                  load_compile_commands(arg_.value(), cfg);
+                                  return true;
+                                }
+                                catch (...)
+                                {
+                                }
+
+                                try
+                                {
+                                  load_config(arg_.value(), cfg);
+                                  return true;
+                                }
+                                catch (...)
+                                {
+                                }
+
+                                return false;
+                              }};
+
       // clang-format off
       parser
         .flag<false>("-h", "--help", "Display help", display_help)

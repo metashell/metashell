@@ -103,23 +103,25 @@ TEST(shell_compile_commands, creating_shell_configs)
     out.end_array();
   }
 
-  metashell_instance mi(
-      {"--load_compile_commands", (temp / "compile_commands.json").string()},
-      boost::filesystem::path(), false);
+  for (const auto& args : with_and_without_prefix(
+           "--load_compile_commands", temp / "compile_commands.json"))
+  {
+    metashell_instance mi{args, boost::filesystem::path{}, false};
 
-  const std::vector<json_string> a_foo =
-      mi.command("#msh config show xa/foo.cpp");
-  ASSERT_EQ(a_foo.size(), 2);
-  ASSERT_EQ(comment(_), a_foo.front());
-  ASSERT_TRUE(a_foo.front().get().find("\\\"engine\\\":\\\"auto\\\",") !=
-              std::string::npos);
-  ASSERT_TRUE(
-      a_foo.front().get().find(
-          "\\\"engine_args\\\":[\\\"/foo/bar/g++\\\",\\\"-Iasd\\\"],") !=
-      std::string::npos);
-  ASSERT_TRUE(a_foo.front().find(json_string_escape(
-                  json_string("\"cwd\":") + to_json(bin_dir.string()))) !=
-              std::string::npos);
+    const std::vector<json_string> a_foo =
+        mi.command("#msh config show xa/foo.cpp");
+    ASSERT_EQ(a_foo.size(), 2);
+    ASSERT_EQ(comment(_), a_foo.front());
+    ASSERT_TRUE(a_foo.front().get().find("\\\"engine\\\":\\\"auto\\\",") !=
+                std::string::npos);
+    ASSERT_TRUE(
+        a_foo.front().get().find(
+            "\\\"engine_args\\\":[\\\"/foo/bar/g++\\\",\\\"-Iasd\\\"],") !=
+        std::string::npos);
+    ASSERT_TRUE(a_foo.front().find(json_string_escape(
+                    json_string("\"cwd\":") + to_json(bin_dir.string()))) !=
+                std::string::npos);
+  }
 }
 
 TEST(shell_compile_commands, existing_name)
@@ -143,20 +145,22 @@ TEST(shell_compile_commands, existing_name)
     out.end_array();
   }
 
-  metashell_instance mi(
-      {"--load_compile_commands", (temp / "compile_commands.json").string()},
-      boost::filesystem::path(), false);
+  for (const auto& args : with_and_without_prefix(
+           "--load_compile_commands", temp / "compile_commands.json"))
+  {
+    metashell_instance mi{args, boost::filesystem::path{}, false};
 
-  const std::vector<json_string> a_foo =
-      mi.command("#msh config show default:1");
-  ASSERT_EQ(a_foo.size(), 2);
-  ASSERT_EQ(comment(_), a_foo.front());
-  ASSERT_TRUE(a_foo.front().get().find("\\\"engine\\\":\\\"auto\\\",") !=
-              std::string::npos);
-  ASSERT_TRUE(
-      a_foo.front().get().find(
-          "\\\"engine_args\\\":[\\\"/foo/bar/g++\\\",\\\"-Iasd\\\"],") !=
-      std::string::npos);
+    const std::vector<json_string> a_foo =
+        mi.command("#msh config show default:1");
+    ASSERT_EQ(a_foo.size(), 2);
+    ASSERT_EQ(comment(_), a_foo.front());
+    ASSERT_TRUE(a_foo.front().get().find("\\\"engine\\\":\\\"auto\\\",") !=
+                std::string::npos);
+    ASSERT_TRUE(
+        a_foo.front().get().find(
+            "\\\"engine_args\\\":[\\\"/foo/bar/g++\\\",\\\"-Iasd\\\"],") !=
+        std::string::npos);
+  }
 }
 
 TEST(shell_compile_commands, test_path_simplification)
@@ -263,22 +267,24 @@ TEST(shell_compile_commands, test_multiple_arch_args)
     out.end_array();
   }
 
-  metashell_instance mi{
-      {"--load_compile_commands", compile_commands_json.string()},
-      boost::filesystem::path(),
-      false};
-
+  for (const auto& args : with_and_without_prefix(
+           "--load_compile_commands", compile_commands_json))
   {
-    const std::vector<json_string> load =
-        mi.command("#msh config load foo.cpp");
-    ASSERT_EQ(2, load.size());
-    ASSERT_EQ(comment(_), load.front());
-    ASSERT_TRUE(load.front().get().find("Removed argument -arch armv7s because "
-                                        "of earlier argument: -arch armv7.") !=
-                std::string::npos);
-  }
+    metashell_instance mi{args, boost::filesystem::path{}, false};
 
-  ASSERT_EQ(json_string{}, mi.command_fails("#msh config load foo.cpp"));
-  ASSERT_EQ(json_string{}, mi.command_fails("#msh engine switch wave"));
-  ASSERT_EQ(json_string{}, mi.command_fails("#msh engine switch internal"));
+    {
+      const std::vector<json_string> load =
+          mi.command("#msh config load foo.cpp");
+      ASSERT_EQ(2, load.size());
+      ASSERT_EQ(comment(_), load.front());
+      ASSERT_TRUE(
+          load.front().get().find("Removed argument -arch armv7s because "
+                                  "of earlier argument: -arch armv7.") !=
+          std::string::npos);
+    }
+
+    ASSERT_EQ(json_string{}, mi.command_fails("#msh config load foo.cpp"));
+    ASSERT_EQ(json_string{}, mi.command_fails("#msh engine switch wave"));
+    ASSERT_EQ(json_string{}, mi.command_fails("#msh engine switch internal"));
+  }
 }
