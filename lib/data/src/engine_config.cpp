@@ -223,6 +223,8 @@ namespace metashell
 
     engine_config parse_vc_arguments(const command_line_argument_list& args_)
     {
+      using data::arg_number;
+
       ignore_t ignore;
 
       engine_config result;
@@ -238,30 +240,30 @@ namespace metashell
           "specify an additional include directory",
           result.includes.capital_i
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "/D",
           "specify a macro to define (as `macro[=[value]]`)",
           [&result](const command_line_argument& def_)
           { result.macros.push_back(data::macro_definition(def_)); }
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "/U",
           "specify a macro to undefine",
           [&result](const command_line_argument& name_)
           { result.macros.push_back(data::macro_undefinition(name_)); }
         )
-        .flag(
+        .flag<arg_number::any>(
           "/X",
           "ignore standard headers",
           [&result]
           { result.use_standard_headers = standard_headers_allowed::none; }
         )
-        .flag(
+        .flag<arg_number::any>(
           "/w",
           "Suppresses all compiler warnings.",
           [&result] { result.warnings_enabled = false; }
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "/EH",
           "exception handling model",
           ignore
@@ -307,7 +309,7 @@ namespace metashell
           "specify an additional include directory to be checked after system headers",
           result.includes.idirafter
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-isysroot",
           "Specify the root of the includes",
           [&result](const command_line_argument& path_)
@@ -315,7 +317,7 @@ namespace metashell
             result.includes.isysroot = path_.value();
           }
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "--sysroot",
           "Specify the root of the includes",
           [&result](const command_line_argument& path_)
@@ -326,25 +328,25 @@ namespace metashell
             }
           }
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-D",
           "specify a macro to define (as `macro[=[value]]`)",
           [&result](const command_line_argument& def_)
           { result.macros.push_back(data::macro_definition(def_)); }
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-U",
           "specify a macro to undefine",
           [&result](const command_line_argument& name_)
           { result.macros.push_back(data::macro_undefinition(name_)); }
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-ftemplate-depth=",
           "specify the maximum template instantion depth",
           [&result](const command_line_argument& arg_)
           { result.template_instantiation_depth = arg_.as_int("Invalid template instantiation depth"); }
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-std=",
           "specify the languge standard to use",
           [&result](const command_line_argument& arg_)
@@ -365,265 +367,294 @@ namespace metashell
           "specify the standard lib to use",
           result.standard_lib
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-W",
           "Warning-related setting",
           ignore
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-fvisibility",
           "Set the default ELF image symbol visibility",
           ignore
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-ftls-model",
           "Alter the thread-local storage model to be used",
           ignore
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-miphoneos-version-min",
           "Minimum iPhone OS version",
           ignore
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-mmacosx-version-min",
           "Minimum macOS version",
           ignore
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-fno-sanitize",
           "Disable sanitizers",
           ignore
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-mfloat-abi",
           "Use hardware or software instructions for floating point"
           " operations and specify registers to use for floating point"
           " parameter passing and return values.",
           ignore
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-march",
           "Target CPU architecture",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-nostdinc",
           "ignore standard C headers",
           [&result]
           { result.use_standard_headers = disable_c(result.use_standard_headers); }
         )
-        .flag(
+        .flag<arg_number::any>(
           "-nostdinc++",
           "ignore standard C headers",
           [&result]
           { result.use_standard_headers = disable_cpp(result.use_standard_headers); }
         )
-        .flag(
+        .flag<arg_number::any>(
           "-w",
           "Inhibit all warning messages",
           [&result] { result.warnings_enabled = false; }
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fno-ms-compatibility",
           "disable Visual C++ compatibility",
           ignore
         )
-        .flag("-g", dash_g_suffixes(), "Add debug symbols", ignore)
-        .flag(
+        .flag<arg_number::any>(
+          "-g",
+          dash_g_suffixes(),
+          "Add debug symbols",
+          ignore
+        )
+        .flag<arg_number::any>(
           "-pedantic",
           "Issue all the warnings demanded by strict IDO C and ISO C++",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-pedantic-errors",
           "Give an error whenever the base standard requires a diagnostic.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fpic",
           "Generate position-independent code suitable for use in a shared"
           " library.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fpie",
           "Similar to -fpic, but generated position independent code"
           " can be only linked into executables.",
           ignore
         )
-        .flag("-fPIC", "Emit position-independent code", ignore)
-        .flag(
+        .flag<arg_number::any>(
+          "-fPIC",
+          "Emit position-independent code",
+          ignore
+        )
+        .flag<arg_number::any>(
           "-fPIE",
           "Similar to -fPIC, but generated position independent code"
           " can be only linked into executables.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fvisibility-inlines-hidden",
           "Declares that the user does not attempt to compare pointers to"
           " inline functions or methods where the addresses of the two"
           " functions are taken in different shared object.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-ffunction-sections",
           "Place each function into its own section in the output file",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fdata-sections",
           "Place each data item into its own section in the output file",
           ignore
         )
-        .flag("-fexceptions", "Enable exception hanlding", ignore)
-        .flag("-fno-exceptions", "Disable exception hanlding", ignore)
-        .flag(
+        .flag<arg_number::any>(
+          "-fexceptions",
+          "Enable exception hanlding",
+          ignore
+        )
+        .flag<arg_number::any>(
+          "-fno-exceptions",
+          "Disable exception hanlding",
+          ignore
+        )
+        .flag<arg_number::any>(
           "-frtti",
           "Enable generation of information about every class"
           " with virtual functions",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fno-rtti",
           "Disable generation of information about every class"
           " with virtual functions",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fbuiltin",
           "Recognize built-in functions that do not begin with"
           " __builtin_ as prefix",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fno-builtin",
           "Don't recognize built-in functions that do not begin with"
           " __builtin_ as prefix",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fbuiltin-function",
           "Recognize built-in functions that do not begin with"
           " __builtin_ as prefix",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fno-builtin-function",
           "Don't recognize built-in functions that do not begin with"
           " __builtin_ as prefix",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fomit-frame-pointer",
           "Don't keep the frame pointer in a register for"
           " functions that don't need one.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fno-omit-frame-pointer",
           "Keep the frame pointer in a register for"
           " functions that don't need one.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-funwind-tables",
           "Similar to -fexceptions, except that it just generates any"
           " needed static data, but does not affect the generated code in any"
           " other way.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fstack-protector",
           "Emit extra code to check for buffer overflows for functions that"
           " call alloca and functions with buffers larger than 8 bytes.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fstack-protector-all",
           "Like -fstack-protector except that all functions are protected.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fstack-protector-strong",
           "Like -fstack-protector but includes additional functions to be"
           " protected.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fstack-protector-explicit",
           "Like -fstack-protector but only protects those functions which"
           " have the stack_protect attribute",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fno-stack-protector",
           "Disable the stack protector check",
           ignore
         )
-        .flag("-flto", "Enable link-time optimisation", ignore)
-        .flag("-fno-lto", "Disable link-time optimisation", ignore)
-        .flag(
+        .flag<arg_number::any>(
+          "-flto",
+          "Enable link-time optimisation",
+          ignore
+        )
+        .flag<arg_number::any>(
+          "-fno-lto",
+          "Disable link-time optimisation",
+          ignore
+        )
+        .flag<arg_number::any>(
           "-O0",
           "Reduce compilation time and make debugging"
           " produce the expected result",
           ignore
         )
-        .flag("-O", "Optimize", ignore)
-        .flag("-O1", "Optimize", ignore)
-        .flag("-O2", "Optimize even more", ignore)
-        .flag("-O3", "Optimize yet more", ignore)
-        .flag("-Os", "Optimize for size", ignore)
-        .flag("-Oz", "Optimize for size further", ignore)
-        .flag("-Ofast", "Disregard strict standards compliance", ignore)
-        .flag("-Og", "Optimize debugging experience", ignore)
-        .flag("-m32", "Generate code for 32-bit ABI", ignore)
-        .flag("-m64", "Generate code for 64-bit ABI", ignore)
-        .flag(
+        .flag<arg_number::any>("-O", "Optimize", ignore)
+        .flag<arg_number::any>("-O1", "Optimize", ignore)
+        .flag<arg_number::any>("-O2", "Optimize even more", ignore)
+        .flag<arg_number::any>("-O3", "Optimize yet more", ignore)
+        .flag<arg_number::any>("-Os", "Optimize for size", ignore)
+        .flag<arg_number::any>("-Oz", "Optimize for size further", ignore)
+        .flag<arg_number::any>(
+          "-Ofast",
+          "Disregard strict standards compliance",
+          ignore
+        )
+        .flag<arg_number::any>("-Og", "Optimize debugging experience", ignore)
+        .flag<arg_number::any>("-m32", "Generate code for 32-bit ABI", ignore)
+        .flag<arg_number::any>("-m64", "Generate code for 64-bit ABI", ignore)
+        .flag<arg_number::any>(
           "-ffreestanding",
           "Assert that compilation targets a freestanding environment.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fcommon",
           "Place uninitialized global variables in a common block.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fno-common",
           "Place uninitialized global variables in the data section of the"
           " object file.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fstrict-aliasing",
           "Allow the compiler to assume the strictest aliasing rules"
           " applicable to the language being compiled.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fno-strict-aliasing",
           "Don't allow the compiler to assume the strictest aliasing rules"
           " applicable to the language being compiled.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-pthread",
           "Define additional macros required for using the POSIX threads"
           " library.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-static",
           "Prevent linking with the static libraries.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-mkernel",
           "Enable kernel development mode.",
           ignore
         )
-        .flag(
+        .flag<arg_number::any>(
           "-fobjc-arc",
           "Synthesize retain and release calls for Objective-C pointers",
           ignore
@@ -644,9 +675,11 @@ namespace metashell
             "tbm",      "mpx",      "mwaitx",   "clzero",     "pku"})
       {
         parser.flag(data::command_line_argument("-m" + instr),
-                    "Enable " + instr + " instructions", ignore);
+                    "Enable " + instr + " instructions", arg_number::any,
+                    ignore);
         parser.flag(data::command_line_argument("-mno-" + instr),
-                    "Disable " + instr + " instructions", ignore);
+                    "Disable " + instr + " instructions", arg_number::any,
+                    ignore);
       }
 
       parser.parse(args_);

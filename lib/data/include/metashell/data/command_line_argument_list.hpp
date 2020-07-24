@@ -46,6 +46,8 @@ namespace metashell
 
       command_line_argument_list() = default;
 
+      command_line_argument_list(int argc_, const char* argv_[]);
+
       command_line_argument_list(const command_line_argument_list&);
       command_line_argument_list(command_line_argument_list&&);
 

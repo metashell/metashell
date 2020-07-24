@@ -99,7 +99,6 @@ cd tmp
   get_lib pool
   get_lib predef
   get_lib preprocessor
-  get_lib program_options
   get_lib property_map
   get_lib proto
   get_lib range
