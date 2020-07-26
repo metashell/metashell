@@ -26,7 +26,6 @@ target_link_libraries(
 
   boost::algorithm
   boost::filesystem
-  boost::program_options
   boost::range
 
   just::file

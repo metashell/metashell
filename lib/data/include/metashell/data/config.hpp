@@ -41,7 +41,11 @@ namespace metashell
       logging_mode log_mode = logging_mode::none;
       std::string log_file;
 
+      config();
+
       const std::vector<shell_config>& shell_configs() const;
+
+      shell_config& default_shell_config();
 
       shell_config& active_shell_config();
       const shell_config& active_shell_config() const;
@@ -57,7 +61,7 @@ namespace metashell
 
       // using index instead of iterator to avoid it getting invalidated
       // during insertion.
-      std::vector<shell_config>::size_type _active_config = 0;
+      std::vector<shell_config>::size_type _active_config;
 
       void validate_active_config() const;
     };

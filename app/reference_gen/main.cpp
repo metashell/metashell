@@ -18,9 +18,9 @@
 #include "commands.hpp"
 #include "file_cache.hpp"
 
-#include <boost/program_options/options_description.hpp>
-#include <boost/program_options/parsers.hpp>
-#include <boost/program_options/variables_map.hpp>
+#include <metashell/data/arg_parser.hpp>
+
+#include <metashell/core/stdout_console.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -35,27 +35,42 @@ int main(int argc_, const char* argv_[])
 {
   boost::filesystem::path docs_dir;
 
-  boost::program_options::options_description desc("Options");
+  bool display_help = false;
+  bool test = false;
+
+  metashell::data::arg_parser parser{};
   // clang-format off
-  desc.add_options()
-      ("help,h", "Display usage")
-      ("test,t", "Don't update, just validate the generated content.")
-      (
-        "docs_dir,d",
-        boost::program_options::value(&docs_dir),
-        "Path to the docs dir of the source code."
-      );
+  parser
+    .flag<false>("-h", "--help", "Display help", display_help)
+    .flag<false>(
+      "-t", "--test",
+      "Don't update, just validate the generated content.",
+      test
+    )
+    .with_value(
+      "-d", "--docs_dir",
+      "Path to the docs dir of the source code.",
+      docs_dir
+    )
+  ;
   // clang-format on
+
+  const auto show_help = [&parser, argv_](std::ostream& out_) {
+    out_ << "Usage:\n"
+         << "  " << argv_[0] << " <options>\n"
+         << "\n"
+         << unformat(
+                parser.description(metashell::core::stdout_console{}.width()))
+         << "\n";
+  };
 
   try
   {
-    boost::program_options::variables_map vm;
-    store(parse_command_line(argc_, argv_, desc), vm);
-    notify(vm);
+    parser.parse(metashell::data::command_line_argument_list{argc_, argv_});
 
-    if (vm.count("help"))
+    if (display_help)
     {
-      std::cout << desc << std::endl;
+      show_help(std::cout);
       return 0;
     }
 
@@ -75,7 +90,7 @@ int main(int argc_, const char* argv_[])
 
     if (files.changed())
     {
-      if (vm.count("test"))
+      if (test)
       {
         const std::vector<std::string> lines{
             "Automatically generated documentation is out of date.",
@@ -111,7 +126,9 @@ int main(int argc_, const char* argv_[])
   }
   catch (std::exception& e_)
   {
-    std::cerr << "Error: " << e_.what() << std::endl << desc << std::endl;
+    std::cerr << "Error: " << e_.what() << "\n";
+    show_help(std::cerr);
+    std::cerr << "\n";
     return 1;
   }
 }

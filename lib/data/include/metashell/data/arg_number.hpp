@@ -1,8 +1,8 @@
-#ifndef METASHELL_INDENTER_HPP
-#define METASHELL_INDENTER_HPP
+#ifndef METASHELL_DATA_ARG_NUMBER_HPP
+#define METASHELL_DATA_ARG_NUMBER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2020, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,30 +17,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <sstream>
-#include <string>
+#include <metashell/data/counter.hpp>
+
+#include <cassert>
 
 namespace metashell
 {
-  namespace core
+  namespace data
   {
-    class indenter
+    enum class arg_number
     {
-    public:
-      explicit indenter(int width_);
-
-      indenter& left_align(const std::string& s_,
-                           const std::string& line_prefix_,
-                           const std::string& first_line_prefix_);
-
-      indenter& raw(const std::string& s_);
-
-      std::string str() const;
-
-    private:
-      int _width;
-      std::ostringstream _buff;
+      any,
+      at_most_once
     };
+
+    template <class CounterT>
+    bool allow_one_more(arg_number num_, basic_counter<CounterT> so_far_)
+    {
+      switch (num_)
+      {
+      case arg_number::any:
+        return true;
+      case arg_number::at_most_once:
+        return so_far_.empty();
+      }
+      assert(!"Invalid arg_number value");
+      return false;
+    }
   }
 }
 

@@ -14,98 +14,98 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/indenter.hpp>
+#include <metashell/data/indenter.hpp>
 
 #include <gtest/gtest.h>
 
-using namespace metashell;
+using namespace metashell::data;
 
 TEST(indenter, empty_indenter_returns_empty_string)
 {
-  core::indenter ind(10);
+  indenter ind{10};
   ASSERT_EQ("", ind.str());
 }
 
 TEST(indenter, displaying_raw_text)
 {
-  core::indenter ind(10);
+  indenter ind{10};
   ind.raw("foo");
   ASSERT_EQ("foo\n", ind.str());
 }
 
 TEST(indenter, displaying_raw_text_that_is_longer_than_width)
 {
-  core::indenter ind(2);
+  indenter ind(2);
   ind.raw("foo");
   ASSERT_EQ("foo\n", ind.str());
 }
 
 TEST(indenter, left_aligning_one_liner)
 {
-  core::indenter ind(10);
+  indenter ind{10};
   ind.left_align("foo", "-", ".");
   ASSERT_EQ(".foo\n", ind.str());
 }
 
 TEST(indenter, left_aligning_two_liner)
 {
-  core::indenter ind(10);
+  indenter ind{10};
   ind.left_align("foo foo foo", "-", ".");
   ASSERT_EQ(".foo foo\n-foo\n", ind.str());
 }
 
 TEST(indenter, removing_extra_whitespace_at_line_break)
 {
-  core::indenter ind(10);
+  indenter ind{10};
   ind.left_align("foo foo                  foo", "-", ".");
   ASSERT_EQ(".foo foo\n-foo\n", ind.str());
 }
 
 TEST(indenter, left_aligning_two_liner_word)
 {
-  core::indenter ind(10);
+  indenter ind{10};
   ind.left_align("foofoofoofoo", "-", ".");
   ASSERT_EQ(".foofoofoo\n-foo\n", ind.str());
 }
 
 TEST(indenter, left_aligning_three_liner_word)
 {
-  core::indenter ind(10);
+  indenter ind{10};
   ind.left_align("foofoofoobarbarbarxyz", "-", ".");
   ASSERT_EQ(".foofoofoo\n-barbarbar\n-xyz\n", ind.str());
 }
 
 TEST(indenter, left_aligning_with_new_line)
 {
-  core::indenter ind(10);
+  indenter ind{10};
   ind.left_align("foo\nbar xyz", "-", ".");
   ASSERT_EQ(".foo\n-bar xyz\n", ind.str());
 }
 
 TEST(indenter, left_aligning_text_shorter_than_the_width_with_new_line)
 {
-  core::indenter ind(10);
+  indenter ind{10};
   ind.left_align("foo\nbar", "-", ".");
   ASSERT_EQ(".foo\n-bar\n", ind.str());
 }
 
 TEST(indenter, left_aligning_text_starting_with_whitespace)
 {
-  core::indenter ind(10);
+  indenter ind{10};
   ind.left_align(" foo", "-", ".");
   ASSERT_EQ(". foo\n", ind.str());
 }
 
 TEST(indenter, left_aligning_text_with_trailing_whitespace)
 {
-  core::indenter ind(10);
+  indenter ind{10};
   ind.left_align("foo ", "-", ".");
   ASSERT_EQ(".foo\n", ind.str());
 }
 
 TEST(indenter, left_aligning_multi_line_text_starting_with_whitespace)
 {
-  core::indenter ind(10);
+  indenter ind{10};
   ind.left_align(" foo\n bar", "-", ".");
   ASSERT_EQ(". foo\n- bar\n", ind.str());
 }

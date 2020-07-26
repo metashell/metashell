@@ -30,6 +30,12 @@ namespace metashell
   {
     bool command_line_argument_list::empty() const { return _items.empty(); }
 
+    command_line_argument_list::command_line_argument_list(int argc_,
+                                                           const char* argv_[])
+      : _items{argc_ > 0 ? container(argv_ + 1, argv_ + argc_) : container{}}
+    {
+    }
+
     command_line_argument_list::command_line_argument_list(
         const command_line_argument_list& a_)
       : _items(a_._items)

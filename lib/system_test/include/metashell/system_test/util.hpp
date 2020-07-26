@@ -20,11 +20,13 @@
 #include <metashell/system_test/json_string.hpp>
 
 #include <metashell/data/command_line_argument.hpp>
+#include <metashell/data/command_line_argument_list.hpp>
 
 #include <boost/filesystem/path.hpp>
 
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace metashell
 {
@@ -56,6 +58,15 @@ namespace metashell
     void write_file(const boost::filesystem::path&, const std::string&);
 
     json_string test_config(const std::string& name_);
+
+    template <size_t PrefixLen>
+    std::vector<data::command_line_argument_list>
+    with_and_without_prefix(const char (&prefix_)[PrefixLen],
+                            const boost::filesystem::path& arg_)
+    {
+      return {data::command_line_argument_list{prefix_, arg_.string()},
+              data::command_line_argument_list{arg_.string()}};
+    }
   }
 }
 

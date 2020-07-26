@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/core/indenter.hpp>
+#include <metashell/data/indenter.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -22,7 +22,7 @@
 
 namespace metashell
 {
-  namespace core
+  namespace data
   {
     namespace
     {
@@ -99,13 +99,16 @@ namespace metashell
       }
     }
 
-    indenter::indenter(int width_) : _width(width_) {}
+    indenter::indenter(int width_, std::string line_sep_)
+      : _width{width_}, _line_sep{std::move(line_sep_)}
+    {
+    }
 
     std::string indenter::str() const { return _buff.str(); }
 
     indenter& indenter::raw(const std::string& s_)
     {
-      _buff << s_ << "\n";
+      _buff << s_ << _line_sep;
       return *this;
     }
 
@@ -120,7 +123,8 @@ namespace metashell
       bool first = true;
       for (const std::string& line : lines)
       {
-        _buff << (first ? first_line_prefix_ : line_prefix_) << line << "\n";
+        _buff << (first ? first_line_prefix_ : line_prefix_) << line
+              << _line_sep;
         first = false;
       }
       return *this;
