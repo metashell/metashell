@@ -60,6 +60,8 @@ target_link_libraries(
   ${CMAKE_THREAD_LIBS_INIT}
 )
 
+set_target_properties(${PROJECT_NAME} PROPERTIES UNITY_BUILD OFF)
+
 disable_warnings(${PROJECT_NAME})
 
 target_include_directories(
