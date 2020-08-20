@@ -130,7 +130,7 @@ namespace metashell
               boost::wave::cpplexer::lex_iterator<core::wave_token>,
               boost::wave::iteration_context_policies::load_file_to_string,
               macro_definition_collector>
-              ctx(begin(defines), end(defines), "<macros>", def_collector);
+              ctx(defines.begin(), defines.end(), "<macros>", def_collector);
 
           ctx.set_language(boost::wave::language_support(
               boost::wave::support_cpp0x |

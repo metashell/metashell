@@ -48,7 +48,7 @@ namespace metashell
       {
         try
         {
-          context ctx(begin(exp_), end(exp_), "<stdin>");
+          context ctx(exp_.begin(), exp_.end(), "<stdin>");
           wave::apply(ctx, _config, _system_includes);
 
           std::ostringstream s;

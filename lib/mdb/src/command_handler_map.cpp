@@ -39,7 +39,7 @@ namespace metashell
     std::optional<command> command_handler_map::get_command(
         const data::mdb_command::name_type& name) const
     {
-      if (empty(name))
+      if (name.empty())
       {
         return std::nullopt;
       }

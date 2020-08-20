@@ -48,7 +48,7 @@ namespace metashell
         const command_line_argument& prefix_) const
     {
       return starts_with_impl(prefix_.value().c_str()) ?
-                 std::make_optional(substr(*this, size(prefix_))) :
+                 std::make_optional(substr(prefix_.size())) :
                  std::nullopt;
     }
 

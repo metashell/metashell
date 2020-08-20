@@ -34,7 +34,7 @@ namespace metashell
       data::cpp_code macro_discovery::macros(const iface::environment& env_)
       {
         const data::cpp_code code = env_.get_all() + data::cpp_code("\n");
-        context ctx(begin(code), end(code), "<stdin>");
+        context ctx(code.begin(), code.end(), "<stdin>");
         wave::apply(ctx, _config, _system_includes);
         preprocess(ctx);
 

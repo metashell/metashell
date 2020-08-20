@@ -44,11 +44,11 @@ namespace metashell
               ends_with(arg_, data::command_line_argument("\"")))
           {
             return boost::filesystem::path(
-                substr(arg_, 3, size(arg_) - 4).value());
+                arg_.substr(3, arg_.size() - 4).value());
           }
           else if (starts_with(arg_, data::command_line_argument("/I")))
           {
-            return boost::filesystem::path(substr(arg_, 2).value());
+            return boost::filesystem::path(arg_.substr(2).value());
           }
 
           return std::nullopt;

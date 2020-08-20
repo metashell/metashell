@@ -30,6 +30,11 @@ namespace metashell
     public:
       using string<cpp_code, true, constraint::code>::string;
       using string<cpp_code, true, constraint::code>::value;
+      using string<cpp_code, true, constraint::code>::size;
+      using string<cpp_code, true, constraint::code>::begin;
+      using string<cpp_code, true, constraint::code>::end;
+      using string<cpp_code, true, constraint::code>::empty;
+      using string<cpp_code, true, constraint::code>::substr;
 
       static constexpr const char* name_of_type() { return "C++ code"; }
     };

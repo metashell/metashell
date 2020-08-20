@@ -73,16 +73,15 @@ namespace metashell
       string_literal_workaround(const data::user_input& to_complete_,
                                 data::code_completion values_)
       {
-        if (values_.size() == 1 &&
-            std::count(begin(to_complete_), end(to_complete_), '\"') % 2 == 1)
+        if (values_.size() == 1 && count(to_complete_, '\"') % 2 == 1)
         {
           data::user_input completion = *values_.pop();
-          if (empty(completion) || *(end(completion) - 1) != '\"')
+          if (completion.empty() || *(completion.end() - 1) != '\"')
           {
             values_.insert(std::move(completion));
           }
           {
-            values_.insert(substr(completion, 0, size(completion) - 1));
+            values_.insert(completion.substr(0, completion.size() - 1));
           }
         }
         return values_;

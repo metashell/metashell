@@ -285,7 +285,7 @@ namespace metashell
         const auto& args = system_test_config::engine_args();
         return std::find_if(args.begin(), args.end(),
                             [](const data::command_line_argument& arg) {
-                              return find(arg, "cl.exe") != std::string::npos;
+                              return arg.find("cl.exe") != std::string::npos;
                             }) != args.end();
       }
       else

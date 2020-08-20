@@ -34,48 +34,6 @@ namespace metashell
 
       std::string to_string(const std::string&);
 
-      template <class CharT, class Traits, class Allocator>
-      auto c_str(const std::basic_string<CharT, Traits, Allocator>& s_)
-      {
-        return s_.c_str();
-      }
-
-      template <class CharT, class Traits, class Allocator>
-      auto empty(const std::basic_string<CharT, Traits, Allocator>& s_)
-      {
-        return s_.empty();
-      }
-
-      template <class CharT, class Traits, class Allocator>
-      void clear(std::basic_string<CharT, Traits, Allocator>& s_)
-      {
-        s_.clear();
-      }
-
-      template <class CharT, class Traits, class Allocator>
-      auto size(const std::basic_string<CharT, Traits, Allocator>& s_)
-      {
-        return s_.size();
-      }
-
-      template <class CharT, class Traits, class Allocator, class... Args>
-      auto find(const std::basic_string<CharT, Traits, Allocator>& s_,
-                Args&&... args_)
-      {
-        return s_.find(std::forward<Args>(args_)...);
-      }
-
-      template <class CharT, class Traits, class Allocator>
-      auto substr(
-          const std::basic_string<CharT, Traits, Allocator>& s_,
-          typename std::basic_string<CharT, Traits, Allocator>::size_type pos_ =
-              0,
-          typename std::basic_string<CharT, Traits, Allocator>::size_type len_ =
-              std::basic_string<CharT, Traits, Allocator>::npos)
-      {
-        return s_.substr(pos_, len_);
-      }
-
       void throw_(const std::string&);
 
       bool isspace(int);
@@ -111,44 +69,29 @@ namespace metashell
 
       const String& value() const { return _value; }
 
-      friend auto c_str(const Derived& s_)
+      auto c_str() const { return _value.c_str(); }
+
+      bool empty() const { return _value.empty(); }
+
+      void clear()
       {
-        using impl::c_str;
-        return c_str(s_.value());
+        static_assert(AllowEmpty);
+        _value.clear();
+        check_invariant(_value);
       }
 
-      friend auto empty(const Derived& s_)
-      {
-        using impl::empty;
-        return empty(s_.value());
-      }
-
-      friend void clear(Derived& s_)
-      {
-        using impl::clear;
-        clear(const_cast<String&>(s_.value()));
-      }
-
-      friend auto size(const Derived& s_)
-      {
-        using impl::size;
-        return size(s_.value());
-      }
+      auto size() const { return _value.size(); }
 
       template <class... Args>
-      friend auto find(const Derived& s_, Args&&... args_)
+      auto find(Args&&... args_) const
       {
-        using impl::find;
-        return find(s_.value(), std::forward<Args>(args_)...);
+        return _value.find(std::forward<Args>(args_)...);
       }
 
-      // requires requires { Derived(String()); };
-      friend auto substr(const Derived& s_,
-                         std::string::size_type pos_ = 0,
-                         std::string::size_type len_ = std::string::npos)
+      auto substr(std::string::size_type pos_ = 0,
+                  std::string::size_type len_ = std::string::npos) const
       {
-        using impl::substr;
-        return Derived(substr(s_.value(), pos_, len_));
+        return Derived{_value.substr(pos_, len_)};
       }
 
       friend Derived& operator+=(Derived& lhs_, const Derived& rhs_)
@@ -191,17 +134,9 @@ namespace metashell
         return o_ << s_.value();
       }
 
-      friend auto begin(const Derived& s_)
-      {
-        using std::begin;
-        return begin(s_.value());
-      }
+      auto begin() const { return _value.begin(); }
 
-      friend auto end(const Derived& s_)
-      {
-        using std::end;
-        return end(s_.value());
-      }
+      auto end() const { return _value.end(); }
 
       friend bool operator==(const Derived& lhs_, const Derived& rhs_)
       {
@@ -263,40 +198,28 @@ namespace metashell
 
       friend bool starts_with(const Derived& input_, const Derived& test_)
       {
-        using impl::size;
-        using std::begin;
-
-        const auto len = size(test_.value());
-        return size(input_.value()) >= len &&
-               std::equal(begin(input_.value()), begin(input_.value()) + len,
-                          begin(test_.value()));
+        const auto len = test_.size();
+        return input_.size() >= len &&
+               std::equal(input_.begin(), input_.begin() + len, test_.begin());
       }
 
       friend bool ends_with(const Derived& input_, const Derived& test_)
       {
-        using impl::size;
-        using std::begin;
-        using std::end;
-
-        const auto len = size(test_.value());
-        return size(input_.value()) >= len &&
-               std::equal(end(input_.value()) - len, end(input_.value()),
-                          begin(test_.value()));
+        const auto len = test_.size();
+        return input_.size() >= len &&
+               std::equal(input_.end() - len, input_.end(), test_.begin());
       }
 
       friend Derived trim_copy(const Derived& s_)
       {
-        using std::begin;
-        using std::end;
-
         const auto spc = [](auto c_) {
           using impl::isspace;
           return isspace(c_);
         };
 
-        auto e = end(s_.value());
+        auto e = s_.end();
 
-        const auto b = std::find_if_not(begin(s_.value()), e, spc);
+        const auto b = std::find_if_not(s_.begin(), e, spc);
         if (b != e)
         {
           --e;
@@ -313,19 +236,13 @@ namespace metashell
       template <class UnaryPredicate>
       friend auto count_if(const Derived& s_, UnaryPredicate p_)
       {
-        using std::begin;
-        using std::end;
-
-        return std::count_if(begin(s_.value()), end(s_.value()), p_);
+        return std::count_if(s_.begin(), s_.end(), p_);
       }
 
       template <class T>
       friend auto count(const Derived& s_, T c_)
       {
-        using std::begin;
-        using std::end;
-
-        return std::count(begin(s_.value()), end(s_.value()), c_);
+        return std::count(s_.begin(), s_.end(), c_);
       }
 
     private:
@@ -333,7 +250,7 @@ namespace metashell
 
       static void check_invariant(const String& s_)
       {
-        if (!AllowEmpty && empty(s_))
+        if (!AllowEmpty && s_.empty())
         {
           impl::throw_("Empty " + std::string{Derived::name_of_type()} +
                        " value");

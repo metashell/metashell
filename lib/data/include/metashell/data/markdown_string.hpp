@@ -32,6 +32,7 @@ namespace metashell
     public:
       using string<markdown_string, true, constraint::code>::string;
       using string<markdown_string, true, constraint::code>::value;
+      using string<markdown_string, true, constraint::code>::size;
 
       static constexpr const char* name_of_type() { return "markdown string"; }
     };

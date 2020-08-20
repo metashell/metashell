@@ -85,8 +85,9 @@ namespace metashell
 
       const auto arg = tokens_to_string(args_begin_, args_end_);
       const std::optional<data::shell_config_name> prefix =
-          empty(arg) ? std::nullopt :
-                       std::make_optional(data::shell_config_name(arg.value()));
+          arg.empty() ?
+              std::nullopt :
+              std::make_optional(data::shell_config_name(arg.value()));
 
       const auto active_to_show = element_to_show(prefix, active);
 

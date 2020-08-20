@@ -142,7 +142,7 @@ namespace mindent
     static bool is_c_comment(const token_type& t_)
     {
       return category(t_) == metashell::data::token_category::comment &&
-             size(metashell::data::value(t_)) >= 4 &&
+             metashell::data::value(t_).size() >= 4 &&
              starts_with(
                  metashell::data::value(t_), metashell::data::cpp_code("/*"));
     }
