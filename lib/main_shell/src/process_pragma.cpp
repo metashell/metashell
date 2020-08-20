@@ -17,6 +17,8 @@
 #include <metashell/main_shell/metashell_pragma.hpp>
 #include <metashell/main_shell/process_pragma.hpp>
 
+#include <metashell/core/find_last_if.hpp>
+
 #include <metashell/data/exception.hpp>
 #include <metashell/data/token.hpp>
 #include <metashell/data/token_type.hpp>
@@ -25,24 +27,6 @@ namespace metashell
 {
   namespace main_shell
   {
-    namespace
-    {
-      template <class ForwardIterator, class Pred>
-      ForwardIterator
-      find_last_if(ForwardIterator begin_, ForwardIterator end_, Pred pred_)
-      {
-        ForwardIterator last = end_;
-        for (ForwardIterator i = begin_; i != end_; ++i)
-        {
-          if (pred_(*i))
-          {
-            last = i;
-          }
-        }
-        return last;
-      }
-    }
-
     void process_pragma(
         const std::map<data::pragma_name,
                        std::unique_ptr<iface::pragma_handler>>& handlers_,
@@ -77,7 +61,7 @@ namespace metashell
       if (longest_fit_handler)
       {
         longest_fit_handler->run(
-            begin_, find_last_if(begin_, longest_fit_begin,
+            begin_, core::find_last_if(begin_, longest_fit_begin,
                                  [](const data::token& token_) {
                                    return category(token_) !=
                                           data::token_category::whitespace;
