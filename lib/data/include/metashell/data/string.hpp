@@ -20,10 +20,7 @@
 #include <metashell/data/constraint/any.hpp>
 
 #include <algorithm>
-#include <cctype>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
+#include <iosfwd>
 #include <string>
 #include <type_traits>
 
@@ -33,57 +30,9 @@ namespace metashell
   {
     namespace impl
     {
-      template <class Char>
-      std::basic_string<Char> c_escape(const std::basic_string<Char>& s_)
-      {
-        std::basic_ostringstream<Char> result;
-        for (Char c : s_)
-        {
-          if (c == '\a')
-          {
-            result << '\\' << 'a';
-          }
-          else if (c == '\b')
-          {
-            result << '\\' << 'b';
-          }
-          else if (c == '\f')
-          {
-            result << '\\' << 'b';
-          }
-          else if (c == '\n')
-          {
-            result << '\\' << 'n';
-          }
-          else if (c == '\r')
-          {
-            result << '\\' << 'r';
-          }
-          else if (c == '\t')
-          {
-            result << '\\' << 't';
-          }
-          else if (c == '\v')
-          {
-            result << '\\' << 'v';
-          }
-          else if (c < Char(32) || Char(126) < c)
-          {
-            result << '\\' << 'x' << std::hex << int(c);
-          }
-          else
-          {
-            if (c == '\\' || c == '"' || c == '\'')
-            {
-              result << '\\';
-            }
-            result << c;
-          }
-        }
-        return result.str();
-      }
+      std::string c_escape(int);
 
-      inline std::string to_string(const std::string& s_) { return s_; }
+      std::string to_string(const std::string&);
 
       template <class CharT, class Traits, class Allocator>
       auto c_str(const std::basic_string<CharT, Traits, Allocator>& s_)
@@ -127,129 +76,9 @@ namespace metashell
         return s_.substr(pos_, len_);
       }
 
-      template <class Derived,
-                bool AllowEmpty,
-                class NonFirstCharConstraints,
-                class FirstCharConstraints,
-                class String>
-      class string_base
-      {
-      public:
-        explicit string_base(String value_) : _value(std::move(value_))
-        {
-          check_invariant(_value);
-        }
+      void throw_(const std::string&);
 
-        static void check_invariant(const String& s_)
-        {
-          if (!AllowEmpty && empty(s_))
-          {
-            throw std::runtime_error(
-                "Empty " + std::string(Derived::name_of_type()) + " value");
-          }
-
-          bool first = true;
-          for (auto c : s_)
-          {
-            if ((first && !FirstCharConstraints::allowed_char(c)) ||
-                (!first && !NonFirstCharConstraints::allowed_char(c)))
-            {
-              throw std::runtime_error(
-                  "Invalid character in " +
-                  std::string(Derived::name_of_type()) + ": " +
-                  c_escape(std::basic_string<decltype(c)>(1, c)));
-            }
-          }
-        }
-
-        String _value;
-      };
-
-      template <class Derived,
-                bool AllowEmpty,
-                class NonFirstCharConstraints,
-                class FirstCharConstraints,
-                class String>
-      class string : public string_base<Derived,
-                                        AllowEmpty,
-                                        NonFirstCharConstraints,
-                                        FirstCharConstraints,
-                                        String>
-      {
-      public:
-        string()
-          : string_base<Derived,
-                        AllowEmpty,
-                        NonFirstCharConstraints,
-                        FirstCharConstraints,
-                        String>(String())
-        {
-          static_assert(AllowEmpty, "Empty values are disabled.");
-        }
-
-        explicit string(String value_)
-          : string_base<Derived,
-                        AllowEmpty,
-                        NonFirstCharConstraints,
-                        FirstCharConstraints,
-                        String>(std::move(value_))
-        {
-        }
-
-        explicit string(std::string value_)
-          : string_base<Derived,
-                        AllowEmpty,
-                        NonFirstCharConstraints,
-                        FirstCharConstraints,
-                        String>(String(std::move(value_)))
-        {
-        }
-
-        template <class InputIterator>
-        string(InputIterator begin_, InputIterator end_)
-          : string_base<Derived,
-                        AllowEmpty,
-                        NonFirstCharConstraints,
-                        FirstCharConstraints,
-                        String>(String(begin_, end_))
-        {
-        }
-      };
-
-      template <class Derived,
-                bool AllowEmpty,
-                class NonFirstCharConstraints,
-                class FirstCharConstraints>
-      class string<Derived,
-                   AllowEmpty,
-                   NonFirstCharConstraints,
-                   FirstCharConstraints,
-                   std::string> : public string_base<Derived,
-                                                     AllowEmpty,
-                                                     NonFirstCharConstraints,
-                                                     FirstCharConstraints,
-                                                     std::string>
-      {
-      public:
-        explicit string(std::string value_ = std::string())
-          : string_base<Derived,
-                        AllowEmpty,
-                        NonFirstCharConstraints,
-                        FirstCharConstraints,
-                        std::string>(std::move(value_))
-        {
-        }
-
-        template <class InputIterator>
-        string(InputIterator begin_, InputIterator end_)
-          : string_base<Derived,
-                        AllowEmpty,
-                        NonFirstCharConstraints,
-                        FirstCharConstraints,
-                        std::string>(std::string(begin_, end_))
-        {
-        }
-      };
+      bool isspace(int);
     }
 
     template <class Derived,
@@ -257,33 +86,30 @@ namespace metashell
               class NonFirstCharConstraints = constraint::any,
               class FirstCharConstraints = NonFirstCharConstraints,
               class String = std::string>
-    class string : impl::string<Derived,
-                                AllowEmpty,
-                                NonFirstCharConstraints,
-                                FirstCharConstraints,
-                                String>
+    class string
     {
     public:
-      using impl::string<Derived,
-                         AllowEmpty,
-                         NonFirstCharConstraints,
-                         FirstCharConstraints,
-                         String>::string;
-
-      string()
-        : impl::string<Derived,
-                       AllowEmpty,
-                       NonFirstCharConstraints,
-                       FirstCharConstraints,
-                       String>()
+      string() : _value{}
       {
+        static_assert(AllowEmpty, "Empty values are disabled.");
+
+        check_invariant(_value);
       }
 
-      const String& value() const
+      template <class Str,
+                class = std::enable_if_t<std::is_constructible_v<String, Str>>>
+      explicit string(Str value_) : _value{std::move(value_)}
       {
-        return impl::string<Derived, AllowEmpty, NonFirstCharConstraints,
-                            FirstCharConstraints, String>::_value;
+        check_invariant(_value);
       }
+
+      template <class InputIterator>
+      string(InputIterator begin_, InputIterator end_) : _value{begin_, end_}
+      {
+        check_invariant(_value);
+      }
+
+      const String& value() const { return _value; }
 
       friend auto c_str(const Derived& s_)
       {
@@ -464,7 +290,7 @@ namespace metashell
         using std::end;
 
         const auto spc = [](auto c_) {
-          using std::isspace;
+          using impl::isspace;
           return isspace(c_);
         };
 
@@ -500,6 +326,31 @@ namespace metashell
         using std::end;
 
         return std::count(begin(s_.value()), end(s_.value()), c_);
+      }
+
+    private:
+      String _value;
+
+      static void check_invariant(const String& s_)
+      {
+        if (!AllowEmpty && empty(s_))
+        {
+          impl::throw_("Empty " + std::string{Derived::name_of_type()} +
+                       " value");
+        }
+
+        bool first = true;
+        for (auto c : s_)
+        {
+          if ((first && !FirstCharConstraints::allowed_char(c)) ||
+              (!first && !NonFirstCharConstraints::allowed_char(c)))
+          {
+            impl::throw_("Invalid character in " +
+                         std::string{Derived::name_of_type()} + ": " +
+                         impl::c_escape(c));
+          }
+          first = false;
+        }
       }
     };
   }
