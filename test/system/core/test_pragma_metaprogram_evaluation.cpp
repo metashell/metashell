@@ -21,13 +21,9 @@
 
 using namespace metashell::system_test;
 
-namespace
-{
-  auto res = code_completion_result::create;
-}
-
 TEST(pragma_metaprogram_evaluation, code_complete)
 {
+  auto res = code_completion_result::create;
   code_completer c;
 
   ASSERT_EQ(c("#msh metaprogram evaluation"), res(" on", " off", " 1", " 0"));

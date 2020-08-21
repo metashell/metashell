@@ -22,15 +22,11 @@
 
 using namespace metashell::system_test;
 
-namespace
-{
-  auto res = code_completion_result::create;
-}
-
 TEST(pragma_pdb, code_complete)
 {
   // further test cases are covered by test_completion.cpp
 
+  auto res = code_completion_result::create;
   code_completer c;
 
   ASSERT_EQ(c("#msh pdb"), res(" -", " -profile", " -nocache"));

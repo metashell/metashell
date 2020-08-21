@@ -27,13 +27,9 @@
 
 using namespace metashell::system_test;
 
-namespace
-{
-  auto res = code_completion_result::create;
-}
-
 TEST(pragma_ls, code_complete)
 {
+  auto res = code_completion_result::create;
   const std::string prefixes[] = {"", " <list>", "\"list\"", " <>"};
 
   just::temp::directory tmp;

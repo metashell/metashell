@@ -32,12 +32,11 @@ namespace
   {
     just::file::write(path_.string(), "");
   }
-
-  auto res = code_completion_result::create;
 }
 
 TEST(pragma_environment, code_complete)
 {
+  auto res = code_completion_result::create;
   code_completer c;
 
   ASSERT_EQ(
@@ -57,6 +56,7 @@ TEST(pragma_environment_add, code_complete)
 
 TEST(pragma_environment_save, code_complete)
 {
+  auto res = code_completion_result::create;
   just::temp::directory tmp_dir;
   const boost::filesystem::path tmp{tmp_dir.path()};
   create_directory(tmp / "comp");
