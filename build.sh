@@ -47,6 +47,13 @@ else
   TESTS_ARG="-DTESTS=${TESTS}"
 fi
 
+if [ -z "${ENABLE_UNITY_BUILD}" ]
+then
+  UNITY_BUILD_ARGS=""
+else
+  UNITY_BUILD_ARGS="-DCMAKE_UNITY_BUILD=ON"
+fi
+
 PLATFORM="$(tools/detect_platform.sh)"
 PLATFORM_ID="$(tools/detect_platform.sh --id)"
 
@@ -92,9 +99,9 @@ fi
 mkdir -p "bin/${PLATFORM_ID}/metashell"; cd "bin/${PLATFORM_ID}/metashell"
   if [ -z "${METASHELL_NO_DOC_GENERATION}" ]
   then
-    cmake ../../.. ${TESTS_ARG}
+    cmake ../../.. ${TESTS_ARG} ${UNITY_BUILD_ARGS}
   else
-    cmake ../../.. ${TESTS_ARG} -DMETASHELL_NO_DOC_GENERATION=1
+    cmake ../../.. ${TESTS_ARG} ${UNITY_BUILD_ARGS} -DMETASHELL_NO_DOC_GENERATION=1
   fi
   make -j${BUILD_THREADS}
   ctest -j${TEST_THREADS} || (cat Testing/Temporary/LastTest.log && false)
