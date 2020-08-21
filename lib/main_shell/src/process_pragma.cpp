@@ -61,12 +61,13 @@ namespace metashell
       if (longest_fit_handler)
       {
         longest_fit_handler->run(
-            begin_, core::find_last_if(begin_, longest_fit_begin,
-                                 [](const data::token& token_) {
-                                   return category(token_) !=
-                                          data::token_category::whitespace;
-                                 }) +
-                        1,
+            begin_,
+            core::find_last_if(begin_, longest_fit_begin,
+                               [](const data::token& token_) {
+                                 return category(token_) !=
+                                        data::token_category::whitespace;
+                               }) +
+                1,
             longest_fit_begin, e, shell_, displayer_);
       }
       else

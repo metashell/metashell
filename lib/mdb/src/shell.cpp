@@ -43,9 +43,7 @@ namespace metashell
       callback(void (shell::*f)(const data::mdb_command::arguments_type&,
                                 iface::displayer&))
       {
-        return std::bind(f,
-                         std::placeholders::_1,
-                         std::placeholders::_2,
+        return std::bind(f, std::placeholders::_1, std::placeholders::_2,
                          std::placeholders::_3);
       }
     }

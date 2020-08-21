@@ -19,7 +19,7 @@
 
 namespace metashell
 {
-  namespace core 
+  namespace core
   {
     template <class ForwardIterator, class Pred>
     ForwardIterator
