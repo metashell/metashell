@@ -42,7 +42,7 @@ namespace metashell
                             iface::displayer& displayer_) const
     {
       const data::cpp_code arg = tokens_to_string(args_begin_, args_end_);
-      if (empty(arg))
+      if (arg.empty())
       {
         displayer_.show_error("Usage: " +
                               tokens_to_string(name_begin_, name_end_) + " " +

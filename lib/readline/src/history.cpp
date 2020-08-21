@@ -32,7 +32,7 @@ namespace metashell
     void history::add(const data::user_input& cmd_)
     {
       // TODO save/restore history
-      std::vector<char> l(c_str(cmd_), c_str(cmd_) + size(cmd_) + 1);
+      std::vector<char> l(cmd_.c_str(), cmd_.c_str() + cmd_.size() + 1);
       ::add_history(l.data());
     }
   }

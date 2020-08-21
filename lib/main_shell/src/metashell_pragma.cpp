@@ -52,7 +52,7 @@ namespace metashell
             (value(*i) == "metashell" || value(*i) == "msh"))
         {
           i = skip_whitespace(skip(i), cmd_.end());
-          if (i == cmd_.end() || empty(value(*i)))
+          if (i == cmd_.end() || value(*i).empty())
           {
             throw data::exception(
                 "The name of the metashell pragma is missing.");

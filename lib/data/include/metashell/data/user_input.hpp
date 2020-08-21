@@ -34,6 +34,13 @@ namespace metashell
     public:
       using string<user_input, true, constraint::code>::string;
       using string<user_input, true, constraint::code>::value;
+      using string<user_input, true, constraint::code>::c_str;
+      using string<user_input, true, constraint::code>::begin;
+      using string<user_input, true, constraint::code>::end;
+      using string<user_input, true, constraint::code>::size;
+      using string<user_input, true, constraint::code>::empty;
+      using string<user_input, true, constraint::code>::substr;
+      using string<user_input, true, constraint::code>::clear;
 
       static constexpr const char* name_of_type() { return "user input"; }
 

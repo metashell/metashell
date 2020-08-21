@@ -99,7 +99,7 @@ namespace metashell
       result[0] = exe_.c_str();
       const auto last = std::transform(
           _items.begin(), _items.end(), result.begin() + 1,
-          [](const command_line_argument& a_) { return c_str(a_); });
+          [](const command_line_argument& a_) { return a_.c_str(); });
       assert(last != result.end());
       *last = nullptr;
       return result;

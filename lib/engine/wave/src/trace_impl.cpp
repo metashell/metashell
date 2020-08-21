@@ -71,7 +71,7 @@ namespace metashell
           _ignore_macro_redefinition(config_.ignore_macro_redefinition),
           _input(determine_input(env_, exp_)),
           _num_tokens_from_macro_call(0),
-          _ctx(begin(_input), end(_input), env_path().c_str()),
+          _ctx(_input.begin(), _input.end(), env_path().c_str()),
           _pos(std::nullopt)
       {
         namespace p = std::placeholders;

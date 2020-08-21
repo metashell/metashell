@@ -33,8 +33,17 @@ namespace metashell
     public:
       using string<type, true, constraint::any, constraint::any, cpp_code>::
           string;
+
       using string<type, true, constraint::any, constraint::any, cpp_code>::
           value;
+
+      using string<type, true, constraint::any, constraint::any, cpp_code>::
+          size;
+
+      using string<type, true, constraint::any, constraint::any, cpp_code>::
+          begin;
+
+      using string<type, true, constraint::any, constraint::any, cpp_code>::end;
 
       static constexpr const char* name_of_type() { return "type"; }
 

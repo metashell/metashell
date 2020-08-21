@@ -167,7 +167,7 @@ namespace metashell
         METASHELL_LOG(_logger, "Exit code of clang: " + to_string(o.status));
 
         const std::string out = o.standard_output;
-        const auto prefix_len = size(completion_start.second);
+        const auto prefix_len = completion_start.second.size();
         data::code_completion result;
         core::for_each_line(out, [&result, &completion_start,
                                   prefix_len](const std::string& line_) {
@@ -176,7 +176,7 @@ namespace metashell
             if (starts_with(*comp, completion_start.second) &&
                 *comp != completion_start.second)
             {
-              result.insert(data::user_input{substr(*comp, prefix_len)});
+              result.insert(data::user_input{comp->substr(prefix_len)});
             }
           }
         });
