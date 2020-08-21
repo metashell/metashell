@@ -33,7 +33,8 @@ add_library(boost::thread ALIAS ${PROJECT_NAME})
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE BOOST_THREAD_BUILD_LIB)
 
-set_target_properties(${PROJECT_NAME} PROPERTIES UNITY_BUILD ON)
+# flag_states enum are defined in multiple TUs
+set_target_properties(${PROJECT_NAME} PROPERTIES UNITY_BUILD OFF)
 
 target_link_libraries(
   ${PROJECT_NAME}
@@ -61,8 +62,6 @@ target_link_libraries(
 
   ${CMAKE_THREAD_LIBS_INIT}
 )
-
-set_target_properties(${PROJECT_NAME} PROPERTIES UNITY_BUILD OFF)
 
 disable_warnings(${PROJECT_NAME})
 

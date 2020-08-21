@@ -42,8 +42,6 @@ target_link_libraries(
     boost::config
 )
 
-set_target_properties(${PROJECT_NAME} PROPERTIES UNITY_BUILD ON)
-
 # Workaround on some systems (OSX + clang + Boost 1.55)
 target_compile_definitions(
   ${PROJECT_NAME}

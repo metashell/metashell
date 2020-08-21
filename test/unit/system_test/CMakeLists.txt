@@ -25,6 +25,9 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 
 enable_warnings(${PROJECT_NAME})
 
+# Need to remove using `namespace metashell` from test code
+set_target_properties(${PROJECT_NAME} PROPERTIES UNITY_BUILD OFF)
+
 target_link_libraries(
   ${PROJECT_NAME}
 

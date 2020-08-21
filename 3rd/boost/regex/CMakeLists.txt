@@ -45,6 +45,4 @@ target_link_libraries(
   boost::type_traits
 )
 
-set_target_properties(${PROJECT_NAME} PROPERTIES UNITY_BUILD ON)
-
 boost_lib(PUBLIC ${PROJECT_NAME})
