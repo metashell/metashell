@@ -61,7 +61,7 @@ namespace metashell
         const data::cpp_code exp = exp_ + data::cpp_code("\n");
         std::set<boost::filesystem::path> result;
         hooks hks(result);
-        context ctx(begin(exp), end(exp), "<stdin>", hks);
+        context ctx(exp.begin(), exp.end(), "<stdin>", hks);
         wave::apply(ctx, _config, _system_includes);
         preprocess(ctx);
         return result;

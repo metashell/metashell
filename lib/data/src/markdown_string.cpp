@@ -43,7 +43,7 @@ namespace metashell
           Size& width = boost::get<0>(p);
           const markdown_string& cell = boost::get<1>(p);
 
-          width = std::max(width, size(cell));
+          width = std::max(width, cell.size());
         }
       }
 
@@ -59,9 +59,9 @@ namespace metashell
           const Size& width = boost::get<0>(p);
           const markdown_string& cell = boost::get<1>(p);
 
-          assert(size(cell) <= width);
+          assert(cell.size() <= width);
 
-          out_ << '|' << cell << std::string(width - size(cell), ' ');
+          out_ << '|' << cell << std::string(width - cell.size(), ' ');
         }
         out_ << "|\n";
       }

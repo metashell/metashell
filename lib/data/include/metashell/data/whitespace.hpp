@@ -29,6 +29,7 @@ namespace metashell
     public:
       using string<whitespace, true, constraint::whitespace>::string;
       using string<whitespace, true, constraint::whitespace>::value;
+      using string<whitespace, true, constraint::whitespace>::empty;
 
       static constexpr const char* name_of_type() { return "whitespace"; }
     };

@@ -31,6 +31,13 @@ namespace metashell
     {
     public:
       using string<command_line_argument>::value;
+      using string<command_line_argument>::c_str;
+      using string<command_line_argument>::begin;
+      using string<command_line_argument>::end;
+      using string<command_line_argument>::empty;
+      using string<command_line_argument>::find;
+      using string<command_line_argument>::substr;
+      using string<command_line_argument>::size;
 
       explicit command_line_argument(const boost::filesystem::path&);
       explicit command_line_argument(const char*);

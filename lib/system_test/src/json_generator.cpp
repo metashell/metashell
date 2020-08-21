@@ -46,8 +46,6 @@ namespace metashell
         return json_string(buff.GetString());
       }
 
-      const char* c_str(const std::string& s_) { return s_.c_str(); }
-
       template <class Container>
       json_string container_to_json(const Container& container_)
       {
@@ -58,7 +56,7 @@ namespace metashell
 
         for (const auto& s : container_)
         {
-          w.String(c_str(s));
+          w.String(s.c_str());
         }
 
         w.EndArray();

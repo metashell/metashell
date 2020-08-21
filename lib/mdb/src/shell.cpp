@@ -195,7 +195,7 @@ namespace metashell
       }
       else
       {
-        return (empty(line_arg) && last_command_repeatable && prev_line) ?
+        return (line_arg.empty() && last_command_repeatable && prev_line) ?
                    prev_line :
                    std::nullopt;
       }
@@ -236,7 +236,7 @@ namespace metashell
     shell::require_empty_args(const data::mdb_command::arguments_type& args,
                               iface::displayer& displayer_) const
     {
-      if (!empty(args))
+      if (!args.empty())
       {
         displayer_.show_error("This command doesn't accept arguments");
         return false;
@@ -297,7 +297,7 @@ namespace metashell
         return;
       }
 
-      const int continue_count = empty(arg) ? 1 : int(arg);
+      const int continue_count = arg.empty() ? 1 : int(arg);
 
       data::direction_t direction = continue_count >= 0 ?
                                         data::direction_t::forward :
@@ -423,7 +423,7 @@ namespace metashell
         return;
       }
 
-      const int next_count = empty(arg) ? 1 : int(arg);
+      const int next_count = arg.empty() ? 1 : int(arg);
 
       next_metaprogram(next_count >= 0 ? data::direction_t::forward :
                                          data::direction_t::backwards,
@@ -477,7 +477,7 @@ namespace metashell
       }
 
       std::optional<data::cpp_code> expression = data::cpp_code(join(i, e));
-      if (empty(*expression))
+      if (expression->empty())
       {
         if (!mp)
         {
@@ -578,7 +578,7 @@ namespace metashell
     void shell::command_rbreak(const data::mdb_command::arguments_type& arg,
                                iface::displayer& displayer_)
     {
-      if (empty(arg))
+      if (arg.empty())
       {
         displayer_.show_error("Argument expected");
         return;
@@ -654,7 +654,7 @@ namespace metashell
     void shell::command_help(const data::mdb_command::arguments_type& arg,
                              iface::displayer& displayer_)
     {
-      if (empty(arg))
+      if (arg.empty())
       {
         displayer_.show_raw_text("List of available commands:");
         displayer_.show_raw_text("");
@@ -678,7 +678,7 @@ namespace metashell
       {
         if (auto cmd = command_handler.get_command(arg_cmd->name()))
         {
-          if (!empty(arg_cmd->arguments()))
+          if (!arg_cmd->arguments().empty())
           {
             displayer_.show_error("Only one argument expected\n");
             return;

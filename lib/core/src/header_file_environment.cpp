@@ -186,9 +186,9 @@ namespace metashell
     void header_file_environment::append(const data::cpp_code& s_)
     {
       const data::cpp_code new_line("\n");
-      assert(empty(_buffer) || ends_with(_buffer, new_line));
+      assert(_buffer.empty() || ends_with(_buffer, new_line));
 
-      if (!empty(s_))
+      if (!s_.empty())
       {
         _buffer += s_;
         if (!ends_with(_buffer, new_line))

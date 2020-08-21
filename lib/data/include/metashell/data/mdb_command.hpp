@@ -49,10 +49,31 @@ namespace metashell
                      false,
                      constraint::name_non_first,
                      constraint::name_first>::string;
+
         using string<name_type,
                      false,
                      constraint::name_non_first,
                      constraint::name_first>::value;
+
+        using string<name_type,
+                     false,
+                     constraint::name_non_first,
+                     constraint::name_first>::empty;
+
+        using string<name_type,
+                     false,
+                     constraint::name_non_first,
+                     constraint::name_first>::size;
+
+        using string<name_type,
+                     false,
+                     constraint::name_non_first,
+                     constraint::name_first>::begin;
+
+        using string<name_type,
+                     false,
+                     constraint::name_non_first,
+                     constraint::name_first>::end;
 
         name_type() = delete;
 
@@ -110,6 +131,7 @@ namespace metashell
 
         using string<arguments_type, true, constraint::code>::string;
         using string<arguments_type, true, constraint::code>::value;
+        using string<arguments_type, true, constraint::code>::empty;
 
         static constexpr const char* name_of_type()
         {

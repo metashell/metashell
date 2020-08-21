@@ -69,7 +69,7 @@ namespace metashell
         {
           try
           {
-            it = token_iterator(begin(src), end(src),
+            it = token_iterator(src.begin(), src.end(),
                                 token_iterator::value_type::position_type(
                                     input_filename.c_str()),
                                 boost::wave::language_support(

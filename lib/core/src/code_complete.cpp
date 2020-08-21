@@ -61,7 +61,7 @@ namespace metashell
 
         bool ends_with_sep(const data::user_input& s_)
         {
-          return !empty(s_) &&
+          return !s_.empty() &&
                  (s_.value().back() == '/' || s_.value().back() == '\\');
         }
 
@@ -97,7 +97,7 @@ namespace metashell
 
           const boost::filesystem::path path_to_complete{
               ends_with_sep(to_complete_) ?
-                  to_complete_.value().substr(0, size(to_complete_) - 1) :
+                  to_complete_.value().substr(0, to_complete_.size() - 1) :
                   to_complete_.value()};
 
           const boost::filesystem::path parent_path =
@@ -118,8 +118,9 @@ namespace metashell
               if (is_directory(real_path) || filter_(i->path()))
               {
                 const data::user_input comp{
-                    (empty(to_complete_) || ends_with_sep(to_complete_) ? "" :
-                                                                          "/") +
+                    (to_complete_.empty() || ends_with_sep(to_complete_) ?
+                         "" :
+                         "/") +
                     i->path().filename().string()};
                 out_[prefix_ + comp].push_back(
                     data::file_completion_entry{base_path_, real_path, comp});
@@ -356,7 +357,7 @@ namespace metashell
                 {
                   result.first.insert(
                       data::user_input{
-                          substr(code_in_cmd, size(code_in_code_to_complete)) +
+                          code_in_cmd.substr(code_in_code_to_complete.size()) +
                           data::cpp_code{
                               prefix_len < c->tokens().size() - 1 ? " " : ""}} +
                       join_with_space(c->tokens().begin() + prefix_len + 1,

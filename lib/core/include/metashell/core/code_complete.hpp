@@ -89,7 +89,7 @@ namespace metashell
             const data::user_input value = impl::to_user_input(*values_begin_);
             if (starts_with(value, prefix))
             {
-              result.insert(substr(value, size(prefix)));
+              result.insert(value.substr(prefix.size()));
             }
           }
         }

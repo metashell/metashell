@@ -219,7 +219,7 @@ namespace metashell {
           {
             if (starts_with(directive, prefix_))
             {
-              out_.insert(data::user_input{substr(directive, size(prefix_))});
+              out_.insert(data::user_input{directive.substr(prefix_.size())});
               found = true;
             }
           }
@@ -227,7 +227,7 @@ namespace metashell {
           if (metashell_extensions_ &&
               starts_with(data::cpp_code{"msh"}, prefix_))
           {
-            out_.insert(substr(data::user_input{"msh"}, size(prefix_)));
+            out_.insert(data::user_input{"msh"}.substr(prefix_.size()));
             found = true;
           }
           return found;
@@ -262,7 +262,7 @@ namespace metashell {
             }
             else if (starts_with(metashell_, val))
             {
-              out_.insert(data::user_input{substr(metashell_, size(val))});
+              out_.insert(data::user_input{metashell_.substr(val.size())});
               return true;
             }
           }
@@ -381,7 +381,7 @@ namespace metashell {
         if (!ends_with(s_, data::user_input("\\")))
         {
           const data::user_input s = _line_prefix + s_;
-          clear(_line_prefix);
+          _line_prefix.clear();
 
           const data::command cmd = core::to_command(data::cpp_code(s));
 
@@ -417,7 +417,7 @@ namespace metashell {
         }
         else
         {
-          _line_prefix += substr(s_, 0, size(s_) - 1);
+          _line_prefix += s_.substr(0, s_.size() - 1);
         }
       }
       catch (const std::exception& e)
@@ -432,7 +432,7 @@ namespace metashell {
 
     std::string shell::prompt() const
     {
-      return empty(_line_prefix) ? ">" : "...>";
+      return _line_prefix.empty() ? ">" : "...>";
     }
 
     bool shell::store_in_buffer(const data::cpp_code& s_,
@@ -697,7 +697,7 @@ namespace metashell {
           try_to_get_shell(engine()), _config.active_shell_config(),
           _internal_dir, _env_filename);
 
-      if (!empty(content_))
+      if (!content_.empty())
       {
         _env->append(content_);
       }
