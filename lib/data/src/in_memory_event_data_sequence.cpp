@@ -31,10 +31,10 @@ namespace metashell
     {
     }
 
-    boost::optional<event_data> in_memory_event_data_sequence::next()
+    std::optional<event_data> in_memory_event_data_sequence::next()
     {
-      return _next < _events.size() ? boost::make_optional(_events[_next++]) :
-                                      boost::none;
+      return _next < _events.size() ? std::make_optional(_events[_next++]) :
+                                      std::nullopt;
     }
 
     const cpp_code& in_memory_event_data_sequence::root_name() const

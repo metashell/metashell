@@ -22,10 +22,10 @@
 
 #include <boost/filesystem/path.hpp>
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
 #include <iosfwd>
 #include <map>
+#include <optional>
 
 namespace metashell
 {
@@ -38,7 +38,7 @@ namespace metashell
       include_type type;
       boost::filesystem::path path;
 
-      static std::pair<boost::optional<include_argument>, command::iterator>
+      static std::pair<std::optional<include_argument>, command::iterator>
       parse(const command::iterator& begin_, const command::iterator& end_);
     };
 

@@ -48,6 +48,10 @@ namespace metashell
                iface::main_shell& shell_,
                iface::displayer& displayer_) const override;
 
+      data::code_completion code_complete(data::command::const_iterator,
+                                          data::command::const_iterator,
+                                          iface::main_shell&) const override;
+
       static parsed_arguments
       parse_arguments(const std::string& name_,
                       const data::command::iterator& args_begin_,

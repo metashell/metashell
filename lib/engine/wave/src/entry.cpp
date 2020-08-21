@@ -31,6 +31,8 @@
 
 #include <metashell/data/wave_arg_parser.hpp>
 
+#include <limits>
+
 namespace metashell
 {
   namespace engine
@@ -40,7 +42,7 @@ namespace metashell
       namespace
       {
         std::vector<boost::filesystem::path>
-        prefix_all(const boost::optional<boost::filesystem::path>& prefix_,
+        prefix_all(const std::optional<boost::filesystem::path>& prefix_,
                    std::vector<boost::filesystem::path> items_)
         {
           if (prefix_)
@@ -151,7 +153,8 @@ namespace metashell
                                          "deployed with Metashell." :
                                          std::string()) +
                   "<br /><br />" +
-                  data::wave_arg_parser(UseTemplightHeaders).description()),
+                  data::wave_arg_parser{UseTemplightHeaders}.description(
+                      std::numeric_limits<int>::max())),
               supported_features(), core::never_used_by_auto());
         }
       } // anonymous namespace

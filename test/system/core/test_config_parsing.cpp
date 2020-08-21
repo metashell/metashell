@@ -47,8 +47,9 @@ namespace
   class config_parse_test
   {
   public:
-    explicit config_parse_test(boost::filesystem::path cwd_ = {})
-      : _cwd(std::move(cwd_))
+    explicit config_parse_test(bool long_arg_form_,
+                               boost::filesystem::path cwd_ = {})
+      : _long_arg_form{long_arg_form_}, _cwd{std::move(cwd_)}
     {
     }
 
@@ -86,6 +87,7 @@ namespace
     }
 
   private:
+    bool _long_arg_form;
     just::temp::directory _tmp;
     boost::filesystem::path _cwd;
 
@@ -101,7 +103,14 @@ namespace
 
         just::file::write(config.string(), configs_[i].get());
 
-        args.push_back("--load_configs", config);
+        if (_long_arg_form)
+        {
+          args.push_back("--load_configs", config);
+        }
+        else
+        {
+          args.push_back(config);
+        }
       }
 
       return args;
@@ -176,7 +185,7 @@ namespace
 TEST(config_parsing, errors)
 {
   const std::string nl = new_line() + new_line();
-  config_parse_test t;
+  config_parse_test t{true};
 
   typedef std::pair<std::string, json_string> sp;
   typedef std::pair<std::string, value_type> sv;
@@ -260,63 +269,72 @@ TEST(config_parsing, errors)
 
 TEST(config_parsing, parsed_config)
 {
-  config_parse_test t;
+  for (bool long_arg_form : {true, false})
+  {
+    config_parse_test t{long_arg_form};
 
-  ASSERT_EQ(comment(" * default"),
-            t.cmd_with_configs({}, {"#msh all config"}).front());
+    ASSERT_EQ(comment(" * default"),
+              t.cmd_with_configs({}, {"#msh all config"}).front());
 
-  ASSERT_EQ(
-      comment(" * default\n   test"),
-      t.cmd_with_configs({array({test_config("test")})}, {"#msh all config"})
-          .front());
+    ASSERT_EQ(
+        comment(" * default\n   test"),
+        t.cmd_with_configs({array({test_config("test")})}, {"#msh all config"})
+            .front());
 
-  ASSERT_EQ(
-      comment(" * default\n   test1\n   test2"),
-      t.cmd_with_configs({array({test_config("test1"), test_config("test2")})},
-                         {"#msh all config"})
-          .front());
+    ASSERT_EQ(comment(" * default\n   test1\n   test2"),
+              t.cmd_with_configs(
+                   {array({test_config("test1"), test_config("test2")})},
+                   {"#msh all config"})
+                  .front());
 
-  ASSERT_EQ(comment(" * default\n   test1\n   test2"),
-            t.cmd_with_configs(
-                 {array({test_config("test1")}), array({test_config("test2")})},
-                 {"#msh all config"})
-                .front());
+    ASSERT_EQ(comment(" * default\n   test1\n   test2"),
+              t.cmd_with_configs({array({test_config("test1")}),
+                                  array({test_config("test2")})},
+                                 {"#msh all config"})
+                  .front());
 
-  ASSERT_EQ(comment(test_config("test").get()),
-            t.cmd_with_configs(
-                 {array({test_config("test")})}, {"#msh config show test"})
-                .front());
+    ASSERT_EQ(comment(test_config("test").get()),
+              t.cmd_with_configs(
+                   {array({test_config("test")})}, {"#msh config show test"})
+                  .front());
 
-  ASSERT_EQ(error("Error: Config test2 not found."),
-            t.cmd_with_configs(
-                 {array({test_config("test1")})}, {"#msh config show test2"})
-                .front());
+    ASSERT_EQ(error("Error: Config test2 not found."),
+              t.cmd_with_configs(
+                   {array({test_config("test1")})}, {"#msh config show test2"})
+                  .front());
 
-  ASSERT_EQ(comment(" * default\n   1"),
-            t.cmd_with_configs({array({test_config("1")})}, {"#msh all config"})
-                .front());
+    ASSERT_EQ(
+        comment(" * default\n   1"),
+        t.cmd_with_configs({array({test_config("1")})}, {"#msh all config"})
+            .front());
+  }
 }
 
 TEST(config_parsing, switching_config)
 {
   const std::vector<json_string> configs{
       json_string("[{\"name\":\"wave\",\"engine\":\"wave\"}]")};
-  config_parse_test t;
 
-  ASSERT_EQ(
-      prompt(">"), t.cmd_with_configs(configs, {"typedef int x;"}).front());
-  ASSERT_EQ(comment(_), t.cmd_with_configs(configs, {"typedef int x;",
-                                                     "#msh config load wave"})
-                            .front());
-  ASSERT_EQ(error(_), t.cmd_with_configs(configs, {"#msh config load wave",
-                                                   "typedef foo bar;",
-                                                   "#msh config load default"})
-                          .front());
-  ASSERT_EQ(comment("   default\n * wave"),
-            t.cmd_with_configs(
-                 configs, {"#msh config load wave", "typedef foo bar;",
-                           "#msh config load default", "#msh all config"})
-                .front());
+  for (bool long_arg_form : {true, false})
+  {
+    config_parse_test t{long_arg_form};
+
+    ASSERT_EQ(
+        prompt(">"), t.cmd_with_configs(configs, {"typedef int x;"}).front());
+    ASSERT_EQ(comment(_), t.cmd_with_configs(configs, {"typedef int x;",
+                                                       "#msh config load wave"})
+                              .front());
+    ASSERT_EQ(
+        error(_), t.cmd_with_configs(
+                       configs, {"#msh config load wave", "typedef foo bar;",
+                                 "#msh config load default"})
+                      .front());
+    ASSERT_EQ(comment("   default\n * wave"),
+              t.cmd_with_configs(
+                   configs, {"#msh config load wave", "typedef foo bar;",
+                             "#msh config load default", "#msh all config"})
+                  .front());
+  }
 }
 
 TEST(config_parsing, cwd)
@@ -332,29 +350,33 @@ TEST(config_parsing, cwd)
   just::file::write((d2 / "d2.hpp").string(), "#define FOO double");
 
   const std::vector<json_string> configs{generate_cwd_related_configs(d2)};
-  config_parse_test t{d1};
 
-  ASSERT_EQ(cpp_code("int"),
-            t.cmd_with_configs(configs, {"#msh preprocessor mode",
-                                         "#include \"d1.hpp\"", "FOO"})
-                .front());
+  for (bool long_arg_form : {true, false})
+  {
+    config_parse_test t{long_arg_form, d1};
 
-  ASSERT_EQ(cpp_code("int"),
-            t.cmd_with_configs(
-                 configs, {"#msh preprocessor mode", "#msh config load no_cwd",
-                           "#include \"d1.hpp\"", "FOO"})
-                .front());
+    ASSERT_EQ(cpp_code("int"),
+              t.cmd_with_configs(configs, {"#msh preprocessor mode",
+                                           "#include \"d1.hpp\"", "FOO"})
+                  .front());
 
-  ASSERT_EQ(cpp_code("double"),
-            t.cmd_with_configs(configs, {"#msh preprocessor mode",
-                                         "#msh config load with_cwd",
-                                         "#include \"d2.hpp\"", "FOO"})
-                .front());
+    ASSERT_EQ(cpp_code("int"),
+              t.cmd_with_configs(configs, {"#msh preprocessor mode",
+                                           "#msh config load no_cwd",
+                                           "#include \"d1.hpp\"", "FOO"})
+                  .front());
 
-  ASSERT_EQ(
-      cpp_code("int"),
-      t.cmd_with_configs(
-           configs, {"#msh preprocessor mode", "#msh config load with_cwd",
-                     "#msh config load no_cwd", "#include \"d1.hpp\"", "FOO"})
-          .front());
+    ASSERT_EQ(cpp_code("double"),
+              t.cmd_with_configs(configs, {"#msh preprocessor mode",
+                                           "#msh config load with_cwd",
+                                           "#include \"d2.hpp\"", "FOO"})
+                  .front());
+
+    ASSERT_EQ(
+        cpp_code("int"),
+        t.cmd_with_configs(
+             configs, {"#msh preprocessor mode", "#msh config load with_cwd",
+                       "#msh config load no_cwd", "#include \"d1.hpp\"", "FOO"})
+            .front());
+  }
 }

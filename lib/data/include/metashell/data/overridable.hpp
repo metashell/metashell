@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/optional.hpp>
+#include <optional>
 
 namespace metashell
 {
@@ -43,11 +43,11 @@ namespace metashell
 
       void set_override(T value_) { _override = std::move(value_); }
 
-      void set_override() { _override = boost::none; }
+      void set_override() { _override = std::nullopt; }
 
     private:
       T _default;
-      boost::optional<T> _override;
+      std::optional<T> _override;
     };
   }
 }

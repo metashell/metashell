@@ -25,7 +25,7 @@
 #include <metashell/core/event_cache.hpp>
 #include <metashell/core/filter_with_queue.hpp>
 
-#include <boost/optional.hpp>
+#include <optional>
 
 namespace metashell
 {
@@ -36,16 +36,16 @@ namespace metashell
     {
     public:
       explicit filter_replay_instantiations_t(
-          Events&& events_, boost::optional<data::file_location> from_)
+          Events&& events_, std::optional<data::file_location> from_)
         : _events(std::move(events_)),
           _from(std::move(from_)),
           _replaying(false)
       {
       }
 
-      boost::optional<data::event_data> next()
+      std::optional<data::event_data> next()
       {
-        boost::optional<data::event_data> event = _events.next();
+        std::optional<data::event_data> event = _events.next();
 
         if (_from && event)
         {
@@ -75,7 +75,7 @@ namespace metashell
 
     private:
       filter_with_queue<Events> _events;
-      boost::optional<data::file_location> _from;
+      std::optional<data::file_location> _from;
       bool _replaying;
       event_cache _cache;
 
@@ -88,7 +88,7 @@ namespace metashell
     template <class Events>
     filter_replay_instantiations_t<Events>
     filter_replay_instantiations(Events&& events_,
-                                 boost::optional<data::file_location> from_)
+                                 std::optional<data::file_location> from_)
     {
       return filter_replay_instantiations_t<Events>(
           std::move(events_), std::move(from_));

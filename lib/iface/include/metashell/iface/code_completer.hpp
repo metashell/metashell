@@ -17,11 +17,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/code_completion.hpp>
 #include <metashell/data/feature.hpp>
 #include <metashell/data/user_input.hpp>
-#include <metashell/iface/environment.hpp>
 
-#include <set>
+#include <metashell/iface/environment.hpp>
 
 namespace metashell
 {
@@ -30,12 +30,12 @@ namespace metashell
     class code_completer
     {
     public:
-      virtual ~code_completer() {}
+      virtual ~code_completer() = default;
 
-      virtual void code_complete(const environment& env_,
-                                 const data::user_input& src_,
-                                 std::set<data::user_input>& out_,
-                                 bool use_precompiled_headers_) = 0;
+      virtual data::code_completion
+      code_complete(const environment& env_,
+                    const data::user_input& src_,
+                    bool use_precompiled_headers_) = 0;
 
       static data::feature name_of_feature()
       {

@@ -39,7 +39,7 @@ namespace metashell
       MOCK_CONST_METHOD0(stopped, bool());
 
       MOCK_METHOD2(code_complete,
-                   void(const data::user_input&, std::set<data::user_input>&));
+                   data::code_completion(const data::user_input&, bool));
 
       MOCK_CONST_METHOD0(get_config, const data::config&());
       MOCK_METHOD0(get_config, data::config&());
@@ -77,6 +77,9 @@ namespace metashell
       MOCK_METHOD2(enabled, void(data::shell_flag, bool));
 
       MOCK_METHOD1(switch_to, void(const data::real_engine_name&));
+
+      MOCK_CONST_METHOD0(available_engines,
+                         const std::vector<data::real_engine_name>&());
     };
   }
 }

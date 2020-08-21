@@ -16,6 +16,7 @@
 
 #include <metashell/pragma/help.hpp>
 
+#include <metashell/core/code_complete.hpp>
 #include <metashell/core/version.hpp>
 
 #include <boost/range/adaptor/filtered.hpp>
@@ -129,6 +130,16 @@ namespace metashell
                                 " not found.");
         }
       }
+    }
+
+    data::code_completion
+    help::code_complete(data::command::const_iterator begin_,
+                        data::command::const_iterator end_,
+                        iface::main_shell& shell_) const
+    {
+      return core::code_complete::pragma_metashell(
+                 begin_, end_, shell_.pragma_handlers())
+          .first;
     }
   }
 }

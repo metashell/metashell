@@ -21,10 +21,10 @@
 #include <metashell/data/executable_path.hpp>
 
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
 #include <iosfwd>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -45,6 +45,8 @@ namespace metashell
       using const_iterator = iterator;
 
       command_line_argument_list() = default;
+
+      command_line_argument_list(int argc_, const char* argv_[]);
 
       command_line_argument_list(const command_line_argument_list&);
       command_line_argument_list(command_line_argument_list&&);
@@ -73,8 +75,8 @@ namespace metashell
       bool empty() const;
       size_type size() const;
 
-      boost::optional<command_line_argument> front() const;
-      boost::optional<command_line_argument> back() const;
+      std::optional<command_line_argument> front() const;
+      std::optional<command_line_argument> back() const;
 
       void push_back(command_line_argument);
       void push_back(const boost::filesystem::path&);
@@ -152,7 +154,7 @@ namespace metashell
     bool operator==(const command_line_argument_list&,
                     const command_line_argument_list&);
 
-    std::pair<boost::optional<std::string>, command_line_argument_list>
+    std::pair<std::optional<std::string>, command_line_argument_list>
     remove_multiple_arch_arguments(const command_line_argument_list&);
   }
 }

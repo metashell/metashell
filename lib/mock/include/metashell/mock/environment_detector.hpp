@@ -28,8 +28,7 @@ namespace metashell
     class environment_detector : public iface::environment_detector
     {
     public:
-      MOCK_METHOD0(search_clang_binary,
-                   boost::optional<data::executable_path>());
+      MOCK_METHOD0(search_clang_binary, std::optional<data::executable_path>());
       MOCK_METHOD1(file_exists, bool(const boost::filesystem::path&));
 
       MOCK_METHOD0(on_windows, bool());

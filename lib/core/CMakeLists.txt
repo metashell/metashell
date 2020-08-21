@@ -32,8 +32,6 @@ target_link_libraries(
   boost::algorithm
   boost::container
   boost::filesystem
-  boost::optional
-  boost::program_options
   boost::range
   boost::utility
   boost::wave

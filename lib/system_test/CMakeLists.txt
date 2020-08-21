@@ -32,7 +32,6 @@ target_link_libraries(
   boost::algorithm
   boost::core
   boost::filesystem
-  boost::optional
   boost::range
   boost::utility
 

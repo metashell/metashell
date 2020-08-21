@@ -35,7 +35,7 @@ namespace metashell
 
     type::operator cpp_code() const { return name(); }
 
-    boost::optional<type> trim_wrap_type(const type& type_)
+    std::optional<type> trim_wrap_type(const type& type_)
     {
       const type wrap_prefix("metashell::impl::wrap<");
       const type wrap_suffix(">");
@@ -50,7 +50,7 @@ namespace metashell
       }
       else
       {
-        return boost::none;
+        return std::nullopt;
       }
     }
 

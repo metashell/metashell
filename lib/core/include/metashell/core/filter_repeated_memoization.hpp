@@ -22,8 +22,7 @@
 #include <metashell/data/exception.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
 
-#include <boost/optional.hpp>
-
+#include <optional>
 #include <set>
 #include <vector>
 
@@ -40,9 +39,9 @@ namespace metashell
       {
       }
 
-      boost::optional<data::event_data> next()
+      std::optional<data::event_data> next()
       {
-        while (boost::optional<data::event_data> event = _events.next())
+        while (std::optional<data::event_data> event = _events.next())
         {
           const auto inst = _instantiations.size() - 1;
 
@@ -104,7 +103,7 @@ namespace metashell
           }
         }
 
-        return boost::none;
+        return std::nullopt;
       }
 
       data::cpp_code root_name() const { return _events.root_name(); }

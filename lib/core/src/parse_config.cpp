@@ -14,22 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/arg_parser.hpp>
+#include <metashell/data/exception.hpp>
 #include <metashell/data/markdown_string.hpp>
 
 #include <metashell/core/engine_entry.hpp>
 #include <metashell/core/parse_config.hpp>
 #include <metashell/core/rapid_compile_commands_parser.hpp>
 #include <metashell/core/rapid_shell_config_parser.hpp>
+#include <metashell/core/stdout_console.hpp>
 
 #include <rapidjson/reader.h>
 
 #include <boost/algorithm/string/join.hpp>
-#include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
-#include <boost/program_options/options_description.hpp>
-#include <boost/program_options/parsers.hpp>
-#include <boost/program_options/variables_map.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 
@@ -38,6 +36,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -55,15 +54,14 @@ namespace metashell
         }
       }
 
-      void show_help(std::ostream* out_,
-                     const boost::program_options::options_description& desc_)
+      void show_help(std::ostream* out_, const data::markdown_string& desc_)
       {
         if (out_)
         {
           *out_ << "Usage:\n"
                 << "  metashell <options> [-- <extra Clang options>]\n"
                 << "\n"
-                << desc_ << std::endl;
+                << unformat(desc_) << "\n";
         }
       }
 
@@ -101,123 +99,6 @@ namespace metashell
         }
       }
 
-      class decommissioned_argument
-      {
-      public:
-        enum class type
-        {
-          flag,
-          one_value,
-          multiple_values
-        };
-
-        decommissioned_argument(const std::string& long_form_,
-                                char short_form_,
-                                type type_)
-          : _long_form(long_form_),
-            _short_form(std::string(1, short_form_)),
-            _type(type_)
-        {
-        }
-
-        decommissioned_argument(const std::string& long_form_,
-                                type type_,
-                                const std::string& suggestion_,
-                                const std::string& msg_)
-          : _long_form(long_form_),
-            _short_form(boost::none),
-            _type(type_),
-            _suggestion(suggestion_),
-            _msg(msg_)
-        {
-        }
-
-        decommissioned_argument(const std::string& long_form_, type type_)
-          : _long_form(long_form_), _short_form(boost::none), _type(type_)
-        {
-        }
-
-        decommissioned_argument(char short_form_, type type_)
-          : _long_form(boost::none),
-            _short_form(std::string(1, short_form_)),
-            _type(type_)
-        {
-        }
-
-        void add_to(boost::program_options::options_description& desc_)
-        {
-          using boost::program_options::value;
-
-          const std::string desc = "DECOMMISSIONED argument. " + _suggestion;
-
-          const std::string fmt = (_long_form ? *_long_form : "") +
-                                  (_short_form ? "," + *_short_form : "");
-
-          switch (_type)
-          {
-          case type::flag:
-            desc_.add_options()(fmt.c_str(), desc.c_str());
-            break;
-          case type::one_value:
-            desc_.add_options()(fmt.c_str(), value(&_ignore), desc.c_str());
-            break;
-          case type::multiple_values:
-            desc_.add_options()(fmt.c_str(), value(&_ignores), desc.c_str());
-            break;
-          }
-        }
-
-        void check(const boost::program_options::variables_map& vm_) const
-        {
-          if ((_long_form && vm_.count(*_long_form)) ||
-              (_short_form && vm_.count(*_short_form)) || !_ignore.empty() ||
-              !_ignores.empty())
-          {
-            const std::string name =
-                _short_form ? "-" + *_short_form : "--" + *_long_form;
-            throw std::runtime_error(boost::replace_all_copy(
-                boost::replace_all_copy(_msg, "{NAME}", name), "{VALUE}",
-                _ignore));
-          }
-        }
-
-      private:
-        boost::optional<std::string> _long_form;
-        boost::optional<std::string> _short_form;
-        type _type;
-
-        std::string _ignore;
-        std::vector<std::string> _ignores;
-        std::string _suggestion =
-            "Please provide it as a compiler argument after --";
-        std::string _msg =
-            "Argument {NAME} has been decommissioned. Please provide it as a "
-            "compiler"
-            " argument after --";
-      };
-
-      data::shell_config parse_default_shell_config(
-          const boost::program_options::variables_map& vm_,
-          const char** extra_args_begin_,
-          const char** extra_args_end_,
-          const boost::optional<data::engine_name>& engine_)
-      {
-        data::shell_config result(
-            data::shell_config_name("default"), data::shell_config_data());
-
-        result.engine.default_value().args = data::command_line_argument_list(
-            extra_args_begin_, extra_args_end_);
-
-        if (engine_)
-        {
-          result.engine.default_value().name = *engine_;
-        }
-        result.use_precompiled_headers = !vm_.count("no_precompiled_headers");
-        result.preprocessor_mode = vm_.count("preprocessor");
-
-        return result;
-      }
-
       data::shell_config_name find_unique_name(const data::config& cfg_,
                                                data::shell_config_name prefix_)
       {
@@ -242,6 +123,53 @@ namespace metashell
           }
         }
       }
+
+      void load_compile_commands(const boost::filesystem::path& path_,
+                                 data::config& cfg_)
+      {
+        rapid_compile_commands_parser handler{
+            cfg_.default_shell_config().use_precompiled_headers,
+            cfg_.default_shell_config().preprocessor_mode};
+        {
+          const std::string json =
+              just::file::read<std::string>(path_.string());
+          rapidjson::StringStream string_stream(json.c_str());
+          rapidjson::Reader reader;
+          if (!reader.Parse(string_stream, handler))
+          {
+            throw data::exception{"Invalid JSON document: " + path_.string()};
+          }
+        }
+
+        for (data::shell_config scfg : handler.configs())
+        {
+          scfg.name = find_unique_name(cfg_, std::move(scfg.name));
+          cfg_.push_back(scfg);
+        };
+      }
+
+      void load_config(const boost::filesystem::path& path_, data::config& cfg_)
+      {
+        const std::string json = just::file::read<std::string>(path_.string());
+        rapidjson::StringStream string_stream{json.c_str()};
+        rapidjson::Reader reader;
+        rapid_shell_config_parser handler;
+        handler.parsed_config_callback = [&cfg_](data::shell_config config_) {
+          if (cfg_.exists(config_.name))
+          {
+            throw json_parsing_error{
+                "More than one config provided with the name " + config_.name};
+          }
+          else
+          {
+            cfg_.push_back(std::move(config_));
+          }
+        };
+        if (!reader.Parse(string_stream, handler))
+        {
+          throw data::exception{"Invalid JSON document: " + path_.string()};
+        }
+      }
     }
 
     parse_config_result
@@ -252,12 +180,8 @@ namespace metashell
                  std::ostream* out_,
                  std::ostream* err_)
     {
-      using boost::program_options::options_description;
-      using boost::program_options::variables_map;
-      using boost::program_options::store;
-      using boost::program_options::notify;
-      using boost::program_options::parse_command_line;
-      using boost::program_options::value;
+      using data::no_short_name;
+      using data::arg_number;
 
       data::config cfg;
 
@@ -271,12 +195,114 @@ namespace metashell
 
       const int argc = minus_minus - argv_;
 
-      std::string con_type("readline");
+      cfg.default_shell_config().engine.default_value().args =
+          data::command_line_argument_list{extra_args_begin, args_end};
 
-      std::string help_engine;
-      std::string engine;
+      cfg.default_shell_config().use_precompiled_headers = true;
+      cfg.default_shell_config().preprocessor_mode = false;
 
-      const std::string engine_info =
+      cfg.con_type = data::console_type::readline;
+      cfg.log_mode = data::logging_mode::none;
+
+      std::optional<data::engine_name> help_engine;
+
+      bool display_help = false;
+
+      constexpr char default_suggestion[] =
+          "Please provide it as a compiler argument after --";
+
+      data::arg_parser parser{[](const data::command_line_argument& arg_) {
+                                return "Invalid argument: " + arg_;
+                              },
+                              [&cfg](const data::command_line_argument& arg_) {
+                                try
+                                {
+                                  load_compile_commands(arg_.value(), cfg);
+                                  return true;
+                                }
+                                catch (...)
+                                {
+                                }
+
+                                try
+                                {
+                                  load_config(arg_.value(), cfg);
+                                  return true;
+                                }
+                                catch (...)
+                                {
+                                }
+
+                                return false;
+                              }};
+
+      // clang-format off
+      parser
+        .flag<false>("-h", "--help", "Display help", display_help)
+        .flag<false>("-V", "--verbose", "Verbose mode", cfg.verbose)
+        .flag<true>(
+          "-H", "--no_highligt",
+          "Disable syntax highlighting",
+          cfg.syntax_highlight
+        )
+        .flag<false>("--indent", "Enable indenting (experimental)", cfg.indent)
+        .flag<arg_number::at_most_once>(
+          "--no_precompiled_headers",
+          "Disable precompiled header usage."
+          " (It needs clang++ to be available and writes to the local disc.)",
+          [&cfg] { cfg.default_shell_config().use_precompiled_headers = false; }
+        )
+        .flag<true>(
+          "--disable_saving",
+          "Disable saving the environment using the #msh environment save",
+          cfg.saving_enabled
+        )
+        .flag<true>(
+          "--nosplash",
+          "Disable the splash messages",
+          cfg.splash_enabled
+        )
+        .flag<arg_number::at_most_once>(
+          "--preprocessor",
+          "Starts the shell in preprocessor mode",
+          [&cfg] { cfg.default_shell_config().preprocessor_mode = true; }
+        )
+
+        .decommissioned_flag("-w", default_suggestion)
+        .decommissioned_flag("--no_warnings", default_suggestion)
+        .decommissioned_flag(
+          "--enable_saving",
+          "Saving is enabled by default. To disable it, use --disable_saving.",
+          "Saving is enabled by default."
+        )
+
+        .with_value<arg_number::at_most_once>(
+          no_short_name, "--console",
+          "Console type. Possible values: plain, readline, json."
+          " Default value: readline.",
+          [&cfg](const data::command_line_argument& arg_)
+          {
+            cfg.con_type = data::parse_console_type(arg_.value());
+          }
+        )
+        .with_value<arg_number::at_most_once>(
+          no_short_name, "--log",
+          "Log into a file. When it is set to -, it logs into the console.",
+          [&cfg](const data::command_line_argument& arg_)
+          {
+            if (arg_ == data::command_line_argument{"-"})
+            {
+              cfg.log_mode = data::logging_mode::console;
+            }
+            else
+            {
+              cfg.log_mode = data::logging_mode::file;
+              cfg.log_file = arg_.value();
+            }
+          }
+        )
+        .with_value<arg_number::at_most_once>(
+          no_short_name, "--engine",
           "The engine (C++ compiler) to use. Available engines: auto, " +
           boost::algorithm::join(engines_ | boost::adaptors::map_keys |
                                      boost::adaptors::transformed([](
@@ -284,165 +310,98 @@ namespace metashell
                                        return to_string(name_);
                                      }),
                                  ", ") +
-          ". Default: " + data::shell_config_data().engine->name;
-
-      std::vector<boost::filesystem::path> configs_to_load;
-      std::vector<boost::filesystem::path> compile_commands_to_load;
-
-      options_description desc("Options");
-      // clang-format off
-      desc.add_options()
-        ("help", "Display help")
-        ("verbose,V", "Verbose mode")
-        ("no_highlight,H", "Disable syntax highlighting")
-        ("indent", "Enable indenting (experimental)")
-        (
-          "no_precompiled_headers",
-          "Disable precompiled header usage."
-          " (It needs clang++ to be available and writes to the local disc.)"
+          ". Default: " + data::shell_config_data().engine->name,
+          [&cfg](const data::command_line_argument& arg_)
+          {
+            cfg.default_shell_config().engine.default_value().name =
+              data::parse_engine_name(arg_.value());
+          }
         )
-        (
-          "disable_saving",
-          "Disable saving the environment using the #msh environment save"
+        .with_value<arg_number::at_most_once>(
+          no_short_name, "--help_engine",
+          "Display help about the engine",
+          [&help_engine](const data::command_line_argument& arg_)
+          {
+            help_engine = data::parse_engine_name(arg_.value());
+          }
         )
-        (
-          "console", value(&con_type)->default_value(con_type),
-          "Console type. Possible values: plain, readline, json"
-        )
-        ("nosplash", "Disable the splash messages")
-        (
-          "log", value(&cfg.log_file),
-          "Log into a file. When it is set to -, it logs into the console."
-        )
-        ("engine", value(&engine), engine_info.c_str())
-        ("help_engine", value(&help_engine), "Display help about the engine")
-        ("preprocessor", "Starts the shell in preprocessor mode")
-        (
-          "load_compile_commands", value(&compile_commands_to_load),
+        .with_value<arg_number::any>(
+          no_short_name, "--load_compile_commands",
           "Generate configs for the compilation units of the"
-          " compile_commands.json file"
+          " compile_commands.json file",
+          [&cfg](const data::command_line_argument& arg_)
+          {
+            load_compile_commands(arg_.value(), cfg);
+          }
         )
-        ("load_configs", value(&configs_to_load), "Load configs from a file.");
+        .with_value<arg_number::any>(
+          no_short_name, "--load_configs",
+          "Load configs from a file.",
+          [&cfg](const data::command_line_argument& arg_)
+          {
+            load_config(arg_.value(), cfg);
+          }
+        )
+
+        .decommissioned_with_value(
+          no_short_name, "-I",
+          default_suggestion
+        )
+        .decommissioned_with_value(
+          no_short_name, "--include",
+          default_suggestion
+        )
+        .decommissioned_with_value(
+          no_short_name, "-D",
+          default_suggestion
+        )
+        .decommissioned_with_value(
+          no_short_name, "--define",
+          default_suggestion
+        )
+        .decommissioned_with_value(
+          no_short_name, "--std",
+          default_suggestion
+        )
+        .decommissioned_with_value(
+          no_short_name, "-f",
+          default_suggestion
+        )
+        .decommissioned_with_value(
+          no_short_name, "-s",
+          default_suggestion
+        )
+        .decommissioned_with_value(
+          no_short_name,
+          "--clang",
+          "Please use \"--engine clang\" with the custom clang binary instead.",
+          "{NAME} has been decommissioned. You can specify the clang binary to"
+          " use by using the clang engine. For example:\n"
+          "\n" +
+              std::string{ argv_[0] } +
+              " --engine clang -- {VALUE} -std=c++0x -ftemplate-depth=256"
+              " -Wfatal-errors" +
+              (env_detector_.on_windows() ?
+                   " -fno-ms-compatibility -U_MSC_VER" :
+                   "")
+        )
+      ;
       // clang-format on
-
-      using dec_arg = decommissioned_argument;
-      using dec_type = decommissioned_argument::type;
-      std::vector<dec_arg> dec_args{
-          dec_arg{"include", 'I', dec_type::multiple_values},
-          dec_arg{"define", 'D', dec_type::multiple_values},
-          dec_arg{"std", dec_type::one_value},
-          dec_arg{"no_warnings", 'w', dec_type::flag},
-          dec_arg{'f', dec_type::one_value}, dec_arg{'s', dec_type::one_value},
-          dec_arg{
-              "clang", dec_type::one_value,
-              "Please use \"--engine clang\" with the custom clang binary "
-              "instead.",
-              "{NAME} has been decommissioned. You can specify the clang "
-              "binary to"
-              " use by using the clang engine. For example:\n"
-              "\n" +
-                  std::string(argv_[0]) +
-                  " --engine clang -- {VALUE} -std=c++0x -ftemplate-depth=256"
-                  " -Wfatal-errors" +
-                  (env_detector_.on_windows() ?
-                       " -fno-ms-compatibility -U_MSC_VER" :
-                       "")},
-          dec_arg{"enable_saving", dec_type::flag,
-                  "Saving is enabled by default. To disable it, use "
-                  "--disable_saving.",
-                  "Saving is enabled by default."}};
-
-      for (auto& a : dec_args)
-      {
-        a.add_to(desc);
-      }
 
       try
       {
-        variables_map vm;
-        store(parse_command_line(argc, argv_, desc), vm);
-        notify(vm);
+        parser.parse(argc > 0 ? data::command_line_argument_list{argv_ + 1,
+                                                                 argv_ + argc} :
+                                data::command_line_argument_list{});
 
-        for (const auto& a : dec_args)
+        if (display_help)
         {
-          a.check(vm);
-        }
-
-        cfg.verbose = vm.count("verbose") || vm.count("V");
-        cfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
-        cfg.indent = vm.count("indent") != 0;
-        cfg.con_type = data::parse_console_type(con_type);
-        cfg.saving_enabled = !vm.count("disable_saving");
-        cfg.splash_enabled = vm.count("nosplash") == 0;
-        if (vm.count("log") == 0)
-        {
-          cfg.log_mode = data::logging_mode::none;
-        }
-        else
-        {
-          cfg.log_mode = (cfg.log_file == "-") ? data::logging_mode::console :
-                                                 data::logging_mode::file;
-        }
-
-        const auto default_shell_config = parse_default_shell_config(
-            vm, extra_args_begin, args_end,
-            vm.count("engine") ?
-                boost::make_optional(data::parse_engine_name(engine)) :
-                boost::none);
-
-        cfg.push_back(default_shell_config);
-
-        for (const boost::filesystem::path& config_path : configs_to_load)
-        {
-          const std::string json =
-              just::file::read<std::string>(config_path.string());
-          rapidjson::StringStream string_stream(json.c_str());
-          rapidjson::Reader reader;
-          rapid_shell_config_parser handler;
-          handler.parsed_config_callback = [&cfg](data::shell_config cfg_) {
-            if (cfg.exists(cfg_.name))
-            {
-              throw json_parsing_error(
-                  "More than one config provided with the name " + cfg_.name);
-            }
-            else
-            {
-              cfg.push_back(std::move(cfg_));
-            }
-          };
-          reader.Parse(string_stream, handler);
-        }
-
-        for (const boost::filesystem::path& compile_commands_path :
-             compile_commands_to_load)
-        {
-          rapid_compile_commands_parser handler(
-              default_shell_config.use_precompiled_headers,
-              default_shell_config.preprocessor_mode);
-          {
-            const std::string json =
-                just::file::read<std::string>(compile_commands_path.string());
-            rapidjson::StringStream string_stream(json.c_str());
-            rapidjson::Reader reader;
-            reader.Parse(string_stream, handler);
-          }
-
-          for (data::shell_config scfg : handler.configs())
-          {
-            scfg.name = find_unique_name(cfg, std::move(scfg.name));
-            cfg.push_back(scfg);
-          };
-        }
-
-        if (vm.count("help"))
-        {
-          show_help(out_, desc);
+          show_help(out_, parser.description(stdout_console{}.width()));
           return exit{false};
         }
-        else if (vm.count("help_engine"))
+        else if (help_engine)
         {
-          show_engine_help(
-              engines_, data::parse_engine_name(help_engine), out_, argv_[0]);
+          show_engine_help(engines_, *help_engine, out_, argv_[0]);
           return exit{false};
         }
         else
@@ -458,7 +417,7 @@ namespace metashell
       catch (const std::exception& e_)
       {
         show_error(err_, e_);
-        show_help(err_, desc);
+        show_help(err_, parser.description(stdout_console{}.width()));
         return exit{true};
       }
     }

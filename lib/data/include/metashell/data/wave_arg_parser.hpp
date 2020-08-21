@@ -47,7 +47,7 @@ namespace metashell
 
       const wave_config& result() const;
 
-      std::string description() const;
+      std::string description(int console_width_) const;
 
     private:
       data::include_config _includes;

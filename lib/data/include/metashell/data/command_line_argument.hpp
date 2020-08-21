@@ -20,7 +20,8 @@
 #include <metashell/data/string.hpp>
 
 #include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
+
+#include <optional>
 
 namespace metashell
 {
@@ -35,11 +36,11 @@ namespace metashell
       explicit command_line_argument(const char*);
       command_line_argument() = default;
 
-      boost::optional<command_line_argument>
+      std::optional<command_line_argument>
       remove_prefix(const command_line_argument&) const;
 
       template <size_t Len>
-      boost::optional<command_line_argument>
+      std::optional<command_line_argument>
       remove_prefix(const char (&prefix_)[Len]) const
       {
         return remove_prefix(command_line_argument(prefix_));
@@ -57,7 +58,7 @@ namespace metashell
         return contains_impl(substr_);
       }
 
-      boost::optional<int> as_int() const;
+      std::optional<int> as_int() const;
       int as_int(const std::string& error_) const;
 
       static constexpr const char* name_of_type()

@@ -20,12 +20,12 @@
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
-#include <boost/optional.hpp>
 
 #include <just/environment.hpp>
 #include <just/lines.hpp>
 
 #include <algorithm>
+#include <optional>
 #include <regex>
 
 namespace metashell
@@ -36,7 +36,7 @@ namespace metashell
     {
       namespace
       {
-        boost::optional<boost::filesystem::path>
+        std::optional<boost::filesystem::path>
         include_path_addition(const data::command_line_argument& arg_)
         {
           if ((starts_with(arg_, data::command_line_argument("\"/I")) ||
@@ -51,7 +51,7 @@ namespace metashell
             return boost::filesystem::path(substr(arg_, 2).value());
           }
 
-          return boost::none;
+          return std::nullopt;
         }
 
         data::includes
@@ -72,7 +72,7 @@ namespace metashell
 
           for (const data::command_line_argument& arg : cl_args_)
           {
-            if (const boost::optional<boost::filesystem::path> path =
+            if (const std::optional<boost::filesystem::path> path =
                     include_path_addition(arg))
             {
               result.sys.push_back(*path);

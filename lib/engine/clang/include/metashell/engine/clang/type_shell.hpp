@@ -39,10 +39,9 @@ namespace metashell
                    binary binary_,
                    core::logger* logger_);
 
-        virtual data::result
-        eval(const iface::environment& env_,
-             const boost::optional<data::cpp_code>& tmp_exp_,
-             bool use_precompiled_headers_) override;
+        virtual data::result eval(const iface::environment& env_,
+                                  const std::optional<data::cpp_code>& tmp_exp_,
+                                  bool use_precompiled_headers_) override;
 
         virtual void generate_precompiled_header(
             const boost::filesystem::path& fn_) override;

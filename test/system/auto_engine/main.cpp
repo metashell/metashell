@@ -16,9 +16,9 @@
 
 #include "auto_engine_test.hpp"
 
-#include <boost/filesystem/path.hpp>
+#include <metashell/data/arg_parser.hpp>
 
-#include <boost/program_options.hpp>
+#include <boost/filesystem/path.hpp>
 
 #include <iostream>
 #include <stdexcept>
@@ -26,59 +26,84 @@
 
 namespace
 {
-  boost::program_options::variables_map parse_arguments(int argc_,
-                                                        char* argv_[])
+  struct parsed_arguments
   {
-    using boost::program_options::value;
+    ::metashell::data::executable_path metashell;
+    std::vector<boost::filesystem::path> clang;
+    std::vector<boost::filesystem::path> templight;
+    std::vector<boost::filesystem::path> gcc;
+    std::vector<boost::filesystem::path> msvc;
+  };
 
-    boost::program_options::options_description desc("auto engine system test");
+  parsed_arguments parse_arguments(int argc_, const char* argv_[])
+  {
+    using metashell::data::no_short_name;
+
+    boost::filesystem::path metashell_path;
+    std::vector<boost::filesystem::path> clang;
+    std::vector<boost::filesystem::path> templight;
+    std::vector<boost::filesystem::path> gcc;
+    std::vector<boost::filesystem::path> msvc;
+
+    metashell::data::arg_parser parser{};
     // clang-format off
-    desc.add_options()
-      ("metashell", value<boost::filesystem::path>(), "Path of metashell binary to test")
-      ("clang", value<std::vector<boost::filesystem::path>>()->multitoken(), "path of clang stub")
-      ("templight", value<std::vector<boost::filesystem::path>>()->multitoken(), "Path of templight binary to test")
-      ("gcc", value<std::vector<boost::filesystem::path>>()->multitoken(), "path of gcc stub")
-      ("msvc", value<std::vector<boost::filesystem::path>>()->multitoken(), "path of cl.exe stub");
+    parser
+      .with_value(
+        no_short_name, "--metashell",
+        "Path of metashell binary to test",
+        metashell_path
+      )
+      .with_value(no_short_name, "--clang", "path of clang stub", clang)
+      .with_value(
+        no_short_name, "--templight",
+        "Path of templight binary to test",
+        templight
+      )
+      .with_value(no_short_name, "--gcc", "path of gcc stub", gcc)
+      .with_value(no_short_name, "--msvc", "path of cl.exe stub", msvc)
+    ;
     // clang-format on
 
-    boost::program_options::variables_map vm;
-    store(parse_command_line(argc_, argv_, desc), vm);
-    notify(vm);
+    parser.parse(metashell::data::command_line_argument_list{argc_, argv_});
 
-    if (vm["metashell"].empty())
+    if (metashell_path.empty())
     {
-      throw std::runtime_error("Missing mandatory --metashell argument.");
+      throw std::runtime_error{"Missing mandatory --metashell argument."};
     }
 
-    return vm;
+    return parsed_arguments{
+        metashell::data::executable_path{std::move(metashell_path)},
+        std::move(clang), std::move(templight), std::move(gcc),
+        std::move(msvc)};
+  }
+
+  void test_engine(auto_engine_test& test_,
+                   const std::string& name_,
+                   const std::vector<boost::filesystem::path>& stubs_)
+  {
+    for (const auto& stub : stubs_)
+    {
+      test_.test_engine_selection({stub.string()}, name_);
+    }
   }
 }
 
-int main(int argc_, char* argv_[])
+int main(int argc_, const char* argv_[])
 {
   try
   {
-    const boost::program_options::variables_map args =
-        parse_arguments(argc_, argv_);
+    const parsed_arguments args = parse_arguments(argc_, argv_);
 
-    auto_engine_test test(metashell::data::executable_path(
-        args["metashell"].as<boost::filesystem::path>()));
+    auto_engine_test test{args.metashell};
 
     test.test_engine_selection({}, std::string("internal"));
     test.test_engine_selection({"-I."}, std::string("internal"));
-    test.test_engine_selection({"asd"}, boost::none);
+    test.test_engine_selection({"asd"}, std::nullopt);
 
-    for (const std::string engine : {"clang", "gcc", "msvc", "templight"})
-    {
-      if (!args[engine].empty())
-      {
-        for (const auto& stub :
-             args[engine].as<std::vector<boost::filesystem::path>>())
-        {
-          test.test_engine_selection({stub.string()}, engine);
-        }
-      }
-    }
+    test_engine(test, "clang", args.clang);
+    test_engine(test, "gcc", args.gcc);
+    test_engine(test, "msvc", args.msvc);
+    test_engine(test, "templight", args.templight);
 
     std::cout << "All tests passed\n";
     return 0;

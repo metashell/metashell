@@ -25,15 +25,11 @@ namespace metashell
     std::string included_headers::description() const
     {
       return "Displays the list of header files (recursively) included into "
-             "the "
-             "environment. When <expression> is provided, it displays the "
-             "headers "
-             "added to the envrionment by <expression>. Headers that are "
-             "included "
-             "multiple times are listed only once. Headers that are not "
-             "included "
-             "because of being in a conditional (#if ... #endif) part that is "
-             "skipped are not listed.";
+             "the environment. When <expression> is provided, it displays the "
+             "headers added to the envrionment by <expression>. Headers that "
+             "are included multiple times are listed only once. Headers that "
+             "are not included because of being in a conditional (#if ... "
+             "#endif) part that is skipped are not listed.";
     }
 
     void included_headers::run(const data::command::iterator&,
@@ -70,6 +66,15 @@ namespace metashell
 
         displayer_.show_filename_set(new_headers);
       }
+    }
+
+    data::code_completion
+    included_headers::code_complete(data::command::const_iterator begin_,
+                                    data::command::const_iterator end_,
+                                    iface::main_shell& shell_) const
+    {
+      return shell_.code_complete(
+          data::user_input{data::join_tokens(begin_, end_)}, false);
     }
   }
 }

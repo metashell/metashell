@@ -37,7 +37,7 @@ namespace metashell
       {
       }
 
-      virtual boost::optional<data::event_data> next() override
+      virtual std::optional<data::event_data> next() override
       {
         return _wrapped.next();
       }

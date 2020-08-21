@@ -22,15 +22,15 @@ namespace metashell
 {
   namespace mdb
   {
-    forward_trace_iterator::forward_trace_iterator() : _at_end(boost::none) {}
+    forward_trace_iterator::forward_trace_iterator() : _at_end(std::nullopt) {}
 
     forward_trace_iterator::forward_trace_iterator(
         metaprogram::iterator begin_,
         metaprogram::iterator end_,
-        const boost::optional<int>& max_depth_)
+        const std::optional<int>& max_depth_)
       : _at_end(begin_ == end_ ?
-                    boost::none :
-                    boost::make_optional(std::make_pair(begin_, end_))),
+                    std::nullopt :
+                    std::make_optional(std::make_pair(begin_, end_))),
         _max_depth(max_depth_)
     {
       cache_current();
@@ -47,7 +47,7 @@ namespace metashell
 
       if (at() == end() || _depth <= 0)
       {
-        _at_end = boost::none;
+        _at_end = std::nullopt;
       }
       else
       {
@@ -87,7 +87,7 @@ namespace metashell
       --_depth;
       if (_depth == -1)
       {
-        _at_end = boost::none;
+        _at_end = std::nullopt;
       }
       return _depth > 0;
     }

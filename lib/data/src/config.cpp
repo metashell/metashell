@@ -15,10 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/config.hpp>
-
-#include <boost/optional.hpp>
+#include <metashell/data/exception.hpp>
 
 #include <algorithm>
+#include <optional>
 #include <stdexcept>
 
 namespace metashell
@@ -27,9 +27,14 @@ namespace metashell
   {
     namespace
     {
-      boost::optional<std::vector<shell_config>::size_type>
-      find(const shell_config_name& name_,
-           const std::vector<shell_config>& configs_)
+      data::shell_config_name default_config()
+      {
+        return data::shell_config_name{"default"};
+      }
+
+      std::optional<std::vector<shell_config>::size_type>
+      find_nothrow(const shell_config_name& name_,
+                   const std::vector<shell_config>& configs_) noexcept
       {
         const auto begin = configs_.begin();
         const auto end = configs_.end();
@@ -39,13 +44,34 @@ namespace metashell
             [&name_](const shell_config& c_) { return c_.name == name_; });
         if (i == end)
         {
-          return boost::none;
+          return std::nullopt;
         }
         else
         {
           return i - begin;
         }
       }
+
+      std::vector<shell_config>::size_type
+      find(const shell_config_name& name_,
+           const std::vector<shell_config>& configs_) noexcept(false)
+      {
+        if (const auto i = find_nothrow(name_, configs_))
+        {
+          return *i;
+        }
+        else
+        {
+          throw exception{"Config " + name_ + " not found."};
+        }
+      }
+    }
+
+    config::config()
+      : _shell_configs{shell_config{
+            default_config(), data::shell_config_data{}}},
+        _active_config{0}
+    {
     }
 
     const std::vector<shell_config>& config::shell_configs() const
@@ -65,22 +91,19 @@ namespace metashell
       return _shell_configs[_active_config];
     }
 
+    shell_config& config::default_shell_config()
+    {
+      return _shell_configs[find(default_config(), _shell_configs)];
+    }
+
     void config::activate(const shell_config_name& name_)
     {
-      const auto i = find(name_, _shell_configs);
-      if (i)
-      {
-        _active_config = *i;
-      }
-      else
-      {
-        throw std::runtime_error("Config " + name_ + " not found.");
-      }
+      _active_config = find(name_, _shell_configs);
     }
 
     void config::push_back(shell_config config_)
     {
-      if (find(config_.name, _shell_configs))
+      if (find_nothrow(config_.name, _shell_configs))
       {
         throw std::runtime_error("Config " + config_.name + " already exists.");
       }
@@ -100,7 +123,7 @@ namespace metashell
 
     bool config::exists(const shell_config_name& name_) const
     {
-      return bool(find(name_, _shell_configs));
+      return bool(find_nothrow(name_, _shell_configs));
     }
   }
 }

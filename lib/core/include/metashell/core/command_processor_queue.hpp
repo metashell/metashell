@@ -45,8 +45,8 @@ namespace metashell
       void cancel_operation();
       void line_available(const data::user_input& cmd_,
                           iface::displayer& displayer_);
-      void code_complete(const data::user_input& s_,
-                         std::set<data::user_input>& out_) const;
+
+      data::code_completion code_complete(const data::user_input& s_) const;
 
       std::string prompt() const;
 

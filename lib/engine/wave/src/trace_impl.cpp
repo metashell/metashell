@@ -46,7 +46,7 @@ namespace metashell
 
         data::cpp_code
         determine_input(const data::cpp_code& env_,
-                        const boost::optional<data::cpp_code>& exp_)
+                        const std::optional<data::cpp_code>& exp_)
         {
           if (exp_)
           {
@@ -64,7 +64,7 @@ namespace metashell
 
       trace_impl::trace_impl(
           const data::cpp_code& env_,
-          const boost::optional<data::cpp_code>& exp_,
+          const std::optional<data::cpp_code>& exp_,
           const data::wave_config& config_,
           const std::vector<boost::filesystem::path>& system_includes_)
         : _full_trace(exp_),
@@ -72,7 +72,7 @@ namespace metashell
           _input(determine_input(env_, exp_)),
           _num_tokens_from_macro_call(0),
           _ctx(begin(_input), end(_input), env_path().c_str()),
-          _pos(boost::none)
+          _pos(std::nullopt)
       {
         namespace p = std::placeholders;
 
@@ -126,7 +126,7 @@ namespace metashell
         _pos = _ctx.begin();
       }
 
-      boost::optional<data::event_data> trace_impl::next()
+      std::optional<data::event_data> trace_impl::next()
       {
         while (_events.empty() && _pos)
         {
@@ -140,7 +140,7 @@ namespace metashell
                   data::event_details<data::event_kind::evaluation_end>{
                       {_full_trace ? remove_markers(output_code, true) :
                                      std::move(output_code)}});
-              _pos = boost::none;
+              _pos = std::nullopt;
             }
           }
           catch (const boost::wave::cpp_exception& error_)
@@ -149,18 +149,18 @@ namespace metashell
                 data::event_details<data::event_kind::evaluation_end>{
                     {data::type_or_code_or_error::make_error(
                         to_string(error_))}});
-            _pos = boost::none;
+            _pos = std::nullopt;
           }
           catch (const std::exception& error_)
           {
             _events.emplace_back(
                 data::event_details<data::event_kind::evaluation_end>{
                     {data::type_or_code_or_error::make_error(error_.what())}});
-            _pos = boost::none;
+            _pos = std::nullopt;
           }
         }
 
-        boost::optional<data::event_data> result;
+        std::optional<data::event_data> result;
         if (!_events.empty())
         {
           result = std::move(_events.front());
@@ -180,7 +180,7 @@ namespace metashell
 
       void trace_impl::on_macro_expansion_begin(
           const data::cpp_code& name_,
-          const boost::optional<std::vector<data::cpp_code>>& args_,
+          const std::optional<std::vector<data::cpp_code>>& args_,
           const data::file_location& point_of_event_,
           const data::file_location& source_location_)
       {
@@ -267,7 +267,7 @@ namespace metashell
 
       void trace_impl::on_define(
           const data::cpp_code& name_,
-          const boost::optional<std::vector<data::cpp_code>>& args_,
+          const std::optional<std::vector<data::cpp_code>>& args_,
           const data::cpp_code& body_,
           const data::file_location& point_of_event_)
       {

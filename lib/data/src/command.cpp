@@ -22,15 +22,6 @@ namespace metashell
 {
   namespace data
   {
-    namespace
-    {
-      bool whitespace_or_comment(token_category c_)
-      {
-        return c_ == token_category::whitespace ||
-               c_ == token_category::comment;
-      }
-    }
-
     command::command(std::vector<token> tokens_) : _tokens(std::move(tokens_))
     {
     }

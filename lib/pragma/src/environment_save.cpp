@@ -16,20 +16,63 @@
 
 #include <metashell/pragma/environment_save.hpp>
 
+#include <metashell/core/code_complete.hpp>
+
+#include <boost/filesystem.hpp>
+
+#include <cctype>
 #include <fstream>
 
 namespace metashell
 {
   namespace pragma
   {
+    namespace
+    {
+      template <char C>
+      bool is(char c_)
+      {
+        return c_ == C || c_ == std::toupper(C);
+      }
+
+      bool cpp_source(const boost::filesystem::path& path_)
+      {
+        const std::string ext = extension(path_);
+        const auto len = ext.size();
+        if (len > 1 && ext[0] == '.')
+        {
+          switch (ext[1])
+          {
+          case 'c':
+          case 'C':
+          case 'h':
+          case 'H':
+            if (len == 2)
+            {
+              return true;
+            }
+            else if (is<'p'>(ext[2]))
+            {
+              return len == 4 && is<'p'>(ext[3]);
+            }
+            else if (is<'x'>(ext[2]))
+            {
+              return len == 4 && is<'x'>(ext[3]);
+            }
+            break;
+          }
+        }
+        return false;
+      }
+    }
+
     std::string environment_save::arguments() const { return "<path>"; }
 
     std::string environment_save::description() const
     {
       return "Saves the environment into a file. This is disabled by default. "
-             "It "
-             "can be"
-             " enabled using the --enable_saving command line argument.";
+             "It can be enabled using the --enable_saving command line "
+             "argument.";
     }
 
     void environment_save::run(const data::command::iterator&,
@@ -66,6 +109,17 @@ namespace metashell
             "Saving is disabled by the --disable_saving command line "
             "argument.");
       }
+    }
+
+    data::code_completion
+    environment_save::code_complete(data::command::const_iterator begin_,
+                                    data::command::const_iterator end_,
+                                    iface::main_shell&) const
+    {
+      return core::code_complete::files(
+          data::user_input{
+              tokens_to_string(data::skip_all_whitespace(begin_, end_), end_)},
+          data::user_input{begin_ == end_ ? " " : ""}, cpp_source);
     }
   }
 }

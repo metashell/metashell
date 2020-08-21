@@ -31,7 +31,7 @@ namespace metashell
         explicit type_shell(data::result result_);
 
         virtual data::result eval(const iface::environment&,
-                                  const boost::optional<data::cpp_code>&,
+                                  const std::optional<data::cpp_code>&,
                                   bool) override;
 
         virtual void

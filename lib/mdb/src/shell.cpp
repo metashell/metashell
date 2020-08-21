@@ -26,12 +26,11 @@
 #include <metashell/data/mdb_usage.hpp>
 #include <metashell/data/some_feature_not_supported.hpp>
 
-#include <cmath>
-#include <stdexcept>
-
-#include <boost/optional.hpp>
-
 #include <boost/range/iterator_range.hpp>
+
+#include <cmath>
+#include <optional>
+#include <stdexcept>
 
 namespace metashell
 {
@@ -180,11 +179,11 @@ namespace metashell
       displayer_.show_raw_text("For help, type \"help\".");
     }
 
-    boost::optional<data::mdb_command>
+    std::optional<data::mdb_command>
     shell::command_to_execute(const data::user_input& line_arg,
                               iface::history& history_)
     {
-      if (auto line = boost::optional<data::mdb_command>(line_arg))
+      if (auto line = std::optional<data::mdb_command>(line_arg))
       {
         if (line != prev_line)
         {
@@ -200,7 +199,7 @@ namespace metashell
       {
         return (empty(line_arg) && last_command_repeatable && prev_line) ?
                    prev_line :
-                   boost::none;
+                   std::nullopt;
       }
     }
 
@@ -210,7 +209,7 @@ namespace metashell
     {
       try
       {
-        if (boost::optional<data::mdb_command> line =
+        if (std::optional<data::mdb_command> line =
                 command_to_execute(line_arg, history_))
         {
           if (auto cmd = command_handler.get_command(line->name()))
@@ -479,7 +478,7 @@ namespace metashell
         return;
       }
 
-      boost::optional<data::cpp_code> expression = data::cpp_code(join(i, e));
+      std::optional<data::cpp_code> expression = data::cpp_code(join(i, e));
       if (empty(*expression))
       {
         if (!mp)
@@ -491,7 +490,7 @@ namespace metashell
       }
       else if (*expression == "-")
       {
-        expression = boost::none;
+        expression = std::nullopt;
       }
 
       next_breakpoint_id = 1;
@@ -526,7 +525,7 @@ namespace metashell
         return;
       }
 
-      boost::optional<int> max_depth;
+      std::optional<int> max_depth;
 
       auto begin = arg.begin();
       const auto end = arg.end();
@@ -677,7 +676,7 @@ namespace metashell
         return;
       }
 
-      if (const auto arg_cmd = boost::optional<data::mdb_command>(arg))
+      if (const auto arg_cmd = std::optional<data::mdb_command>(arg))
       {
         if (auto cmd = command_handler.get_command(arg_cmd->name()))
         {
@@ -720,7 +719,7 @@ namespace metashell
     }
 
     bool shell::run_metaprogram_with_templight(
-        const boost::optional<data::cpp_code>& expression,
+        const std::optional<data::cpp_code>& expression,
         data::metaprogram_mode mode,
         bool caching_enabled,
         iface::displayer& displayer_)
@@ -749,7 +748,7 @@ namespace metashell
       catch (const std::exception& error)
       {
         displayer_.show_error(error.what());
-        mp = boost::none;
+        mp = std::nullopt;
         return false;
       }
       return true;
@@ -829,7 +828,7 @@ namespace metashell
       display_frame(mp->get_current_frame(), displayer_);
     }
 
-    void shell::display_current_forwardtrace(boost::optional<int> max_depth,
+    void shell::display_current_forwardtrace(std::optional<int> max_depth,
                                              iface::displayer& displayer_)
     {
       if (mp->caching_enabled())
@@ -900,10 +899,10 @@ namespace metashell
       // TODO
     }
 
-    void shell::code_complete(const data::user_input&,
-                              std::set<data::user_input>&)
+    data::code_completion shell::code_complete(const data::user_input&, bool)
     {
       // TODO
+      return data::code_completion{};
     }
 
     void shell::line_available(const data::user_input& line,

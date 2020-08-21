@@ -19,12 +19,15 @@
 #include <metashell/data/exception.hpp>
 #include <metashell/data/include_argument.hpp>
 
+#include <metashell/core/code_complete.hpp>
 #include <metashell/core/include_path_cache.hpp>
+#include <metashell/core/util.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptors.hpp>
 
+#include <algorithm>
 #include <set>
 #include <vector>
 
@@ -70,19 +73,6 @@ namespace metashell
         return result;
       }
 
-      boost::filesystem::path resolve_symlink(boost::filesystem::path p_)
-      {
-        std::set<boost::filesystem::path> visited;
-
-        while (visited.find(p_) == visited.end() && is_symlink(p_))
-        {
-          visited.insert(p_);
-          p_ = read_symlink(p_);
-        }
-
-        return p_;
-      }
-
       void display(iface::displayer& displayer_,
                    const std::string& type_,
                    const std::set<data::include_argument>& paths_,
@@ -101,6 +91,51 @@ namespace metashell
                   "\n") +
               (extra_new_line_ ? "\n" : "")));
         }
+      }
+
+      data::command::const_iterator
+      last_include_start(data::command::const_iterator begin_,
+                         data::command::const_iterator end_)
+      {
+        data::command::const_iterator result = begin_;
+
+        for (auto i = begin_; i != end_; ++i)
+        {
+          if (type_of(*i) == data::token_type::operator_less)
+          {
+            const auto j = std::find_if(i, end_, [](const data::token& token_) {
+              return type_of(token_) == data::token_type::operator_greater;
+            });
+            if (j == end_)
+            {
+              return i;
+            }
+            else
+            {
+              i = j;
+              result = j + 1;
+            }
+          }
+          else if (type_of(*i) == data::token_type::string_literal)
+          {
+            result = i + 1;
+          }
+          else if (data::include_quote_token(*begin_))
+          {
+            const auto j = std::find_if(i, end_, data::include_quote_token);
+            if (j == end_)
+            {
+              return i;
+            }
+            else
+            {
+              i = j;
+              result = j + 1;
+            }
+          }
+        }
+
+        return result;
       }
     }
 
@@ -137,7 +172,8 @@ namespace metashell
         for (const boost::filesystem::path& p :
              paths[{arg.type, data::standard_headers_allowed::all}])
         {
-          const boost::filesystem::path path = resolve_symlink(p / arg.path);
+          const boost::filesystem::path path =
+              core::resolve_symlink(p / arg.path);
 
           if (is_regular_file(path))
           {
@@ -147,7 +183,8 @@ namespace metashell
           {
             for (boost::filesystem::directory_iterator i(path); i != end; ++i)
             {
-              const boost::filesystem::path f = resolve_symlink(i->path());
+              const boost::filesystem::path f =
+                  core::resolve_symlink(i->path());
 
               const data::include_argument entry{
                   arg.type, arg.path / i->path().filename()};
@@ -167,6 +204,16 @@ namespace metashell
 
       display(displayer_, "Directories", dirs, !headers.empty());
       display(displayer_, "Header files", headers);
+    }
+
+    data::code_completion
+    ls::code_complete(data::command::const_iterator begin_,
+                      data::command::const_iterator end_,
+                      iface::main_shell& shell_) const
+    {
+      return core::code_complete::include(last_include_start(begin_, end_),
+                                          end_,
+                                          shell_.engine().header_discoverer());
     }
   }
 }

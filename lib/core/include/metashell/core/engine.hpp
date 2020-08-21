@@ -27,10 +27,9 @@
 
 #include <metashell/iface/engine.hpp>
 
-#include <boost/optional.hpp>
-
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -294,7 +293,7 @@ namespace metashell
           std::move(parse_config_));
     }
 
-    boost::optional<std::string> limitation(const iface::engine& engine_);
+    std::optional<std::string> limitation(const iface::engine& engine_);
   }
 }
 

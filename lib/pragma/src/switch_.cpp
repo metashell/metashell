@@ -16,6 +16,8 @@
 
 #include <metashell/pragma/switch_.hpp>
 
+#include <metashell/core/code_complete.hpp>
+
 #include <boost/algorithm/string/join.hpp>
 
 #include <algorithm>
@@ -94,6 +96,18 @@ namespace metashell
       }
       displayer_.show_comment(data::text(
           to_string(_flag) + " is " + (shell_.enabled(_flag) ? "on" : "off")));
+    }
+
+    data::code_completion
+    switch_::code_complete(data::command::const_iterator begin_,
+                           data::command::const_iterator end_,
+                           iface::main_shell&) const
+    {
+      data::code_completion result =
+          core::code_complete::fixed_values(begin_, end_, true_values);
+      result.insert(
+          core::code_complete::fixed_values(begin_, end_, false_values));
+      return result;
     }
   }
 }

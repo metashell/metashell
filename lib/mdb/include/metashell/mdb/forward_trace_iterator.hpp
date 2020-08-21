@@ -24,8 +24,9 @@
 #include <metashell/mdb/metaprogram.hpp>
 
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
+
 #include <map>
+#include <optional>
 
 namespace metashell
 {
@@ -40,7 +41,7 @@ namespace metashell
 
       forward_trace_iterator(metaprogram::iterator begin_,
                              metaprogram::iterator end_,
-                             const boost::optional<int>& max_depth_);
+                             const std::optional<int>& max_depth_);
 
       forward_trace_iterator& operator++();
 
@@ -49,11 +50,11 @@ namespace metashell
       const data::call_graph_node& operator*() const;
 
     private:
-      boost::optional<std::pair<metaprogram::iterator, metaprogram::iterator>>
+      std::optional<std::pair<metaprogram::iterator, metaprogram::iterator>>
           _at_end;
       data::call_graph_node _current;
 
-      boost::optional<int> _max_depth;
+      std::optional<int> _max_depth;
       int _depth = 0;
 
       void cache_current();

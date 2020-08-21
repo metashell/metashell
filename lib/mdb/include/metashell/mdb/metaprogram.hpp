@@ -33,10 +33,10 @@
 #include <metashell/data/type_or_code_or_error.hpp>
 
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace metashell
@@ -78,7 +78,7 @@ namespace metashell
 
       private:
         metaprogram* mp;
-        boost::optional<metaprogram::size_type> at;
+        std::optional<metaprogram::size_type> at;
       };
 
       friend iterator;
@@ -115,9 +115,9 @@ namespace metashell
 
     private:
       std::unique_ptr<iface::event_data_sequence> event_source;
-      boost::optional<data::event_data> next_unread_event;
+      std::optional<data::event_data> next_unread_event;
 
-      boost::optional<data::frame_only_event> current_frame;
+      std::optional<data::frame_only_event> current_frame;
       bool read_open_or_flat = false;
       bool has_unread_event = true;
       size_type read_event_count = 1; // The root event
@@ -125,22 +125,22 @@ namespace metashell
 
       // using indices to avoid invalidation during copy/move
       size_type next_event = 0;
-      boost::optional<data::backtrace> current_bt;
+      std::optional<data::backtrace> current_bt;
       data::backtrace final_bt{true};
 
       data::metaprogram_mode mode;
 
-      boost::optional<debugger_history> history;
+      std::optional<debugger_history> history;
 
       data::type_or_code_or_error result;
 
       void cache_current_frame();
 
-      boost::optional<data::debugger_event> read_next_event();
+      std::optional<data::debugger_event> read_next_event();
 
-      bool try_reading_until(
-          size_type pos,
-          boost::optional<data::debugger_event>* last_event_read_);
+      bool
+      try_reading_until(size_type pos,
+                        std::optional<data::debugger_event>* last_event_read_);
 
       void read_remaining_events();
 

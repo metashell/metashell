@@ -29,9 +29,9 @@ namespace metashell
   {
     raw_text::raw_text(const std::string& text_) : _text(text_) {}
 
-    raw_text::raw_text(pattern::placeholder) : _text(boost::none) {}
+    raw_text::raw_text(pattern::placeholder) : _text(std::nullopt) {}
 
-    raw_text::raw_text(const json_string& s_) : _text(boost::none)
+    raw_text::raw_text(const json_string& s_) : _text(std::nullopt)
     {
       rapidjson::Document d;
       d.Parse(s_.get().c_str());

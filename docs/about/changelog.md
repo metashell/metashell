@@ -22,6 +22,8 @@
       removing the corresponding standard headers from the standard include
       path.
     * Support for user defined warnings in configs.
+    * Code completion for Metashell commands
+      (`#msh ...` and `#pragma metashell`)
 
 * Fixes
     * When multiple shell configs use the same engine with different engine
@@ -54,6 +56,8 @@
     * **Breaking change** The Wave argument `--nostdinc++` has been replaced
       with `-nostdinc++` and `-nostdinc`. Using both provides the same behaviour
       as `--nostdinc++` did.
+    * Passing the path of a `compile_commands.json` or a config JSON file is
+      enough, the corresponding arguments (eg. `--load_configs`) is optional.
 
 ## Version 4.0.0
 

@@ -114,5 +114,10 @@ namespace metashell
       assert(false);
       return std::string();
     }
+
+    bool include_quote_token(const token& token_)
+    {
+      return type_of(token_) == token_type::unknown && value(token_) == "\"";
+    }
   }
 }

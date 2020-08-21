@@ -19,6 +19,8 @@
 
 #include <metashell/iface/shell.hpp>
 
+#include <vector>
+
 namespace metashell
 {
   namespace iface
@@ -27,6 +29,9 @@ namespace metashell
     {
     public:
       virtual void switch_to(const data::real_engine_name&) = 0;
+
+      virtual const std::vector<data::real_engine_name>&
+      available_engines() const = 0;
     };
   }
 }

@@ -21,8 +21,7 @@
 #include <metashell/data/event_data.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
 
-#include <boost/optional.hpp>
-
+#include <optional>
 #include <vector>
 
 namespace metashell
@@ -36,7 +35,7 @@ namespace metashell
                                     metaprogram_mode mode_,
                                     std::vector<event_data> events_);
 
-      boost::optional<event_data> next();
+      std::optional<event_data> next();
 
       const cpp_code& root_name() const;
 

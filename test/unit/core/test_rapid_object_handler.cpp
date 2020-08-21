@@ -178,7 +178,7 @@ TEST(rapid_object_handler, returns_none_for_non_existing_fields)
   core::null_displayer d;
   core::rapid_object_handler r(d);
 
-  const boost::optional<std::string> f = r.field("foo");
+  const std::optional<std::string> f = r.field("foo");
 
   ASSERT_FALSE(f);
 }
@@ -212,9 +212,9 @@ namespace
 
     ASSERT_FALSE(r.failed());
 
-    const boost::optional<std::string> f = r.field(field_);
+    const std::optional<std::string> f = r.field(field_);
 
-    ASSERT_TRUE(f != boost::none);
+    ASSERT_TRUE(f != std::nullopt);
     ASSERT_EQ("foo", *f);
   }
 }

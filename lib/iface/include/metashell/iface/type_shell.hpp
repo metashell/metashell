@@ -23,8 +23,8 @@
 #include <metashell/iface/environment.hpp>
 
 #include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
 
+#include <optional>
 #include <string>
 
 namespace metashell
@@ -37,7 +37,7 @@ namespace metashell
       virtual ~type_shell() {}
 
       virtual data::result eval(const environment& env_,
-                                const boost::optional<data::cpp_code>& tmp_exp_,
+                                const std::optional<data::cpp_code>& tmp_exp_,
                                 bool use_precompiled_headers_) = 0;
 
       virtual void

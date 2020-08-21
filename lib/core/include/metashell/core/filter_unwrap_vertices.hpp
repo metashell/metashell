@@ -23,7 +23,7 @@
 
 #include <metashell/core/type.hpp>
 
-#include <boost/optional.hpp>
+#include <optional>
 
 namespace metashell
 {
@@ -38,13 +38,13 @@ namespace metashell
       {
       }
 
-      boost::optional<data::event_data> next()
+      std::optional<data::event_data> next()
       {
-        boost::optional<data::event_data> event = _events.next();
+        std::optional<data::event_data> event = _events.next();
 
         if (event)
         {
-          if (const boost::optional<data::type> type = type_of(*event))
+          if (const std::optional<data::type> type = type_of(*event))
           {
             if (const auto t = trim_wrap_type(*type))
             {

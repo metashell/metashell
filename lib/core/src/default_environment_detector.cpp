@@ -164,13 +164,13 @@ namespace metashell
     {
     }
 
-    boost::optional<data::executable_path>
+    std::optional<data::executable_path>
     default_environment_detector::search_clang_binary()
     {
       const data::default_clang_search_path sp;
       const auto p = std::find_if(sp.begin(), sp.end(), file_exists_impl);
-      return p == sp.end() ? boost::none :
-                             boost::make_optional(data::executable_path(*p));
+      return p == sp.end() ? std::nullopt :
+                             std::make_optional(data::executable_path(*p));
     }
 
     bool default_environment_detector::file_exists(

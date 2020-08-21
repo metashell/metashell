@@ -20,7 +20,7 @@
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/string.hpp>
 
-#include <boost/optional.hpp>
+#include <optional>
 
 namespace metashell
 {
@@ -46,7 +46,7 @@ namespace metashell
       operator cpp_code() const;
     };
 
-    boost::optional<type> trim_wrap_type(const type& type_);
+    std::optional<type> trim_wrap_type(const type& type_);
     bool is_remove_ptr(const type& type_);
   }
 }

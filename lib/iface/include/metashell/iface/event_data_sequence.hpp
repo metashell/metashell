@@ -21,7 +21,7 @@
 #include <metashell/data/event_data.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
 
-#include <boost/optional.hpp>
+#include <optional>
 
 namespace metashell
 {
@@ -32,7 +32,7 @@ namespace metashell
     public:
       virtual ~event_data_sequence() {}
 
-      virtual boost::optional<data::event_data> next() = 0;
+      virtual std::optional<data::event_data> next() = 0;
 
       virtual data::cpp_code root_name() const = 0;
 

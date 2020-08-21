@@ -46,7 +46,7 @@ namespace metashell
       {
         assert(p.second);
 
-        if (const boost::optional<data::command::iterator> i =
+        if (const std::optional<data::command::iterator> i =
                 is_this_pragma(p.first, begin_, e))
         {
           const auto len = p.first.tokens().size();

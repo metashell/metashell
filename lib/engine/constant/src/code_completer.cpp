@@ -22,12 +22,10 @@ namespace metashell
   {
     namespace constant
     {
-      void code_completer::code_complete(const iface::environment&,
-                                         const data::user_input&,
-                                         std::set<data::user_input>&,
-                                         bool)
+      data::code_completion code_completer::code_complete(
+          const iface::environment&, const data::user_input&, bool)
       {
-        // ignore
+        return data::code_completion{};
       }
     }
   }

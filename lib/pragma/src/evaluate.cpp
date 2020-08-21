@@ -64,5 +64,14 @@ namespace metashell
             " https://github.com/metashell/metashell/issues. Thank you."));
       }
     }
+
+    data::code_completion
+    evaluate::code_complete(data::command::const_iterator begin_,
+                            data::command::const_iterator end_,
+                            iface::main_shell& shell_) const
+    {
+      return shell_.code_complete(
+          data::user_input{data::join_tokens(begin_, end_)}, false);
+    }
   }
 }

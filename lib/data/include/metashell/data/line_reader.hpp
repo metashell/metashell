@@ -19,16 +19,15 @@
 
 #include <metashell/data/user_input.hpp>
 
-#include <boost/optional.hpp>
-
 #include <functional>
+#include <optional>
 #include <string>
 
 namespace metashell
 {
   namespace data
   {
-    typedef std::function<boost::optional<user_input>(const std::string&)>
+    typedef std::function<std::optional<user_input>(const std::string&)>
         line_reader;
   }
 }

@@ -34,6 +34,7 @@
 #include <metashell/data/config.hpp>
 
 #include <boost/filesystem.hpp>
+#include <boost/range/adaptor/map.hpp>
 
 #include <just/temp.hpp>
 
@@ -130,6 +131,8 @@ int main(int argc_, const char* argv_[])
     create_directories(temp_dir);
     create_directories(mdb_dir);
 
+    auto supported_engines = engines | boost::adaptors::map_keys;
+
     auto shell = std::make_unique<metashell::main_shell::shell>(
         cfg, shell_dir, env_filename,
         // The shell should be destroyed when this scope is left, capturing
@@ -140,6 +143,8 @@ int main(int argc_, const char* argv_[])
               .build(config_, shell_dir, temp_dir, env_filename, det,
                      ccfg.displayer(), &logger);
         },
+        std::vector<metashell::data::real_engine_name>(
+            supported_engines.begin(), supported_engines.end()),
         metashell::defaults::pragma_map(
             &ccfg.processor_queue(), mdb_dir, &logger),
         &logger);

@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/code_completer.hpp>
+#include <metashell/system_test/code_completion_result.hpp>
 #include <metashell/system_test/comment.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/util.hpp>
@@ -26,6 +28,11 @@
 #include <just/temp.hpp>
 
 using namespace metashell::system_test;
+
+namespace
+{
+  auto res = code_completion_result::create;
+}
 
 TEST(shell_pragma_config, listing)
 {
@@ -76,4 +83,39 @@ TEST(shell_pragma_config, listing)
 
   ASSERT_EQ(
       comment("   bar.cpp\n   baz.cpp"), mi.command("#msh config foo").front());
+}
+
+TEST(pragma_config, code_complete)
+{
+  just::temp::directory temp_dir;
+  const auto config_path =
+      boost::filesystem::path(temp_dir.path()) / "config.json";
+
+  just::file::write(
+      config_path.string(),
+      array({test_config("foo/bar.cpp"), test_config("foo"),
+             test_config("foo/baz.cpp"), test_config("app/sample/a.cpp"),
+             test_config("app/sample\\b.cpp"), test_config("app/sample/c.cpp"),
+             test_config("low"), test_config("show/x"),
+             test_config("load/load")})
+          .get());
+
+  code_completer c{"", {"--load_configs", config_path.string()}};
+
+  const auto all_config = res("default", "foo/bar.cpp", "foo", "foo/baz.cpp",
+                              "app/sample/a.cpp", "app/sample\\b.cpp",
+                              "app/sample/c.cpp", "low", "show/x", "load/load");
+
+  ASSERT_EQ(
+      c("#msh config"), res(" load", " show") + all_config.prefixed_with(" "));
+  ASSERT_EQ(c("#msh config "), res("load", "show") + all_config);
+  ASSERT_EQ(c("#msh config lo"), res("ad", "w", "ad/load"));
+  ASSERT_EQ(
+      c("#msh config load"), res("/load") + all_config.prefixed_with(" "));
+  ASSERT_EQ(c("#msh config load/"), res("load"));
+  ASSERT_EQ(c("#msh config load "), all_config);
+  ASSERT_EQ(c("#msh config show"), res("/x") + all_config.prefixed_with(" "));
+  ASSERT_EQ(c("#msh config show/"), res("x"));
+  ASSERT_EQ(c("#msh config show "), all_config);
+  ASSERT_EQ(c("#msh config default"), res(""));
 }

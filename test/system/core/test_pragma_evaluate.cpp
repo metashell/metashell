@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/code_completer.hpp>
+#include <metashell/system_test/code_completion_result.hpp>
 #include <metashell/system_test/comment.hpp>
 #include <metashell/system_test/error.hpp>
 #include <metashell/system_test/prompt.hpp>
@@ -73,4 +75,14 @@ TEST(pragma_evaluate, warns)
               paragraph("int")}),
           to_json_string(prompt(">"))}),
       mi.command("#pragma metashell evaluate int"));
+}
+
+TEST(pragma_evaluate, code_complete)
+{
+  // most of the code completion testing is covered in test_completion.cpp
+
+  code_completer c;
+
+  ASSERT_EQ(c("#msh evaluate #ms"), code_completion_result{});
+  ASSERT_EQ(c("#msh evaluate #pragma metash"), code_completion_result{});
 }

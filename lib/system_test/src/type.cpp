@@ -30,9 +30,9 @@ namespace metashell
   {
     type::type(const std::string& name_) : _name(name_) {}
 
-    type::type(pattern::placeholder) : _name(boost::none) {}
+    type::type(pattern::placeholder) : _name(std::nullopt) {}
 
-    bool type::name_specified() const { return _name != boost::none; }
+    bool type::name_specified() const { return _name != std::nullopt; }
 
     const std::string& type::name() const
     {

@@ -27,7 +27,7 @@ namespace metashell
       }
 
       data::result type_shell::eval(const iface::environment&,
-                                    const boost::optional<data::cpp_code>&,
+                                    const std::optional<data::cpp_code>&,
                                     bool)
       {
         return _result;

@@ -20,9 +20,9 @@
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/history.hpp>
 
+#include <metashell/data/code_completion.hpp>
 #include <metashell/data/user_input.hpp>
 
-#include <set>
 #include <string>
 
 namespace metashell
@@ -32,7 +32,7 @@ namespace metashell
     class command_processor
     {
     public:
-      virtual ~command_processor() {}
+      virtual ~command_processor() = default;
 
       virtual void line_available(const data::user_input& cmd_,
                                   iface::displayer& displayer_,
@@ -42,8 +42,8 @@ namespace metashell
       virtual std::string prompt() const = 0;
       virtual bool stopped() const = 0;
 
-      virtual void code_complete(const data::user_input& s_,
-                                 std::set<data::user_input>& out_) = 0;
+      virtual data::code_completion
+      code_complete(const data::user_input& s_, bool metashell_extensions_) = 0;
     };
   }
 }

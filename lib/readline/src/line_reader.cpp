@@ -16,6 +16,8 @@
 
 #include <metashell/readline/line_reader.hpp>
 
+#include <metashell/data/code_completion.hpp>
+
 #ifdef USE_EDITLINE
 #include <editline/readline.h>
 #else
@@ -27,7 +29,6 @@
 #include <cassert>
 #include <functional>
 #include <iterator>
-#include <set>
 #include <string>
 
 namespace metashell
@@ -68,38 +69,55 @@ namespace metashell
         return std::string(rl_line_buffer, rl_line_buffer + line_length());
       }
 
+      data::code_completion
+      string_literal_workaround(const data::user_input& to_complete_,
+                                data::code_completion values_)
+      {
+        if (values_.size() == 1 &&
+            std::count(begin(to_complete_), end(to_complete_), '\"') % 2 == 1)
+        {
+          data::user_input completion = *values_.pop();
+          if (empty(completion) || *(end(completion) - 1) != '\"')
+          {
+            values_.insert(std::move(completion));
+          }
+          {
+            values_.insert(substr(completion, 0, size(completion) - 1));
+          }
+        }
+        return values_;
+      }
+
       char* tab_generator(const char* text_, int state_)
       {
         assert(bool(completer));
 
-        static std::set<data::user_input> values;
-        static std::set<data::user_input>::const_iterator pos;
+        static data::code_completion values;
 
         if (!state_) // init
         {
           const std::string edited_text = get_edited_text();
 
           const auto eb = edited_text.begin();
-          completer(data::user_input(eb, eb + completion_end), values);
-          pos = values.begin();
+          const data::user_input to_complete{eb, eb + completion_end};
+          values =
+              string_literal_workaround(to_complete, completer(to_complete));
         }
 
-        if (pos == values.end())
+        if (const std::optional<data::user_input> val = values.pop())
         {
-          return nullptr;
-        }
-        else
-        {
-          const auto str = text_ + pos->value();
+          const auto str = text_ + *val;
           // readline expects the string to be allocated by malloc
           const auto len = str.size();
           char* s = (char*)malloc(len + 1);
           std::copy(str.begin(), str.end(), array_begin(s, len + 1));
           s[len] = 0;
-          ++pos;
           return s;
         }
-        return nullptr;
+        else
+        {
+          return nullptr;
+        }
       }
 
       char** tab_completion(const char* text_, int, int end_)
@@ -108,7 +126,7 @@ namespace metashell
         return rl_completion_matches(const_cast<char*>(text_), &tab_generator);
       }
 
-      boost::optional<data::user_input>
+      std::optional<data::user_input>
       read_next_line(const std::string& prompt_,
                      const data::code_completer& completer_)
       {
@@ -130,7 +148,7 @@ namespace metashell
         }
         else
         {
-          return boost::none;
+          return std::nullopt;
         }
       }
     }

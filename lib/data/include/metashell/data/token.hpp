@@ -24,6 +24,7 @@
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/transformed.hpp>
+#include <boost/range/iterator_range.hpp>
 
 #include <variant.hpp>
 
@@ -59,6 +60,8 @@ namespace metashell
 
     std::string format_token(const token& t_);
 
+    bool include_quote_token(const token&);
+
     std::ostream& operator<<(std::ostream& out_, const token& t_);
 
     std::string string_literal_value(const token& token_);
@@ -82,6 +85,13 @@ namespace metashell
           tokens_ | boost::adaptors::transformed(
                         [](const token& t_) { return to_string(value(t_)); }),
           sep_);
+    }
+
+    template <class InputIt, class Sep = std::string>
+    std::string
+    join_tokens(InputIt begin_, InputIt end_, const Sep& sep_ = Sep{})
+    {
+      return join_tokens(boost::make_iterator_range(begin_, end_), sep_);
     }
 
     template <token_category Category>

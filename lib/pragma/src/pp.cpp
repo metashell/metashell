@@ -37,5 +37,14 @@ namespace metashell
       shell_.preprocess(
           displayer_, tokens_to_string(args_begin_, args_end_), false);
     }
+
+    data::code_completion
+    pp::code_complete(data::command::const_iterator begin_,
+                      data::command::const_iterator end_,
+                      iface::main_shell& shell_) const
+    {
+      return shell_.code_complete(
+          data::user_input{data::join_tokens(begin_, end_)}, false);
+    }
   }
 }

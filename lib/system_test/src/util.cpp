@@ -69,13 +69,13 @@ namespace metashell
       }
     }
 
-    boost::optional<std::string>
-    try_to_remove_prefix(const std::string& prefix_, const std::string& s_)
+    std::optional<std::string> try_to_remove_prefix(const std::string& prefix_,
+                                                    const std::string& s_)
     {
       return try_to_remove_prefix_suffix(prefix_, s_, "");
     }
 
-    boost::optional<std::string>
+    std::optional<std::string>
     try_to_remove_prefix_suffix(const std::string& prefix_,
                                 const std::string& s_,
                                 const std::string& suffix_)
@@ -89,11 +89,11 @@ namespace metashell
       }
       else
       {
-        return boost::none;
+        return std::nullopt;
       }
     }
 
-    boost::optional<boost::filesystem::path>
+    std::optional<boost::filesystem::path>
     include_path_addition(const data::command_line_argument& arg_)
     {
       for (const auto& def : include_definitions())
@@ -104,7 +104,7 @@ namespace metashell
           return boost::filesystem::path(*path);
         }
       }
-      return boost::none;
+      return std::nullopt;
     }
 
     std::string c_string_literal(const std::string& s_)

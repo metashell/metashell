@@ -34,12 +34,12 @@ namespace metashell
 
         void full_time_taken(pop_frame&, double) {}
 
-        boost::optional<double> time_taken(const frame& f_)
+        std::optional<double> time_taken(const frame& f_)
         {
           return f_.time_taken();
         }
 
-        boost::none_t time_taken(const pop_frame&) { return boost::none; }
+        std::nullopt_t time_taken(const pop_frame&) { return std::nullopt; }
       }
     }
 
@@ -69,10 +69,10 @@ namespace metashell
       return out_;
     }
 
-    boost::optional<double> time_taken(const debugger_event& event_)
+    std::optional<double> time_taken(const debugger_event& event_)
     {
       return mpark::visit(
-          [](const auto& f) -> boost::optional<double> {
+          [](const auto& f) -> std::optional<double> {
             return impl::time_taken(f);
           },
           event_);

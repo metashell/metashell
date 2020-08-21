@@ -33,21 +33,21 @@ namespace metashell
         }
 
         template <class T>
-        boost::none_t point_of_event(const T&)
+        std::nullopt_t point_of_event(const T&)
         {
-          return boost::none;
+          return std::nullopt;
         }
 
         template <class T>
-        boost::none_t source_location(const T&)
+        std::nullopt_t source_location(const T&)
         {
-          return boost::none;
+          return std::nullopt;
         }
 
         template <class T>
-        boost::none_t result_of(const T&)
+        std::nullopt_t result_of(const T&)
         {
-          return boost::none;
+          return std::nullopt;
         }
       }
     }
@@ -142,33 +142,33 @@ namespace metashell
           data);
     }
 
-    boost::optional<file_location> point_of_event(const event_data& data)
+    std::optional<file_location> point_of_event(const event_data& data)
     {
       return mpark::visit(
-          [](const auto& details) -> boost::optional<file_location> {
+          [](const auto& details) -> std::optional<file_location> {
             using metashell::data::impl::point_of_event;
             return point_of_event(details.what);
           },
           data);
     }
 
-    boost::optional<file_location> source_location(const event_data& data)
+    std::optional<file_location> source_location(const event_data& data)
     {
       return mpark::visit(
-          [](const auto& details) -> boost::optional<file_location> {
+          [](const auto& details) -> std::optional<file_location> {
             using metashell::data::impl::source_location;
             return source_location(details.what);
           },
           data);
     }
 
-    boost::optional<double> timestamp(const event_data& data)
+    std::optional<double> timestamp(const event_data& data)
     {
       return mpark::visit(
           [](const auto& details) { return timestamp(details); }, data);
     }
 
-    boost::optional<data::type> type_of(const event_data& data)
+    std::optional<data::type> type_of(const event_data& data)
     {
       return mpark::visit(
           [](const auto& details) { return type_of(details.what); }, data);
@@ -190,10 +190,10 @@ namespace metashell
           data);
     }
 
-    boost::optional<type_or_code_or_error> result_of(const event_data& data)
+    std::optional<type_or_code_or_error> result_of(const event_data& data)
     {
       return mpark::visit(
-          [](const auto& detail) -> boost::optional<type_or_code_or_error> {
+          [](const auto& detail) -> std::optional<type_or_code_or_error> {
             using metashell::data::impl::result_of;
             return result_of(detail.what);
           },
@@ -202,7 +202,7 @@ namespace metashell
 
     bool from_line(const event_data& event, const file_location& line)
     {
-      const boost::optional<file_location> poe = point_of_event(event);
+      const std::optional<file_location> poe = point_of_event(event);
       return poe && poe->name == line.name && poe->row == line.row;
     }
 

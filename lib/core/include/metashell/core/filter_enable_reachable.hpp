@@ -22,8 +22,7 @@
 #include <metashell/data/file_location.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
 
-#include <boost/optional.hpp>
-
+#include <optional>
 #include <vector>
 
 namespace metashell
@@ -35,14 +34,14 @@ namespace metashell
     {
     public:
       explicit filter_enable_reachable_t(
-          Events&& events_, boost::optional<data::file_location> from_)
+          Events&& events_, std::optional<data::file_location> from_)
         : _events(std::move(events_)), _from(std::move(from_))
       {
       }
 
-      boost::optional<data::event_data> next()
+      std::optional<data::event_data> next()
       {
-        while (boost::optional<data::event_data> event = _events.next())
+        while (std::optional<data::event_data> event = _events.next())
         {
           const data::event_kind kind = kind_of(*event);
 
@@ -83,7 +82,7 @@ namespace metashell
           }
         }
 
-        return boost::none;
+        return std::nullopt;
       }
 
       data::cpp_code root_name() const { return _events.root_name(); }
@@ -92,7 +91,7 @@ namespace metashell
 
     private:
       Events _events;
-      boost::optional<data::file_location> _from;
+      std::optional<data::file_location> _from;
       std::vector<bool> _depth_enabled{false};
 
       bool from_here(const data::event_data& event_) const
@@ -104,7 +103,7 @@ namespace metashell
     template <class Events>
     filter_enable_reachable_t<Events>
     filter_enable_reachable(Events&& events_,
-                            boost::optional<data::file_location> from_)
+                            std::optional<data::file_location> from_)
     {
       return filter_enable_reachable_t<Events>(
           std::move(events_), std::move(from_));

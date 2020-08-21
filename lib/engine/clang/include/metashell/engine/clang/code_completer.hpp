@@ -40,10 +40,10 @@ namespace metashell
                        binary binary_,
                        core::logger* logger_);
 
-        virtual void code_complete(const iface::environment& env_,
-                                   const data::user_input& src_,
-                                   std::set<data::user_input>& out_,
-                                   bool use_precompiled_headers_) override;
+        virtual data::code_completion
+        code_complete(const iface::environment& env_,
+                      const data::user_input& src_,
+                      bool use_precompiled_headers_) override;
 
       private:
         binary _binary;

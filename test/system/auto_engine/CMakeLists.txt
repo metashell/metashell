@@ -29,7 +29,6 @@ target_link_libraries(
   ${PROJECT_NAME}
 
   boost::filesystem
-  boost::program_options
 
   metashell::process
 )

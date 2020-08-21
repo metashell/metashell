@@ -22,9 +22,9 @@
 #include <metashell/data/mdb_command.hpp>
 
 #include <boost/container/flat_map.hpp>
-#include <boost/optional.hpp>
 
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -39,7 +39,7 @@ namespace metashell
 
       command_handler_map(const commands_t& commands);
 
-      boost::optional<command>
+      std::optional<command>
       get_command(const data::mdb_command::name_type&) const;
 
       const commands_t& get_commands() const;

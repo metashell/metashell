@@ -17,10 +17,10 @@
 #include <metashell/core/console_displayer.hpp>
 #include <metashell/core/get_file_section.hpp>
 #include <metashell/core/highlight_syntax.hpp>
-#include <metashell/core/indenter.hpp>
 #include <metashell/core/wave_tokeniser.hpp>
 
 #include <metashell/data/colored_string.hpp>
+#include <metashell/data/indenter.hpp>
 
 #include <metashell/iface/tokeniser.hpp>
 
@@ -207,7 +207,7 @@ namespace metashell
     void console_displayer::show_comment(const data::text& msg_)
     {
       // TODO: handle one-liners differently (with //)
-      indenter ind(_console->width());
+      data::indenter ind{_console->width()};
 
       ind.raw("/*");
 

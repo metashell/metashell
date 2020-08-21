@@ -53,7 +53,7 @@ namespace metashell
           "specify an additional include directory to be checked after system headers",
           _includes.idirafter
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-isysroot",
           "Specify the root of the includes",
           [this](const command_line_argument& path_)
@@ -61,7 +61,7 @@ namespace metashell
             this->_includes.isysroot = path_.value();
           }
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "--sysroot",
           "Specify the root of the includes",
           [this](const command_line_argument& path_)
@@ -72,29 +72,29 @@ namespace metashell
             }
           }
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-D", "--define",
           "specify a macro to define (as `macro[=[value]]`)",
           [this](const command_line_argument& def_)
           { this->_config.config.macros.push_back(data::macro_definition(def_)); }
         )
-        .with_value(
+        .with_value<arg_number::any>(
           "-U",
           "specify a macro to undefine",
           [this](const command_line_argument& name_)
           { this->_config.config.macros.push_back(data::macro_undefinition(name_)); }
         )
-        .flag(
+        .flag<false>(
           "--long_long",
           "enable long long support in C++ mode",
-          [this] { this->_config.long_long = true; }
+          _config.long_long
         )
-        .flag(
+        .flag<false>(
           "--variadics",
           "enable certain C99 extensions in C++ mode",
-          [this] { this->_config.variadics = true; }
+          _config.variadics
         )
-        .flag(
+        .flag<arg_number::at_most_once>(
           "--c99",
           "enable C99 mode (implies `--variadics`)",
           [this] {
@@ -103,7 +103,7 @@ namespace metashell
             this->_standards.emplace_back("c99");
           }
         )
-        .flag(
+        .flag<arg_number::at_most_once>(
           "--c++11",
           "enable C++11 mode (implies `--variadics` and `--long_long`)",
           [this] {
@@ -112,7 +112,7 @@ namespace metashell
             this->_standards.emplace_back("c++11");
           }
         )
-        .flag(
+        .flag<arg_number::at_most_once>(
           "-nostdinc++",
           use_templight_headers_ ?
             "don't add C++ standard headers to the include path" :
@@ -122,7 +122,7 @@ namespace metashell
               disable_cpp(this->_config.config.use_standard_headers);
           }
         )
-        .flag(
+        .flag<arg_number::at_most_once>(
           "-nostdinc",
           use_templight_headers_ ?
             "don't add C standard headers to the include path" :
@@ -158,9 +158,9 @@ namespace metashell
 
     const wave_config& wave_arg_parser::result() const { return _config; }
 
-    std::string wave_arg_parser::description() const
+    std::string wave_arg_parser::description(int console_width_) const
     {
-      return "Wave options:<br />" + _parser.description();
+      return "Wave options:<br />" + _parser.description(console_width_);
     }
   }
 }

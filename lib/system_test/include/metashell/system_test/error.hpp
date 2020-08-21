@@ -22,9 +22,9 @@
 #include <pattern/placeholder.hpp>
 
 #include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
 #include <iosfwd>
+#include <optional>
 #include <string>
 
 namespace metashell
@@ -42,7 +42,7 @@ namespace metashell
       const std::string& message() const;
 
     private:
-      boost::optional<std::string> _msg;
+      std::optional<std::string> _msg;
     };
 
     std::ostream& operator<<(std::ostream& out_, const error& error_);
