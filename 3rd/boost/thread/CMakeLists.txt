@@ -33,6 +33,9 @@ add_library(boost::thread ALIAS ${PROJECT_NAME})
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE BOOST_THREAD_BUILD_LIB)
 
+# flag_states enum are defined in multiple TUs
+set_target_properties(${PROJECT_NAME} PROPERTIES UNITY_BUILD OFF)
+
 target_link_libraries(
   ${PROJECT_NAME}
   

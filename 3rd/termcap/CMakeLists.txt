@@ -21,6 +21,9 @@ add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 disable_warnings(${PROJECT_NAME})
 
+# termcap has some TU local static definitions (memory_out, xmalloc, etc)
+set_target_properties(${PROJECT_NAME} PROPERTIES UNITY_BUILD OFF)
+
 target_include_directories(
   ${PROJECT_NAME} SYSTEM
   INTERFACE ${PROJECT_SOURCE_DIR}/include

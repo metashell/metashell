@@ -1,5 +1,8 @@
+#ifndef METASHELL_FIND_LAST_IF_HPP
+#define METASHELL_FIND_LAST_IF_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2020, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,19 +17,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/system_test/code_completer.hpp>
-#include <metashell/system_test/code_completion_result.hpp>
-
-#include <gtest/gtest.h>
-
-using namespace metashell::system_test;
-
-TEST(pragma_echo, code_complete)
+namespace metashell
 {
-  auto res = code_completion_result::create;
-  code_completer c;
-
-  ASSERT_EQ(c("#msh echo"), res(""));
-  ASSERT_EQ(c("#msh echo "), res());
-  ASSERT_EQ(c("#msh echo x"), res());
+  namespace core
+  {
+    template <class ForwardIterator, class Pred>
+    ForwardIterator
+    find_last_if(ForwardIterator begin_, ForwardIterator end_, Pred pred_)
+    {
+      ForwardIterator last = end_;
+      for (ForwardIterator i = begin_; i != end_; ++i)
+      {
+        if (pred_(*i))
+        {
+          last = i;
+        }
+      }
+      return last;
+    }
+  }
 }
+#endif

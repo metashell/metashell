@@ -21,13 +21,9 @@
 
 using namespace metashell::system_test;
 
-namespace
-{
-  auto res = code_completion_result::create;
-}
-
 TEST(pragma_precompiled_headers, code_complete)
 {
+  auto res = code_completion_result::create;
   code_completer c;
 
   ASSERT_EQ(c("#msh precompiled_headers"), res(" on", " off", " 1", " 0"));

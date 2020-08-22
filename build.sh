@@ -47,6 +47,13 @@ else
   TESTS_ARG="-DTESTS=${TESTS}"
 fi
 
+if [ -z "${ENABLE_UNITY_BUILD}" ]
+then
+  UNITY_BUILD_ARGS=""
+else
+  UNITY_BUILD_ARGS="-DCMAKE_UNITY_BUILD=ON"
+fi
+
 PLATFORM="$(tools/detect_platform.sh)"
 PLATFORM_ID="$(tools/detect_platform.sh --id)"
 
@@ -69,6 +76,10 @@ then
   then
     # The default Templight include path seems to be empty on Tumbleweed
     C_INCLUDE_DIRS="-DC_INCLUDE_DIRS=$(tools/clang_default_path --gcc g++ -f shell)"
+  elif [ "${PLATFORM}" = "osx" ]
+  then
+    # osx has the standard headers within XCode's installation directory
+    C_INCLUDE_DIRS="-DC_INCLUDE_DIRS=$(tools/clang_default_path --gcc clang++ -f shell)"
   else
     C_INCLUDE_DIRS=""
   fi
@@ -88,9 +99,9 @@ fi
 mkdir -p "bin/${PLATFORM_ID}/metashell"; cd "bin/${PLATFORM_ID}/metashell"
   if [ -z "${METASHELL_NO_DOC_GENERATION}" ]
   then
-    cmake ../../.. ${TESTS_ARG}
+    cmake ../../.. ${TESTS_ARG} ${UNITY_BUILD_ARGS}
   else
-    cmake ../../.. ${TESTS_ARG} -DMETASHELL_NO_DOC_GENERATION=1
+    cmake ../../.. ${TESTS_ARG} ${UNITY_BUILD_ARGS} -DMETASHELL_NO_DOC_GENERATION=1
   fi
   make -j${BUILD_THREADS}
   ctest -j${TEST_THREADS} || (cat Testing/Temporary/LastTest.log && false)

@@ -30,6 +30,9 @@ add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 disable_warnings(${PROJECT_NAME})
 
+# googletest defines main() if not correctly included
+set_target_properties(${PROJECT_NAME} PROPERTIES UNITY_BUILD OFF)
+
 target_include_directories(
   ${PROJECT_NAME} SYSTEM
   PUBLIC ${PROJECT_SOURCE_DIR}/include

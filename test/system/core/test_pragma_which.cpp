@@ -27,13 +27,9 @@
 
 using namespace metashell::system_test;
 
-namespace
-{
-  auto res = code_completion_result::create;
-}
-
 TEST(pragma_which, code_complete)
 {
+  auto res = code_completion_result::create;
   just::temp::directory tmp;
   const boost::filesystem::path tmp_path = tmp.path();
 

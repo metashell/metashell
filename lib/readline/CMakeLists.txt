@@ -40,7 +40,6 @@ else()
   target_link_libraries(${PROJECT_NAME} ${READLINE_LIBRARY} termcap)
 endif()
 
-
 target_link_libraries(
   ${PROJECT_NAME}
 

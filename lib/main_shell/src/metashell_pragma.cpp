@@ -16,6 +16,8 @@
 
 #include <metashell/main_shell/metashell_pragma.hpp>
 
+#include <metashell/core/find_last_if.hpp>
+
 #include <metashell/data/exception.hpp>
 
 #include <algorithm>
@@ -28,20 +30,6 @@ namespace metashell
   {
     namespace
     {
-      template <class It, class P>
-      It find_last_if(It begin_, It end_, P pred_)
-      {
-        It result = end_;
-        for (; begin_ != end_; ++begin_)
-        {
-          if (pred_(*begin_))
-          {
-            result = begin_;
-          }
-        }
-        return result;
-      }
-
       bool argument_token(const data::token& t_)
       {
         const data::token_category c = category(t_);
@@ -90,7 +78,7 @@ namespace metashell
                                 const data::command::iterator& end_)
     {
       data::command::iterator result =
-          find_last_if(begin_, end_, argument_token);
+          core::find_last_if(begin_, end_, main_shell::argument_token);
 
       if (result == end_)
       {
