@@ -17,7 +17,7 @@ from. Once you have that file, Metashell can load the compilation flags
 (eg. the ones setting the include path) from that file:
 
 ```
-$ metashell --load_compile_commands <path to compile_commands.json>
+$ metashell <path to compile_commands.json>
 ```
 
 Once Metashell has started, you will need to select the compilation unit,
@@ -36,8 +36,8 @@ the content of a directory with the same command:
 ```
 
 Using this command repeatedly on subdirectories will get you to the source
-files of your project. Once you know which one you'd like to debug, you can
-load it:
+files of your project. You can also use tab completion to help the navigation.
+Once you know which one you'd like to debug, you can load it:
 
 ```cpp
 > #msh config load <name of the config>
