@@ -22,7 +22,7 @@
 #include <vector>
 
 class counting_event_data_sequence
-    : public metashell::iface::event_data_sequence
+  : public metashell::iface::event_data_sequence
 {
 public:
   typedef std::vector<metashell::data::event_data>::size_type size_type;

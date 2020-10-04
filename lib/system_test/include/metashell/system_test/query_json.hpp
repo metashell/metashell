@@ -58,7 +58,7 @@ namespace metashell
           return false;
         }
       }
-    }
+    } // namespace impl
 
     template <class Encoding, class Allocator>
     bool no_other_members_than(
@@ -111,7 +111,7 @@ namespace metashell
       return v_.IsString() &&
              std::string(v_.GetString(), v_.GetStringLength()) == s_;
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

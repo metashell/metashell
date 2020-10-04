@@ -31,7 +31,7 @@ namespace metashell
 
       shell_config(shell_config_name, shell_config_data);
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

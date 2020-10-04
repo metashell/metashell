@@ -39,12 +39,12 @@ namespace metashell
       }
     }
 
-    const std::vector<boost::filesystem::path>& include_path_cache::
-    operator[](include_path_cache::key_type key_)
+    const std::vector<boost::filesystem::path>&
+    include_path_cache::operator[](include_path_cache::key_type key_)
     {
       const auto i = _cache.find(key_);
       assert(i != _cache.end());
       return *i->second;
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

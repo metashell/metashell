@@ -29,7 +29,7 @@ then
 fi
 
 PLATFORM="$(tools/detect_platform.sh)"
-CLANG_VERSION=3.8.0
+CLANG_VERSION=10.0.1
 GRAPHVIZ_VERSION=2.40.1
 
 # Show argument & config summary
@@ -77,19 +77,14 @@ ubuntu)
     sudo apt-add-repository universe
   fi
   sudo apt-get -y install \
-      git g++ cmake libreadline-dev zip python3-pip \
+      git g++ cmake libreadline-dev zip python3-pip libtinfo5 \
       libtool automake autoconf libltdl-dev pkg-config bison flex
   sudo -H pip3 install pycodestyle pylint gitpython daemonize mkdocs cheetah3
   PLATFORM_ID="$(tools/detect_platform.sh --id)"
-  UBUNTU_VERSION="$(tools/detect_platform.sh --version)"
-  if [ "${UBUNTU_VERSION}" = "18.04" ]
-  then
-    UBUNTU_VERSION="16.04"
-  fi
-  CLANG_ARCHIVE="clang+llvm-${CLANG_VERSION}-x86_64-linux-gnu-ubuntu-${UBUNTU_VERSION}"
+  CLANG_ARCHIVE="clang+llvm-${CLANG_VERSION}-x86_64-linux-gnu-ubuntu-16.04"
   mkdir -p "bin/${PLATFORM_ID}"
   cd "bin/${PLATFORM_ID}"
-    wget http://llvm.org/releases/${CLANG_VERSION}/${CLANG_ARCHIVE}.tar.xz
+    wget https://github.com/llvm/llvm-project/releases/download/llvmorg-${CLANG_VERSION}/${CLANG_ARCHIVE}.tar.xz
     tar -xf ${CLANG_ARCHIVE}.tar.xz
     rm -rf clang
     mv ${CLANG_ARCHIVE} clang

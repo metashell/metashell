@@ -141,8 +141,10 @@ namespace metashell
         if (_short_name == arg_ || _long_name == arg_)
         {
           argument_used();
-          if
-            constexpr(WithArg) { return processing_result::value_comes_next; }
+          if constexpr (WithArg)
+          {
+            return processing_result::value_comes_next;
+          }
           else
           {
             _action();
@@ -150,29 +152,28 @@ namespace metashell
           }
         }
 
-        if
-          constexpr(WithArg)
+        if constexpr (WithArg)
+        {
+          if (_short_name)
           {
-            if (_short_name)
+            if (const auto value = arg_.remove_prefix(*_short_name))
             {
-              if (const auto value = arg_.remove_prefix(*_short_name))
-              {
-                argument_used();
-                _action(*value);
-                return processing_result::argument_processed;
-              }
-            }
-            if (_long_name)
-            {
-              if (const auto value = arg_.remove_prefix(
-                      *_long_name + command_line_argument{"="}))
-              {
-                argument_used();
-                _action(*value);
-                return processing_result::argument_processed;
-              }
+              argument_used();
+              _action(*value);
+              return processing_result::argument_processed;
             }
           }
+          if (_long_name)
+          {
+            if (const auto value = arg_.remove_prefix(
+                    *_long_name + command_line_argument{"="}))
+            {
+              argument_used();
+              _action(*value);
+              return processing_result::argument_processed;
+            }
+          }
+        }
         return processing_result::not_this_argument;
       }
 
@@ -192,7 +193,7 @@ namespace metashell
 
       bool invariant() const { return _short_name || _long_name; }
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

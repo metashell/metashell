@@ -34,5 +34,5 @@ namespace metashell
                       type_of(t_) == data::token_type::operator_less;
              }) != cmd.end();
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

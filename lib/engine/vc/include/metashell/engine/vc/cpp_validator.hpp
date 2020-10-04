@@ -50,8 +50,8 @@ namespace metashell
         boost::filesystem::path _env_path;
         core::logger* _logger;
       };
-    }
-  }
-}
+    } // namespace vc
+  } // namespace engine
+} // namespace metashell
 
 #endif

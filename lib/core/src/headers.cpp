@@ -28,5 +28,5 @@ namespace metashell
         generate(h);
       }
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

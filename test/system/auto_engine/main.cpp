@@ -86,7 +86,7 @@ namespace
       test_.test_engine_selection({stub.string()}, name_);
     }
   }
-}
+} // namespace
 
 int main(int argc_, const char* argv_[])
 {

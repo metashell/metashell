@@ -30,7 +30,7 @@ namespace metashell
     {
       using code = one_of<whitespace, ascii_printable, extended_ascii>;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

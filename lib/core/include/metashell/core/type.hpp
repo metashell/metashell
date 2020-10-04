@@ -25,6 +25,6 @@ namespace metashell
   {
     bool is_template_type(const data::type& type_);
   }
-}
+} // namespace metashell
 
 #endif

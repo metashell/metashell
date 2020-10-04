@@ -36,7 +36,7 @@ namespace metashell
       MOCK_CONST_METHOD0(width, int());
       MOCK_CONST_METHOD0(height, int());
     };
-  }
-}
+  } // namespace mock
+} // namespace metashell
 
 #endif

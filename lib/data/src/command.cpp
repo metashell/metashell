@@ -66,5 +66,5 @@ namespace metashell
       }
       return cpp_code(s.str());
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

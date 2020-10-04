@@ -43,8 +43,8 @@ namespace metashell
       private:
         data::headers _headers;
       };
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell
 
 #endif

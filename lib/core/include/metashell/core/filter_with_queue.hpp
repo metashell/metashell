@@ -66,7 +66,7 @@ namespace metashell
       Events _events;
       std::deque<data::event_data> _queue;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

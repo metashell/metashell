@@ -30,8 +30,8 @@ namespace metashell
   namespace system_test
   {
     class code_completion_result
-        : boost::equality_comparable<code_completion_result, json_string>,
-          boost::addable<code_completion_result>
+      : boost::equality_comparable<code_completion_result, json_string>,
+        boost::addable<code_completion_result>
     {
     public:
       explicit code_completion_result(
@@ -81,7 +81,7 @@ namespace metashell
     json_string to_json_string(const code_completion_result& r_);
 
     bool operator==(const code_completion_result& r_, const json_string& s_);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

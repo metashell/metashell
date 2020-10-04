@@ -41,7 +41,7 @@ namespace metashell
           return c_ >= '0' && c_ <= '9';
         });
       }
-    }
+    } // namespace
 
     file_location::file_location(const json_string& s_)
       : _filename(std::nullopt), _row(std::nullopt), _column(std::nullopt)
@@ -134,5 +134,5 @@ namespace metashell
     {
       return l_ == file_location(s_);
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

@@ -60,7 +60,7 @@ namespace metashell
         }
 
         double now() { return double(std::time(nullptr)); }
-      }
+      } // namespace
 
       trace_impl::trace_impl(
           const data::cpp_code& env_,
@@ -219,8 +219,9 @@ namespace metashell
       {
         _events.emplace_back(
             data::event_details<data::event_kind::generated_token>{
-                {t_, _num_tokens_from_macro_call > 0 ? _point_of_event :
-                                                       source_location_,
+                {t_,
+                 _num_tokens_from_macro_call > 0 ? _point_of_event :
+                                                   source_location_,
                  source_location_},
                 now()});
         if (_num_tokens_from_macro_call > 0)
@@ -340,6 +341,6 @@ namespace metashell
             data::event_details<data::event_kind::line_directive>{
                 {arg_, point_of_event_, source_location_}, now()});
       }
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell

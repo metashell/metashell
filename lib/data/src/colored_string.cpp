@@ -67,7 +67,7 @@ namespace
     assert(false);
     return just::console::color::black;
   }
-}
+} // namespace
 
 namespace metashell
 {
@@ -172,5 +172,5 @@ namespace metashell
       return boost::equal(a_.get_string(), b_.get_string()) &&
              boost::equal(a_.get_colors(), b_.get_colors());
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

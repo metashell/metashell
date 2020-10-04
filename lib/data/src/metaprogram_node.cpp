@@ -53,7 +53,7 @@ namespace metashell
       private:
         std::ostream& _out;
       };
-    }
+    } // namespace
 
     metaprogram_node::metaprogram_node() : _value(type()) {}
 
@@ -98,5 +98,5 @@ namespace metashell
     {
       return a_.variant() == b_.variant();
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

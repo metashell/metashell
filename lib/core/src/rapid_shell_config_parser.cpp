@@ -74,7 +74,7 @@ namespace metashell
       {
         return empty(s_);
       }
-    }
+    } // namespace
 
     bool rapid_shell_config_parser::StartArray()
     {
@@ -280,5 +280,5 @@ namespace metashell
         return false;
       }
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

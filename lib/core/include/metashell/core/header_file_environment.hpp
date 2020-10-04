@@ -57,7 +57,7 @@ namespace metashell
 
       void save();
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

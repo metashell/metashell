@@ -44,7 +44,7 @@ namespace metashell
       virtual void show_filename_set(
           const std::set<boost::filesystem::path>& filenames_) override;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

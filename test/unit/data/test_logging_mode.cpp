@@ -32,7 +32,7 @@ namespace
     s << mode_;
     return s.str();
   }
-}
+} // namespace
 
 TEST(logging_mode, displayer)
 {

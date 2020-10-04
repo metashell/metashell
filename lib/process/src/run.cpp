@@ -39,5 +39,5 @@ namespace metashell
 
       return result;
     }
-  }
-}
+  } // namespace process
+} // namespace metashell

@@ -82,7 +82,7 @@ namespace metashell
         throw std::runtime_error("Kind should be a string");
       }
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

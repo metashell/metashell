@@ -48,7 +48,7 @@ namespace metashell
     private:
       container _completions;
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

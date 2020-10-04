@@ -26,6 +26,6 @@ namespace metashell
   {
     data::command to_command(const data::cpp_code& code_);
   }
-}
+} // namespace metashell
 
 #endif

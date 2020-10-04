@@ -95,7 +95,7 @@ namespace metashell
     data::command_line_argument_list
     with_includes(data::command_line_argument_list args_,
                   const std::vector<boost::filesystem::path>& paths_);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

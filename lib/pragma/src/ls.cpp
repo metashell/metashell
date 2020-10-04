@@ -137,7 +137,7 @@ namespace metashell
 
         return result;
       }
-    }
+    } // namespace
 
     std::string ls::arguments() const
     {
@@ -215,5 +215,5 @@ namespace metashell
                                           end_,
                                           shell_.engine().header_discoverer());
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

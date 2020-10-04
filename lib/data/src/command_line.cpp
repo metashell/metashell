@@ -48,5 +48,5 @@ namespace metashell
       return data::to_string(c_.executable()) + " " +
              data::to_string(c_.arguments());
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

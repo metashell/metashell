@@ -59,7 +59,7 @@ namespace metashell
 
         return to_string_with_standard_suffix(*i);
       };
-    }
+    } // namespace
 
     std::string config::arguments() const { return "[<name>]"; }
 
@@ -76,9 +76,9 @@ namespace metashell
                      iface::main_shell& shell_,
                      iface::displayer& displayer_) const
     {
-      using boost::algorithm::join;
-      using boost::adaptors::transformed;
       using boost::adaptors::filtered;
+      using boost::adaptors::transformed;
+      using boost::algorithm::join;
 
       const data::config& cfg = shell_.get_config();
       const data::shell_config_name active = cfg.active_shell_config().name;
@@ -121,5 +121,5 @@ namespace metashell
                 return cfg_.name.value();
               }));
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

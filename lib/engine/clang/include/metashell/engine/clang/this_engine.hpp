@@ -27,8 +27,8 @@ namespace metashell
     {
       bool is_clang(const data::executable_path&);
       bool is_templight(const data::executable_path&);
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell
 
 #endif

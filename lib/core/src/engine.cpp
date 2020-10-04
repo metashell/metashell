@@ -71,7 +71,7 @@ namespace metashell
           return std::string("not debug anything");
         }
       }
-    }
+    } // namespace
 
     std::optional<std::string> limitation(const iface::engine& engine_)
     {
@@ -87,5 +87,5 @@ namespace metashell
         return std::nullopt;
       }
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

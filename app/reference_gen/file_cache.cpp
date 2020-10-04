@@ -48,8 +48,8 @@ file_cache::file_cache(const std::vector<cmd_t>& cmds_)
   }
 }
 
-const std::string& file_cache::
-operator[](const boost::filesystem::path& path_) const
+const std::string&
+file_cache::operator[](const boost::filesystem::path& path_) const
 {
   const auto i = _files.find(path_);
   assert(i != _files.end());

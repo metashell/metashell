@@ -24,5 +24,5 @@ namespace metashell
       : exception("JSON parsing failed: " + msg_)
     {
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

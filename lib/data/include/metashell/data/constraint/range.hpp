@@ -32,8 +32,8 @@ namespace metashell
           return From <= c_ && c_ <= To;
         }
       };
-    }
-  }
-}
+    } // namespace constraint
+  } // namespace data
+} // namespace metashell
 
 #endif

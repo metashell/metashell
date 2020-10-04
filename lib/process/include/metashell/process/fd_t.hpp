@@ -32,7 +32,7 @@ namespace metashell
 #endif
 
     fd_t invalid_fd();
-  }
-}
+  } // namespace process
+} // namespace metashell
 
 #endif

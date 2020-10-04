@@ -57,7 +57,7 @@ namespace metashell
 
     std::optional<type> trim_wrap_type(const type& type_);
     bool is_remove_ptr(const type& type_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

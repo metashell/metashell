@@ -37,7 +37,7 @@ namespace metashell
     private:
       debugger_event _event;
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

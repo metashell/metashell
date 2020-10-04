@@ -31,7 +31,7 @@ namespace metashell
       bool variadics = false;
       bool ignore_macro_redefinition = false;
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

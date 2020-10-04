@@ -28,7 +28,7 @@ namespace metashell
     public:
       virtual void add(const data::user_input& cmd_) override;
     };
-  }
-}
+  } // namespace readline
+} // namespace metashell
 
 #endif

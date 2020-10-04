@@ -33,7 +33,7 @@ namespace metashell
       core::cached<data::includes>
           includes_cache(binary, data::standard_headers_allowed);
     }
-  }
-}
+  } // namespace engine
+} // namespace metashell
 
 #endif

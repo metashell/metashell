@@ -36,7 +36,7 @@ namespace metashell
             event_name;
 
     metaprogram_node to_metaprogram_node(const event_name& name_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

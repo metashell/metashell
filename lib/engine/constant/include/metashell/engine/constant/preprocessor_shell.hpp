@@ -37,8 +37,8 @@ namespace metashell
       private:
         data::result _result;
       };
-    }
-  }
-}
+    } // namespace constant
+  } // namespace engine
+} // namespace metashell
 
 #endif

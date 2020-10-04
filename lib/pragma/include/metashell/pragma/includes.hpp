@@ -44,7 +44,7 @@ namespace metashell
                 Type, data::standard_headers_allowed::all));
       }
     };
-  }
-}
+  } // namespace pragma
+} // namespace metashell
 
 #endif

@@ -38,5 +38,5 @@ namespace metashell
     {
       return _stub.run(argc_, argv_);
     }
-  }
-}
+  } // namespace compiler_stub
+} // namespace metashell

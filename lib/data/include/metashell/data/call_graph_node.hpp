@@ -45,7 +45,7 @@ namespace metashell
 
     bool operator==(const call_graph_node& a_, const call_graph_node& b_);
     std::ostream& operator<<(std::ostream& o_, const call_graph_node& n_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

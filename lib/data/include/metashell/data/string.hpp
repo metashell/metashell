@@ -37,7 +37,7 @@ namespace metashell
       void throw_(const std::string&);
 
       bool isspace(int);
-    }
+    } // namespace impl
 
     template <class Derived,
               bool AllowEmpty = true,
@@ -270,7 +270,7 @@ namespace metashell
         }
       }
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

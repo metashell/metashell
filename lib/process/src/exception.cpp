@@ -34,5 +34,5 @@ namespace metashell
     {
       return exception{strerror(errno_)};
     }
-  }
-}
+  } // namespace process
+} // namespace metashell

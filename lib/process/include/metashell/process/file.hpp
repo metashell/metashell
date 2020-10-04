@@ -81,7 +81,7 @@ namespace metashell
     private:
       fd_t _fd;
     };
-  }
-}
+  } // namespace process
+} // namespace metashell
 
 #endif

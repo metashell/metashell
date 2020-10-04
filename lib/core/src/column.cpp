@@ -51,5 +51,5 @@ namespace metashell
     }
 
     bool operator==(column a_, column b_) { return a_.value() == b_.value(); }
-  }
-}
+  } // namespace core
+} // namespace metashell

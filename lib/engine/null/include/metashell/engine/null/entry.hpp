@@ -30,8 +30,8 @@ namespace metashell
       data::real_engine_name name();
 
       core::engine_entry entry();
-    }
-  }
-}
+    } // namespace null
+  } // namespace engine
+} // namespace metashell
 
 #endif

@@ -32,7 +32,7 @@ namespace
     mi.command(init_line_);
     return mi.command(input_).front();
   }
-}
+} // namespace
 
 TEST(pretty_printing, basic_type)
 {

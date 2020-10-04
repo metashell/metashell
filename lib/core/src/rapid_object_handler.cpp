@@ -26,7 +26,7 @@ namespace metashell
       {
         return field_ == "type" || field_ == "cmd" || field_ == "code";
       }
-    }
+    } // namespace
 
     rapid_object_handler::rapid_object_handler(iface::displayer& displayer_)
       : _in_object(false), _displayer(displayer_)
@@ -106,5 +106,5 @@ namespace metashell
         rapid_handler<rapid_object_handler, false>::fail(msg_);
       }
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

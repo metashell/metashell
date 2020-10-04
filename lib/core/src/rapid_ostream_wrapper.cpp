@@ -62,5 +62,5 @@ namespace metashell
     }
 
     void rapid_ostream_wrapper::new_line() { _os << std::endl; }
-  }
-}
+  } // namespace core
+} // namespace metashell

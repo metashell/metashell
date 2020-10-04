@@ -33,8 +33,8 @@ namespace metashell
              const std::optional<data::cpp_code>&,
              data::metaprogram_mode) override;
       };
-    }
-  }
-}
+    } // namespace constant
+  } // namespace engine
+} // namespace metashell
 
 #endif

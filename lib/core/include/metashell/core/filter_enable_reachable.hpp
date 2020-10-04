@@ -108,7 +108,7 @@ namespace metashell
       return filter_enable_reachable_t<Events>(
           std::move(events_), std::move(from_));
     }
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

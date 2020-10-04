@@ -28,5 +28,5 @@ namespace metashell
             "report it at https://github.com/metashell/metashell/issues")
     {
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

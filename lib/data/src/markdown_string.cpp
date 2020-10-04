@@ -87,7 +87,7 @@ namespace metashell
         }
         out_ << "|\n";
       }
-    }
+    } // namespace
 
     markdown_string italics(const markdown_string& md_)
     {
@@ -149,5 +149,5 @@ namespace metashell
           "Chooses an engine based on the compiler "
           "specified in the arguments.");
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

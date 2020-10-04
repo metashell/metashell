@@ -37,8 +37,8 @@ namespace metashell
       private:
         binary _binary;
       };
-    }
-  }
-}
+    } // namespace vc
+  } // namespace engine
+} // namespace metashell
 
 #endif

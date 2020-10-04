@@ -31,7 +31,7 @@ namespace
     return wrap("* __METASHELL_PP_MARKER *",
                 std::string(process_directives_ ? "\n" : ""));
   }
-}
+} // namespace
 
 namespace metashell
 {
@@ -85,5 +85,5 @@ namespace metashell
     }
 
     int lines_in(const cpp_code& code_) { return int(count(code_, '\n')); }
-  }
-} // namespace metashell:data
+  } // namespace data
+} // namespace metashell

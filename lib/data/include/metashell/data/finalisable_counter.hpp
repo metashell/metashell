@@ -47,7 +47,7 @@ namespace metashell
 
     std::string to_string(const finalisable_counter& c_);
     std::ostream& operator<<(std::ostream& out_, const finalisable_counter& c_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

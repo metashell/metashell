@@ -51,8 +51,8 @@ namespace metashell
         core::cached<data::includes> _c_includes;
         core::cached<data::includes> _cpp_includes;
       };
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell
 
 #endif

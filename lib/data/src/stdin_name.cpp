@@ -21,5 +21,5 @@ namespace metashell
   namespace data
   {
     std::string stdin_name_in_clang() { return "<stdin>"; }
-  }
-}
+  } // namespace data
+} // namespace metashell

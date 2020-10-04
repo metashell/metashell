@@ -47,7 +47,7 @@ namespace metashell
                     std::vector<debugger_event>& events_,
                     const std::optional<double>& timestamp_,
                     metaprogram_mode mode_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

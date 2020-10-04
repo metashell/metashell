@@ -39,7 +39,7 @@ namespace
     ASSERT_TRUE(t->has_further_tokens());
     ASSERT_TRUE(expected_category_ == category(t->current_token()));
   }
-}
+} // namespace
 
 TEST(wave_tokeniser, empty_code_is_empty_token_sequence)
 {

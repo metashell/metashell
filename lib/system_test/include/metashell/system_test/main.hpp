@@ -23,6 +23,6 @@ namespace metashell
   {
     int main(int argc_, char* argv_[]);
   }
-}
+} // namespace metashell
 
 #endif

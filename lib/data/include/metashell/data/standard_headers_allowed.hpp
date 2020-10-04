@@ -43,7 +43,7 @@ namespace metashell
 
     std::string to_string(standard_headers_allowed);
     std::ostream& operator<<(std::ostream&, standard_headers_allowed);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

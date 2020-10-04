@@ -34,7 +34,7 @@ namespace
     std::ifstream f(path_.c_str());
     return !(f.fail() || f.bad());
   }
-}
+} // namespace
 
 TEST(environment, invalid_environment_command_displays_an_error)
 {

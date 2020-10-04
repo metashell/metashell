@@ -52,5 +52,5 @@ namespace metashell
       }
       return o_ << "})";
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

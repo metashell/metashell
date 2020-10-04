@@ -102,5 +102,5 @@ namespace metashell
       }
       return result + "\"";
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

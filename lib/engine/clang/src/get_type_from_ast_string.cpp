@@ -74,6 +74,6 @@ namespace metashell
           }
         }
       }
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell

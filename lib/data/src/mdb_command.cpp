@@ -35,7 +35,7 @@ namespace metashell
     namespace
     {
       bool is_space(char c_) { return std::isspace(c_); }
-    }
+    } // namespace
 
     mdb_command::argument_type::argument_type(std::string value_,
                                               whitespace suffix_)
@@ -61,7 +61,7 @@ namespace metashell
     }
 
     mdb_command::arguments_type::iterator&
-        mdb_command::arguments_type::iterator::operator++()
+    mdb_command::arguments_type::iterator::operator++()
     {
       const auto b = _at;
       const auto e = std::find_if(b, _end, is_space);
@@ -70,8 +70,8 @@ namespace metashell
       return *this;
     }
 
-    const mdb_command::argument_type& mdb_command::arguments_type::iterator::
-    operator*() const
+    const mdb_command::argument_type&
+    mdb_command::arguments_type::iterator::operator*() const
     {
       return _value;
     }
@@ -82,8 +82,8 @@ namespace metashell
       return lhs_.value() == rhs_.value() && lhs_.suffix() == rhs_.suffix();
     }
 
-    bool mdb_command::arguments_type::iterator::
-    operator==(const iterator& rhs_) const
+    bool mdb_command::arguments_type::iterator::operator==(
+        const iterator& rhs_) const
     {
       assert(_end == rhs_._end);
       return _at == rhs_._at && _value == rhs_._value;
@@ -274,5 +274,5 @@ namespace metashell
     {
       return lhs_.tuple() == rhs_.tuple();
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

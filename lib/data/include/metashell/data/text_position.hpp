@@ -54,7 +54,7 @@ namespace metashell
     text_position operator+(text_position pos_, const std::string& s_);
 
     std::ostream& operator<<(std::ostream& o_, const text_position& pos_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

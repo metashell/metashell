@@ -67,7 +67,7 @@ namespace
   {
     return mpark::get<data::config>(parse_config(args_));
   }
-}
+} // namespace
 
 TEST(argument_parsing, recognising_engine_args)
 {

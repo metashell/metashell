@@ -34,7 +34,7 @@ namespace metashell
     std::ostream& operator<<(std::ostream& o_, event_category category_);
 
     std::string to_string(event_category category_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

@@ -140,7 +140,7 @@ namespace metashell
           }
         }
       };
-    }
+    } // namespace
 
     std::unique_ptr<iface::tokeniser>
     create_wave_tokeniser(data::cpp_code src_, std::string input_filename_)
@@ -157,5 +157,5 @@ namespace metashell
               boost::wave::cpplexer::lex_iterator<
                   boost::wave::cpplexer::lex_token<>>>::get_version_string());
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

@@ -109,11 +109,11 @@ namespace metashell
       {
       public:
         class iterator
-            : public boost::forward_iterator_helper<iterator,
-                                                    const argument_type,
-                                                    std::ptrdiff_t,
-                                                    const argument_type*,
-                                                    const argument_type&>
+          : public boost::forward_iterator_helper<iterator,
+                                                  const argument_type,
+                                                  std::ptrdiff_t,
+                                                  const argument_type*,
+                                                  const argument_type&>
         {
         public:
           iterator(std::string::const_iterator, std::string::const_iterator);
@@ -204,7 +204,7 @@ namespace metashell
 
     bool operator==(const mdb_command::argument_type&,
                     const mdb_command::argument_type&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

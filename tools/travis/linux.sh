@@ -11,9 +11,8 @@ fi
 
 ./install_build_dependencies.sh
 
-# gcc 5 support
-sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-7 /usr/bin/gcc
-sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-7 /usr/bin/g++
+sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-10 /usr/bin/gcc
+sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-10 /usr/bin/g++
 
 PLATFORM_ID="$(tools/detect_platform.sh --id)"
 
@@ -57,7 +56,7 @@ else
   mkdir -p "bin/${PLATFORM_ID}"
   cd "bin/${PLATFORM_ID}"
     ARCHIVE_NAME=templight_${PLATFORM_ID}.tar.bz2
-    wget https://github.com/metashell/templight_binary/releases/download/templight_c2fc38/${ARCHIVE_NAME}
+    wget https://github.com/metashell/templight_binary/releases/download/templight_c68167/${ARCHIVE_NAME}
     tar -xvjf ${ARCHIVE_NAME}
   cd ../..
 

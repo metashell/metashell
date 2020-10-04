@@ -43,7 +43,7 @@ namespace metashell
                   skip_all_whitespace(path_end + 1, end_)};
         }
       }
-    }
+    } // namespace
 
     include_argument::include_argument(include_type type_,
                                        const boost::filesystem::path& path_)
@@ -102,5 +102,5 @@ namespace metashell
     {
       return include_code(arg_.type, arg_.path);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

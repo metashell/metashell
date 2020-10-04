@@ -109,8 +109,8 @@ namespace metashell
                                       iface::type_shell& type_shell_,
                                       core::logger* logger_)
       {
-        using std::string;
         using std::pair;
+        using std::string;
 
         METASHELL_LOG(logger_,
                       "Checking if metaprogram can be evaluated without "
@@ -249,7 +249,7 @@ namespace metashell {
             if (val == metashell_)
             {
               ++begin_;
-              auto[completions, pragmas] =
+              auto [completions, pragmas] =
                   core::code_complete::pragma_metashell(
                       data::skip_all_whitespace(begin_, end_), end_,
                       shell_.pragma_handlers());
@@ -279,7 +279,7 @@ namespace metashell {
         return std::find(std::begin(cats), std::end(cats), category_) !=
                std::end(cats);
       }
-    }
+    } // namespace
 
     shell::shell(
         const data::config& config_,
@@ -309,7 +309,7 @@ namespace metashell {
     {
       if (!_env)
       {
-        rebuild_environment();
+        shell::rebuild_environment();
       }
       _env->append(data::cpp_code(default_env));
     }
@@ -525,7 +525,7 @@ namespace metashell {
             else if (metashell_extensions_ &&
                      directive == data::cpp_code{"msh"})
             {
-              auto[completions, pragmas] =
+              auto [completions, pragmas] =
                   core::code_complete::pragma_metashell(
                       i, e, pragma_handlers());
               result.insert(std::move(completions));
@@ -694,7 +694,7 @@ namespace metashell {
     void shell::rebuild_environment(const data::cpp_code& content_)
     {
       _env = std::make_unique<core::header_file_environment>(
-          try_to_get_shell(engine()), _config.active_shell_config(),
+          try_to_get_shell(shell::engine()), _config.active_shell_config(),
           _internal_dir, _env_filename);
 
       if (!content_.empty())
@@ -899,5 +899,5 @@ namespace metashell {
     {
       return _available_engines;
     }
-  }
-}
+  } // namespace main_shell
+} // namespace metashell

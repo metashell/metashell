@@ -231,5 +231,5 @@ namespace metashell
         throw std::runtime_error("Invalid instantion_kind: " + kind_);
       }
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

@@ -60,7 +60,7 @@ namespace metashell
     std::ostream&
     operator<<(std::ostream& out_,
                const event_details<event_kind::evaluation_end>& details_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

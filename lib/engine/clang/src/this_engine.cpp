@@ -57,6 +57,6 @@ namespace metashell
           return false;
         }
       }
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell

@@ -33,7 +33,7 @@ namespace metashell
 
       static constexpr const char* name_of_type() { return "whitespace"; }
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

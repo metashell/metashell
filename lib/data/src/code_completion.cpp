@@ -54,5 +54,5 @@ namespace metashell
     }
 
     bool code_completion::empty() const { return _completions.empty(); }
-  }
-}
+  } // namespace data
+} // namespace metashell

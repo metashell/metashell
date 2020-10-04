@@ -50,7 +50,7 @@ namespace metashell
     {
       throw data::feature_not_supported<Expected>(engine_);
     }
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

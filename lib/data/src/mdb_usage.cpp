@@ -26,5 +26,5 @@ namespace metashell
              " [-nocache] [" + (preprocessor_ ? "<expression>" : "<type>") +
              "|-]";
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

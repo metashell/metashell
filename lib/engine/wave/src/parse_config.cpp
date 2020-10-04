@@ -42,8 +42,8 @@ namespace metashell
       namespace
       {
         class macro_definition_collector
-            : public boost::wave::context_policies::eat_whitespace<
-                  core::wave_token>
+          : public boost::wave::context_policies::eat_whitespace<
+                core::wave_token>
         {
         public:
           explicit macro_definition_collector(
@@ -197,7 +197,7 @@ namespace metashell
           }
           return {};
         }
-      }
+      } // namespace
 
       data::wave_config
       parse_config(bool use_templight_headers_,
@@ -216,6 +216,6 @@ namespace metashell
                                 std::vector<data::macro_definition>());
         return parser.result();
       }
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell

@@ -49,8 +49,8 @@ namespace metashell
         {
           return std::nullopt;
         }
-      }
-    }
+      } // namespace
+    } // namespace impl
 
     event_data template_begin(event_kind kind,
                               const type& type,
@@ -218,5 +218,5 @@ namespace metashell
       s << data;
       return s.str();
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

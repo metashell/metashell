@@ -46,7 +46,7 @@ namespace
   {
     return with_null_engine("", cmd_);
   }
-}
+} // namespace
 
 TEST(null_engine, startup)
 {

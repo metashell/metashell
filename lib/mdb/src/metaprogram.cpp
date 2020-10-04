@@ -349,8 +349,8 @@ namespace metashell
       mp->try_reading_until(at_, nullptr);
     }
 
-    metaprogram::iterator::reference metaprogram::iterator::
-    operator[](difference_type n) const
+    metaprogram::iterator::reference
+    metaprogram::iterator::operator[](difference_type n) const
     {
       assert(mp);
 
@@ -430,5 +430,5 @@ namespace metashell
       assert(mp == mi.mp);
       return at < mi.at;
     }
-  }
-}
+  } // namespace mdb
+} // namespace metashell

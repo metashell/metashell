@@ -40,7 +40,7 @@ namespace metashell
 
       virtual void end_document() override;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

@@ -22,8 +22,8 @@ string_reader::string_reader(
 {
 }
 
-std::optional<metashell::data::user_input> string_reader::
-operator()(const std::string&)
+std::optional<metashell::data::user_input>
+string_reader::operator()(const std::string&)
 {
   if (_next == _strings.size())
   {

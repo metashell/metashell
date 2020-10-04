@@ -24,7 +24,7 @@ namespace metashell
     class not_supported
     {
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

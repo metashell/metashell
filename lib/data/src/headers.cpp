@@ -41,5 +41,5 @@ namespace metashell
     {
       return _internal_dir;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

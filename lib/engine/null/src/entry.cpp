@@ -28,7 +28,7 @@ namespace metashell
       namespace
       {
         std::vector<data::feature> supported_features() { return {}; }
-      }
+      } // namespace
 
       data::real_engine_name name() { return data::real_engine_name::null; }
 
@@ -52,6 +52,6 @@ namespace metashell
                                   "Mainly for testing purposes."),
             supported_features(), core::never_used_by_auto());
       }
-    }
-  }
-}
+    } // namespace null
+  } // namespace engine
+} // namespace metashell

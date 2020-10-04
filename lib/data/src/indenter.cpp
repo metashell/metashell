@@ -97,7 +97,7 @@ namespace metashell
           i = new_i;
         }
       }
-    }
+    } // namespace
 
     indenter::indenter(int width_, std::string line_sep_)
       : _width{width_}, _line_sep{std::move(line_sep_)}
@@ -129,5 +129,5 @@ namespace metashell
       }
       return *this;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

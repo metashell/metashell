@@ -72,10 +72,11 @@ namespace
 
   filename_list remove_metashell_standard_headers(const filename_list& headers_)
   {
-    return filename_list(headers_ | boost::adaptors::filtered([](
-                                        const boost::filesystem::path& p_) {
-                           return !metashell_standard_header_path(p_);
-                         }));
+    return filename_list(
+        headers_ |
+        boost::adaptors::filtered([](const boost::filesystem::path& p_) {
+          return !metashell_standard_header_path(p_);
+        }));
   }
 
   filename_list
@@ -105,7 +106,7 @@ namespace
   {
     return includes(sysincludes_, quoteincludes_, "quote");
   }
-}
+} // namespace
 
 TEST(includes, tests)
 {

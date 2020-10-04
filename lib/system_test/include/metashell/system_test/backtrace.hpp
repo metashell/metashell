@@ -48,7 +48,7 @@ namespace metashell
     json_string to_json_string(const backtrace& c_);
 
     bool operator==(const backtrace& c_, const json_string& s_);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

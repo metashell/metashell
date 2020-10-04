@@ -36,7 +36,7 @@ namespace metashell
         return c != data::token_category::whitespace &&
                c != data::token_category::comment;
       }
-    }
+    } // namespace
 
     std::optional<data::command::iterator>
     parse_pragma(const data::command& cmd_)
@@ -90,5 +90,5 @@ namespace metashell
         return result;
       }
     }
-  }
-}
+  } // namespace main_shell
+} // namespace metashell

@@ -68,5 +68,5 @@ namespace metashell
         break;
       }
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

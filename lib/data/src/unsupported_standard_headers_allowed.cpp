@@ -29,5 +29,5 @@ namespace metashell
                   to_string(config_))
     {
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

@@ -48,7 +48,7 @@ namespace metashell
         return data::feature::header_discoverer();
       }
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

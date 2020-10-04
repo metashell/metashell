@@ -112,7 +112,7 @@ namespace metashell
             }
           }
         }
-      }
+      } // namespace
 
       code_completer::code_completer(
           const boost::filesystem::path& internal_dir_,
@@ -182,6 +182,6 @@ namespace metashell
         });
         return result;
       }
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell

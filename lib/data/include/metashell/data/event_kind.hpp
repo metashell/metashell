@@ -111,8 +111,8 @@ namespace metashell
     std::string to_string(event_kind kind);
 
     bool enabled(event_kind kind);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #ifdef PREPROCESSOR_EVENT_KIND
 #error PREPROCESSOR_EVENT_KIND defined

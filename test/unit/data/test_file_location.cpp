@@ -53,7 +53,10 @@ TEST(file_location, equality)
 TEST(file_location, parsing)
 {
   // Linux allows : in filenames
-  const std::string filenames[] = {"", "hello", "C:\\hello", "C:hello",
+  const std::string filenames[] = {"",
+                                   "hello",
+                                   "C:\\hello",
+                                   "C:hello",
                                    "hello:world",
                                    ":"
                                    "::",

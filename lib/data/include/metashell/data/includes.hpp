@@ -39,7 +39,7 @@ namespace metashell
 
     const std::vector<boost::filesystem::path>& get(include_type type_,
                                                     const includes& includes_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

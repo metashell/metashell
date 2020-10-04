@@ -37,7 +37,7 @@ namespace
   {
     return !std::ofstream((p_ / "test.txt").string()).fail();
   }
-}
+} // namespace
 
 TEST(cwd, include_from_cwd)
 {

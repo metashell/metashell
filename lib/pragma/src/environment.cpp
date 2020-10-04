@@ -30,5 +30,5 @@ namespace metashell
     {
       displayer_.show_cpp_code(shell_.env().get_all());
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

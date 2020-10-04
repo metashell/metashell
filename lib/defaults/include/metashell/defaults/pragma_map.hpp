@@ -38,6 +38,6 @@ namespace metashell
                const boost::filesystem::path& mdb_temp_dir_,
                core::logger* logger_);
   }
-}
+} // namespace metashell
 
 #endif

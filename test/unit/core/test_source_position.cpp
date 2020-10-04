@@ -53,7 +53,7 @@ namespace
     }
     return source_positions[0];
   }
-}
+} // namespace
 
 TEST(source_position, tests)
 {

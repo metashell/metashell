@@ -65,7 +65,7 @@ namespace metashell
           throw exception{"Config " + name_ + " not found."};
         }
       }
-    }
+    } // namespace
 
     config::config()
       : _shell_configs{shell_config{
@@ -125,5 +125,5 @@ namespace metashell
     {
       return bool(find_nothrow(name_, _shell_configs));
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

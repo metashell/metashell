@@ -72,5 +72,5 @@ namespace metashell
       std::stringstream ss(buffer);
       return get_file_section(ss, middle_line, offset);
     }
-  }
-} // namespace metashell { namespace core
+  } // namespace core
+} // namespace metashell

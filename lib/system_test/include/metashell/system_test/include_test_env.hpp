@@ -66,10 +66,9 @@ namespace metashell
       public:
         result(data::include_argument_type value_);
 
-        const mpark::variant<none_t,
-                             system_used_t,
-                             data::include_argument_type>&
-        value() const;
+        const mpark::
+            variant<none_t, system_used_t, data::include_argument_type>&
+            value() const;
 
         static result none();
         static result system_used();
@@ -118,7 +117,7 @@ namespace metashell
                              const include_test_env::result& res_);
 
     boost::filesystem::path to_path(include_test_env::test_filename);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

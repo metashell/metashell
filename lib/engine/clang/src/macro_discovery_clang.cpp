@@ -39,6 +39,6 @@ namespace metashell
                                    output.standard_error);
         }
       }
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell

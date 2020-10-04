@@ -94,7 +94,7 @@ namespace metashell
 
     std::ostream& operator<<(std::ostream& o_, const frame& f_);
     bool operator==(const frame& a_, const frame& b_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

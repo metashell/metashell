@@ -89,5 +89,5 @@ namespace metashell
       return w.ws_row;
 #endif
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

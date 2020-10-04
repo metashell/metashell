@@ -33,11 +33,11 @@ namespace metashell
     {
     public:
       class iterator
-          : public boost::forward_iterator_helper<iterator,
-                                                  command_line_argument,
-                                                  std::ptrdiff_t,
-                                                  command_line_argument*,
-                                                  command_line_argument&>
+        : public boost::forward_iterator_helper<iterator,
+                                                command_line_argument,
+                                                std::ptrdiff_t,
+                                                command_line_argument*,
+                                                command_line_argument&>
       {
       public:
         iterator(std::string_view::const_iterator,
@@ -63,7 +63,7 @@ namespace metashell
     private:
       std::string_view _value;
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

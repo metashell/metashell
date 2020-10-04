@@ -46,5 +46,5 @@ namespace metashell
       return ""; // to avoid warnings about the missing return on some
       // compilers.
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

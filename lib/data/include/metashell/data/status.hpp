@@ -36,7 +36,7 @@ namespace metashell
 
     std::string to_string(const status&);
     std::ostream& operator<<(std::ostream&, const status&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

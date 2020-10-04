@@ -108,8 +108,8 @@ namespace metashell
           const std::optional<boost::filesystem::path>& env_path_,
           binary& clang_binary_,
           data::metaprogram_mode mode_);
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell
 
 #endif

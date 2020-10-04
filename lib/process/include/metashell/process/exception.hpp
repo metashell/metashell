@@ -32,7 +32,7 @@ namespace metashell
       static exception from_errno();
       static exception from_errno(int);
     };
-  }
-}
+  } // namespace process
+} // namespace metashell
 
 #endif

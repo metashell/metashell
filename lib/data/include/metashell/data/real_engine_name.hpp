@@ -46,7 +46,7 @@ namespace metashell
 
     std::string to_string(real_engine_name);
     std::ostream& operator<<(std::ostream&, real_engine_name);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

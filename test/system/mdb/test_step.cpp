@@ -48,7 +48,7 @@ namespace
     }
     return result;
   }
-}
+} // namespace
 
 TEST(mdb_step, without_evaluation)
 {

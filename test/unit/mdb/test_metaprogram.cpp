@@ -57,7 +57,7 @@ namespace
                  {type_or_code_or_error(type("int"))}}},
             mode_));
   }
-}
+} // namespace
 
 TEST(metaprogram, constructor)
 {

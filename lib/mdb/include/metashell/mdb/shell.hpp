@@ -148,7 +148,7 @@ namespace metashell
 
       bool _preprocessor;
     };
-  }
-}
+  } // namespace mdb
+} // namespace metashell
 
 #endif

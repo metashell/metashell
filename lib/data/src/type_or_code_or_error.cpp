@@ -94,8 +94,8 @@ namespace metashell
       return mpark::get<error_type>(data);
     }
 
-    bool type_or_code_or_error::
-    operator==(const type_or_code_or_error& other) const
+    bool
+    type_or_code_or_error::operator==(const type_or_code_or_error& other) const
     {
       return data == other.data;
     }
@@ -120,5 +120,5 @@ namespace metashell
       }
       return os;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

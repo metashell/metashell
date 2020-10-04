@@ -45,7 +45,7 @@ namespace metashell
         }
 
         data::user_input to_user_input(std::string);
-      }
+      } // namespace impl
 
       data::code_completion
       files(const data::user_input& to_complete_,
@@ -106,8 +106,8 @@ namespace metashell
         using std::end;
         return fixed_values(begin_, end_, begin(values_), end(values_));
       }
-    }
-  }
-}
+    } // namespace code_complete
+  } // namespace core
+} // namespace metashell
 
 #endif

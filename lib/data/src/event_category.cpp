@@ -40,5 +40,5 @@ namespace metashell
       }
       return "unknown category";
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

@@ -136,7 +136,7 @@ namespace
     // To avoid warnings
     return plain_line_reader;
   }
-}
+} // namespace
 
 console_config::console_config(data::console_type type_,
                                bool indent_,

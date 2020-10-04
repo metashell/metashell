@@ -69,7 +69,7 @@ namespace metashell
 
         return args;
       }
-    }
+    } // namespace
 
     metashell_instance::metashell_instance(
         const data::command_line_argument_list& extra_args_,
@@ -325,5 +325,5 @@ namespace metashell
                engine == "clang";
       }
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

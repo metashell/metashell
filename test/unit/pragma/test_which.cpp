@@ -106,7 +106,7 @@ namespace
     ASSERT_EQ(quote("hello\\world.hpp", All),
               parse_arguments(prefix + "\"hello\\world.hpp\""));
   }
-}
+} // namespace
 
 TEST(which, invalid_arguments) { test_invalid_arguments(""); }
 

@@ -39,6 +39,6 @@ namespace metashell
         iface::main_shell& shell_,
         iface::displayer& displayer_);
   }
-}
+} // namespace metashell
 
 #endif

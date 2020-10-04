@@ -274,5 +274,5 @@ namespace metashell
       assert(!"Invalid language standard");
       return false;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

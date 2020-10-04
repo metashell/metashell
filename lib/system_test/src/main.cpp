@@ -47,7 +47,7 @@ namespace metashell
           return *begin_ == val_ ? begin_ : end_;
         }
       }
-    }
+    } // namespace
 
     int main(int argc_, char* argv_[])
     {
@@ -88,5 +88,5 @@ namespace metashell
         return RUN_ALL_TESTS();
       }
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

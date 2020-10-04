@@ -92,8 +92,8 @@ namespace
     {
       if (error(_) == result)
       {
-        return "Error running command \"" + command_ + "\": " +
-               error(result).message();
+        return "Error running command \"" + command_ +
+               "\": " + error(result).message();
       }
     }
     return std::nullopt;
@@ -114,7 +114,7 @@ namespace
 
     return command_fails("#msh engine switch internal", mi_);
   }
-}
+} // namespace
 
 int main(int argc_, const char* argv_[])
 {

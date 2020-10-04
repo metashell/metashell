@@ -34,7 +34,7 @@ namespace metashell
       virtual int width() const override;
       virtual int height() const override;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

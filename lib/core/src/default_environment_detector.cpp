@@ -204,5 +204,5 @@ namespace metashell
       p.remove_filename();
       return p;
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

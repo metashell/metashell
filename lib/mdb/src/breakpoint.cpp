@@ -36,6 +36,7 @@ namespace metashell
         }
 
         bool last_result() const { return _last_result; }
+
       private:
         std::regex _regex;
         bool _last_result;
@@ -65,7 +66,7 @@ namespace metashell
           return match(path_.string());
         }
       };
-    }
+    } // namespace
 
     breakpoint::breakpoint(int id, data::regex name_regex)
       : id(id), name_regex(std::move(name_regex))
@@ -86,5 +87,5 @@ namespace metashell
       return "Breakpoint " + std::to_string(id) + ": regex(\"" +
              data::to_string(name_regex) + "\")";
     }
-  }
-}
+  } // namespace mdb
+} // namespace metashell

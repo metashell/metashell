@@ -30,6 +30,6 @@ namespace metashell
     typedef std::function<std::optional<user_input>(const std::string&)>
         line_reader;
   }
-}
+} // namespace metashell
 
 #endif

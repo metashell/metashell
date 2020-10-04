@@ -38,6 +38,6 @@ namespace metashell
       {
         // ignore
       }
-    }
-  }
-}
+    } // namespace constant
+  } // namespace engine
+} // namespace metashell

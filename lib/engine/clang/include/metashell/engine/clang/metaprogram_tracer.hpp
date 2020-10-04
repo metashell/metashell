@@ -44,8 +44,8 @@ namespace metashell
       private:
         binary _binary;
       };
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell
 
 #endif

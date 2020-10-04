@@ -37,7 +37,7 @@ namespace metashell
     std::ostream& operator<<(std::ostream&, include_argument_type);
 
     std::array<include_argument_type, 5> all_include_argument_types();
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

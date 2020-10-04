@@ -47,7 +47,7 @@ namespace metashell
         return "Target architecture";
       }
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

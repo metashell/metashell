@@ -29,7 +29,7 @@ namespace metashell
     {
       some_feature_not_supported(const real_engine_name&, const feature&);
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

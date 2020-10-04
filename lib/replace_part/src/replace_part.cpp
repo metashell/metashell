@@ -51,7 +51,7 @@ namespace
       }
     }
   }
-}
+} // namespace
 
 namespace replace_part
 {
@@ -90,4 +90,4 @@ namespace replace_part
     replace(input_, marker_, replace_with_, out);
     return out.str();
   }
-}
+} // namespace replace_part

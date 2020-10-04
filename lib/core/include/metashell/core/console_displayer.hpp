@@ -73,7 +73,7 @@ namespace metashell
                         const std::vector<int>& depth_counter_,
                         pager& pager_);
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

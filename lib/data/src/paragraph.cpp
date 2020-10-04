@@ -51,5 +51,5 @@ namespace metashell
                 << p_.rest_of_lines_indentation << "\", \""
                 << p_.first_line_indentation << "\")";
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

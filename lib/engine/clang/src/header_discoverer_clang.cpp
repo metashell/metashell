@@ -51,7 +51,7 @@ namespace metashell
           result.erase(j, result.end());
           return result;
         }
-      }
+      } // namespace
 
       header_discoverer::header_discoverer(binary binary_)
         : _binary(binary_),
@@ -94,10 +94,11 @@ namespace metashell
         const just::lines::view lines(output.standard_error);
 
         const auto result =
-            lines | boost::adaptors::filtered(
-                        [&included_header](const std::string& s_) {
-                          return regex_search(s_, included_header);
-                        }) |
+            lines |
+            boost::adaptors::filtered(
+                [&included_header](const std::string& s_) {
+                  return regex_search(s_, included_header);
+                }) |
             boost::adaptors::transformed([](const std::string& s_) {
               const auto i = std::find(s_.begin(), s_.end(), ' ');
 
@@ -109,6 +110,6 @@ namespace metashell
 
         return std::set<boost::filesystem::path>(result.begin(), result.end());
       }
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell

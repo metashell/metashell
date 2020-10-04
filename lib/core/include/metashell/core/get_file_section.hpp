@@ -46,7 +46,7 @@ namespace metashell
     file_section get_file_section_from_buffer(const std::string& buffer,
                                               int middle_line,
                                               int offset);
-  }
+  } // namespace core
 } // namespace metashell
 
 #endif

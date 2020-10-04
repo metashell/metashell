@@ -25,11 +25,11 @@ namespace metashell
       template <class T>
       T to_metaprogram_node_impl(T t_)
       {
-        return std::move(t_);
+        return t_;
       }
 
       type to_metaprogram_node_impl(none_t) { return type(""); }
-    }
+    } // namespace
 
     metaprogram_node to_metaprogram_node(const event_name& name_)
     {
@@ -39,5 +39,5 @@ namespace metashell
           },
           name_);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

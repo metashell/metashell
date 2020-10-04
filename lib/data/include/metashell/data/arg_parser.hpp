@@ -328,7 +328,7 @@ namespace metashell
                                              const command_line_argument&,
                                              state&);
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

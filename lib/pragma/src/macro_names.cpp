@@ -72,7 +72,7 @@ namespace metashell
 
         return data::cpp_code(boost::algorithm::join(names, "\n"));
       }
-    }
+    } // namespace
 
     std::string macro_names::description() const
     {
@@ -85,5 +85,5 @@ namespace metashell
       displayer_.show_cpp_code(extract_macro_names(
           shell_.engine().macro_discovery().macros(shell_.env())));
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

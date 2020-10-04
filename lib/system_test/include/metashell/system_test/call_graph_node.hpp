@@ -58,7 +58,7 @@ namespace metashell
     };
 
     bool operator==(const call_graph_node& a_, const call_graph_node& b_);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

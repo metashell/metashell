@@ -30,7 +30,7 @@ namespace metashell
       command_line_argument_list args;
       engine_name name = auto_engine_name();
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

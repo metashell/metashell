@@ -65,7 +65,7 @@ namespace metashell
 
     std::string to_string(signal);
     std::ostream& operator<<(std::ostream&, signal);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

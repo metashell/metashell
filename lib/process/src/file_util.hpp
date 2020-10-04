@@ -51,7 +51,7 @@ namespace metashell
 #endif
 
     void close_on_exec(output_file& file_);
-  }
-}
+  } // namespace process
+} // namespace metashell
 
 #endif

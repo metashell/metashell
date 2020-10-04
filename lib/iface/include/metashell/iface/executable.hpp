@@ -34,7 +34,7 @@ namespace metashell
       virtual data::process_output run(const data::command_line_argument_list&,
                                        const std::string& stdin_) const = 0;
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

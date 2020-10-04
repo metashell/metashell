@@ -29,7 +29,7 @@ namespace metashell
   namespace core
   {
     class rapid_shell_config_parser
-        : public rapid_handler<rapid_shell_config_parser, true>
+      : public rapid_handler<rapid_shell_config_parser, true>
     {
     public:
       std::function<void(data::shell_config)> parsed_config_callback =
@@ -53,7 +53,7 @@ namespace metashell
       std::optional<data::shell_config_data> _data = std::nullopt;
       std::optional<std::string> _key = std::nullopt;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

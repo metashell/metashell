@@ -103,6 +103,6 @@ namespace pattern
   private:
     mpark::variant<std::basic_string<CharT>, basic_regex<CharT>> _pattern;
   };
-}
+} // namespace pattern
 
 #endif

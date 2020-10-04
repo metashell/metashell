@@ -49,7 +49,7 @@ namespace metashell
       pipe(pipe&& p_);
       pipe& operator=(pipe&& p_);
     };
-  }
-}
+  } // namespace process
+} // namespace metashell
 
 #endif

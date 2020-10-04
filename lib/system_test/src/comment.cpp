@@ -40,7 +40,7 @@ namespace metashell
                    json_[name_].GetString() :
                    std::string();
       }
-    }
+    } // namespace
 
     comment::comment(std::string content_)
       : _paragraphs_specified(true), _paragraphs{paragraph(std::move(content_))}
@@ -158,5 +158,5 @@ namespace metashell
       }
       return false;
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

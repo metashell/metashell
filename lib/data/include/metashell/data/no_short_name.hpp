@@ -26,7 +26,7 @@ namespace metashell
     };
 
     constexpr no_short_name_t no_short_name;
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

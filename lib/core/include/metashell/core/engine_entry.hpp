@@ -83,7 +83,7 @@ namespace metashell
     find(const std::map<data::real_engine_name, engine_entry>&,
          const data::engine_arguments&,
          logger*);
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

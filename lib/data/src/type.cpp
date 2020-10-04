@@ -58,5 +58,5 @@ namespace metashell
     {
       return type_ == type("metashell::impl::remove_ptr");
     }
-  }
-} // namespace metashell:data
+  } // namespace data
+} // namespace metashell

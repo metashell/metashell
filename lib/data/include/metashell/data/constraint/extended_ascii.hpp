@@ -28,8 +28,8 @@ namespace metashell
       // Accepts range<'\x80', '\x9f'> as well because some character encodings
       // (like Windows-1252) have printable characters in that range.
       using extended_ascii = range<'\x80', '\xff'>;
-    }
-  }
-}
+    } // namespace constraint
+  } // namespace data
+} // namespace metashell
 
 #endif

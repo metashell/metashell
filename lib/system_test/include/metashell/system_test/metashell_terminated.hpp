@@ -40,7 +40,7 @@ namespace metashell
     private:
       std::string _stderr;
     };
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

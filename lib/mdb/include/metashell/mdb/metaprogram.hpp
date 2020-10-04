@@ -49,10 +49,10 @@ namespace metashell
       typedef debugger_history::size_type size_type;
 
       class iterator
-          : boost::random_access_iteratable<iterator,
-                                            const data::debugger_event*,
-                                            std::ptrdiff_t,
-                                            data::debugger_event&>
+        : boost::random_access_iteratable<iterator,
+                                          const data::debugger_event*,
+                                          std::ptrdiff_t,
+                                          data::debugger_event&>
       {
       public:
         typedef std::input_iterator_tag iterator_category;
@@ -146,7 +146,7 @@ namespace metashell
 
       bool cached_ahead_of(size_type loc) const;
     };
-  }
-}
+  } // namespace mdb
+} // namespace metashell
 
 #endif

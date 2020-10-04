@@ -26,6 +26,6 @@ namespace pattern
   typedef placeholder_t (*placeholder)();
 
   inline placeholder_t _() { return placeholder_t(); }
-}
+} // namespace pattern
 
 #endif

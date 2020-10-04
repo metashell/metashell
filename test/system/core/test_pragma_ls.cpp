@@ -42,7 +42,7 @@ TEST(pragma_ls, code_complete)
   {
     code_completer c{std::string{}, with_includes({"--"}, {tmp_path})};
 
-    for (const std::string prefix : prefixes)
+    for (const std::string& prefix : prefixes)
     {
       ASSERT_EQ(c("#msh ls" + prefix), res(" \"", " <"));
       ASSERT_EQ(c("#msh ls" + prefix + " "), res("\"", "<"));
@@ -70,7 +70,7 @@ TEST(pragma_ls, code_complete)
     code_completer c{
         std::string{}, with_includes({"--"}, {tmp_path, tmp_path_other})};
 
-    for (const std::string prefix : prefixes)
+    for (const std::string& prefix : prefixes)
     {
       ASSERT_EQ(c("#msh ls" + prefix + " <foob"), res("ar>", "ar/test.hpp>"));
       ASSERT_EQ(c("#msh ls" + prefix + " <foobar"), res(">", "/test.hpp>"));

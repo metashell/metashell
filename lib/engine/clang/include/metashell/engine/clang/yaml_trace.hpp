@@ -56,8 +56,8 @@ namespace metashell
         data::cpp_code _root_name;
         data::metaprogram_mode _mode;
       };
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell
 
 #endif

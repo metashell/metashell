@@ -44,8 +44,8 @@ namespace metashell
       private:
         clang::binary _templight_binary;
       };
-    }
-  }
-}
+    } // namespace templight
+  } // namespace engine
+} // namespace metashell
 
 #endif

@@ -32,8 +32,8 @@ namespace metashell
 
       core::engine_entry entry(bool use_internal_templight_,
                                data::executable_path metashell_binary_);
-    }
-  }
-}
+    } // namespace templight
+  } // namespace engine
+} // namespace metashell
 
 #endif

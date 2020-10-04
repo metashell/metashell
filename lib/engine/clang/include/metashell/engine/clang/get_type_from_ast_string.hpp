@@ -28,8 +28,8 @@ namespace metashell
       std::string repair_type_string(const std::string& type);
 
       std::string get_type_from_ast_string(const std::string& ast);
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell
 
 #endif

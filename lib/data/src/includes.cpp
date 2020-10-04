@@ -31,5 +31,5 @@ namespace metashell
     {
       return type_ == include_type::sys ? includes_.sys : includes_.quote;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

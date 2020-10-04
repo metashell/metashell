@@ -53,7 +53,7 @@ namespace metashell
 
         return result;
       }
-    }
+    } // namespace
 
     rapid_compile_commands_parser::rapid_compile_commands_parser(
         bool use_precompiled_headers_, bool preprocessor_mode_)
@@ -197,5 +197,5 @@ namespace metashell
     {
       return _configs;
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

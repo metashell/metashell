@@ -34,6 +34,6 @@ namespace metashell
                            iface::json_writer& json_writer_,
                            command_processor_queue& command_processor_queue_);
   }
-}
+} // namespace metashell
 
 #endif

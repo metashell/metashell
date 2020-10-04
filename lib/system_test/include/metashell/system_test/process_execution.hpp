@@ -46,7 +46,7 @@ namespace metashell
     };
 
     std::ostream& operator<<(std::ostream& out_, const process_execution& e_);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

@@ -30,8 +30,8 @@ namespace metashell
       public:
         virtual data::cpp_code macros(const iface::environment&) override;
       };
-    }
-  }
-}
+    } // namespace constant
+  } // namespace engine
+} // namespace metashell
 
 #endif

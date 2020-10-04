@@ -34,6 +34,6 @@ namespace metashell
       {
         return _result;
       }
-    }
-  }
-}
+    } // namespace constant
+  } // namespace engine
+} // namespace metashell

@@ -40,7 +40,7 @@ namespace metashell
 
       std::vector<std::string> warnings;
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

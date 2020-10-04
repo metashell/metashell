@@ -53,7 +53,7 @@ namespace metashell
     determine_from_line(const cpp_code& env,
                         const std::optional<cpp_code>& expression,
                         const std::string& stdin_name);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

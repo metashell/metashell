@@ -52,7 +52,7 @@ namespace
             "#msh pdb -nocache -profile ",
             "#msh pdb -profile -nocache "};
   }
-}
+} // namespace
 
 TEST(completion, simple)
 {

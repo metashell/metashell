@@ -123,7 +123,7 @@ namespace metashell
     {
       return filter_repeated_memoization_t<Events>(std::move(events_));
     }
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

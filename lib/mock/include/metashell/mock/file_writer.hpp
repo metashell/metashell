@@ -34,7 +34,7 @@ namespace metashell
 
       MOCK_METHOD1(write, bool(const std::string&));
     };
-  }
-}
+  } // namespace mock
+} // namespace metashell
 
 #endif

@@ -26,5 +26,5 @@ namespace metashell
                   " is not supported by the " + engine_ + " engine.")
     {
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

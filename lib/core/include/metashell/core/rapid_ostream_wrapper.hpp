@@ -46,7 +46,7 @@ namespace metashell
     private:
       std::ostream& _os;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

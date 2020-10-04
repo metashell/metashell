@@ -28,5 +28,5 @@ namespace metashell
       return -1;
 #endif
     }
-  }
-}
+  } // namespace process
+} // namespace metashell

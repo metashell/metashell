@@ -34,6 +34,6 @@ namespace metashell
         return core::make_event_data_sequence_ptr(
             data::in_memory_event_data_sequence{data::cpp_code{}, mode_, {}});
       }
-    }
-  }
-}
+    } // namespace constant
+  } // namespace engine
+} // namespace metashell

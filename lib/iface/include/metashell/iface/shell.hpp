@@ -75,7 +75,7 @@ namespace metashell
       virtual bool enabled(data::shell_flag) const = 0;
       virtual void enabled(data::shell_flag, bool) = 0;
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

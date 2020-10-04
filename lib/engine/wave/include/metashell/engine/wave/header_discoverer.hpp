@@ -45,8 +45,8 @@ namespace metashell
         data::wave_config _config;
         std::vector<boost::filesystem::path> _system_includes;
       };
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell
 
 #endif

@@ -44,7 +44,7 @@ namespace metashell
 
     std::ostream& operator<<(std::ostream&, const command_line&);
     std::string to_string(const command_line&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

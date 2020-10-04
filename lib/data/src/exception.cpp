@@ -21,5 +21,5 @@ namespace metashell
   namespace data
   {
     exception::exception(const std::string& msg_) : std::runtime_error(msg_) {}
-  }
-}
+  } // namespace data
+} // namespace metashell

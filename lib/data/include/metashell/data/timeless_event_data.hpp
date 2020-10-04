@@ -60,7 +60,7 @@ namespace metashell
     {
       return !(a == b);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

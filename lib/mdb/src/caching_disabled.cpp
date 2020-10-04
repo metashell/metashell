@@ -25,5 +25,5 @@ namespace metashell
                   " requires caching.")
     {
     }
-  }
-}
+  } // namespace mdb
+} // namespace metashell

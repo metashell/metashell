@@ -25,6 +25,6 @@ namespace metashell
   {
     void generate(const data::unsaved_file& f_);
   }
-}
+} // namespace metashell
 
 #endif

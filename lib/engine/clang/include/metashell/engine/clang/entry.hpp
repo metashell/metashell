@@ -31,8 +31,8 @@ namespace metashell
       data::real_engine_name name();
 
       core::engine_entry entry(data::executable_path metashell_binary_);
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell
 
 #endif

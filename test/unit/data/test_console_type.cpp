@@ -32,7 +32,7 @@ namespace
     s << t_;
     return s.str();
   }
-}
+} // namespace
 
 TEST(console_type, parsing)
 {

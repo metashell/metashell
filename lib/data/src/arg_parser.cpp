@@ -64,7 +64,7 @@ namespace metashell
         }
         return result;
       }
-    }
+    } // namespace
 
     arg_parser::state::state(
         const std::vector<flag_definition>& flags_,
@@ -259,5 +259,5 @@ namespace metashell
       return flag(short_name_, long_name_, deco_description(suggestion_),
                   arg_number::any, decommissioned{error_msg_, long_name_});
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

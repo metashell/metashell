@@ -29,6 +29,7 @@ public:
   }
 
   ~override_guard() { _var = _old_value; }
+
 private:
   T& _var;
   T _old_value;

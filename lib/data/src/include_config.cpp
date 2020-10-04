@@ -27,7 +27,7 @@ namespace metashell
       {
         to_.insert(to_.end(), items_.begin(), items_.end());
       }
-    }
+    } // namespace
 
     std::vector<boost::filesystem::path> include_config::get(
         include_type type_,
@@ -95,5 +95,5 @@ namespace metashell
       result.append_with_prefix("-idirafter", cfg_.idirafter);
       return result;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

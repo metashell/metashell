@@ -46,7 +46,7 @@ namespace
                 .code()
                 .value();
   }
-}
+} // namespace
 
 TEST(shell_environment, extending_with_pragma_warns)
 {

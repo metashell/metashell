@@ -64,7 +64,7 @@ namespace
 
     // clang-format on
   }
-}
+} // namespace
 
 TEST(pdb, test_macro_definition)
 {

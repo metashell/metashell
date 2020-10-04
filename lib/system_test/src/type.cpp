@@ -81,5 +81,5 @@ namespace metashell
       d.Parse(s_.get().c_str());
       return members_are({"type", "name"}, d) && matches(type_, d["name"]);
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

@@ -42,7 +42,7 @@ namespace metashell
 
       virtual void end_document() = 0;
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

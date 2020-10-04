@@ -37,7 +37,7 @@ namespace metashell
     private:
       std::map<std::vector<std::string>, data::process_output> _actions;
     };
-  }
-}
+  } // namespace compiler_stub
+} // namespace metashell
 
 #endif

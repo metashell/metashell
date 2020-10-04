@@ -31,7 +31,7 @@ namespace metashell
       Value head;
       boost::iterator_range<typename std::vector<Value>::iterator> tail;
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

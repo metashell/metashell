@@ -95,5 +95,5 @@ namespace metashell
              (!error_.message_specified() ||
               is_string(error_.message(), d["msg"]));
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

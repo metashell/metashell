@@ -125,8 +125,8 @@ namespace metashell
       return _current;
     }
 
-    bool forward_trace_iterator::
-    operator==(const forward_trace_iterator& i_) const
+    bool
+    forward_trace_iterator::operator==(const forward_trace_iterator& i_) const
     {
       return finished() == i_.finished();
     }
@@ -150,5 +150,5 @@ namespace metashell
       assert(_at_end);
       return _at_end->second;
     }
-  }
-}
+  } // namespace mdb
+} // namespace metashell

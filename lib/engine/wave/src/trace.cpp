@@ -38,6 +38,6 @@ namespace metashell
       const data::cpp_code& trace::root_name() const { return _root_name; }
 
       data::metaprogram_mode trace::mode() const { return _mode; }
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell

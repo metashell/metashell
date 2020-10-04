@@ -153,7 +153,7 @@ namespace metashell
           return engine_.preprocessor_tracer();
         }
       };
-    }
+    } // namespace impl
 
     template <class Feature>
     Feature& get(engine& engine_)
@@ -166,7 +166,7 @@ namespace metashell
     {
       return impl::get<Feature>::run(engine_);
     }
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

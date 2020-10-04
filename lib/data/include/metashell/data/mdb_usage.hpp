@@ -25,6 +25,6 @@ namespace metashell
   {
     std::string mdb_usage(bool preprocessor_);
   }
-}
+} // namespace metashell
 
 #endif

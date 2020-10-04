@@ -58,7 +58,7 @@ namespace metashell
       boost::filesystem::path _mdb_temp_dir;
       core::logger* _logger;
     };
-  }
-}
+  } // namespace pragma
+} // namespace metashell
 
 #endif

@@ -74,10 +74,11 @@ namespace metashell
               next(beginning_of_includes<Type>(lines_begin_, lines_end_),
                    lines_end_);
 
-          transform(includes_begin, find_if(includes_begin, lines_end_,
-                                            [](const std::string& line_) {
-                                              return !starts_with(line_, " ");
-                                            }),
+          transform(includes_begin,
+                    find_if(includes_begin, lines_end_,
+                            [](const std::string& line_) {
+                              return !starts_with(line_, " ");
+                            }),
                     back_inserter(result),
                     [](const std::string& s_) { return trim_copy(s_); });
 
@@ -128,7 +129,7 @@ namespace metashell
           const std::string s = o.standard_output + o.standard_error;
           return determine_clang_includes(just::lines::view_of(s));
         }
-      }
+      } // namespace
 
       core::cached<data::includes>
       includes_cache(binary binary_, data::standard_headers_allowed allowed_)
@@ -137,6 +138,6 @@ namespace metashell
           return determine_includes(binary_, allowed_);
         });
       }
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell

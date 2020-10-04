@@ -56,5 +56,5 @@ namespace metashell
         throw std::runtime_error("Not supported console type " + con_type_);
       }
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

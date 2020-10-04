@@ -45,7 +45,7 @@ namespace metashell
                    iface::displayer& displayer_,
                    core::logger* logger_);
     }
-  }
-}
+  } // namespace engine
+} // namespace metashell
 
 #endif

@@ -92,7 +92,7 @@ namespace metashell
     std::ostream& operator<<(std::ostream& out, const event_data& data);
 
     std::string to_string(const event_data& data);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

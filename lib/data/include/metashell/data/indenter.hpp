@@ -42,7 +42,7 @@ namespace metashell
       std::string _line_sep;
       std::ostringstream _buff;
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

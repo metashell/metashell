@@ -26,5 +26,5 @@ namespace metashell
     {
       shell_.stop();
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

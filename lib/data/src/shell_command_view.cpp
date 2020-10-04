@@ -79,5 +79,5 @@ namespace metashell
     {
       return iterator(_value.end(), _value.end());
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

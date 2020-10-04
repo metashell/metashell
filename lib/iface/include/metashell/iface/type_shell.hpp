@@ -48,7 +48,7 @@ namespace metashell
         return data::feature::type_shell();
       }
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

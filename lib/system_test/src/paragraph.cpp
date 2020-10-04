@@ -68,5 +68,5 @@ namespace metashell
 
       return json_string(buff.GetString());
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

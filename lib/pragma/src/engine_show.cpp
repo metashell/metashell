@@ -34,5 +34,5 @@ namespace metashell
                                          "\",\"display_name\":\"" +
                                          engine.display_name() + "\"}"));
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

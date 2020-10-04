@@ -42,8 +42,8 @@ namespace metashell
       private:
         data::includes _includes;
       };
-    }
-  }
-}
+    } // namespace constant
+  } // namespace engine
+} // namespace metashell
 
 #endif

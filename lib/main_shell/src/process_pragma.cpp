@@ -76,5 +76,5 @@ namespace metashell
             "Pragma " + to_string(data::pragma_name(begin_, e)) + " not found");
       }
     }
-  }
-}
+  } // namespace main_shell
+} // namespace metashell

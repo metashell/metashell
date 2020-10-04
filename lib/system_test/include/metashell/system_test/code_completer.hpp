@@ -48,7 +48,7 @@ namespace metashell
 
       static metashell_instance& default_();
     };
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

@@ -39,7 +39,7 @@ namespace metashell
              const std::string& error_,
              const std::string& info_);
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

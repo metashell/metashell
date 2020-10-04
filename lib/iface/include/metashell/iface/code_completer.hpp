@@ -42,7 +42,7 @@ namespace metashell
         return data::feature::code_completer();
       }
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

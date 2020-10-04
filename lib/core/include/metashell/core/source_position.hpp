@@ -50,7 +50,7 @@ namespace metashell
     bool operator==(const source_position& a_, const source_position& b_);
 
     source_position source_position_of(const std::string& s_);
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

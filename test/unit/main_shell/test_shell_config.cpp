@@ -38,7 +38,7 @@ namespace
         metashell::data::shell_config_name("test"),
         metashell::data::shell_config_data());
   }
-}
+} // namespace
 
 TEST(shell_config, verbose_mode_is_disabled_from_config)
 {

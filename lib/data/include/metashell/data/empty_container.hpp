@@ -55,7 +55,7 @@ namespace metashell
     {
       return !(e_ == c_);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

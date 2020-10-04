@@ -33,7 +33,7 @@ namespace
   {
     return std::vector<metashell::data::text>{metashell::data::text(text_)};
   }
-}
+} // namespace
 
 TEST(shell_environment, popping_environment_from_empty_queue)
 {

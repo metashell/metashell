@@ -33,7 +33,7 @@ namespace metashell
 
     constexpr bool operator==(none_t, none_t) { return true; }
     constexpr bool operator<(none_t, none_t) { return false; }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

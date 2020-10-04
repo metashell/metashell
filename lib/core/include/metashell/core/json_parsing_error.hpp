@@ -27,7 +27,7 @@ namespace metashell
     {
       explicit json_parsing_error(const std::string& msg_);
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

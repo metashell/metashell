@@ -66,6 +66,6 @@ namespace metashell
           return data::result(false, "", e.what(), "");
         }
       }
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell

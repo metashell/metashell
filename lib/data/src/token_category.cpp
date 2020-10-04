@@ -24,5 +24,5 @@ namespace metashell
     {
       return c_ == token_category::whitespace || c_ == token_category::comment;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

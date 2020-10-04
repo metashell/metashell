@@ -55,7 +55,7 @@ namespace metashell
       std::ostringstream _buff;
       rapid_json_writer _writer;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

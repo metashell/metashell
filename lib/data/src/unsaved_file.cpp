@@ -32,5 +32,5 @@ namespace metashell
     }
 
     const std::string& unsaved_file::content() const { return _content; }
-  }
-}
+  } // namespace data
+} // namespace metashell

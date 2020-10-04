@@ -81,7 +81,7 @@ namespace metashell
     {
       return filter_expand_memoizations_t<Events>(std::move(events_), enabled_);
     }
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

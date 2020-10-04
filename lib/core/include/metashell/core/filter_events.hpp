@@ -42,7 +42,7 @@ namespace metashell
                   from_))),
           full));
     }
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

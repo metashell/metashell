@@ -46,7 +46,7 @@ namespace metashell
         return std::bind(f, std::placeholders::_1, std::placeholders::_2,
                          std::placeholders::_3);
       }
-    }
+    } // namespace
 
     shell::shell(iface::environment& env_arg,
                  iface::engine& engine_,
@@ -909,5 +909,5 @@ namespace metashell
       core::null_history h;
       line_available(line, displayer_, h);
     }
-  }
-}
+  } // namespace mdb
+} // namespace metashell

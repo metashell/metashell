@@ -29,7 +29,7 @@ namespace metashell
       const char* search_path[] = {""
 #include "default_clang_search_path.hpp"
       };
-    }
+    } // namespace
 
     default_clang_search_path::const_iterator::const_iterator(const char** pos_)
       : _pos(pos_), _value()
@@ -37,7 +37,7 @@ namespace metashell
     }
 
     default_clang_search_path::const_iterator::reference
-        default_clang_search_path::const_iterator::operator*() const
+    default_clang_search_path::const_iterator::operator*() const
     {
       if (!_value)
       {
@@ -47,7 +47,7 @@ namespace metashell
     }
 
     default_clang_search_path::const_iterator&
-        default_clang_search_path::const_iterator::operator++()
+    default_clang_search_path::const_iterator::operator++()
     {
       ++_pos;
       _value = std::nullopt;
@@ -63,7 +63,7 @@ namespace metashell
     }
 
     default_clang_search_path::const_iterator&
-        default_clang_search_path::const_iterator::operator--()
+    default_clang_search_path::const_iterator::operator--()
     {
       --_pos;
       _value = std::nullopt;
@@ -124,5 +124,5 @@ namespace metashell
     {
       return a_.at() - b_.at();
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

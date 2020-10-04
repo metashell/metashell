@@ -44,7 +44,7 @@ namespace metashell
       assert(!"Invalid arg_number value");
       return false;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

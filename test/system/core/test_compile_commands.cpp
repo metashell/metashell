@@ -81,7 +81,7 @@ namespace
         .command("#msh all config")
         .front();
   }
-}
+} // namespace
 
 TEST(shell_compile_commands, creating_shell_configs)
 {

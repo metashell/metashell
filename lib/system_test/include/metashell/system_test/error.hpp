@@ -50,7 +50,7 @@ namespace metashell
     json_string to_json_string(const error& e_);
 
     bool operator==(const error& error_, const json_string& s_);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

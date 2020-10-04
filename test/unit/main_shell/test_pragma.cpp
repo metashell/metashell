@@ -28,7 +28,7 @@ namespace
   {
     return core::to_command(data::cpp_code(s_));
   }
-}
+} // namespace
 
 TEST(pragma, parse)
 {

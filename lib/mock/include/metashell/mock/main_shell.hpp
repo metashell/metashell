@@ -81,7 +81,7 @@ namespace metashell
       MOCK_CONST_METHOD0(available_engines,
                          const std::vector<data::real_engine_name>&());
     };
-  }
-}
+  } // namespace mock
+} // namespace metashell
 
 #endif

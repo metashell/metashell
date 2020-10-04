@@ -25,6 +25,6 @@ namespace metashell
   {
     using identifier = token_<token_category::identifier>;
   }
-}
+} // namespace metashell
 
 #endif

@@ -29,7 +29,7 @@ namespace metashell
     {
       using name_first = one_of<letter, exactly<'_'>>;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

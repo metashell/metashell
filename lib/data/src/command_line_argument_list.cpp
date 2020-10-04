@@ -105,8 +105,8 @@ namespace metashell
       return result;
     }
 
-    command_line_argument_list& command_line_argument_list::
-    operator+=(const command_line_argument_list& rhs_)
+    command_line_argument_list& command_line_argument_list::operator+=(
+        const command_line_argument_list& rhs_)
     {
       _items.insert(_items.end(), rhs_.begin(), rhs_.end());
       return *this;
@@ -230,5 +230,5 @@ namespace metashell
         return {warning, result};
       }
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

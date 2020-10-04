@@ -1,6 +1,6 @@
 language: cpp
 sudo: required
-dist: trusty
+dist: focal
 osx_image: xcode11.5
 os:
   - linux
@@ -28,8 +28,9 @@ addons:
     packages:
       - libreadline-dev
       - libncurses5-dev
-      - gcc-7
-      - g++-7
+      - gcc-10
+      - g++-10
       - python-yaml
+      - libz3-4
 script:
   - tools/travis/${TRAVIS_OS_NAME}.sh

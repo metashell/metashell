@@ -75,5 +75,5 @@ namespace metashell
                 return cfg_.name.value();
               }));
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

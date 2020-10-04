@@ -41,7 +41,7 @@ namespace metashell
       std::vector<data::user_input> _commands;
       std::string _description;
     };
-  }
-}
+  } // namespace pragma
+} // namespace metashell
 
 #endif

@@ -93,7 +93,7 @@ namespace metashell
       return filter_replay_instantiations_t<Events>(
           std::move(events_), std::move(from_));
     }
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

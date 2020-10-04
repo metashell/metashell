@@ -49,7 +49,7 @@ namespace
         metashell::engine::constant::create_failing()(get_shell_config());
     return *engine;
   }
-}
+} // namespace
 
 test_shell::test_shell(const std::string& line)
   : metashell::mdb::shell(get_env(),

@@ -89,5 +89,5 @@ namespace metashell
     {
       _history = &history_;
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

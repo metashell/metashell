@@ -30,5 +30,5 @@ namespace metashell
     {
       shell_.display_environment_stack_size(displayer_);
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

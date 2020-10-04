@@ -51,7 +51,7 @@ namespace metashell
     inline column operator+(column a_, int b_) { return a_ += b_; }
     inline column operator+(int a_, column b_) { return b_ += a_; }
     inline column operator-(column a_, int b_) { return a_ -= b_; }
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

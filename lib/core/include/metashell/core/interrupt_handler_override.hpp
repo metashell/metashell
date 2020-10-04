@@ -31,7 +31,7 @@ namespace metashell
       interrupt_handler_override(const std::function<void()>& handler_);
       ~interrupt_handler_override();
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

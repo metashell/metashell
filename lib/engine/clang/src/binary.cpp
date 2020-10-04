@@ -216,13 +216,14 @@ namespace metashell
           }
 
           METASHELL_LOG(
-              logger_, "Include path determined: " +
-                           boost::algorithm::join(
-                               result | boost::adaptors::transformed([](
-                                            const boost::filesystem::path& p_) {
-                                 return p_.string();
-                               }),
-                               ";"));
+              logger_,
+              "Include path determined: " +
+                  boost::algorithm::join(
+                      result | boost::adaptors::transformed(
+                                   [](const boost::filesystem::path& p_) {
+                                     return p_.string();
+                                   }),
+                      ";"));
 
           return result;
         }
@@ -343,12 +344,13 @@ namespace metashell
           const bool success = exit_success(output);
 
           return data::result{
-              success, success && tmp_exp_ ?
-                           get_type_from_ast_string(output.standard_output) :
-                           "",
+              success,
+              success && tmp_exp_ ?
+                  get_type_from_ast_string(output.standard_output) :
+                  "",
               success ? "" : output.standard_error, ""};
         }
-      }
+      } // namespace
 
       binary::binary(data::executable_path clang_path_,
                      data::command_line_argument_list base_args_,
@@ -386,8 +388,8 @@ namespace metashell
       {
         const data::command_line cmd(_clang_path, _base_args + args_);
 
-        METASHELL_LOG(_logger, "Running Clang: " + to_string(cmd) + " [cwd=" +
-                                   _cwd.string() + "]");
+        METASHELL_LOG(_logger, "Running Clang: " + to_string(cmd) +
+                                   " [cwd=" + _cwd.string() + "]");
 
         const data::process_output o = process::run(cmd, stdin_, _cwd);
 
@@ -508,6 +510,6 @@ namespace metashell
           throw data::exception("Clang binary not found.");
         }
       }
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell

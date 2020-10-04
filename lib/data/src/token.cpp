@@ -32,7 +32,7 @@ namespace metashell
           return Category;
         }
       };
-    }
+    } // namespace
 
     token make_token(cpp_code value_, token_type type_)
     {
@@ -119,5 +119,5 @@ namespace metashell
     {
       return type_of(token_) == token_type::unknown && value(token_) == "\"";
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

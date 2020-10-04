@@ -32,8 +32,8 @@ namespace metashell
           return (false || ... || (c_ == Cs));
         }
       };
-    }
-  }
-}
+    } // namespace constraint
+  } // namespace data
+} // namespace metashell
 
 #endif

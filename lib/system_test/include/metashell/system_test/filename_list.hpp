@@ -30,8 +30,8 @@ namespace metashell
   namespace system_test
   {
     class filename_list
-        : boost::equality_comparable<filename_list, json_string>,
-          boost::equality_comparable<filename_list>
+      : boost::equality_comparable<filename_list, json_string>,
+        boost::equality_comparable<filename_list>
     {
     public:
       typedef boost::filesystem::path value_type;
@@ -64,7 +64,7 @@ namespace metashell
 
     bool operator==(const filename_list& filenames_, const json_string& s_);
     bool operator==(const filename_list& a_, const filename_list& b_);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

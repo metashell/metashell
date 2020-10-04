@@ -25,6 +25,6 @@ namespace metashell
   {
     void generate(const data::headers& headers_);
   }
-}
+} // namespace metashell
 
 #endif

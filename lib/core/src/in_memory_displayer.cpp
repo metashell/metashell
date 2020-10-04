@@ -160,5 +160,5 @@ namespace metashell
              _backtraces.empty() && _call_graphs.empty() &&
              _filename_lists.empty() && _filename_sets.empty();
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

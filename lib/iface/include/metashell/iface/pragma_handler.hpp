@@ -48,7 +48,7 @@ namespace metashell
                                                   data::command::const_iterator,
                                                   main_shell&) const = 0;
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

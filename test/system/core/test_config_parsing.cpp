@@ -180,7 +180,7 @@ namespace
 
     return json_string(s.str());
   }
-}
+} // namespace
 
 TEST(config_parsing, errors)
 {
@@ -195,8 +195,8 @@ TEST(config_parsing, errors)
         sp("bool", json_string("true")),
         sp("string", json_string("\"hello\""))})
   {
-    ASSERT_EQ("JSON parsing failed: Unexpected " + p.first + " element: " +
-                  p.second.get() + nl,
+    ASSERT_EQ("JSON parsing failed: Unexpected " + p.first +
+                  " element: " + p.second.get() + nl,
               t.error_with_configs({p.second}));
   }
 
@@ -222,8 +222,8 @@ TEST(config_parsing, errors)
         ASSERT_EQ("JSON parsing failed: " + std::get<2>(smp) +
                       " is not a valid value for " + p.first +
                       ", which should be a " + to_string(p.second) + nl,
-                  t.error_with_configs({json_string("{\"" + p.first + "\":" +
-                                                    std::get<1>(smp) + "}")}));
+                  t.error_with_configs({json_string(
+                      "{\"" + p.first + "\":" + std::get<1>(smp) + "}")}));
       }
     }
   }

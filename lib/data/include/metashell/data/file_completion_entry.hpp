@@ -41,7 +41,7 @@ namespace metashell
       bool _is_directory;
       data::user_input _completion_no_prefix;
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

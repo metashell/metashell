@@ -117,5 +117,5 @@ namespace metashell
       return d.IsObject() && d.HasMember("type") &&
              is_string("frame", d["type"]) && matches(frame_, d);
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

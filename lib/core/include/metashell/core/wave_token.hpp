@@ -350,7 +350,7 @@ namespace metashell
       return data::make_token(
           data::cpp_code(v.begin(), v.end()), type_of_wave_token(t_));
     }
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

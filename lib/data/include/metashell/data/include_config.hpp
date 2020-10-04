@@ -48,7 +48,7 @@ namespace metashell
 
     command_line_argument_list to_clang_arguments(const include_config&);
     command_line_argument_list to_wave_arguments(const include_config&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

@@ -32,7 +32,7 @@ namespace metashell
     };
 
     std::ostream& operator<<(std::ostream& out_, logging_mode m_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

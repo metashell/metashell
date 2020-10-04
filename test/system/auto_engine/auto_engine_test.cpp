@@ -41,7 +41,7 @@ namespace
       return std::nullopt;
     }
   }
-}
+} // namespace
 
 auto_engine_test::auto_engine_test(metashell::data::executable_path metashell_)
   : _metashell(std::move(metashell_))

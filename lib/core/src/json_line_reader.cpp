@@ -133,7 +133,7 @@ namespace metashell
         }
         return std::nullopt;
       }
-    }
+    } // namespace
 
     data::line_reader
     build_json_line_reader(const data::line_reader& line_reader_,
@@ -147,5 +147,5 @@ namespace metashell
                                 command_processor_queue_, prompt_);
       };
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

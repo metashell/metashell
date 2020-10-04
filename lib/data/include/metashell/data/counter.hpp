@@ -66,7 +66,7 @@ namespace metashell
     };
 
     typedef basic_counter<int> counter;
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

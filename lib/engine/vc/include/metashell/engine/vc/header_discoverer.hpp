@@ -45,8 +45,8 @@ namespace metashell
         binary _binary;
         data::includes _includes;
       };
-    }
-  }
-}
+    } // namespace vc
+  } // namespace engine
+} // namespace metashell
 
 #endif

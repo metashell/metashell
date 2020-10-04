@@ -47,7 +47,7 @@ namespace metashell
         using boost::algorithm::join;
         return join(true_values, "|") + "|" + join(false_values, "|");
       }
-    }
+    } // namespace
 
     switch_::switch_(data::shell_flag flag_) : _flag(flag_) {}
 
@@ -109,5 +109,5 @@ namespace metashell
           core::code_complete::fixed_values(begin_, end_, false_values));
       return result;
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

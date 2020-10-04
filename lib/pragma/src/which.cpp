@@ -47,9 +47,9 @@ namespace metashell
                     iface::main_shell& shell_,
                     iface::displayer& displayer_) const
     {
-      using boost::filesystem::path;
-      using boost::adaptors::transformed;
       using boost::adaptors::filtered;
+      using boost::adaptors::transformed;
+      using boost::filesystem::path;
 
       const parsed_arguments args = parse_arguments(
           data::tokens_to_string(name_begin_, name_end_).value(), args_begin_,
@@ -59,8 +59,10 @@ namespace metashell
               args.header.type, data::standard_headers_allowed::all);
       const auto files =
           include_path |
-          transformed(std::function<path(const path&)>([&args](
-              const path& path_) { return path_ / args.header.path; })) |
+          transformed(
+              std::function<path(const path&)>([&args](const path& path_) {
+                return path_ / args.header.path;
+              })) |
           filtered([](const path& path_) { return exists(path_); });
 
       if (files.empty())
@@ -233,5 +235,5 @@ namespace metashell
     {
       return a_.header == b_.header && a_.all == b_.all;
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

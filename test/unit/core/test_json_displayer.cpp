@@ -210,7 +210,7 @@ namespace
     d.show_frame(data::frame(true, std::nullopt, data::type("fib_c<13>::type"),
                              source_location, point_of_event, kind_));
   }
-}
+} // namespace
 
 TEST(json_displayer, frame_full)
 {

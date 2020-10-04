@@ -44,7 +44,7 @@ namespace metashell
 
       static constexpr const char* name_of_type() { return "-stdlib value"; }
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

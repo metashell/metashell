@@ -54,7 +54,7 @@ namespace
 
     return d.filename_lists();
   }
-}
+} // namespace
 
 TEST(include_pragmas, pragma_sysincludes_displays_sysincludes)
 {

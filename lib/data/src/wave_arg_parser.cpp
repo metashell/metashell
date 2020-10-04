@@ -162,5 +162,5 @@ namespace metashell
     {
       return "Wave options:<br />" + _parser.description(console_width_);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

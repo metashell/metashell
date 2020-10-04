@@ -144,7 +144,7 @@ namespace metashell
               (doc_.HasMember("kind") &&
                is_string(to_string(frame_.kind()), doc_["kind"])));
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

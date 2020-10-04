@@ -85,7 +85,7 @@ namespace metashell
                    default_clang_search_path::const_iterator);
 
     std::string join(default_clang_search_path, const std::string&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif
