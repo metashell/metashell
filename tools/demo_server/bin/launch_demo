@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Tool to run the daemon of the Metashell demo"""
 
 # Metashell - Interactive C++ template metaprogramming shell

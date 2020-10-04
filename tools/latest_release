@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Get the latest release tag from Git"""
 
 # Metashell - Interactive C++ template metaprogramming shell
@@ -34,18 +34,18 @@ def format_version(ver, show_dots):
 
 def run(prefix, show_dots):
     """Get and display the latest version"""
-    (stdout, _) = subprocess.Popen(
+    stdout, _ = subprocess.Popen(
         ['git', 'tag'],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ).communicate()
-    print ''.join([
+    print(''.join([
         prefix,
         format_version(
-            max([parse_version(s) for s in stdout.split('\n')
+            max([parse_version(s) for s in stdout.decode('utf-8').split('\n')
                  if re.match(r'^v\d+\.\d+\.\d+$', s)]),
             show_dots
         )
-    ])
+    ]))
 
 
 def main():

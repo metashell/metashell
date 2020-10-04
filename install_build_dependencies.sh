@@ -77,9 +77,9 @@ ubuntu)
     sudo apt-add-repository universe
   fi
   sudo apt-get -y install \
-      git g++ cmake libreadline-dev python-pip zip python3-pip \
+      git g++ cmake libreadline-dev zip python3-pip \
       libtool automake autoconf libltdl-dev pkg-config bison flex
-  sudo -H pip install pycodestyle pylint gitpython daemonize mkdocs cheetah
+  sudo -H pip3 install pycodestyle pylint gitpython daemonize mkdocs cheetah3
   PLATFORM_ID="$(tools/detect_platform.sh --id)"
   UBUNTU_VERSION="$(tools/detect_platform.sh --version)"
   if [ "${UBUNTU_VERSION}" = "18.04" ]

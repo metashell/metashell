@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Daemon for upgrading Metashell"""
 
 # Metashell - Interactive C++ template metaprogramming shell
@@ -35,7 +35,7 @@ Config = collections.namedtuple(
 )
 
 
-class Action(object):
+class Action:
     """Functor implementing the upgrader's functionality"""
 
     def __init__(self, config):
@@ -129,11 +129,11 @@ def main():
 
     try:
         open(args.pidfile, 'w').close()
-    except IOError, err:
-        print 'Unable to create pidfile {0}: {1}'.format(
+    except IOError as err:
+        print('Unable to create pidfile {0}: {1}'.format(
             args.pidfile,
             err.errno
-        )
+        ))
         sys.exit(1)
     os.chown(args.pidfile, uid, gid)
 

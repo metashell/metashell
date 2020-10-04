@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Run a command in the background and display a message on stderr
 periodically"""
 
@@ -24,7 +24,7 @@ import subprocess
 import threading
 
 
-class Condition(object):
+class Condition:
     """Wraps a condition variable"""
 
     def __init__(self):
@@ -63,7 +63,7 @@ def main():
     try:
         sep_at = sys.argv.index('--')
     except ValueError:
-        print 'Usage: {0} <args> -- <command to run>'.format(sys.argv[0])
+        print('Usage: {0} <args> -- <command to run>'.format(sys.argv[0]))
         sys.exit(1)
 
     cmd = sys.argv[sep_at+1:]

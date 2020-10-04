@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Tool to run the demo Metashell"""
 
 # Metashell - Interactive C++ template metaprogramming shell
@@ -22,7 +22,7 @@ import subprocess
 import os
 import sys
 import string
-import urlparse
+from urllib.parse import parse_qsl, urlparse
 import json
 import fcntl
 import datetime
@@ -31,7 +31,7 @@ import shutil
 import tempfile
 
 
-class TempDir(object):
+class TempDir:
     """Temporary directory"""
 
     def __init__(self):
@@ -58,9 +58,6 @@ class TempDir(object):
 class Error(Exception):
     """Custom exception for runner-related errors"""
 
-    def __init__(self, reason):
-        super(Error, self).__init__(reason)
-
 
 def in_red(msg):
     """Returns a string that displays msg in red on a console"""
@@ -86,13 +83,10 @@ def include_path_of(root, name, version):
     path = os.path.join(root, 'include', '_'.join([name, version]))
     if os.path.exists(path):
         return path
-    else:
-        raise Error(
-            'Version {0} of library {1} not found.'.format(version, name)
-        )
+    raise Error('Version {0} of library {1} not found.'.format(version, name))
 
 
-class Config(object):
+class Config:
     """Shell configuration"""
 
     def __init__(self):
@@ -129,13 +123,12 @@ class Config(object):
         )
         if os.path.exists(path):
             return path
-        else:
-            raise Error(
-                '{0} binary of branch {1} not found'.format(
-                    name,
-                    self.metashell_branch
-                )
+        raise Error(
+            '{0} binary of branch {1} not found'.format(
+                name,
+                self.metashell_branch
             )
+        )
 
     def include_path(self, root):
         """Returns the include path"""
@@ -181,7 +174,7 @@ class Config(object):
             raise Error(
                 'Specifying the metashell library version is not supported'
             )
-        elif valid_version(name):
+        if valid_version(name):
             if valid_version(version):
                 self.libs[name] = version
             else:
@@ -252,11 +245,11 @@ def main():
 
     config = Config()
     was_error = False
-    for name, value in urlparse.parse_qsl(urlparse.urlparse(args.url).query):
+    for name, value in parse_qsl(urlparse(args.url).query):
         try:
             config.process(name, value)
-        except Error, err:
-            print in_red(err)
+        except Error as err:
+            print(in_red(err))
             was_error = True
 
     if was_error:
@@ -277,8 +270,8 @@ def main():
                     cmd,
                     cwd=os.path.join(args.root, 'empty')
                 )
-            except Error, err:
-                print in_red(err)
+            except Error as err:
+                print(in_red(err))
                 sys.exit(1)
             sys.exit(exit_code)
 

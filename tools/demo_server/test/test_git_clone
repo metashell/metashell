@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Test cloning using deploy"""
 
 # Metashell - Interactive C++ template metaprogramming shell
@@ -22,13 +22,12 @@ import util
 
 MODULE_UNDER_TEST = util.load_from_bin('deploy')
 # pylint: disable=invalid-name
-git_clone = MODULE_UNDER_TEST.git_clone
+git_clone = MODULE_UNDER_TEST.git_clone  # pylint: disable=no-member
 # pylint: enable=invalid-name
 
 
 def no_logs(_):
     """Logging function dropping log messages"""
-    pass
 
 
 # pylint: disable=missing-docstring
@@ -155,10 +154,10 @@ class TestGitClone(unittest.TestCase):
             repo.checkout_branch('feature', create=True)
             head_of_feature = util.commit(repo, {'bar.txt': 'fgh'})
 
-            branches = dict([
-                (b.name, b.last_commit)
+            branches = {
+                b.name: b.last_commit
                 for b in git_clone(repo.repository(), out_dir.path, no_logs)
-            ])
+            }
             self.assertEqual(
                 {'feature': head_of_feature, 'master': head_of_master},
                 branches

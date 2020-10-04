@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Check if mkdocs.yml is filled properly"""
 
 # Copyright Abel Sinkovics (abel@sinkovics.hu)  2015.
@@ -29,7 +29,7 @@ def pages_of(yml):
     stack = [yml]
     while stack:
         item = stack.pop()
-        if isinstance(item, basestring):
+        if isinstance(item, str):
             yield item
         elif isinstance(item, dict):
             stack.extend(item.values())
@@ -49,7 +49,7 @@ def validate(yml, docs_path):
 def load_yml(path):
     """Load a yaml document"""
     with open(path, 'r') as yaml_file:
-        return yaml.load(yaml_file)
+        return yaml.load(yaml_file, Loader=yaml.SafeLoader)
 
 
 def run(mkdocs_yml):
@@ -60,7 +60,7 @@ def run(mkdocs_yml):
     )
     if errors:
         for err in errors:
-            print err
+            print(err)
         sys.exit(1)
     else:
         sys.exit(0)
@@ -71,7 +71,7 @@ def main():
     if len(sys.argv) == 2:
         run(sys.argv[1])
     else:
-        print 'Usage: {0} <path to mkdocs.yml>'.format(sys.argv[0])
+        print('Usage: {0} <path to mkdocs.yml>'.format(sys.argv[0]))
         sys.exit(1)
 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Tool to (easily) get data out of the deployment logs"""
 
 # Metashell - Interactive C++ template metaprogramming shell
@@ -31,7 +31,7 @@ LOG_MESSAGE_REGEX = re.compile(
 )
 
 
-class LogMessage(object):
+class LogMessage:
     """Represents one log message"""
     def __init__(self, s):
         self.entry = s.strip()
@@ -41,8 +41,7 @@ class LogMessage(object):
         match = LOG_MESSAGE_REGEX.match(self.entry)
         if match:
             return match
-        else:
-            raise Exception('Invalid log entry: {0}'.format(self.entry))
+        raise Exception('Invalid log entry: {0}'.format(self.entry))
 
     def valid(self):
         """Is the log entry valid?"""
@@ -69,7 +68,7 @@ class LogMessage(object):
         return self.entry
 
 
-class LogFormatter(object):
+class LogFormatter:
     """Class to filter and format log messages"""
 
     def __init__(self, only_deploy_events, display_time):
@@ -140,7 +139,7 @@ def main():
     with open(os.path.join(args.root, 'log.txt'), 'r') as log_file:
         for msg in (LogMessage(m) for m in read_lines(log_file, args.follow)):
             if msg.valid() and formatter.keep_message(msg):
-                print formatter.format_message(msg)
+                print(formatter.format_message(msg))
 
 
 if __name__ == '__main__':

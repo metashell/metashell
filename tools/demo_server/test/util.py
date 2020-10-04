@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Utilities for testing"""
 
 # Metashell - Interactive C++ template metaprogramming shell
@@ -51,7 +51,7 @@ def load_from_bin(name):
     module = imp.new_module(name)
     module.__file__ = module_path
     # pylint: disable=exec-used
-    exec code in module.__dict__
+    exec(code, module.__dict__)
     # pylint: enable=exec-used
     return module
 
@@ -59,13 +59,13 @@ def load_from_bin(name):
 def commit(repo, files, msg='Some commit'):
     """Write the files, add them and commit the changes. Returns sha of the
     commit."""
-    for name, content in files.iteritems():
+    for name, content in files.items():
         repo.write_file(name, content)
         repo.add(name)
     return repo.commit(msg)
 
 
-class TempDir(object):
+class TempDir:
     """Temporary directory"""
 
     def __init__(self):
@@ -100,15 +100,11 @@ class TempDir(object):
     def makedirs(self, path):
         """Creates the provided subdirectory"""
         full_path = self.relative(path)
-        try:
-            os.makedirs(full_path)
-        except OSError as err:
-            if err.errno != os.errno.EEXIST:
-                raise
+        os.makedirs(full_path, exist_ok=True)
         return full_path
 
 
-class GitRepository(object):
+class GitRepository:
     """Temporary git repository"""
 
     def __init__(self):
@@ -127,7 +123,7 @@ class GitRepository(object):
         if dirname != '':
             try:
                 os.makedirs(dirname)
-            except OSError, err:
+            except OSError as err:
                 if err.errno != errno.EEXIST:
                     raise
         with open(full_path, 'w') as out_file:
@@ -182,7 +178,7 @@ class GitRepository(object):
         self.temp_dir.__exit__(typ, value, traceback)
 
 
-class LogCollector(object):
+class LogCollector:
     """Logging functor collecting the logs in a buffer"""
     def __init__(self):
         self.messages = []
@@ -207,7 +203,7 @@ class LogCollector(object):
             self.append(msg)
 
 
-class CommonEnv(object):
+class CommonEnv:
     """A common test environment"""
 
     def __init__(self, git_repo_num):
