@@ -51,5 +51,5 @@ namespace metashell
                include_argument_type::isystem,
                include_argument_type::idirafter}};
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

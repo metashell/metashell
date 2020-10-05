@@ -75,5 +75,5 @@ namespace metashell
     {
       return out_ << to_string(value_);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

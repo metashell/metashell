@@ -51,7 +51,7 @@ namespace metashell
         return data::feature::metaprogram_tracer();
       }
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

@@ -44,8 +44,8 @@ namespace metashell
   {
     namespace wave
     {
-      class hooks : public boost::wave::context_policies::eat_whitespace<
-                        core::wave_token>
+      class hooks
+        : public boost::wave::context_policies::eat_whitespace<core::wave_token>
       {
       public:
         int lines_of_env = 0;
@@ -429,8 +429,8 @@ namespace metashell
           }
         }
       };
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell
 
 #endif

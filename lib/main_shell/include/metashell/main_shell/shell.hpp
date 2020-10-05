@@ -136,7 +136,7 @@ namespace metashell
 
       void rebuild_environment(const data::cpp_code& content_);
     };
-  }
-}
+  } // namespace main_shell
+} // namespace metashell
 
 #endif

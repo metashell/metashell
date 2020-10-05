@@ -64,5 +64,5 @@ namespace metashell
       }
       return short_description + "\n" + long_description;
     }
-  }
-}
+  } // namespace mdb
+} // namespace metashell

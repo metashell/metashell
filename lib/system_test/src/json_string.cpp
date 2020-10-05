@@ -70,11 +70,12 @@ namespace metashell
     json_string array(std::initializer_list<json_string> items_)
     {
       return json_string(
-          "[" + boost::algorithm::join(
-                    items_ | boost::adaptors::transformed([](
-                                 const json_string& s_) { return s_.get(); }),
-                    ",") +
+          "[" +
+          boost::algorithm::join(
+              items_ | boost::adaptors::transformed(
+                           [](const json_string& s_) { return s_.get(); }),
+              ",") +
           "]");
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

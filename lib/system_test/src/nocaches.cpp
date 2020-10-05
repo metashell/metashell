@@ -23,5 +23,5 @@ namespace metashell
     std::array<std::string, 2> nocaches() { return {{"", " -nocache"}}; }
 
     bool caching_enabled(const std::string& s_) { return s_.empty(); }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

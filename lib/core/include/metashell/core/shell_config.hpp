@@ -27,6 +27,6 @@ namespace metashell
   {
     void display(iface::json_writer& out_, const data::shell_config& cfg_);
   }
-}
+} // namespace metashell
 
 #endif

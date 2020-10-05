@@ -77,11 +77,12 @@ namespace
     filename_set
     filenames(const std::vector<boost::filesystem::path>& filenames_)
     {
-      return filename_set(filenames_ | boost::adaptors::transformed([this](
-                                           const boost::filesystem::path& p_) {
-                            return boost::filesystem::canonical(
-                                this->relative(p_));
-                          }));
+      return filename_set(filenames_ |
+                          boost::adaptors::transformed(
+                              [this](const boost::filesystem::path& p_) {
+                                return boost::filesystem::canonical(
+                                    this->relative(p_));
+                              }));
     }
 
   private:
@@ -140,7 +141,7 @@ namespace
   {
     return string_literal(value_.string());
   }
-}
+} // namespace
 
 TEST(included_headers, empty_environment_includes_nothing)
 {

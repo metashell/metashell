@@ -35,8 +35,8 @@ namespace metashell
   namespace system_test
   {
     class file_location
-        : boost::equality_comparable<file_location, json_string>,
-          boost::equality_comparable<file_location>
+      : boost::equality_comparable<file_location, json_string>,
+        boost::equality_comparable<file_location>
     {
     public:
       explicit file_location(const json_string& s_);
@@ -94,7 +94,7 @@ namespace metashell
     json_string to_json_string(const file_location& l_);
 
     bool operator==(const file_location& l_, const json_string& s_);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

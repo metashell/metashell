@@ -65,7 +65,7 @@ namespace metashell
       std::string short_description;
       std::string long_description;
     };
-  }
-}
+  } // namespace mdb
+} // namespace metashell
 
 #endif

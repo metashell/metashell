@@ -50,5 +50,5 @@ namespace metashell
       return begin_ == end_ ? data::code_completion{data::user_input{}} :
                               data::code_completion{};
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

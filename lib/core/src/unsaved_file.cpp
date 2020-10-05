@@ -42,5 +42,5 @@ namespace metashell
         throw data::exception("Error creating file " + filename);
       }
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

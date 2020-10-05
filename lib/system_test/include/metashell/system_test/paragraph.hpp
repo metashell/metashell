@@ -89,7 +89,7 @@ namespace metashell
     {
       return !metashell::system_test::operator==(p_, v_);
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

@@ -46,7 +46,7 @@ namespace metashell
     json_string to_json_string(const prompt& p_);
 
     bool operator==(const prompt& prompt_, const json_string& s_);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

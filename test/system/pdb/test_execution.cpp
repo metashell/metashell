@@ -70,7 +70,7 @@ namespace
     throw std::runtime_error(
         "String does not start with location information: " + s_);
   }
-}
+} // namespace
 
 TEST(pdb, empty) { ASSERT_EQ(cpp_code("bar"), pdb_c_returns("FOO")); }
 

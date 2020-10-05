@@ -33,8 +33,8 @@ namespace metashell
   namespace mdb
   {
     class forward_trace_iterator
-        : public boost::forward_iterator_helper<forward_trace_iterator,
-                                                const data::call_graph_node>
+      : public boost::forward_iterator_helper<forward_trace_iterator,
+                                              const data::call_graph_node>
     {
     public:
       forward_trace_iterator();
@@ -72,7 +72,7 @@ namespace metashell
       metaprogram::iterator& at();
       const metaprogram::iterator& end() const;
     };
-  }
-}
+  } // namespace mdb
+} // namespace metashell
 
 #endif

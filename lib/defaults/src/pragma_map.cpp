@@ -76,7 +76,7 @@ namespace metashell
         return std::make_unique<pragma::macro>(
             "Set Metashell to " + name_ + " mode", move(cmds));
       }
-    }
+    } // namespace
 
     std::map<data::pragma_name, std::unique_ptr<iface::pragma_handler>>
     pragma_map(core::command_processor_queue* cpq_,
@@ -193,5 +193,5 @@ namespace metashell
 
       return result;
     }
-  }
-}
+  } // namespace defaults
+} // namespace metashell

@@ -101,8 +101,8 @@ namespace metashell
 
       std::string include_formatter(const std::string& name_)
       {
-        using std::string;
         using boost::filesystem::path;
+        using std::string;
 
         return "#include <" +
                (path("metashell") / "formatter" / (name_ + ".hpp")).string() +
@@ -111,8 +111,8 @@ namespace metashell
 
       void add_internal_headers(data::headers& headers_)
       {
-        using boost::algorithm::join;
         using boost::adaptors::transformed;
+        using boost::algorithm::join;
         using boost::filesystem::path;
 
         using std::string;
@@ -163,7 +163,7 @@ namespace metashell
                      "  ::metashell::expression_instantiated<true ? true : "
                      "((__VA_ARGS__), false)>\n");
       }
-    }
+    } // namespace
 
     header_file_environment::header_file_environment(
         iface::type_shell* type_shell_,
@@ -244,5 +244,5 @@ namespace metashell
     }
 
     data::cpp_code header_file_environment::get_all() const { return _buffer; }
-  }
-}
+  } // namespace core
+} // namespace metashell

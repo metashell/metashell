@@ -43,5 +43,5 @@ namespace metashell
     {
       return out_ << to_string(s_);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

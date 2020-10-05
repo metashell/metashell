@@ -36,7 +36,7 @@ namespace
     return error("Error: Feature macro discovery is not supported by the " +
                  engine_ + " engine.");
   }
-}
+} // namespace
 
 TEST(getting_started, testing_macros)
 {

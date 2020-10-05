@@ -39,7 +39,7 @@ namespace metashell
       int lines_in_current_page = 0;
       int chars_in_current_line = 0;
     };
-  }
-} // namespace metashell { namespace core
+  } // namespace core
+} // namespace metashell
 
 #endif

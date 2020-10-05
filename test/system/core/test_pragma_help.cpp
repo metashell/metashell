@@ -32,7 +32,7 @@ namespace
   {
     return s_.find(substr_) != std::string::npos;
   }
-}
+} // namespace
 
 TEST(pragma_help, no_arguments)
 {

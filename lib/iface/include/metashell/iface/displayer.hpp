@@ -76,7 +76,7 @@ namespace metashell
         }
       }
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

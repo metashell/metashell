@@ -79,7 +79,7 @@ namespace
       }
     }
   }
-}
+} // namespace
 
 TEST(engine_switch, current_engine)
 {

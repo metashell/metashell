@@ -59,7 +59,7 @@ namespace metashell
     {
       return !type_.name_specified() || is_string(type_.name(), doc_);
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

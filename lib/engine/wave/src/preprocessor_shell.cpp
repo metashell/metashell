@@ -64,6 +64,6 @@ namespace metashell
           return data::result{false, "", error_.what(), ""};
         }
       }
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell

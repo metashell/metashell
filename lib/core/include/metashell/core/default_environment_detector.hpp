@@ -42,7 +42,7 @@ namespace metashell
 
       std::string _argv0;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

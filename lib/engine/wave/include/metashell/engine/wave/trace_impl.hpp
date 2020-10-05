@@ -111,8 +111,8 @@ namespace metashell
 
         void record_point_of_event(const data::file_location& point_of_event_);
       };
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell
 
 #endif

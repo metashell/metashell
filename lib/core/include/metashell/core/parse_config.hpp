@@ -47,7 +47,7 @@ namespace metashell
                  iface::environment_detector& env_detector_,
                  std::ostream* out_ = 0,
                  std::ostream* err_ = 0);
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

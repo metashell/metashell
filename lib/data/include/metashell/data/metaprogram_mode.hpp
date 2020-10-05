@@ -33,7 +33,7 @@ namespace metashell
 
     std::string to_string(metaprogram_mode mode_);
     std::ostream& operator<<(std::ostream& os_, metaprogram_mode mode_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

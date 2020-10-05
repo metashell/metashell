@@ -21,5 +21,5 @@ namespace metashell
   namespace data
   {
     bool operator==(blank, blank) { return true; }
-  }
-}
+  } // namespace data
+} // namespace metashell

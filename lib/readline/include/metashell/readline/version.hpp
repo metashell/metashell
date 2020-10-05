@@ -25,6 +25,6 @@ namespace metashell
   {
     std::string version();
   }
-}
+} // namespace metashell
 
 #endif

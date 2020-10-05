@@ -35,7 +35,7 @@ namespace metashell
     };
 
     path_builder operator/(const path_builder& a_, const std::string& b_);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

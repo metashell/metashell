@@ -66,6 +66,6 @@ namespace metashell
         preprocess(ctx);
         return result;
       }
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell

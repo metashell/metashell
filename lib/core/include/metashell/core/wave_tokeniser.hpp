@@ -32,7 +32,7 @@ namespace metashell
                           std::string input_filename_ = std::string());
 
     std::string wave_version();
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

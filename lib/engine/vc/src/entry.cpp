@@ -165,6 +165,6 @@ namespace metashell
                 "Studio Developer Prompt to use this engine."),
             supported_features(), this_engine);
       }
-    }
-  }
-}
+    } // namespace vc
+  } // namespace engine
+} // namespace metashell

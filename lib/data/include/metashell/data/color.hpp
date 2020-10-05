@@ -40,6 +40,6 @@ namespace metashell
       white
     };
   }
-}
+} // namespace metashell
 
 #endif

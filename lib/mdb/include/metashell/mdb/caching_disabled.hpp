@@ -30,7 +30,7 @@ namespace metashell
     public:
       explicit caching_disabled(const std::string& operation_);
     };
-  }
-}
+  } // namespace mdb
+} // namespace metashell
 
 #endif

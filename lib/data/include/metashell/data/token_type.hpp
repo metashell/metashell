@@ -38,7 +38,7 @@ namespace metashell
 
     std::string to_string(token_type t_);
     std::ostream& operator<<(std::ostream&, token_type);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

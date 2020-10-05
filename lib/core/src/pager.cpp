@@ -89,5 +89,5 @@ namespace metashell
       }
       return true;
     }
-  }
-} // namespace metashell { namespace core
+  } // namespace core
+} // namespace metashell

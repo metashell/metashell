@@ -36,6 +36,6 @@ namespace metashell
       {
         return _preprocessor.precompile(src_);
       }
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell

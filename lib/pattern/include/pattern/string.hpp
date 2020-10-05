@@ -35,6 +35,6 @@ namespace pattern
       writer_.Null();
     }
   }
-}
+} // namespace pattern
 
 #endif

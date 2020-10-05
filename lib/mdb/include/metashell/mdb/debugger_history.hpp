@@ -50,7 +50,7 @@ namespace metashell
 
       void pop_event();
     };
-  }
-}
+  } // namespace mdb
+} // namespace metashell
 
 #endif

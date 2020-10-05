@@ -104,8 +104,8 @@ namespace metashell
                        data::command::const_iterator end_,
                        iface::main_shell& shell_) const
     {
-      using data::token_type;
       using data::token_category;
+      using data::token_type;
 
       std::set<std::string> allowed{"", "profile", "nocache"};
       if (!_preprocessor)
@@ -203,5 +203,5 @@ namespace metashell
             data::user_input{data::join_tokens(beg, end_)}, false);
       }
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

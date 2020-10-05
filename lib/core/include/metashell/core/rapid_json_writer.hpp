@@ -52,7 +52,7 @@ namespace metashell
       rapid_ostream_wrapper _os;
       rapidjson::Writer<rapid_ostream_wrapper> _writer;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

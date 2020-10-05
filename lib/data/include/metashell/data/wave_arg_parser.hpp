@@ -57,7 +57,7 @@ namespace metashell
 
       arg_parser _parser;
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

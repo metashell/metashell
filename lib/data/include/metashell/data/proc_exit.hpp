@@ -48,7 +48,7 @@ namespace metashell
 
     std::string to_string(const proc_exit&);
     std::ostream& operator<<(std::ostream&, const proc_exit&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

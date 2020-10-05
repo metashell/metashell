@@ -80,7 +80,7 @@ namespace metashell
     void read_all(std::tuple<input_file&, std::string&> io1_);
     void read_all(std::tuple<input_file&, std::string&> io1_,
                   std::tuple<input_file&, std::string&> io2_);
-  }
-}
+  } // namespace process
+} // namespace metashell
 
 #endif

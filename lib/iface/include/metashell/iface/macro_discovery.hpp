@@ -39,7 +39,7 @@ namespace metashell
         return data::feature::macro_discovery();
       }
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

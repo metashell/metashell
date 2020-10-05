@@ -36,5 +36,5 @@ namespace metashell
 
       return p_;
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

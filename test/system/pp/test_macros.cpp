@@ -24,8 +24,8 @@
 
 using namespace metashell::system_test;
 
-using pattern::regex;
 using pattern::_;
+using pattern::regex;
 
 TEST(macros, getting_defined_macro)
 {

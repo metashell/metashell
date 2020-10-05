@@ -46,7 +46,7 @@ namespace metashell
 
       virtual boost::filesystem::path directory_of_executable() = 0;
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

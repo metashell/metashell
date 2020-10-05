@@ -25,6 +25,6 @@ namespace metashell
   {
     boost::filesystem::path resolve_symlink(boost::filesystem::path);
   }
-}
+} // namespace metashell
 
 #endif

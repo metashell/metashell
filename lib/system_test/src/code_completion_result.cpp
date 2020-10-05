@@ -53,8 +53,8 @@ namespace metashell
       return _results.find(result_) != _results.end();
     }
 
-    code_completion_result& code_completion_result::
-    operator+=(const code_completion_result& rhs_)
+    code_completion_result&
+    code_completion_result::operator+=(const code_completion_result& rhs_)
     {
       _results.insert(rhs_._results.begin(), rhs_._results.end());
       return *this;
@@ -115,5 +115,5 @@ namespace metashell
         return false;
       }
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

@@ -55,7 +55,7 @@ namespace
     mi.command("#msh pdb #include \"test.hpp\"");
     return mi.command("ft").front();
   }
-}
+} // namespace
 
 TEST(pdb, conditionals_in_trace)
 {

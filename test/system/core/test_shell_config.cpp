@@ -73,7 +73,7 @@ namespace
 
     out_.end_object();
   }
-}
+} // namespace
 
 TEST(shell_config, engine_arguments)
 {

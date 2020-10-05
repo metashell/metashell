@@ -35,9 +35,9 @@ namespace
   call_grph fib5_call_graph()
   {
     using data::event_kind;
-    using data::type;
-    using data::frame;
     using data::file_location;
+    using data::frame;
+    using data::type;
 
     file_location f("a.cpp", 1, 2);
     file_location f2("b.hpp", 1, 2);
@@ -72,7 +72,7 @@ namespace
                event_kind::template_instantiation),
          1, 0}};
   }
-}
+} // namespace
 
 TEST(console_displayer, nothing_is_displayed_by_default)
 {

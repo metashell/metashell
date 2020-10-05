@@ -31,7 +31,7 @@ namespace metashell
     public:
       unknown_standard(const real_engine_name&, const std::string&);
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

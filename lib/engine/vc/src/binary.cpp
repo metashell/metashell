@@ -113,7 +113,7 @@ namespace metashell
           }
           return o.str();
         }
-      }
+      } // namespace
 
       binary::binary(data::executable_path cl_path_,
                      data::command_line_argument_list base_args_,
@@ -182,6 +182,6 @@ namespace metashell
         }
         return error_report(empty_line, err.end());
       }
-    }
-  }
-}
+    } // namespace vc
+  } // namespace engine
+} // namespace metashell

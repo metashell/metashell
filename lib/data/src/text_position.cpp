@@ -80,5 +80,5 @@ namespace metashell
     {
       return o_ << pos_.line() << ":" << pos_.column();
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

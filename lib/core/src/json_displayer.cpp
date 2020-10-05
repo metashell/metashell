@@ -117,7 +117,7 @@ namespace metashell
         writer_.end_object();
         writer_.end_document();
       }
-    }
+    } // namespace
 
     json_displayer::json_displayer(iface::json_writer& writer_)
       : _writer(writer_)
@@ -264,5 +264,5 @@ namespace metashell
       write_filenames(
           _writer, "filename_set", filenames_.begin(), filenames_.end());
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

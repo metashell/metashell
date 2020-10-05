@@ -80,7 +80,7 @@ namespace metashell
       std::vector<std::vector<boost::filesystem::path>> _filename_lists;
       std::vector<std::set<boost::filesystem::path>> _filename_sets;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

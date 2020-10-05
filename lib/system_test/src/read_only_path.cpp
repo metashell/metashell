@@ -41,7 +41,7 @@ namespace metashell
           throw std::runtime_error("Failed to create security descriptor");
         }
       }
-    }
+    } // namespace
 #endif
 
     read_only_path::read_only_path()
@@ -68,5 +68,5 @@ namespace metashell
       return "/";
 #endif
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

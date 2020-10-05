@@ -23,6 +23,6 @@ namespace metashell
   {
     class engine_entry;
   }
-}
+} // namespace metashell
 
 #endif

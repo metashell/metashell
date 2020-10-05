@@ -30,6 +30,6 @@ namespace metashell
       {
         return _binary.precompile({}, exp_);
       }
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell

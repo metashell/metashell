@@ -72,9 +72,9 @@ namespace metashell
           out_ << "none";
         }
       }
-    }
-  }
-}
+    } // namespace impl
+  } // namespace data
+} // namespace metashell
 
 #ifdef METASHELL_DATA_FIELDS_FIELD
 #error METASHELL_DATA_FIELDS_FIELD already defined

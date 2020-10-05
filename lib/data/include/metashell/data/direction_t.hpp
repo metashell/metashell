@@ -27,6 +27,6 @@ namespace metashell
       backwards
     };
   }
-}
+} // namespace metashell
 
 #endif

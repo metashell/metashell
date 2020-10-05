@@ -37,7 +37,7 @@ namespace metashell
       // The error flag is never cleared once it was set
       virtual bool was_error() const = 0;
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

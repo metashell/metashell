@@ -62,5 +62,5 @@ namespace metashell
 
       out_.end_object();
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

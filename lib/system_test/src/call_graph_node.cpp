@@ -42,5 +42,5 @@ namespace metashell
              a_.number_of_children() == b_.number_of_children() &&
              a_.current_frame() == b_.current_frame();
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

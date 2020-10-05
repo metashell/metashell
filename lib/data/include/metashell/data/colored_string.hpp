@@ -99,7 +99,7 @@ namespace metashell
     }
 
     std::ostream& operator<<(std::ostream& os, const colored_string& cs);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

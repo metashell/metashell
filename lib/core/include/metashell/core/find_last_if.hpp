@@ -35,6 +35,6 @@ namespace metashell
       }
       return last;
     }
-  }
-}
+  } // namespace core
+} // namespace metashell
 #endif

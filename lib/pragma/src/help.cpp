@@ -63,7 +63,7 @@ namespace metashell
 
         displayer_.show_comment(t);
       }
-    }
+    } // namespace
 
     std::string help::arguments() const { return "[<command>]"; }
 
@@ -141,5 +141,5 @@ namespace metashell
                  begin_, end_, shell_.pragma_handlers())
           .first;
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

@@ -90,5 +90,5 @@ namespace metashell
              is_string("raw_text", d["type"]) &&
              (!text_.text_specified() || is_string(text_.text(), d["value"]));
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

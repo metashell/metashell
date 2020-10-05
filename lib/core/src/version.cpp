@@ -39,5 +39,5 @@ namespace metashell
       return TO_STRING(METASHELL_MAJOR) "." TO_STRING(
           METASHELL_MINOR) "." TO_STRING(METASHELL_PATCH);
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

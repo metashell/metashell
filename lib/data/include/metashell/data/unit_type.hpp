@@ -38,7 +38,7 @@ namespace metashell
         return out_;
       }
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

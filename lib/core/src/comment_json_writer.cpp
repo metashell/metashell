@@ -58,5 +58,5 @@ namespace metashell
     void comment_json_writer::end_array() { _writer.end_array(); }
 
     void comment_json_writer::end_document() { _writer.end_document(); }
-  }
-}
+  } // namespace core
+} // namespace metashell

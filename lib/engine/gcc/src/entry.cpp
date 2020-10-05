@@ -183,6 +183,6 @@ namespace metashell
                 "supported."),
             supported_features(), this_engine);
       }
-    }
-  }
-}
+    } // namespace gcc
+  } // namespace engine
+} // namespace metashell

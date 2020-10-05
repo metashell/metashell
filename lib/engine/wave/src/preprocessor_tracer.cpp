@@ -45,6 +45,6 @@ namespace metashell
             data::determine_from_line(
                 env_.get(), exp_, data::stdin_name_in_clang()));
       }
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell

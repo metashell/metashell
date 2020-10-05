@@ -147,5 +147,5 @@ namespace metashell
     {
       mpark::visit([&bt_](const auto& e) { bt_.update(e); }, event_);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

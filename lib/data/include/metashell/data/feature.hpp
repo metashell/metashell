@@ -55,7 +55,7 @@ namespace metashell
     bool operator==(feature a_, feature b_);
     std::ostream& operator<<(std::ostream& o_, feature f_);
     std::string to_string(feature f_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

@@ -29,7 +29,7 @@ namespace metashell
     {
       using name_non_first = one_of<name_first, digit>;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

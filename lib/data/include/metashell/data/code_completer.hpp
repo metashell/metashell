@@ -28,6 +28,6 @@ namespace metashell
   {
     using code_completer = std::function<code_completion(const user_input&)>;
   }
-}
+} // namespace metashell
 
 #endif

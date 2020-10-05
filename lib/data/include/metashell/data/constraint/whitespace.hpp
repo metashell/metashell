@@ -27,7 +27,7 @@ namespace metashell
     {
       using whitespace = one_of_c<' ', '\f', '\n', '\r', '\t', '\v'>;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

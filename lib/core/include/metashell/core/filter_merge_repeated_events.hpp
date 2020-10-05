@@ -92,7 +92,7 @@ namespace metashell
     {
       return filter_merge_repeated_events_t<Events>(std::move(events_));
     }
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

@@ -44,7 +44,7 @@ namespace metashell
 
     std::string to_string(tree_depth d_);
     std::ostream& operator<<(std::ostream& out_, tree_depth d_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

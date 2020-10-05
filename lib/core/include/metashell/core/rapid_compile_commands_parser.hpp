@@ -29,7 +29,7 @@ namespace metashell
   namespace core
   {
     class rapid_compile_commands_parser
-        : public rapid_handler<rapid_compile_commands_parser, true>
+      : public rapid_handler<rapid_compile_commands_parser, true>
     {
     public:
       rapid_compile_commands_parser(bool use_precompiled_headers_,
@@ -58,7 +58,7 @@ namespace metashell
       std::optional<data::shell_config_data> _data = std::nullopt;
       std::optional<std::string> _key = std::nullopt;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

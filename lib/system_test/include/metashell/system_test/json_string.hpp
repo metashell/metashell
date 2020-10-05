@@ -53,7 +53,7 @@ namespace metashell
 
     bool operator==(const json_string& a_, const json_string& b_);
     std::ostream& operator<<(std::ostream& out_, const json_string& s_);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

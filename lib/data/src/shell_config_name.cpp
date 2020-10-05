@@ -31,7 +31,7 @@ namespace metashell
       const char path_separators[] = "/\\";
 
       bool path_separator(char c_) { return c_ == '/' || c_ == '\\'; }
-    }
+    } // namespace
 
     std::size_t common_prefix_length(const shell_config_name& name1_,
                                      const shell_config_name& name2_)
@@ -164,15 +164,15 @@ namespace metashell
       return *this;
     }
 
-    const shell_config_name::element& shell_config_name::iterator::
-    operator*() const
+    const shell_config_name::element&
+    shell_config_name::iterator::operator*() const
     {
       assert(_value);
       return *_value;
     }
 
-    std::ptrdiff_t shell_config_name::iterator::
-    operator-(const iterator& rhs_) const
+    std::ptrdiff_t
+    shell_config_name::iterator::operator-(const iterator& rhs_) const
     {
       return _index - rhs_._index;
     }
@@ -211,8 +211,8 @@ namespace metashell
       return iterator(&_value, _value.size(), _size);
     }
 
-    shell_config_name& shell_config_name::
-    operator+=(const shell_config_name& rhs_)
+    shell_config_name&
+    shell_config_name::operator+=(const shell_config_name& rhs_)
     {
       _value += rhs_._value;
       update_size();
@@ -314,5 +314,5 @@ namespace metashell
     {
       return s_.value() + (s_.separator() ? "/" : "");
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

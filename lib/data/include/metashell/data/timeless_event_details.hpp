@@ -462,11 +462,13 @@ namespace metashell
     cpp_code name(const timeless_event_details<event_kind::preprocessing_endif>&
                       details_);
 
-    file_location source_location(const timeless_event_details<
-                                  event_kind::preprocessing_endif>& details_);
+    file_location source_location(
+        const timeless_event_details<event_kind::preprocessing_endif>&
+            details_);
 
-    file_location point_of_event(const timeless_event_details<
-                                 event_kind::preprocessing_endif>& details_);
+    file_location point_of_event(
+        const timeless_event_details<event_kind::preprocessing_endif>&
+            details_);
 
     template <>
     struct timeless_event_details<event_kind::error_directive>
@@ -567,7 +569,7 @@ namespace metashell
     {
       return Kind;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

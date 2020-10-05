@@ -57,5 +57,5 @@ namespace metashell
     {
       return a_.value() == b_.value();
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

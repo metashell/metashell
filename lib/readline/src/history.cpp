@@ -35,5 +35,5 @@ namespace metashell
       std::vector<char> l(cmd_.c_str(), cmd_.c_str() + cmd_.size() + 1);
       ::add_history(l.data());
     }
-  }
-}
+  } // namespace readline
+} // namespace metashell

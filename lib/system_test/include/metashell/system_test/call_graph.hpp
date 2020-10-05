@@ -51,7 +51,7 @@ namespace metashell
 
     bool operator==(const call_graph& c_, const json_string& s_);
     bool operator==(const call_graph& c_, const call_graph& s_);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

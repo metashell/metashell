@@ -27,9 +27,9 @@
 #include <string>
 
 using namespace metashell;
+using ::testing::_;
 using ::testing::NiceMock;
 using ::testing::Return;
-using ::testing::_;
 
 TEST(logger, logging_is_disabled_by_default)
 {

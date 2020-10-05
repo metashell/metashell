@@ -41,7 +41,7 @@ namespace
   }
 
   std::string generate_warning() { return "#warning hello"; }
-}
+} // namespace
 
 TEST(evaluation, int)
 {

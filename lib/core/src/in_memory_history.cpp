@@ -29,5 +29,5 @@ namespace metashell
     {
       return _cmds;
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

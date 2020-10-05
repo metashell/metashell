@@ -39,16 +39,15 @@ namespace metashell
 
     std::string to_string(const proc_termsig& p_)
     {
-      return p_.core_dump() ?
-                 "Process core dumped due to unhandled signal " +
-                     to_string(p_.signal()) :
-                 "Process terminated due to unhandled signal " +
-                     to_string(p_.signal());
+      return p_.core_dump() ? "Process core dumped due to unhandled signal " +
+                                  to_string(p_.signal()) :
+                              "Process terminated due to unhandled signal " +
+                                  to_string(p_.signal());
     }
 
     std::ostream& operator<<(std::ostream& out_, const proc_termsig& p_)
     {
       return out_ << to_string(p_);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

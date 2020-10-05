@@ -37,7 +37,7 @@ namespace metashell
 
     json_string json_string_escape(const std::string&);
     json_string json_string_escape(const json_string&);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

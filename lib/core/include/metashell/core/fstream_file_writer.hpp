@@ -37,7 +37,7 @@ namespace metashell
     private:
       std::ofstream _f;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

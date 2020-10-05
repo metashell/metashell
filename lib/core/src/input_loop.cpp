@@ -36,12 +36,13 @@ namespace metashell
         }
 
         ~single_entry_guard() { _active = false; }
+
       private:
         static bool _active;
       };
 
       bool single_entry_guard::_active = false;
-    }
+    } // namespace
 
     void input_loop(command_processor_queue& processor_queue_,
                     iface::displayer& displayer_,
@@ -80,5 +81,5 @@ namespace metashell
         }
       }
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

@@ -35,7 +35,7 @@ namespace metashell
     private:
       std::vector<data::user_input> _cmds;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

@@ -36,7 +36,7 @@ namespace metashell
 
       MOCK_METHOD0(directory_of_executable, boost::filesystem::path());
     };
-  }
-}
+  } // namespace mock
+} // namespace metashell
 
 #endif

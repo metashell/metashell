@@ -51,7 +51,7 @@ namespace metashell
     inline line_number operator+(line_number a_, int b_) { return a_ += b_; }
     inline line_number operator+(int a_, line_number b_) { return b_ += a_; }
     inline line_number operator-(line_number a_, int b_) { return a_ -= b_; }
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

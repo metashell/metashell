@@ -87,7 +87,7 @@ namespace metashell
     {
       return out_ << t_.value();
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

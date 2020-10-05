@@ -45,7 +45,7 @@ namespace metashell
       typedef kind_of_mp type;
       static constexpr event_kind value = Kind;
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

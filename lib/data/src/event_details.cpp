@@ -33,5 +33,5 @@ namespace metashell
       return out_ << "event_details<" << to_string(event_kind::evaluation_end)
                   << ">{" << details_.what << "}";
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

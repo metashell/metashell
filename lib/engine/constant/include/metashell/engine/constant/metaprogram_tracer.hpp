@@ -35,8 +35,8 @@ namespace metashell
              data::metaprogram_mode,
              iface::displayer&) override;
       };
-    }
-  }
-}
+    } // namespace constant
+  } // namespace engine
+} // namespace metashell
 
 #endif

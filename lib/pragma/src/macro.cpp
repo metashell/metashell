@@ -40,5 +40,5 @@ namespace metashell
         shell_.line_available(cmd, displayer_, ignore);
       }
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

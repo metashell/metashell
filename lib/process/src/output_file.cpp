@@ -72,6 +72,7 @@ namespace metashell
         }
 
         const sigset_t& value() const { return _set; }
+
       private:
         sigset_t _set;
       };
@@ -140,7 +141,7 @@ namespace metashell
         }
       }
 #endif
-    }
+    } // namespace
 
     output_file::output_file(fd_t fd_) : file<output_file>(fd_) {}
 
@@ -196,5 +197,5 @@ namespace metashell
     {
       return write(s_.c_str(), s_.length());
     }
-  }
-}
+  } // namespace process
+} // namespace metashell

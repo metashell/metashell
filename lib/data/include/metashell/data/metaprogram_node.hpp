@@ -59,7 +59,7 @@ namespace metashell
     {
       mpark::visit(std::forward<Visitor>(visitor_), n_.variant());
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

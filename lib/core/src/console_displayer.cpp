@@ -166,7 +166,7 @@ namespace metashell
         token_formatter _token_formatter;
         path_formatter _path_formatter;
       };
-    } // anonymouse namespace
+    } // namespace
 
     console_displayer::console_displayer(iface::console& console_,
                                          bool indent_,
@@ -302,17 +302,17 @@ namespace metashell
     {
       data::colored_string result;
 
-      visit(format_visitor(result,
-                           [this](const data::cpp_code& s_) {
-                             return this->format_code(s_);
-                           },
-                           [this](const data::token& t_) {
-                             return this->format_token(t_);
-                           },
-                           [](const boost::filesystem::path& p_) {
-                             return data::colored_string(p_.string());
-                           }),
-            n_);
+      visit(
+          format_visitor(
+              result,
+              [this](const data::cpp_code& s_) {
+                return this->format_code(s_);
+              },
+              [this](const data::token& t_) { return this->format_token(t_); },
+              [](const boost::filesystem::path& p_) {
+                return data::colored_string(p_.string());
+              }),
+          n_);
 
       return result;
     }
@@ -484,5 +484,5 @@ namespace metashell
       pager pager(*_console);
       show_filenames(filenames_.begin(), filenames_.end(), pager);
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

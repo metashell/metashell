@@ -24,5 +24,5 @@ namespace metashell
     {
       // throw away
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

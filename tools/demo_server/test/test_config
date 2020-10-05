@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Test the config file"""
 
 # Metashell - Interactive C++ template metaprogramming shell
@@ -27,12 +27,11 @@ MODULE_UNDER_TEST = util.load_from_bin('deploy')
 
 def no_logging(_):
     """A null logger"""
-    pass
 
 
 def dirname_times(path, times):
     """Calls os.path.dirname on path times times"""
-    for _ in xrange(0, times):
+    for _ in range(0, times):
         path = os.path.dirname(path)
     return path
 
@@ -62,7 +61,10 @@ def config_path():
 
 def load_config():
     """Loads the config file"""
-    return MODULE_UNDER_TEST.load_config_file(config_path(), no_logging)
+    return MODULE_UNDER_TEST.load_config_file(  # pylint: disable=no-member
+        config_path(),
+        no_logging
+    )
 
 
 def config_of(name):
@@ -77,12 +79,16 @@ def paths_to_copy(config):
     """Generator for the list of paths to copy based on a config"""
     if 'bin' in config:
         for path in config['bin']:
-            yield MODULE_UNDER_TEST.path_substitutions(path)
+            yield MODULE_UNDER_TEST \
+                .path_substitutions(path)  # pylint: disable=no-member
 
     for key in ('include', 'share'):
         if key in config:
             for entry in config[key]:
-                yield MODULE_UNDER_TEST.path_substitutions(entry['src'])
+                yield MODULE_UNDER_TEST \
+                    .path_substitutions(  # pylint: disable=no-member
+                        entry['src']
+                    )
 
 
 # pylint: disable=missing-docstring

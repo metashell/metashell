@@ -36,7 +36,7 @@ namespace
   {
     return {s_, s_};
   }
-}
+} // namespace
 
 TEST(test_vc_binary, test_vc_error_report)
 {

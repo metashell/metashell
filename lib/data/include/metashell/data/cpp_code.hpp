@@ -43,7 +43,7 @@ namespace metashell
     cpp_code remove_markers(const cpp_code& code_, bool process_directives_);
 
     int lines_in(const cpp_code& code_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

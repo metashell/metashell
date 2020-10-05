@@ -26,8 +26,8 @@
 #include <gtest/gtest.h>
 
 using namespace metashell;
-using ::testing::Return;
 using ::testing::NiceMock;
+using ::testing::Return;
 
 namespace
 {
@@ -51,7 +51,7 @@ namespace
               cmd.begin(), cmd.end()),
           sh, d);
   }
-}
+} // namespace
 
 TEST(switch_, calls_updating_callback)
 {

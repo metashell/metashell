@@ -23,7 +23,7 @@ namespace metashell
     namespace
     {
       bool was_error(const std::ostream& s_) { return s_.fail() || s_.bad(); }
-    }
+    } // namespace
 
     bool fstream_file_writer::open(const std::string& filename_)
     {
@@ -40,5 +40,5 @@ namespace metashell
       _f << content_;
       return !was_error(_f);
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

@@ -46,7 +46,7 @@ namespace metashell
     json_string to_json_string(const cpp_code& code_);
 
     bool operator==(const cpp_code& code_, const json_string& s_);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

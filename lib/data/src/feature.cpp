@@ -67,7 +67,7 @@ namespace metashell
         return std::find(features.begin(), features.end(), f_) !=
                features.end();
       }
-    }
+    } // namespace
 
     feature feature::type_shell() { return feature(0); }
     feature feature::preprocessor_shell() { return feature(1); }
@@ -110,5 +110,5 @@ namespace metashell
 
       return feature_info(f_.id()).name;
     }
-  }
-} // namespace metashell:data
+  } // namespace data
+} // namespace metashell

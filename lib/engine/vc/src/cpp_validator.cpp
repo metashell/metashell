@@ -57,6 +57,6 @@ namespace metashell
           return data::result(false, "", e.what(), "");
         }
       }
-    }
-  }
-}
+    } // namespace vc
+  } // namespace engine
+} // namespace metashell

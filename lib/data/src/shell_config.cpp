@@ -25,5 +25,5 @@ namespace metashell
       : shell_config_data(std::move(config_data)), name(std::move(config_name))
     {
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

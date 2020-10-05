@@ -26,6 +26,6 @@ namespace metashell
   {
     data::line_reader line_reader(const data::code_completer& completer_);
   }
-}
+} // namespace metashell
 
 #endif

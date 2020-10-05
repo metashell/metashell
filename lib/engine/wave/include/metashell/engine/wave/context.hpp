@@ -91,8 +91,8 @@ namespace metashell
       }
 
       std::string to_string(const boost::wave::cpp_exception& error_);
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell
 
 #endif

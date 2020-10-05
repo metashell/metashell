@@ -45,7 +45,7 @@ namespace metashell
       virtual data::code_completion
       code_complete(const data::user_input& s_, bool metashell_extensions_) = 0;
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

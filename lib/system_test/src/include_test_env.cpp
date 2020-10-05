@@ -61,7 +61,7 @@ namespace metashell
         // "-I" in the path of the include files.
         return "X" + to_string(arg_) + "X";
       }
-    }
+    } // namespace
 
     /*
      * include_test_env::test_filename
@@ -230,9 +230,9 @@ namespace metashell
         {
           if (error(_) == res)
           {
-            throw std::runtime_error("Command " + *_init_command +
-                                     " failed with the following error: " +
-                                     res.get());
+            throw std::runtime_error(
+                "Command " + *_init_command +
+                " failed with the following error: " + res.get());
           }
         }
       }
@@ -305,5 +305,5 @@ namespace metashell
     {
       _init_command = std::move(cmd_);
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

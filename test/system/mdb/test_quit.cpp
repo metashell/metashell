@@ -38,7 +38,7 @@ namespace
     std::ofstream f(filename_.string().c_str());
     f << content_;
   }
-}
+} // namespace
 
 TEST(quit, when_included_file_changes)
 {

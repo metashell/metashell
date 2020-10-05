@@ -32,7 +32,7 @@ namespace
   {
     just::file::write(path_.string(), "");
   }
-}
+} // namespace
 
 TEST(pragma_environment, code_complete)
 {

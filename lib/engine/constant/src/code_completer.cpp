@@ -27,6 +27,6 @@ namespace metashell
       {
         return data::code_completion{};
       }
-    }
-  }
-}
+    } // namespace constant
+  } // namespace engine
+} // namespace metashell

@@ -27,7 +27,7 @@ namespace metashell
     {
       using ascii_printable = range<32, 126>;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

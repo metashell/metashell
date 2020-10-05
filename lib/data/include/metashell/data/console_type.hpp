@@ -34,7 +34,7 @@ namespace metashell
     std::ostream& operator<<(std::ostream& o_, console_type t_);
 
     console_type parse_console_type(const std::string& con_type_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

@@ -54,7 +54,7 @@ namespace metashell
         ++dest_;
         return dest_;
       }
-    }
+    } // namespace
 
     std::string remove_prefix(const std::string& prefix_, const std::string& s_)
     {
@@ -185,5 +185,5 @@ namespace metashell
 
       return json_string(buff.GetString());
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

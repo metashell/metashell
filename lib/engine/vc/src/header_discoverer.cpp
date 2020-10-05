@@ -61,7 +61,7 @@ namespace metashell
 
           data::includes result{{}, {"."}};
 
-          boost::algorithm::split(
+          boost::algorithm::split( // NOLINT
               result.sys, include, boost::algorithm::is_any_of(";"));
 
           result.sys.erase(
@@ -84,10 +84,11 @@ namespace metashell
 
           return result;
         }
-      }
+      } // namespace
 
       header_discoverer::header_discoverer(binary binary_)
-        : _binary(binary_), _includes(determine_includes(binary_.base_args()))
+        : _binary(binary_),
+          _includes(determine_includes(binary_.base_args())) // NOLINT
       {
       }
 
@@ -120,7 +121,8 @@ namespace metashell
 
         std::set<boost::filesystem::path> result;
 
-        for (const std::string line : just::lines::view(output.standard_output))
+        for (const std::string& line :
+             just::lines::view(output.standard_output))
         {
           std::smatch what;
           if (regex_search(line, what, included_header))
@@ -131,6 +133,6 @@ namespace metashell
 
         return result;
       }
-    }
-  }
-}
+    } // namespace vc
+  } // namespace engine
+} // namespace metashell

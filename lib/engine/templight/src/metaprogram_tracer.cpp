@@ -59,7 +59,7 @@ namespace metashell
             return type_or_code_or_error::make_none();
           }
         }
-      }
+      } // namespace
 
       metaprogram_tracer::metaprogram_tracer(clang::binary templight_binary_)
         : _templight_binary(templight_binary_)
@@ -86,6 +86,6 @@ namespace metashell
             determine_from_line(
                 env_.get(), expression_, data::stdin_name_in_clang()));
       }
-    }
-  }
-}
+    } // namespace templight
+  } // namespace engine
+} // namespace metashell

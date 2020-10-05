@@ -199,9 +199,8 @@ def one_path(deps, start, end):
                     node = snode
             if node is None:
                 return None
-            else:
-                result[node] = set([at_node])
-                at_node = node
+            result[node] = set([at_node])
+            at_node = node
         return result
     return None
 
@@ -214,9 +213,8 @@ def all_paths(deps, start, end):
         path = one_path(grp, start, end)
         if path is None:
             return result
-        else:
-            merge_into(result, path)
-            remove_from(grp, path)
+        merge_into(result, path)
+        remove_from(grp, path)
 
 
 def find_circular_dependencies(deps):
@@ -271,7 +269,7 @@ def remove_transitive_edges(graph):
     return result
 
 
-class Dependencies(object):
+class Dependencies:
     """Represents a set of dependencies"""
 
     def __init__(self, source_root):

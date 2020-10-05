@@ -65,7 +65,7 @@ namespace metashell
 
       void validate_active_config() const;
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

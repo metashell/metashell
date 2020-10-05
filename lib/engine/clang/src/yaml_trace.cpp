@@ -81,7 +81,7 @@ namespace metashell
             return std::nullopt;
           }
         }
-      }
+      } // namespace
 
       yaml_trace::yaml_trace(const std::string& trace_,
                              data::type_or_code_or_error evaluation_result_,
@@ -151,6 +151,6 @@ namespace metashell
       const data::cpp_code& yaml_trace::root_name() const { return _root_name; }
 
       data::metaprogram_mode yaml_trace::mode() const { return _mode; }
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell

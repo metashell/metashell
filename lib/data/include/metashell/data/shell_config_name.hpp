@@ -155,7 +155,7 @@ namespace metashell
 
     std::string
     to_string_with_standard_suffix(const shell_config_name::element&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

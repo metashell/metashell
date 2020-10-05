@@ -68,5 +68,5 @@ namespace metashell
       return shell_.code_complete(
           data::user_input{data::join_tokens(begin_, end_)}, false);
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

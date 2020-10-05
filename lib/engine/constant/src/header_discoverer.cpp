@@ -44,6 +44,6 @@ namespace metashell
       {
         return std::set<boost::filesystem::path>();
       }
-    }
-  }
-}
+    } // namespace constant
+  } // namespace engine
+} // namespace metashell

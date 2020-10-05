@@ -170,7 +170,7 @@ namespace metashell
           throw data::exception{"Invalid JSON document: " + path_.string()};
         }
       }
-    }
+    } // namespace
 
     parse_config_result
     parse_config(int argc_,
@@ -180,8 +180,8 @@ namespace metashell
                  std::ostream* out_,
                  std::ostream* err_)
     {
-      using data::no_short_name;
       using data::arg_number;
+      using data::no_short_name;
 
       data::config cfg;
 
@@ -421,5 +421,5 @@ namespace metashell
         return exit{true};
       }
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

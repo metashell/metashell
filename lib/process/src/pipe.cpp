@@ -65,5 +65,5 @@ namespace metashell
       output = std::move(p_.output);
       return *this;
     }
-  }
-}
+  } // namespace process
+} // namespace metashell

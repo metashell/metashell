@@ -38,7 +38,7 @@ namespace metashell
 
       size_type write(const std::string& s_);
     };
-  }
-}
+  } // namespace process
+} // namespace metashell
 
 #endif

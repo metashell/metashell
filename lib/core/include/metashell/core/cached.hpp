@@ -45,11 +45,12 @@ namespace metashell
       }
 
       const ValueType* operator->() { return &**this; }
+
     private:
       std::optional<ValueType> _value;
       std::function<ValueType()> _getter;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

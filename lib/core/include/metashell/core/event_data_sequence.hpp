@@ -63,7 +63,7 @@ namespace metashell
       return std::unique_ptr<event_data_sequence<Wrapped>>(
           new event_data_sequence<Wrapped>(std::move(arg_)));
     }
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

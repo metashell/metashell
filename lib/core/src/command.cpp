@@ -31,5 +31,5 @@ namespace metashell
       }
       return data::command(std::move(tokens));
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

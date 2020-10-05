@@ -28,7 +28,7 @@ namespace metashell
       std::optional<data::executable_path> metashell_binary_path;
       data::command_line_argument_list metashell_args_impl;
       data::command_line_argument_list engine_args_impl;
-    }
+    } // namespace
 
     void system_test_config::metashell_binary(data::executable_path path_)
     {
@@ -64,5 +64,5 @@ namespace metashell
     {
       return engine_args_impl;
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

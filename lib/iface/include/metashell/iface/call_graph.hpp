@@ -30,6 +30,6 @@ namespace metashell
                              boost::forward_traversal_tag>
         call_graph;
   }
-}
+} // namespace metashell
 
 #endif

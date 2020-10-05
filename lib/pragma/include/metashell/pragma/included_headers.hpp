@@ -40,7 +40,7 @@ namespace metashell
                                           data::command::const_iterator,
                                           iface::main_shell&) const override;
     };
-  }
-}
+  } // namespace pragma
+} // namespace metashell
 
 #endif

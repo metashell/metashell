@@ -30,6 +30,6 @@ namespace pattern
   {
     return std::optional<T>(std::move(value_));
   }
-}
+} // namespace pattern
 
 #endif

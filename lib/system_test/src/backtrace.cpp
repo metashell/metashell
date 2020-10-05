@@ -74,5 +74,5 @@ namespace metashell
     {
       return to_json_string(c_) == s_;
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

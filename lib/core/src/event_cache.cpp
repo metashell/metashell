@@ -25,8 +25,9 @@ namespace metashell
       mpark::visit([this](const auto& det) { this->record(det); }, event_);
     }
 
-    void event_cache::record(const data::event_details<
-                             data::event_kind::template_instantiation>& event_)
+    void event_cache::record(
+        const data::event_details<data::event_kind::template_instantiation>&
+            event_)
     {
       if (!_recording_to.empty())
       {
@@ -67,5 +68,5 @@ namespace metashell
       mpark::visit(
           [this](const auto& det) { this->erase_related(det); }, event_);
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

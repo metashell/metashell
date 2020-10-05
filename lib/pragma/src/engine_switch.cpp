@@ -44,9 +44,9 @@ namespace metashell
       const data::cpp_code arg = tokens_to_string(args_begin_, args_end_);
       if (arg.empty())
       {
-        displayer_.show_error("Usage: " +
-                              tokens_to_string(name_begin_, name_end_) + " " +
-                              arguments());
+        displayer_.show_error(
+            "Usage: " + tokens_to_string(name_begin_, name_end_) + " " +
+            arguments());
         return;
       }
 
@@ -94,5 +94,5 @@ namespace metashell
       return core::code_complete::fixed_values(
           begin_, end_, shell_.available_engines());
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

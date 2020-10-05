@@ -40,5 +40,5 @@ namespace metashell
     {
       return out_ << e_.value();
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

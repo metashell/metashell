@@ -71,7 +71,7 @@ namespace metashell
     bool operator==(const backtrace& a_, const backtrace& b_);
 
     void update(backtrace& bt_, const debugger_event& event_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

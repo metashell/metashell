@@ -57,5 +57,5 @@ namespace metashell
       static metashell_instance result{};
       return result;
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

@@ -48,5 +48,5 @@ namespace metashell
       return o_ << "call_graph_node(" << n_.current_frame() << ", "
                 << n_.depth() << ", " << n_.number_of_children() << ")";
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

@@ -61,7 +61,7 @@ namespace metashell
     json_string to_json_string(const filename_set& filenames_);
 
     bool operator==(const filename_set& filenames_, const json_string& s_);
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

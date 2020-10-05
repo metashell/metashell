@@ -67,5 +67,5 @@ namespace metashell
         }
       }
     }
-  }
-}
+  } // namespace compiler_stub
+} // namespace metashell

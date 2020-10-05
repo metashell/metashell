@@ -39,5 +39,5 @@ namespace metashell
     {
       data::full_time_taken(_event, t_);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

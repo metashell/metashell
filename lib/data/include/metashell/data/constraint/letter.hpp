@@ -28,7 +28,7 @@ namespace metashell
     {
       using letter = one_of<range<'a', 'z'>, range<'A', 'Z'>>;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

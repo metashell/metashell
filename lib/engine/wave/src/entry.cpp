@@ -179,6 +179,6 @@ namespace metashell
       {
         return get_engine_entry<true>(std::move(metashell_binary_));
       }
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell

@@ -40,7 +40,7 @@ namespace metashell
       MOCK_METHOD2(code_complete,
                    data::code_completion(const data::user_input&, bool));
     };
-  }
-}
+  } // namespace mock
+} // namespace metashell
 
 #endif

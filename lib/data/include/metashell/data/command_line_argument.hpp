@@ -79,7 +79,7 @@ namespace metashell
     };
 
     std::string quote(const command_line_argument&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

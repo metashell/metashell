@@ -64,7 +64,7 @@ namespace metashell
         }
         return false;
       }
-    }
+    } // namespace
 
     std::string environment_save::arguments() const { return "<path>"; }
 
@@ -121,5 +121,5 @@ namespace metashell
               tokens_to_string(data::skip_all_whitespace(begin_, end_), end_)},
           data::user_input{begin_ == end_ ? " " : ""}, cpp_source);
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

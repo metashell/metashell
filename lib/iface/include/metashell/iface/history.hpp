@@ -30,7 +30,7 @@ namespace metashell
 
       virtual void add(const data::user_input& cmd_) = 0;
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

@@ -72,5 +72,5 @@ namespace metashell
         break;
       }
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

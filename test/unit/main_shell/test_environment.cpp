@@ -46,7 +46,7 @@ namespace
   {
     return {false, "", "Using failing engine", ""};
   }
-}
+} // namespace
 
 TEST(environment, empty_header_file_environment_is_empty)
 {

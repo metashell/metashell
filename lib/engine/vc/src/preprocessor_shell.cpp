@@ -35,6 +35,6 @@ namespace metashell
         return data::result{success, success ? output.standard_output : "",
                             success ? "" : error_report_on_stderr(output), ""};
       }
-    }
-  }
-}
+    } // namespace vc
+  } // namespace engine
+} // namespace metashell

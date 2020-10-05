@@ -58,7 +58,7 @@ namespace
                  std::nullopt;
     }
   }
-}
+} // namespace
 
 namespace metashell
 {
@@ -128,5 +128,5 @@ namespace metashell
                               file_location{stdin_name, lines_in(env) + 1, 1}) :
                           std::nullopt;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

@@ -44,7 +44,7 @@ namespace metashell
     };
 
     std::ostream& operator<<(std::ostream& o_, const paragraph& p_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

@@ -47,7 +47,7 @@ namespace metashell
     private:
       data::shell_flag _flag;
     };
-  }
-}
+  } // namespace pragma
+} // namespace metashell
 
 #endif

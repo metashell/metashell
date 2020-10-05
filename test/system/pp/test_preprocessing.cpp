@@ -27,7 +27,7 @@ namespace
 {
   std::string macro_in_marker() { return "__METASHELL_PP_MARKER"; }
   std::string marker() { return "* __METASHELL_PP_MARKER *"; }
-}
+} // namespace
 
 TEST(pp, empty)
 {

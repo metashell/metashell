@@ -25,6 +25,6 @@ namespace metashell
   {
     std::string stdin_name_in_clang();
   }
-}
+} // namespace metashell
 
 #endif

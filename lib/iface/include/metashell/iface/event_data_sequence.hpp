@@ -38,7 +38,7 @@ namespace metashell
 
       virtual data::metaprogram_mode mode() const = 0;
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

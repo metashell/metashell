@@ -28,7 +28,7 @@ namespace metashell
     {
       explicit exception(const std::string& msg_);
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

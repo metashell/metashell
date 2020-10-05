@@ -172,6 +172,7 @@ namespace metashell
       }
 
       void not_empty() { _empty = false; }
+
     private:
       bool _empty = true;
       bool _failed = false;
@@ -184,7 +185,7 @@ namespace metashell
         return "Unexpected integer element: " + std::to_string(value_);
       }
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

@@ -96,7 +96,7 @@ namespace metashell
         throw exception{"Invalid status " + std::to_string(status)};
       }
 #endif
-    }
+    } // namespace
 
 #ifdef _WIN32
     execution::execution(const data::command_line& cmd_,
@@ -260,5 +260,5 @@ namespace metashell
 
       return mpark::get<data::status>(_process);
     }
-  }
-}
+  } // namespace process
+} // namespace metashell

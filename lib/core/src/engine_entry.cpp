@@ -31,7 +31,7 @@ namespace metashell
     namespace
     {
       std::string no_features() { return "no features are supported"; }
-    }
+    } // namespace
 
     engine_entry::engine_entry(
         engine_factory factory_,
@@ -195,5 +195,5 @@ namespace metashell
         }
       }
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

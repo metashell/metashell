@@ -63,7 +63,7 @@ namespace metashell
 
         return json_string(buff.GetString());
       }
-    }
+    } // namespace
 
     json_string command(const std::string& cmd_)
     {
@@ -105,5 +105,5 @@ namespace metashell
     {
       return json_string_escape(s_.get());
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

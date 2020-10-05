@@ -36,7 +36,7 @@ namespace metashell
 
       MOCK_CONST_METHOD0(get_all, data::cpp_code());
     };
-  }
-}
+  } // namespace mock
+} // namespace metashell
 
 #endif

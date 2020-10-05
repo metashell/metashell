@@ -69,8 +69,9 @@ namespace metashell
         }
       }
 
-      void record(const data::event_details<
-                  data::event_kind::template_instantiation>& event_);
+      void record(
+          const data::event_details<data::event_kind::template_instantiation>&
+              event_);
 
       void
       record(const data::event_details<data::event_kind::template_end>& event_);
@@ -136,8 +137,9 @@ namespace metashell
             "This function should be specialised for recordable kinds.");
       }
 
-      void erase_related(const data::event_details<
-                         data::event_kind::template_instantiation>& event_)
+      void erase_related(
+          const data::event_details<data::event_kind::template_instantiation>&
+              event_)
       {
         erase_related_recordable(event_);
       }
@@ -148,7 +150,7 @@ namespace metashell
         erase_related_recordable(event_);
       }
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

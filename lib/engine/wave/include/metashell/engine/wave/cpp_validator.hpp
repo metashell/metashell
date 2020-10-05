@@ -42,8 +42,8 @@ namespace metashell
       private:
         preprocessor_shell _preprocessor;
       };
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell
 
 #endif

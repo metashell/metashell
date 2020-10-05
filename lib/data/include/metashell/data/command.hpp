@@ -52,7 +52,7 @@ namespace metashell
 
     cpp_code tokens_to_string(command::iterator begin_,
                               const command::iterator& end_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

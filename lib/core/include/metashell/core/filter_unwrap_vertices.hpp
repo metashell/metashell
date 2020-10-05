@@ -80,7 +80,7 @@ namespace metashell
     {
       return filter_unwrap_vertices_t<Events>(std::move(events_));
     }
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

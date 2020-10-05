@@ -38,7 +38,7 @@ namespace metashell
     private:
       stub _stub;
     };
-  }
-}
+  } // namespace compiler_stub
+} // namespace metashell
 
 #endif

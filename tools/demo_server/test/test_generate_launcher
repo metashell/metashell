@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Test launcher HTML generation for the demo server"""
 
 # Metashell - Interactive C++ template metaprogramming shell
@@ -34,8 +34,16 @@ def generate_launcher(env):
     """Convenience wrapper for the function under test"""
     config_path = env.config_dir.relative('config.json')
     root = env.out_dir.path
-    configs = MODULE_UNDER_TEST.load_config_file(config_path, env.log)
-    return MODULE_UNDER_TEST.deploy_libs(configs, 1234, root, env.log)
+    configs = MODULE_UNDER_TEST.load_config_file(  # pylint: disable=no-member
+        config_path,
+        env.log
+    )
+    return MODULE_UNDER_TEST.deploy_libs(  # pylint: disable=no-member
+        configs,
+        1234,
+        root,
+        env.log
+    )
 
 
 def get_config(name, configs):
@@ -192,7 +200,7 @@ class TestGenerateLauncher(unittest.TestCase):
                 'include': [{'src': 'template'}],
                 'launcher': {'src': 'template', 'dst': 'foo'}
             }])
-            MODULE_UNDER_TEST.deploy(
+            MODULE_UNDER_TEST.deploy(  # pylint: disable=no-member
                 env.config_dir.relative('config.json'),
                 '1234',
                 env.out_dir.path,

@@ -60,7 +60,7 @@ namespace
     return {{"Boost.Wave", metashell::core::wave_version()},
             {readline_name, metashell::readline::version()}};
   }
-}
+} // namespace
 
 int main(int argc_, const char* argv_[])
 {

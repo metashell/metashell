@@ -31,6 +31,6 @@ namespace metashell
                     iface::displayer& displayer_,
                     const data::line_reader& line_reader_);
   }
-}
+} // namespace metashell
 
 #endif

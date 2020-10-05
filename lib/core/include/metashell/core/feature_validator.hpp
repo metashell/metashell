@@ -52,7 +52,7 @@ namespace metashell
 
       void check(data::feature feature_, bool really_supported_);
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

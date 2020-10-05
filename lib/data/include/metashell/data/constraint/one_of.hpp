@@ -32,8 +32,8 @@ namespace metashell
           return (false || ... || Cs::allowed_char(c_));
         }
       };
-    }
-  }
-}
+    } // namespace constraint
+  } // namespace data
+} // namespace metashell
 
 #endif

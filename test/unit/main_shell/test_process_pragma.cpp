@@ -59,7 +59,7 @@ namespace
   private:
     bool& _run_flag;
   };
-}
+} // namespace
 
 TEST(process_pragma, handler_sets_run_flag)
 {

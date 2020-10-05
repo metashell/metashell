@@ -40,8 +40,8 @@ namespace metashell
         }
 
         std::nullopt_t time_taken(const pop_frame&) { return std::nullopt; }
-      }
-    }
+      } // namespace
+    } // namespace impl
 
     debugger_event to_debugger_event(event_data event_, metaprogram_mode mode_)
     {
@@ -84,5 +84,5 @@ namespace metashell
           [full_time_](auto& f) { impl::full_time_taken(f, full_time_); },
           event_);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

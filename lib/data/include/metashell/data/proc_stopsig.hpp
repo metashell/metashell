@@ -43,7 +43,7 @@ namespace metashell
 
     std::string to_string(const proc_stopsig&);
     std::ostream& operator<<(std::ostream&, const proc_stopsig&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

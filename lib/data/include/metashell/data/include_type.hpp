@@ -44,7 +44,7 @@ namespace metashell
     {
       return "#include " + include_code(Type, "...");
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

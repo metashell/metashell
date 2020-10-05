@@ -31,5 +31,5 @@ namespace metashell
     {
       shell_.reset_environment();
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

@@ -146,7 +146,7 @@ namespace metashell
           }
           return result;
         }
-      }
+      } // namespace
 
       void apply(context& ctx_, const data::macro_definition& def_)
       {
@@ -193,6 +193,6 @@ namespace metashell
           throw std::runtime_error(to_string(error_));
         }
       }
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell

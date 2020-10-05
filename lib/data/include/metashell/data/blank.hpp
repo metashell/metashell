@@ -28,7 +28,7 @@ namespace metashell
     };
 
     bool operator==(blank, blank);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

@@ -131,12 +131,13 @@ namespace metashell
                                &create_templight_engine<false>;
 
         auto factory = [factory_fun, metashell_binary_](
-            const data::shell_config& config_,
-            const boost::filesystem::path& internal_dir_,
-            const boost::filesystem::path& temp_dir_,
-            const boost::filesystem::path& env_filename_,
-            iface::environment_detector& env_detector_,
-            iface::displayer& displayer_, core::logger* logger_) {
+                           const data::shell_config& config_,
+                           const boost::filesystem::path& internal_dir_,
+                           const boost::filesystem::path& temp_dir_,
+                           const boost::filesystem::path& env_filename_,
+                           iface::environment_detector& env_detector_,
+                           iface::displayer& displayer_,
+                           core::logger* logger_) {
           return factory_fun(config_, metashell_binary_, internal_dir_,
                              temp_dir_, env_filename_, env_detector_,
                              displayer_, logger_);
@@ -165,6 +166,6 @@ namespace metashell
                            "omit the `-std` argument."),
                        supported_features(), this_engine_external_templight);
       }
-    }
-  }
-}
+    } // namespace templight
+  } // namespace engine
+} // namespace metashell

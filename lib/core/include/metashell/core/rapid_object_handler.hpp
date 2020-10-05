@@ -29,7 +29,7 @@ namespace metashell
   namespace core
   {
     class rapid_object_handler
-        : public rapid_handler<rapid_object_handler, false>
+      : public rapid_handler<rapid_object_handler, false>
     {
     public:
       explicit rapid_object_handler(iface::displayer& displayer_);
@@ -52,7 +52,7 @@ namespace metashell
 
       iface::displayer& _displayer;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

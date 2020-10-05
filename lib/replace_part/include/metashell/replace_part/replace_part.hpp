@@ -56,6 +56,6 @@ namespace replace_part
   {
     return replace(std::string(input_), marker_, replace_with_);
   }
-}
+} // namespace replace_part
 
 #endif

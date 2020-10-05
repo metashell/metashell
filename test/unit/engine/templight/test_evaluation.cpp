@@ -24,10 +24,10 @@
 #include <gtest/gtest.h>
 
 using namespace metashell;
+using ::testing::_;
 using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::Throw;
-using ::testing::_;
 
 TEST(evaluation, throwing_environment_not_breaking_validate)
 {

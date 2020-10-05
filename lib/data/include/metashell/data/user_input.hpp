@@ -52,7 +52,7 @@ namespace metashell
     };
 
     bool has_non_whitespace(const user_input&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

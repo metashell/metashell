@@ -86,7 +86,7 @@ namespace metashell
 
     command_line_argument gcc_name(language_standard);
     command_line_argument wave_name(language_standard);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

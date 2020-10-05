@@ -59,7 +59,7 @@ namespace metashell
     }
 
     bool whitespace_or_comment(token_category);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

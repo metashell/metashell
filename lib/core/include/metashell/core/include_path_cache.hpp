@@ -46,7 +46,7 @@ namespace metashell
     private:
       std::map<key_type, cached<std::vector<boost::filesystem::path>>> _cache;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

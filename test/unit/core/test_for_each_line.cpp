@@ -42,7 +42,7 @@ namespace
     test_with_lines(lines_, "\r");
     test_with_lines(lines_, "\r\n");
   }
-}
+} // namespace
 
 TEST(for_each_line, inputs)
 {

@@ -46,8 +46,8 @@ namespace metashell
       iface::file_writer& _fwriter;
       iface::displayer& _displayer;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #ifdef METASHELL_LOG
 #error METASHELL_LOG already defined

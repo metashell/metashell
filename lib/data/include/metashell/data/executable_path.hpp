@@ -55,7 +55,7 @@ namespace metashell
     std::string to_string(const executable_path&);
 
     executable_path absolute(const executable_path&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

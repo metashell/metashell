@@ -62,7 +62,7 @@ namespace metashell
                              const which::parsed_arguments& args_);
     bool operator==(const which::parsed_arguments& a_,
                     const which::parsed_arguments& b_);
-  }
-}
+  } // namespace pragma
+} // namespace metashell
 
 #endif

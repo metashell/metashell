@@ -67,7 +67,7 @@ namespace metashell
       return {data::command_line_argument_list{prefix_, arg_.string()},
               data::command_line_argument_list{arg_.string()}};
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

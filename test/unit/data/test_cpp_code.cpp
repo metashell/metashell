@@ -36,7 +36,7 @@ namespace
     }
     return std::string();
   }
-}
+} // namespace
 
 TEST(cpp_code, test_invalid_markers)
 {

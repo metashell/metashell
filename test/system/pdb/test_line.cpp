@@ -37,7 +37,7 @@ namespace
     mi.command("#msh pdb " + exp_);
     return mi.command("ft").front();
   }
-}
+} // namespace
 
 TEST(pdb, line_in_trace)
 {

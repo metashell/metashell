@@ -46,7 +46,7 @@ namespace metashell
             return data::type_or_code_or_error::make_error(res_.error);
           }
         }
-      }
+      } // namespace
 
       metaprogram_tracer::metaprogram_tracer(binary binary_) : _binary(binary_)
       {
@@ -86,6 +86,6 @@ namespace metashell
                   env_.get(), expression_, data::stdin_name_in_clang()));
         }
       }
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell

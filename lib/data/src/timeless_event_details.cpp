@@ -210,8 +210,9 @@ namespace metashell
       return details_.point_of_event;
     }
 
-    file_location point_of_event(const timeless_event_details<
-                                 event_kind::preprocessing_condition>& details_)
+    file_location point_of_event(
+        const timeless_event_details<event_kind::preprocessing_condition>&
+            details_)
     {
       return details_.point_of_event;
     }
@@ -312,5 +313,5 @@ namespace metashell
     {
       return details_.result;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

@@ -35,7 +35,7 @@ namespace
         .command("#msh engine switch null")
         .front();
   }
-}
+} // namespace
 
 TEST(engine_switch, unused_arguments)
 {

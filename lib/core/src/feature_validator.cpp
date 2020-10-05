@@ -88,5 +88,5 @@ namespace metashell
 
       _all_checked = true;
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

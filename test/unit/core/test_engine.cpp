@@ -144,18 +144,18 @@ namespace
       }
     }
   };
-}
+} // namespace
 
 TEST(engine, limitation_results)
 {
-  using iface::type_shell;
-  using iface::preprocessor_shell;
   using iface::code_completer;
-  using iface::header_discoverer;
-  using iface::metaprogram_tracer;
   using iface::cpp_validator;
+  using iface::header_discoverer;
   using iface::macro_discovery;
+  using iface::metaprogram_tracer;
+  using iface::preprocessor_shell;
   using iface::preprocessor_tracer;
+  using iface::type_shell;
 
   std::unique_ptr<iface::engine> base =
       metashell::engine::constant::create_failing()(data::shell_config(

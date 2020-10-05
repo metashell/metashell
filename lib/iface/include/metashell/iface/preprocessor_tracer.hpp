@@ -45,7 +45,7 @@ namespace metashell
         return data::feature::preprocessor_tracer();
       }
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

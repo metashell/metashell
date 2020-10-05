@@ -31,6 +31,6 @@ namespace metashell
     std::map<data::real_engine_name, core::engine_entry>
     available_engines(const data::executable_path& metashell_binary_);
   }
-}
+} // namespace metashell
 
 #endif

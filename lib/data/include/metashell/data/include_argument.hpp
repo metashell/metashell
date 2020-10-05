@@ -47,7 +47,7 @@ namespace metashell
     bool operator<(const include_argument& a_, const include_argument& b_);
 
     std::string include_code(const include_argument& arg_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

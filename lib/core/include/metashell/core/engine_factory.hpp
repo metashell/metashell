@@ -45,6 +45,6 @@ namespace metashell
         logger*)>
         engine_factory;
   }
-}
+} // namespace metashell
 
 #endif

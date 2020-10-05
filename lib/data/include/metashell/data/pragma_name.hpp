@@ -81,7 +81,7 @@ namespace metashell
       }
       return i == prefix_.end();
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

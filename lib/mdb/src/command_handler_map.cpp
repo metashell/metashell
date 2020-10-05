@@ -78,5 +78,5 @@ namespace metashell
     {
       return commands;
     }
-  }
-}
+  } // namespace mdb
+} // namespace metashell

@@ -45,7 +45,7 @@ namespace metashell
     };
 
     using breakpoints_t = std::vector<breakpoint>;
-  }
-}
+  } // namespace mdb
+} // namespace metashell
 
 #endif

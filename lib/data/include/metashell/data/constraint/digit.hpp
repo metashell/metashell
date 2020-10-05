@@ -27,7 +27,7 @@ namespace metashell
     {
       using digit = range<'0', '9'>;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

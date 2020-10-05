@@ -33,8 +33,8 @@ namespace metashell
   namespace data
   {
     class command_line_argument_list
-        : boost::addable<command_line_argument_list>,
-          boost::equality_comparable<command_line_argument_list>
+      : boost::addable<command_line_argument_list>,
+        boost::equality_comparable<command_line_argument_list>
     {
     public:
       using container = std::vector<command_line_argument>;
@@ -156,7 +156,7 @@ namespace metashell
 
     std::pair<std::optional<std::string>, command_line_argument_list>
     remove_multiple_arch_arguments(const command_line_argument_list&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

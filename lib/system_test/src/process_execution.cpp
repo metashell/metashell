@@ -56,5 +56,5 @@ namespace metashell
                   << "Standard output: " << to_json(e_.standard_output())
                   << std::endl;
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

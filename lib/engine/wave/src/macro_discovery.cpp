@@ -71,6 +71,6 @@ namespace metashell
 
         return data::cpp_code(result.str());
       }
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell

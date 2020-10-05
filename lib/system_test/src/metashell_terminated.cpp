@@ -36,5 +36,5 @@ namespace metashell
     {
       return _stderr;
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

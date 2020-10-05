@@ -112,5 +112,5 @@ namespace metashell
     {
       return filenames_ == filename_set(s_);
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

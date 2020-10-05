@@ -67,8 +67,8 @@ namespace metashell
       std::string error_report_on_stdout(const data::process_output& output_);
 
       std::string error_report_on_stderr(const data::process_output& output_);
-    }
-  }
-}
+    } // namespace vc
+  } // namespace engine
+} // namespace metashell
 
 #endif

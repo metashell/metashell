@@ -37,7 +37,7 @@ namespace metashell
       just::temp::directory _temp;
 #endif
     };
-  }
-}
+  } // namespace system_test
+} // namespace metashell
 
 #endif

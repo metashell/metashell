@@ -145,5 +145,5 @@ namespace metashell
     {
       return _buffer_begin == _buffer_end && !_input;
     }
-  }
-}
+  } // namespace process
+} // namespace metashell

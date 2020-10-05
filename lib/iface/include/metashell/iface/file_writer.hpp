@@ -34,7 +34,7 @@ namespace metashell
 
       virtual bool write(const std::string& content_) = 0;
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

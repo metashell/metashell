@@ -63,5 +63,5 @@ namespace metashell
 
       return result;
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

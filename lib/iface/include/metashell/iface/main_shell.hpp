@@ -33,7 +33,7 @@ namespace metashell
       virtual const std::vector<data::real_engine_name>&
       available_engines() const = 0;
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

@@ -103,5 +103,5 @@ namespace metashell
     {
       return to_string(lhs_) + rhs_;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

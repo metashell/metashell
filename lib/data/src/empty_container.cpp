@@ -28,5 +28,5 @@ namespace metashell
     {
       return out_ << to_string(c_);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

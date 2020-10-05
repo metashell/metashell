@@ -80,6 +80,7 @@ namespace metashell
           {
             values_.insert(std::move(completion));
           }
+          else
           {
             values_.insert(completion.substr(0, completion.size() - 1));
           }
@@ -150,7 +151,7 @@ namespace metashell
           return std::nullopt;
         }
       }
-    }
+    } // namespace
 
     data::line_reader line_reader(const data::code_completer& completer_)
     {
@@ -158,5 +159,5 @@ namespace metashell
         return read_next_line(prompt_ + " ", completer_);
       };
     }
-  }
-}
+  } // namespace readline
+} // namespace metashell

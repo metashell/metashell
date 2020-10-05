@@ -32,8 +32,8 @@ namespace metashell
           return c_ == Char;
         }
       };
-    }
-  }
-}
+    } // namespace constraint
+  } // namespace data
+} // namespace metashell
 
 #endif

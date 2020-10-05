@@ -37,7 +37,7 @@ namespace metashell
         shell_.get_config().activate(name_);
         shell_.rebuild_environment();
       }
-    }
+    } // namespace
 
     std::string config_load::arguments() const { return "<name>"; }
 
@@ -84,7 +84,7 @@ namespace metashell
             comment.paragraphs.emplace_back(*limit);
           }
 
-          for (const auto warning :
+          for (const auto& warning :
                shell_.get_config().active_shell_config().warnings)
           {
             comment.paragraphs.emplace_back();
@@ -120,5 +120,5 @@ namespace metashell
                 return cfg_.name.value();
               }));
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

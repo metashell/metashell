@@ -31,5 +31,5 @@ namespace metashell
       fcntl(file_.fd(), F_SETFD, fcntl(file_.fd(), F_GETFD) | FD_CLOEXEC);
 #endif
     }
-  }
-}
+  } // namespace process
+} // namespace metashell

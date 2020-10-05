@@ -31,5 +31,5 @@ namespace metashell
       : successful(successful), output(output_), error(error_), info(info_)
     {
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

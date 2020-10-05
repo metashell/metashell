@@ -69,7 +69,7 @@ namespace metashell
 
       mpark::variant<running_process, data::status> _process;
     };
-  }
-}
+  } // namespace process
+} // namespace metashell
 
 #endif

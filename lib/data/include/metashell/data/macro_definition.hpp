@@ -42,7 +42,7 @@ namespace metashell
 
     std::string to_string(const macro_definition&);
     std::ostream& operator<<(std::ostream&, const macro_definition&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

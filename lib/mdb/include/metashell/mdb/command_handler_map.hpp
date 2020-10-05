@@ -60,7 +60,7 @@ namespace metashell
       // This map's key indexes into commands
       key_command_map_t key_command_map;
     };
-  }
-}
+  } // namespace mdb
+} // namespace metashell
 
 #endif

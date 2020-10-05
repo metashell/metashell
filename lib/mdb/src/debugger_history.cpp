@@ -72,8 +72,8 @@ namespace metashell
       _frame_stack.pop_back();
     }
 
-    const data::debugger_event& debugger_history::
-    operator[](debugger_history::size_type n_) const
+    const data::debugger_event&
+    debugger_history::operator[](debugger_history::size_type n_) const
     {
       assert(n_ < _events.size());
       return _events[n_];
@@ -89,5 +89,5 @@ namespace metashell
       }
       return result;
     }
-  }
-}
+  } // namespace mdb
+} // namespace metashell

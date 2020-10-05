@@ -84,5 +84,5 @@ namespace metashell
       }
       return std::make_optional(begin_);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

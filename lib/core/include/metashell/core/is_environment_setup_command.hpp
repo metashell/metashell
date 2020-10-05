@@ -30,7 +30,7 @@ namespace metashell
     {
       return is_environment_setup_command(cmd_.begin(), cmd_.end());
     }
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

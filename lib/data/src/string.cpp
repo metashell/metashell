@@ -67,7 +67,7 @@ namespace metashell
             return 0;
           }
         }
-      }
+      } // namespace
 
       std::string c_escape(int c_)
       {
@@ -118,6 +118,6 @@ namespace metashell
       void throw_(const std::string& what_) { throw std::runtime_error{what_}; }
 
       bool isspace(int ch_) { return std::isspace(ch_); }
-    }
-  }
-}
+    } // namespace impl
+  } // namespace data
+} // namespace metashell

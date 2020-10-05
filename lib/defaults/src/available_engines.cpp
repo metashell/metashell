@@ -47,5 +47,5 @@ namespace metashell
 
       return result;
     }
-  }
-}
+  } // namespace defaults
+} // namespace metashell

@@ -42,7 +42,7 @@ namespace metashell
       // Returns parts that are in precompiled header files as well
       virtual data::cpp_code get_all() const = 0;
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif

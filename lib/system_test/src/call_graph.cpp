@@ -119,5 +119,5 @@ namespace metashell
     {
       return boost::equal(c_, s_);
     }
-  }
-}
+  } // namespace system_test
+} // namespace metashell

@@ -213,7 +213,7 @@ namespace metashell
 
         return result;
       }
-    }
+    } // namespace
 
     engine_arguments convert_to(real_engine_name engine_,
                                 const engine_config& cfg_)
@@ -686,5 +686,5 @@ namespace metashell
 
       return result;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

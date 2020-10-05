@@ -52,7 +52,7 @@ namespace metashell
                                    " has no point of event information.");
         }
       }
-    }
+    } // namespace
 
     frame::frame(metaprogram_node node_) : _node(std::move(node_)), _flat(false)
     {
@@ -213,5 +213,5 @@ namespace metashell
              a_.time_taken_ratio() == b_.time_taken_ratio() &&
              a_.number_of_children() == b_.number_of_children();
     }
-  }
-} // namespace metashell::data
+  } // namespace data
+} // namespace metashell

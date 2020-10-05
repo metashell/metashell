@@ -34,8 +34,8 @@ namespace metashell
       data::real_engine_name name_with_templight_headers();
       core::engine_entry
       entry_with_templight_headers(data::executable_path metashell_binary_);
-    }
-  }
-}
+    } // namespace wave
+  } // namespace engine
+} // namespace metashell
 
 #endif

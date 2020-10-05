@@ -41,7 +41,7 @@ namespace metashell
 
     std::optional<double> time_taken(const debugger_event& event_);
     void full_time_taken(debugger_event& event_, double full_time_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

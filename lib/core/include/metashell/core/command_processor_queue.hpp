@@ -58,7 +58,7 @@ namespace metashell
                             cleanup_function>>
           _items;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

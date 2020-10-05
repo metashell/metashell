@@ -43,5 +43,5 @@ namespace metashell
     {
       return _completion_no_prefix;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

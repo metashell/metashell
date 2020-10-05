@@ -51,6 +51,6 @@ namespace metashell
     std::unique_ptr<iface::history> _history;
     data::line_reader _reader;
   };
-}
+} // namespace metashell
 
 #endif

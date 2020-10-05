@@ -118,8 +118,8 @@ namespace metashell
     {
       return !(lhs_ == rhs_);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 namespace mindent
 {
@@ -206,6 +206,6 @@ namespace mindent
       return to_string(metashell::data::value(t_));
     }
   };
-}
+} // namespace mindent
 
 #endif

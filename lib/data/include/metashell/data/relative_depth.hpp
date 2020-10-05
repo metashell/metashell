@@ -34,7 +34,7 @@ namespace metashell
 
     std::string to_string(relative_depth d_);
     std::ostream& operator<<(std::ostream& out_, relative_depth d_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

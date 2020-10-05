@@ -41,5 +41,5 @@ namespace metashell
     {
       return os_ << to_string(mode_);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

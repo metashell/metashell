@@ -50,7 +50,7 @@ namespace metashell
     private:
       iface::json_writer& _writer;
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

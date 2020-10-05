@@ -31,7 +31,7 @@ namespace metashell
       unsupported_standard_headers_allowed(real_engine_name,
                                            standard_headers_allowed);
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

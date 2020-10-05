@@ -38,8 +38,8 @@ namespace metashell
       std::function<std::unique_ptr<iface::engine>(const data::shell_config&)>
       create_with_include_path(data::include_type type_,
                                std::vector<boost::filesystem::path> path_);
-    }
-  }
-}
+    } // namespace constant
+  } // namespace engine
+} // namespace metashell
 
 #endif

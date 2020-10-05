@@ -217,7 +217,7 @@ namespace
     ASSERT_TRUE(f != std::nullopt);
     ASSERT_EQ("foo", *f);
   }
-}
+} // namespace
 
 TEST(rapid_object_handler, whitelisted_fields)
 {

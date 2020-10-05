@@ -46,5 +46,5 @@ namespace metashell
     {
       return _mode;
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

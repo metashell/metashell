@@ -47,7 +47,7 @@ namespace metashell
       cpp_code _root_name;
       metaprogram_mode _mode;
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

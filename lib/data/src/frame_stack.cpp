@@ -67,5 +67,5 @@ namespace metashell
         stack_.running_at(events_, *timestamp_);
       }
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

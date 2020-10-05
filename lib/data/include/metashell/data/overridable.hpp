@@ -49,7 +49,7 @@ namespace metashell
       T _default;
       std::optional<T> _override;
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

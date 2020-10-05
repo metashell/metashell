@@ -32,8 +32,8 @@ namespace metashell
                                                     const data::user_input&,
                                                     bool) override;
       };
-    }
-  }
-}
+    } // namespace constant
+  } // namespace engine
+} // namespace metashell
 
 #endif

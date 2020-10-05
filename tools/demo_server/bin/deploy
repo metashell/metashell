@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Tool to deploy (and upgrade) software from source"""
 
 # Metashell - Interactive C++ template metaprogramming shell
@@ -53,7 +53,6 @@ def path_substitutions(path):
 
 def no_logging(_):
     """Ignore log messages"""
-    pass
 
 
 def deploy_event(step_name, action, name):
@@ -97,7 +96,7 @@ def makedirs(path, log):
             set_permissions(subpath)
 
 
-class LogToFile(object):
+class LogToFile:
     """Logger writing logs into a file"""
 
     def __init__(self, filename):
@@ -139,8 +138,8 @@ def run_command(cmd, src_dir, log):
     )
     out, err = proc.communicate()
     log('Exit code: {0}'.format(proc.returncode))
-    log('Stdout: {0}'.format(out))
-    log('Stderr: {0}'.format(err))
+    log('Stdout: {0}'.format(out.decode('utf-8')))
+    log('Stderr: {0}'.format(err.decode('utf-8')))
     return out, err, proc.returncode
 
 
@@ -150,22 +149,18 @@ def git(cwd, git_cmd, log):
     cmd.extend(git_cmd)
     out, err, returncode = run_command(cmd, cwd, log)
     if returncode == 0:
-        return out
-    else:
-        raise Exception(
-            'Command {0} exited with {1}.\n\nstdout:\n{2}\n\nstderr:\n{3}'
-            .format(' '.join(cmd), returncode, out, err)
-        )
+        return out.decode('utf-8')
+    raise Exception(
+        'Command {0} exited with {1}.\n\nstdout:\n{2}\n\nstderr:\n{3}'
+        .format(' '.join(cmd), returncode, out, err)
+    )
 
 
 def remove_prefix(prefix, string):
     """Removes the prefix from the string"""
     if string.startswith(prefix):
         return string[len(prefix):]
-    else:
-        raise Exception(
-            'String {0} does not start with {1}'.format(string, prefix)
-        )
+    raise Exception('String {} does not start with {}'.format(string, prefix))
 
 
 def root_of_a_git_repository(path):
@@ -181,13 +176,12 @@ def choose_initial_dir(out_dir):
 
         if root_of_a_git_repository(current):
             return current
-        else:
-            dirs = dirs[1:]
-            dirs.extend([
-                os.path.join(current, d)
-                for d in os.listdir(os.path.join(out_dir, current))
-                if os.path.isdir(os.path.join(out_dir, current, d))
-            ])
+        dirs = dirs[1:]
+        dirs.extend([
+            os.path.join(current, d)
+            for d in os.listdir(os.path.join(out_dir, current))
+            if os.path.isdir(os.path.join(out_dir, current, d))
+        ])
 
     return 'master'
 
@@ -320,15 +314,7 @@ def deploy_file(config_name, path_from, path_to, log):
                 log
             )
         set_permissions(abs_to)
-    except IOError, err:
-        log(
-            'In {0} error deploying {1}: errno {2}'.format(
-                config_name,
-                os.path.basename(path_from),
-                err.errno
-            )
-        )
-    except OSError, err:
+    except IOError as err:
         log(
             'In {0} error deploying {1}: errno {2}'.format(
                 config_name,
@@ -348,7 +334,7 @@ def symlink(dst, link, log):
     log('Creating symlink {0} -> {1}'.format(link, dst))
     try:
         os.symlink(dst, link)
-    except OSError, err:
+    except OSError as err:
         if err.errno == errno.EEXIST:
             os.remove(link)
             os.symlink(dst, link)
@@ -399,7 +385,7 @@ def flatten(list_of_lists):
     return [item for sublist in list_of_lists for item in sublist]
 
 
-class Branch(object):
+class Branch:
     """Represents a branch of a git repository"""
 
     def __init__(self, name, last_commit, log):
@@ -485,11 +471,10 @@ def join_path(path1, path2):
         if path2.startswith('/'):
             path2 = path2[1:]
         return os.path.join(path1, path2)
-    else:
-        return path1
+    return path1
 
 
-class FileDeployment(object):
+class FileDeployment:
     """The deployment of one file"""
 
     def __init__(self, name, deployed_file, path_from_to, link_name):
@@ -529,7 +514,7 @@ def determine_to_path_suffix(entry_config, from_path_suffix):
     return from_path_suffix
 
 
-class Deployer(object):
+class Deployer:
     """Class for deploying files of a project"""
 
     def __init__(self, name, branch, out_dir, log):
@@ -639,20 +624,19 @@ def version_of(name, link):
     prefix = '{0}_'.format(name)
     if base.startswith(prefix):
         return base[len(prefix):]
-    else:
-        raise Exception('Invalid link name {0} for {1}'.format(link, name))
+    raise Exception('Invalid link name {0} for {1}'.format(link, name))
 
 
 def merge_external_versions_to(versions1, versions2):
     """Merges two lists of external versions"""
-    for name, versions in versions2.iteritems():
+    for name, versions in versions2.items():
         if name not in versions1:
             versions1[name] = []
         versions1[name].extend(versions)
     return versions1
 
 
-class DeployedLib(object):
+class DeployedLib:
     """Describes a deployed library's attributes"""
 
     def __init__(self, config):
@@ -717,7 +701,7 @@ class DeployedLib(object):
                         self.uses_link(dep.to_path, dep.deployed_filename())
             log(deploy_event('clone', 'success', self.name()))
             return True
-        except Exception, err:
+        except Exception as err:
             # Catching all exceptions to avoid an error in one config
             # preventing the deployment of the rest
             log('Failed to deploy {0}: {1}'.format(self.name(), err))
@@ -733,7 +717,7 @@ class DeployedLib(object):
                 try:
                     branch.build(self.name(), self.config['build'], out_dir)
                     log(deploy_event('build', 'success', name))
-                except Exception, err:
+                except Exception as err:
                     # Catching all exceptions to avoid an error in one branch
                     # preventing the deployment of the rest
                     log('Failed to deploy branch {0} of {1}: {2}'.format(
@@ -777,7 +761,7 @@ class DeployedLib(object):
                         [{'port': port, 'configs': launcher_info}]
                     )
                     log(deploy_event('generate_launcher', 'finish', name))
-                except Exception, err:
+                except Exception as err:
                     # Catching all exceptions to avoid an error in one config
                     # preventing the deployment of the rest
                     log(

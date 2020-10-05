@@ -31,8 +31,8 @@ namespace metashell
     void all_config::run(iface::main_shell& shell_,
                          iface::displayer& displayer_) const
     {
-      using boost::algorithm::join;
       using boost::adaptors::transformed;
+      using boost::algorithm::join;
 
       const data::config& cfg = shell_.get_config();
       const data::shell_config* active = &cfg.active_shell_config();
@@ -44,5 +44,5 @@ namespace metashell
                    }),
                "\n")));
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

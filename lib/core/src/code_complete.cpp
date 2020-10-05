@@ -215,7 +215,7 @@ namespace metashell
           }
           return post_process(to_complete_, std::move(out), suffix_, keep_all);
         }
-      }
+      } // namespace
 
       namespace impl
       {
@@ -223,7 +223,7 @@ namespace metashell
         {
           return data::user_input{std::move(value_)};
         }
-      }
+      } // namespace impl
 
       data::code_completion
       files(const data::user_input& to_complete_,
@@ -394,6 +394,6 @@ namespace metashell
 
         return result;
       }
-    }
-  }
-}
+    } // namespace code_complete
+  } // namespace core
+} // namespace metashell

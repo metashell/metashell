@@ -34,7 +34,7 @@ namespace v1
   {
     return metashell::system_test::type("v1::fib<" + std::to_string(N) + ">");
   }
-}
+} // namespace v1
 
 namespace v2
 {
@@ -43,6 +43,6 @@ namespace v2
   {
     return metashell::system_test::type("v2::fib<" + std::to_string(N) + ">");
   }
-}
+} // namespace v2
 
 #endif

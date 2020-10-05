@@ -34,6 +34,6 @@ namespace metashell
         const std::string& input_,
         const boost::filesystem::path& cwd_ = boost::filesystem::path());
   }
-}
+} // namespace metashell
 
 #endif

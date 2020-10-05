@@ -25,7 +25,7 @@ namespace
     boost::algorithm::replace_all(s_, "\r\n", "\n");
     return s_;
   }
-}
+} // namespace
 
 namespace metashell
 {
@@ -41,5 +41,5 @@ namespace metashell
     {
       return exit_success(o_.status);
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

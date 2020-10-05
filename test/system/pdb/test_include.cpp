@@ -92,7 +92,7 @@ namespace
 
     // clang-format on
   }
-}
+} // namespace
 
 TEST(pdb, tokens_from_include)
 {

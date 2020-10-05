@@ -51,7 +51,7 @@ namespace metashell
       std::vector<data::unsaved_file> _headers;
       boost::filesystem::path _internal_dir;
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

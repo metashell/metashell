@@ -332,7 +332,7 @@ namespace
       }
     }
   }
-}
+} // namespace
 
 TEST(include_types, tests)
 {

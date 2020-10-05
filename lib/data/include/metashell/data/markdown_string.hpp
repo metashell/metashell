@@ -50,7 +50,7 @@ namespace metashell
     std::string unformat(const markdown_string& s_);
 
     markdown_string auto_engine_description();
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

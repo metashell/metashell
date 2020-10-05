@@ -90,5 +90,5 @@ namespace metashell
         return false;
       }
     }
-  }
-}
+  } // namespace data
+} // namespace metashell

@@ -61,7 +61,7 @@ namespace metashell
     };
 
     std::ostream& operator<<(std::ostream& os, const type_or_code_or_error& te);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

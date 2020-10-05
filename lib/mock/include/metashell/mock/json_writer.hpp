@@ -42,7 +42,7 @@ namespace metashell
 
       MOCK_METHOD0(end_document, void());
     };
-  }
-}
+  } // namespace mock
+} // namespace metashell
 
 #endif

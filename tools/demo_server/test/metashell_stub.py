@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """A stub to use as a metashell binary replacement"""
 
 # Metashell - Interactive C++ template metaprogramming shell
@@ -33,7 +33,7 @@ def referenced_files(args):
     for arg in args:
         if arg == '--':
             return
-        elif keep_next:
+        if keep_next:
             yield arg
             keep_next = False
         elif arg == '--load_configs':
@@ -52,7 +52,7 @@ def determine_output(args):
 
 def main():
     """The main function of the utility"""
-    print json.dumps(determine_output(sys.argv))
+    print(json.dumps(determine_output(sys.argv)))
 
 
 if __name__ == '__main__':

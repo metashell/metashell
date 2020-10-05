@@ -65,23 +65,23 @@ namespace metashell
                 std::to_string(kind) + ")");
           }
         }
-      }
+      } // namespace
 
       protobuf_trace::protobuf_trace(
           const boost::filesystem::path& src,
           data::type_or_code_or_error evaluation_result,
           data::cpp_code root_name_,
           data::metaprogram_mode mode_)
-          // Opening in binary mode, because some platforms interpret some
-          // characters
-          // specially in text mode, which caused parsing to fail.
-          : _src(new std::ifstream(src.string(),
-                                   std::ios_base::in | std::ios_base::binary)),
-            _evaluation_result(
-                data::event_details<data::event_kind::evaluation_end>{
-                    {evaluation_result}}),
-            _root_name(std::move(root_name_)),
-            _mode(mode_)
+        // Opening in binary mode, because some platforms interpret some
+        // characters
+        // specially in text mode, which caused parsing to fail.
+        : _src(new std::ifstream(
+              src.string(), std::ios_base::in | std::ios_base::binary)),
+          _evaluation_result(
+              data::event_details<data::event_kind::evaluation_end>{
+                  {evaluation_result}}),
+          _root_name(std::move(root_name_)),
+          _mode(mode_)
       {
         if (!*_src)
         {
@@ -153,6 +153,6 @@ namespace metashell
       }
 
       data::metaprogram_mode protobuf_trace::mode() const { return _mode; }
-    }
-  }
-}
+    } // namespace templight
+  } // namespace engine
+} // namespace metashell

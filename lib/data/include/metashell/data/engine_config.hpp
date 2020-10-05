@@ -54,7 +54,7 @@ namespace metashell
     engine_config parse_vc_arguments(const command_line_argument_list&);
 
     engine_config parse_clang_arguments(const command_line_argument_list&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

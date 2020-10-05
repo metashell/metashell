@@ -34,7 +34,7 @@ namespace metashell
     struct supported<not_supported> : std::false_type
     {
     };
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

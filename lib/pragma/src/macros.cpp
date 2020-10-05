@@ -31,5 +31,5 @@ namespace metashell
       displayer_.show_cpp_code(
           shell_.engine().macro_discovery().macros(shell_.env()));
     }
-  }
-}
+  } // namespace pragma
+} // namespace metashell

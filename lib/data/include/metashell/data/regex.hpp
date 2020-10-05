@@ -40,7 +40,7 @@ namespace metashell
 
     std::string to_string(const regex&);
     std::ostream& operator<<(std::ostream&, const regex&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

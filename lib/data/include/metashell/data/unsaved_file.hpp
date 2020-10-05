@@ -39,7 +39,7 @@ namespace metashell
       boost::filesystem::path _filename;
       std::string _content;
     };
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

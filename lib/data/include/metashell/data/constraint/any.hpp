@@ -31,8 +31,8 @@ namespace metashell
           return true;
         }
       };
-    }
-  }
-}
+    } // namespace constraint
+  } // namespace data
+} // namespace metashell
 
 #endif

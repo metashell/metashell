@@ -64,7 +64,7 @@ namespace metashell
           // some compilers
           return header_discoverer(empty, empty);
         }
-      }
+      } // namespace
 
       std::function<std::unique_ptr<iface::engine>(const data::shell_config&)>
       create_failing()
@@ -114,6 +114,6 @@ namespace metashell
               preprocessor_tracer(), supported_features());
         };
       }
-    }
-  }
-}
+    } // namespace constant
+  } // namespace engine
+} // namespace metashell

@@ -35,7 +35,7 @@ namespace metashell
     process_output dos2unix(process_output o_);
 
     bool exit_success(const process_output&);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

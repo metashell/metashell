@@ -133,5 +133,5 @@ namespace metashell
         return false;
       }
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

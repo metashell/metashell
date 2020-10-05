@@ -32,7 +32,7 @@ namespace metashell
 
       void run(iface::main_shell&, iface::displayer&) const override;
     };
-  }
-}
+  } // namespace pragma
+} // namespace metashell
 
 #endif

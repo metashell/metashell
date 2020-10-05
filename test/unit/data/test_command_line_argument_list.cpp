@@ -57,7 +57,7 @@ namespace
   {
     return lhs_.values == rhs_;
   }
-}
+} // namespace
 
 TEST(command_line_argument_list, arch_removal)
 {

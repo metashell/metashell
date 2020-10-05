@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """
 Utility to query the default include PATH of gcc or clang.
 
@@ -37,15 +37,12 @@ import json
 
 def run(cmd):
     """Run the given command"""
-    try:
-        return subprocess.Popen(
-            cmd,
-            stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stdin=subprocess.PIPE
-        ).communicate()
-    except OSError:
-        raise Exception('{0}: {1}'.format(' '.join(cmd), sys.exc_info()[1]))
+    return subprocess.Popen(
+        cmd,
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stdin=subprocess.PIPE
+    ).communicate()
 
 
 def bytes_to_string(bts):
@@ -88,8 +85,8 @@ def main():
         )
     except getopt.error:
         msg = sys.exc_info()[1]
-        print msg
-        print "Getting help: --help"
+        print(msg)
+        print("Getting help: --help")
         sys.exit(1)
 
     inc_type = 'sys'
@@ -101,10 +98,10 @@ def main():
             if val in ('sys', 'normal'):
                 inc_type = val
             else:
-                print 'Invalid type: {0}'.format(val)
+                print('Invalid type: {0}'.format(val))
                 sys.exit(1)
         elif opt in ('-h', '--help'):
-            print __doc__
+            print(__doc__)
             sys.exit(0)
         elif opt in ('-g', '--gcc'):
             gcc = val
@@ -114,12 +111,12 @@ def main():
     (normal, system) = get_standard_gcc_includes(gcc)
     paths = system if inc_type == 'sys' else normal
     if out_format == 'cpp':
-        print '\n'.join([', {0}'.format(json.dumps(s)) for s in paths])
-        print ''
+        print('\n'.join([', {0}'.format(json.dumps(s)) for s in paths]))
+        print('')
     elif out_format == 'shell':
-        print ':'.join(paths)
+        print(':'.join(paths))
     else:
-        print 'Unknown output format: {0}'.format(out_format)
+        print('Unknown output format: {0}'.format(out_format))
 
 
 if __name__ == '__main__':

@@ -49,7 +49,7 @@ namespace metashell
 
       void remove_callback() { signal(SIGINT, old_handler); }
 #endif
-    }
+    } // namespace
 
     interrupt_handler_override::interrupt_handler_override(
         const std::function<void()>& handler_)
@@ -63,5 +63,5 @@ namespace metashell
     {
       remove_callback();
     }
-  }
-}
+  } // namespace core
+} // namespace metashell

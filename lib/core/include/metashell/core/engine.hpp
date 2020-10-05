@@ -294,7 +294,7 @@ namespace metashell
     }
 
     std::optional<std::string> limitation(const iface::engine& engine_);
-  }
-}
+  } // namespace core
+} // namespace metashell
 
 #endif

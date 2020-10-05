@@ -63,14 +63,13 @@ namespace metashell
         const std::string err = o.standard_output + o.standard_error;
         if (!err.empty()
             // clang displays this even when "-w" is used. This can be ignored
-            &&
-            trim_copy(err) !=
-                "warning: precompiled header used __DATE__ or __TIME__.")
+            && trim_copy(err) !=
+                   "warning: precompiled header used __DATE__ or __TIME__.")
         {
           throw data::exception("Error precompiling header " + filename + ": " +
                                 err);
         }
       }
-    }
-  }
-}
+    } // namespace clang
+  } // namespace engine
+} // namespace metashell

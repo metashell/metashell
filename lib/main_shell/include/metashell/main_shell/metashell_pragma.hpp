@@ -32,7 +32,7 @@ namespace metashell
     data::command::iterator
     end_of_pragma_argument_list(data::command::iterator begin_,
                                 const data::command::iterator& end_);
-  }
-}
+  } // namespace main_shell
+} // namespace metashell
 
 #endif

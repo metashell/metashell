@@ -34,7 +34,7 @@ namespace metashell
 
     std::string to_string(pop_frame f_);
     std::ostream& operator<<(std::ostream& out_, pop_frame f_);
-  }
-}
+  } // namespace data
+} // namespace metashell
 
 #endif

@@ -39,7 +39,7 @@ namespace metashell
         return data::feature::preprocessor_shell();
       }
     };
-  }
-}
+  } // namespace iface
+} // namespace metashell
 
 #endif
