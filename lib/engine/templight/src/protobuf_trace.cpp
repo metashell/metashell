@@ -54,10 +54,30 @@ namespace metashell
           case 8:
             return event_kind::exception_spec_instantiation;
           case 9:
-            return event_kind::declaring_special_member;
+            return event_kind::requirement_instantiation;
           case 10:
-            return event_kind::defining_synthesized_function;
+            return event_kind::nested_requirement_constraints_check;
           case 11:
+            return event_kind::declaring_special_member;
+          case 12:
+            return event_kind::declaring_implicit_equality_comparison;
+          case 13:
+            return event_kind::defining_synthesized_function;
+          case 14:
+            return event_kind::constraints_check;
+          case 15:
+            return event_kind::constraint_substitution;
+          case 16:
+            return event_kind::constraint_normalization;
+          case 17:
+            return event_kind::parameter_mapping_substitution;
+          case 18:
+            return event_kind::rewriting_operator_as_spaceship;
+          case 19:
+            return event_kind::initializing_structured_binding;
+          case 20:
+            return event_kind::marking_class_dll_exported;
+          case 21:
             return event_kind::memoization;
           default:
             throw data::exception(

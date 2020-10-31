@@ -88,6 +88,7 @@ then
     cmake \
       -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
       -DLLVM_ENABLE_TERMINFO=OFF \
+      -DLLVM_ENABLE_PROJECTS=clang \
       "${C_INCLUDE_DIRS}" \
       ../../../3rd/templight/llvm
     make templight -j${BUILD_THREADS}

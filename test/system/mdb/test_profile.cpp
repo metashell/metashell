@@ -25,12 +25,15 @@ using namespace metashell::system_test;
 
 TEST(mdb_profile, profile_has_nonzero_time)
 {
-  metashell_instance mi;
-  mi.command(slow_mp);
-  mi.command("#msh mdb -profile slow_mp<0>::value");
+  if (using_internal())
+  {
+    metashell_instance mi;
+    mi.command(slow_mp);
+    mi.command("#msh mdb -profile slow_mp<0>::value");
 
-  rapidjson::Document d;
-  d.Parse(mi.command("ft").front().get().c_str());
+    rapidjson::Document d;
+    d.Parse(mi.command("ft").front().get().c_str());
 
-  ASSERT_GT(d["nodes"][0]["time_taken"].GetDouble(), 0);
+    ASSERT_GT(d["nodes"][0]["time_taken"].GetDouble(), 0);
+  }
 }

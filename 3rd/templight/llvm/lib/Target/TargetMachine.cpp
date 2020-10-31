@@ -34,10 +34,10 @@ using namespace llvm;
 TargetMachine::TargetMachine(const Target &T, StringRef DataLayoutString,
                              const Triple &TT, StringRef CPU, StringRef FS,
                              const TargetOptions &Options)
-    : TheTarget(T), DL(DataLayoutString), TargetTriple(TT), TargetCPU(CPU),
-      TargetFS(FS), AsmInfo(nullptr), MRI(nullptr), MII(nullptr), STI(nullptr),
-      RequireStructuredCFG(false), DefaultOptions(Options), Options(Options) {
-}
+    : TheTarget(T), DL(DataLayoutString), TargetTriple(TT),
+      TargetCPU(std::string(CPU)), TargetFS(std::string(FS)), AsmInfo(nullptr),
+      MRI(nullptr), MII(nullptr), STI(nullptr), RequireStructuredCFG(false),
+      O0WantsFastISel(false), DefaultOptions(Options), Options(Options) {}
 
 TargetMachine::~TargetMachine() = default;
 
@@ -46,35 +46,23 @@ bool TargetMachine::isPositionIndependent() const {
 }
 
 /// Reset the target options based on the function's attributes.
+/// setFunctionAttributes should have made the raw attribute value consistent
+/// with the command line flag if used.
+//
 // FIXME: This function needs to go away for a number of reasons:
 // a) global state on the TargetMachine is terrible in general,
 // b) these target options should be passed only on the function
 //    and not on the TargetMachine (via TargetOptions) at all.
 void TargetMachine::resetTargetOptions(const Function &F) const {
-#define RESET_OPTION(X, Y)                                                     \
-  do {                                                                         \
-    if (F.hasFnAttribute(Y))                                                   \
-      Options.X = (F.getFnAttribute(Y).getValueAsString() == "true");          \
-    else                                                                       \
-      Options.X = DefaultOptions.X;                                            \
+#define RESET_OPTION(X, Y)                                              \
+  do {                                                                  \
+    Options.X = (F.getFnAttribute(Y).getValueAsString() == "true");     \
   } while (0)
 
   RESET_OPTION(UnsafeFPMath, "unsafe-fp-math");
   RESET_OPTION(NoInfsFPMath, "no-infs-fp-math");
   RESET_OPTION(NoNaNsFPMath, "no-nans-fp-math");
   RESET_OPTION(NoSignedZerosFPMath, "no-signed-zeros-fp-math");
-  RESET_OPTION(NoTrappingFPMath, "no-trapping-math");
-
-  StringRef Denormal =
-    F.getFnAttribute("denormal-fp-math").getValueAsString();
-  if (Denormal == "ieee")
-    Options.FPDenormalMode = FPDenormal::IEEE;
-  else if (Denormal == "preserve-sign")
-    Options.FPDenormalMode = FPDenormal::PreserveSign;
-  else if (Denormal == "positive-zero")
-    Options.FPDenormalMode = FPDenormal::PositiveZero;
-  else
-    Options.FPDenormalMode = DefaultOptions.FPDenormalMode;
 }
 
 /// Returns the code generation relocation model. The choices are static, PIC,
@@ -196,16 +184,23 @@ bool TargetMachine::shouldAssumeDSOLocal(const Module &M,
     const Function *F = dyn_cast_or_null<Function>(GV);
     if (F && F->hasFnAttribute(Attribute::NonLazyBind))
       return false;
-
-    bool IsTLS = GV && GV->isThreadLocal();
-    bool IsAccessViaCopyRelocs =
-        GV && Options.MCOptions.MCPIECopyRelocations && isa<GlobalVariable>(GV);
     Triple::ArchType Arch = TT.getArch();
-    bool IsPPC =
-        Arch == Triple::ppc || Arch == Triple::ppc64 || Arch == Triple::ppc64le;
-    // Check if we can use copy relocations. PowerPC has no copy relocations.
-    if (!IsTLS && !IsPPC && (RM == Reloc::Static || IsAccessViaCopyRelocs))
+
+    // PowerPC prefers avoiding copy relocations.
+    if (Arch == Triple::ppc || TT.isPPC64())
+      return false;
+
+    // Check if we can use copy relocations.
+    if (!(GV && GV->isThreadLocal()) && RM == Reloc::Static)
       return true;
+  } else if (TT.isOSBinFormatELF()) {
+    // If dso_local allows AsmPrinter::getSymbolPreferLocal to use a local
+    // alias, set the flag. We cannot set dso_local for other global values,
+    // because otherwise direct accesses to a probably interposable symbol (even
+    // if the codegen assumes not) will be rejected by the linker.
+    if (!GV || !GV->canBenefitFromLocalAlias())
+      return false;
+    return TT.isX86() && M.noSemanticInterposition();
   }
 
   // ELF & wasm support preemption of other symbols.
@@ -271,6 +266,10 @@ void TargetMachine::getNameWithPrefix(SmallVectorImpl<char> &Name,
 
 MCSymbol *TargetMachine::getSymbol(const GlobalValue *GV) const {
   const TargetLoweringObjectFile *TLOF = getObjFileLowering();
+  // XCOFF symbols could have special naming convention.
+  if (MCSymbol *TargetSymbol = TLOF->getTargetSymbol(GV, *this))
+    return TargetSymbol;
+
   SmallString<128> NameStr;
   getNameWithPrefix(NameStr, GV, TLOF->getMangler());
   return TLOF->getContext().getOrCreateSymbol(NameStr);

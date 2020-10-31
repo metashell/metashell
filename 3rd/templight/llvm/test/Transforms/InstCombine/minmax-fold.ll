@@ -922,11 +922,11 @@ define i32 @common_factor_umax_extra_use_both(i32 %a, i32 %b, i32 %c) {
 define float @not_min_of_min(i8 %i, float %x) {
 ; CHECK-LABEL: @not_min_of_min(
 ; CHECK-NEXT:    [[CMP1_INV:%.*]] = fcmp fast oge float [[X:%.*]], 1.000000e+00
-; CHECK-NEXT:    [[MIN1:%.*]] = select i1 [[CMP1_INV]], float 1.000000e+00, float [[X]]
+; CHECK-NEXT:    [[TMP1:%.*]] = select fast i1 [[CMP1_INV]], float 1.000000e+00, float [[X]]
 ; CHECK-NEXT:    [[CMP2_INV:%.*]] = fcmp fast oge float [[X]], 2.000000e+00
-; CHECK-NEXT:    [[MIN2:%.*]] = select i1 [[CMP2_INV]], float 2.000000e+00, float [[X]]
+; CHECK-NEXT:    [[TMP2:%.*]] = select fast i1 [[CMP2_INV]], float 2.000000e+00, float [[X]]
 ; CHECK-NEXT:    [[CMP3:%.*]] = icmp ult i8 [[I:%.*]], 16
-; CHECK-NEXT:    [[R:%.*]] = select i1 [[CMP3]], float [[MIN1]], float [[MIN2]]
+; CHECK-NEXT:    [[R:%.*]] = select i1 [[CMP3]], float [[TMP1]], float [[TMP2]]
 ; CHECK-NEXT:    ret float [[R]]
 ;
   %cmp1 = fcmp fast ult float %x, 1.0
@@ -953,8 +953,8 @@ define i32 @add_umin(i32 %x) {
 
 define i32 @add_umin_constant_limit(i32 %x) {
 ; CHECK-LABEL: @add_umin_constant_limit(
-; CHECK-NEXT:    [[TMP1:%.*]] = icmp eq i32 [[X:%.*]], 0
-; CHECK-NEXT:    [[R:%.*]] = select i1 [[TMP1]], i32 41, i32 42
+; CHECK-NEXT:    [[DOTNOT:%.*]] = icmp eq i32 [[X:%.*]], 0
+; CHECK-NEXT:    [[R:%.*]] = select i1 [[DOTNOT]], i32 41, i32 42
 ; CHECK-NEXT:    ret i32 [[R]]
 ;
   %a = add nuw i32 %x, 41
@@ -1080,8 +1080,8 @@ define i37 @add_umax_constant_limit(i37 %x) {
 
 define i37 @add_umax_simplify(i37 %x) {
 ; CHECK-LABEL: @add_umax_simplify(
-; CHECK-NEXT:    [[R:%.*]] = add nuw i37 [[X:%.*]], 42
-; CHECK-NEXT:    ret i37 [[R]]
+; CHECK-NEXT:    [[A:%.*]] = add i37 [[X:%.*]], 42
+; CHECK-NEXT:    ret i37 [[A]]
 ;
   %a = add nuw i37 %x, 42
   %c = icmp ugt i37 %a, 42
@@ -1165,8 +1165,8 @@ define <2 x i33> @add_umax_vec(<2 x i33> %x) {
 
 define i8 @PR14613_umin(i8 %x) {
 ; CHECK-LABEL: @PR14613_umin(
-; CHECK-NEXT:    [[U7:%.*]] = call i8 @llvm.uadd.sat.i8(i8 [[X:%.*]], i8 15)
-; CHECK-NEXT:    ret i8 [[U7]]
+; CHECK-NEXT:    [[TMP1:%.*]] = call i8 @llvm.uadd.sat.i8(i8 [[X:%.*]], i8 15)
+; CHECK-NEXT:    ret i8 [[TMP1]]
 ;
   %u4 = zext i8 %x to i32
   %u5 = add nuw nsw i32 %u4, 15
@@ -1179,8 +1179,8 @@ define i8 @PR14613_umin(i8 %x) {
 define i8 @PR14613_umax(i8 %x) {
 ; CHECK-LABEL: @PR14613_umax(
 ; CHECK-NEXT:    [[TMP1:%.*]] = icmp ugt i8 [[X:%.*]], -16
-; CHECK-NEXT:    [[TMP2:%.*]] = select i1 [[TMP1]], i8 [[X]], i8 -16
-; CHECK-NEXT:    [[U7:%.*]] = add nsw i8 [[TMP2]], 15
+; CHECK-NEXT:    [[X_OP:%.*]] = add i8 [[X]], 15
+; CHECK-NEXT:    [[U7:%.*]] = select i1 [[TMP1]], i8 [[X_OP]], i8 -1
 ; CHECK-NEXT:    ret i8 [[U7]]
 ;
   %u4 = zext i8 %x to i32
@@ -1422,8 +1422,8 @@ define <2 x i33> @add_smax_vec(<2 x i33> %x) {
 define i8 @PR14613_smin(i8 %x) {
 ; CHECK-LABEL: @PR14613_smin(
 ; CHECK-NEXT:    [[TMP1:%.*]] = icmp slt i8 [[X:%.*]], 40
-; CHECK-NEXT:    [[TMP2:%.*]] = select i1 [[TMP1]], i8 [[X]], i8 40
-; CHECK-NEXT:    [[U7:%.*]] = add nsw i8 [[TMP2]], 15
+; CHECK-NEXT:    [[X_OP:%.*]] = add i8 [[X]], 15
+; CHECK-NEXT:    [[U7:%.*]] = select i1 [[TMP1]], i8 [[X_OP]], i8 55
 ; CHECK-NEXT:    ret i8 [[U7]]
 ;
   %u4 = sext i8 %x to i32
@@ -1437,8 +1437,8 @@ define i8 @PR14613_smin(i8 %x) {
 define i8 @PR14613_smax(i8 %x) {
 ; CHECK-LABEL: @PR14613_smax(
 ; CHECK-NEXT:    [[TMP1:%.*]] = icmp sgt i8 [[X:%.*]], 40
-; CHECK-NEXT:    [[TMP2:%.*]] = select i1 [[TMP1]], i8 [[X]], i8 40
-; CHECK-NEXT:    [[U7:%.*]] = add nuw i8 [[TMP2]], 15
+; CHECK-NEXT:    [[X_OP:%.*]] = add i8 [[X]], 15
+; CHECK-NEXT:    [[U7:%.*]] = select i1 [[TMP1]], i8 [[X_OP]], i8 55
 ; CHECK-NEXT:    ret i8 [[U7]]
 ;
   %u4 = sext i8 %x to i32
@@ -1446,5 +1446,20 @@ define i8 @PR14613_smax(i8 %x) {
   %u6 = icmp sgt i32 %u5, 55
   %u7 = select i1 %u6, i32 %u5, i32 55
   %r = trunc i32 %u7 to i8
+  ret i8 %r
+}
+
+define i8 @PR46271(<2 x i8> %x) {
+; CHECK-LABEL: @PR46271(
+; CHECK-NEXT:    [[A:%.*]] = icmp sgt <2 x i8> [[X:%.*]], <i8 -1, i8 -1>
+; CHECK-NEXT:    [[B:%.*]] = select <2 x i1> [[A]], <2 x i8> [[X]], <2 x i8> <i8 undef, i8 -1>
+; CHECK-NEXT:    [[TMP1:%.*]] = extractelement <2 x i8> [[B]], i32 1
+; CHECK-NEXT:    [[R:%.*]] = xor i8 [[TMP1]], -1
+; CHECK-NEXT:    ret i8 [[R]]
+;
+  %a = icmp sgt <2 x i8> %x, <i8 -1, i8 -1>
+  %b = select <2 x i1> %a, <2 x i8> %x, <2 x i8> <i8 undef, i8 -1>
+  %not = xor <2 x i8> %b, <i8 undef, i8 -1>
+  %r = extractelement <2 x i8> %not, i32 1
   ret i8 %r
 }
