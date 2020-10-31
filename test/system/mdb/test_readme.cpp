@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/any_of.hpp>
 #include <metashell/system_test/backtrace.hpp>
 #include <metashell/system_test/call_graph.hpp>
 #include <metashell/system_test/error.hpp>
@@ -67,8 +68,9 @@ TEST(readme, getting_started)
   mi.command("#include <metashell/scalar.hpp>");
 
   const json_string ic13 = mi.command("SCALAR(fib<6>::value)").front();
-  ASSERT_TRUE(type("std::integral_constant<int, 13>") == ic13 ||
-              type("std::__1::integral_constant<int, 13>") == ic13);
+  ASSERT_EQ(any_of<type>("std::integral_constant<int, 13>",
+                         "std::__1::integral_constant<int, 13>"),
+            ic13);
 
   // clang-format off
 
@@ -243,11 +245,17 @@ TEST(readme, how_to_template_argument_deduction)
   const std::vector<json_string> cont = mi.command("continue 2");
 
   ASSERT_EQ(raw_text("Breakpoint 1: regex(\"foo\") reached"), cont[0]);
-  ASSERT_TRUE(
-      frame(type("foo<std::vector<int, std::allocator<int> > >"), _, _,
-            event_kind::template_instantiation) == cont[1] ||
-      frame(type("foo<std::__1::vector<int, std::__1::allocator<int> > >"), _,
-            _, event_kind::template_instantiation) == cont[1]);
+  ASSERT_EQ(
+      any_of<frame>(
+          frame(type("foo<std::vector<int, std::allocator<int>>>"), _, _,
+                event_kind::template_instantiation),
+          frame(type("foo<std::__1::vector<int, std::__1::allocator<int>>>"), _,
+                _, event_kind::template_instantiation),
+          frame(type("foo<std::vector<int, std::allocator<int> > >"), _, _,
+                event_kind::template_instantiation),
+          frame(type("foo<std::__1::vector<int, std::__1::allocator<int> > >"),
+                _, _, event_kind::template_instantiation)),
+      cont[1]);
 }
 
 TEST(readme, how_to_sfinae)
