@@ -181,6 +181,10 @@ arguments.
 Metadebugger lets you inspect step by step how the compiler runs your
 metaprograms.
 
+> Note that depending on your platform or underlying compiler, the details of
+> the template instantiations may differ. For example the order and amount of
+> memoizations might be different than what you find in this tutorial.
+
 Let's debug the fibonacci metaprogram seen earlier. Start the metadebugger by
 entering:
 
