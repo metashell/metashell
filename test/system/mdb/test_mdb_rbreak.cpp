@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/any_of.hpp>
 #include <metashell/system_test/error.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/nocaches.hpp>
@@ -115,12 +116,20 @@ TEST(mdb_rbreak, valid_regex_with_three_matches)
     mi.command("#msh mdb");
     mi.command("evaluate" + nocache + " int_<fib<5>::value>");
 
-    ASSERT_EQ(
-        raw_text(
-            caching_enabled(nocache) ?
-                "Breakpoint \"fib<3>\" will stop the execution on 3 locations" :
-                "Breakpoint \"fib<3>\" created"),
-        mi.command("rbreak fib<3>").front());
+    const json_string rbreak = mi.command("rbreak fib<3>").front();
+
+    if (caching_enabled(nocache))
+    {
+      ASSERT_EQ(
+          any_of<raw_text>(
+              "Breakpoint \"fib<3>\" will stop the execution on 3 locations",
+              "Breakpoint \"fib<3>\" will stop the execution on 4 locations"),
+          rbreak);
+    }
+    else
+    {
+      ASSERT_EQ(raw_text{"Breakpoint \"fib<3>\" created"}, rbreak);
+    }
   }
 }
 
@@ -133,12 +142,20 @@ TEST(mdb_rbreak, does_not_count_stops_in_unreachable_subgraphs)
     mi.command("#msh mdb");
     mi.command("evaluate" + nocache + " int_<fib<2>::value>");
 
-    ASSERT_EQ(
-        raw_text(
-            caching_enabled(nocache) ?
-                "Breakpoint \"fib\" will stop the execution on 3 locations" :
-                "Breakpoint \"fib\" created"),
-        mi.command("rbreak fib").front());
+    const json_string rbreak = mi.command("rbreak fib").front();
+
+    if (caching_enabled(nocache))
+    {
+      ASSERT_EQ(
+          any_of<raw_text>(
+              "Breakpoint \"fib\" will stop the execution on 1 location",
+              "Breakpoint \"fib\" will stop the execution on 3 locations"),
+          rbreak);
+    }
+    else
+    {
+      ASSERT_EQ(raw_text{"Breakpoint \"fib\" created"}, rbreak);
+    }
   }
 }
 
@@ -151,12 +168,20 @@ TEST(mdb_rbreak, valid_regex_in_full_mode)
     mi.command("#msh mdb");
     mi.command("evaluate" + nocache + " -full int_<fib<5>::value>");
 
-    ASSERT_EQ(
-        raw_text(
-            caching_enabled(nocache) ?
-                "Breakpoint \"fib<3>\" will stop the execution on 2 locations" :
-                "Breakpoint \"fib<3>\" created"),
-        mi.command("rbreak fib<3>").front());
+    const json_string rbreak = mi.command("rbreak fib<3>").front();
+
+    if (caching_enabled(nocache))
+    {
+      ASSERT_EQ(
+          any_of<raw_text>(
+              "Breakpoint \"fib<3>\" will stop the execution on 2 locations",
+              "Breakpoint \"fib<3>\" will stop the execution on 3 locations"),
+          rbreak);
+    }
+    else
+    {
+      ASSERT_EQ(raw_text{"Breakpoint \"fib<3>\" created"}, rbreak);
+    }
   }
 }
 
@@ -186,11 +211,23 @@ TEST(mdb_rbreak, valid_regex_in_full_mode_match_also_root)
     mi.command("#msh mdb");
     mi.command("evaluate" + nocache + " -full int_<fib<5>::value>");
 
-    ASSERT_EQ(
-        raw_text(caching_enabled(nocache) ?
-                     "Breakpoint \"(int_<fib<5>::value>)|(fib<3>)\" "
-                     "will stop the execution on 2 locations" :
-                     "Breakpoint \"(int_<fib<5>::value>)|(fib<3>)\" created"),
-        mi.command("rbreak (int_<fib<5>::value>)|(fib<3>)").front());
+    const json_string rbreak =
+        mi.command("rbreak (int_<fib<5>::value>)|(fib<3>)").front();
+
+    if (caching_enabled(nocache))
+    {
+      ASSERT_EQ(
+          any_of<raw_text>("Breakpoint \"(int_<fib<5>::value>)|(fib<3>)\" will "
+                           "stop the execution on 2 locations",
+                           "Breakpoint \"(int_<fib<5>::value>)|(fib<3>)\" will "
+                           "stop the execution on 3 locations"),
+          rbreak);
+    }
+    else
+    {
+      ASSERT_EQ(
+          raw_text{"Breakpoint \"(int_<fib<5>::value>)|(fib<3>)\" created"},
+          rbreak);
+    }
   }
 }
