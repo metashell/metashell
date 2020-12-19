@@ -29,7 +29,7 @@ rem Build Templight
 if defined no_templight goto skip_templight
   md bin\%PLATFORM_ID%\templight
   cd bin\%PLATFORM_ID%\templight
-    cmake ..\..\..\3rd\templight\llvm
+    cmake -DLLVM_ENABLE_PROJECTS=clang ..\..\..\3rd\templight\llvm
     msbuild LLVM.sln /p:Configuration=Release /p:Platform="Win32" "/t:Clang executables\templight"
     if errorlevel 1 goto no_dev
   cd ..\..\..

@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/any_of.hpp>
 #include <metashell/system_test/error.hpp>
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/type.hpp>
@@ -91,8 +92,9 @@ TEST(evaluation, defining_constexpr_function)
   mi.command("constexpr int f() { return 13; }");
 
   const json_string ic = mi.command("SCALAR(f())").front();
-  ASSERT_TRUE(type("std::integral_constant<int, 13>") == ic ||
-              type("std::__1::integral_constant<int, 13>") == ic);
+  ASSERT_EQ(any_of<type>("std::integral_constant<int, 13>",
+                         "std::__1::integral_constant<int, 13>"),
+            ic);
 }
 
 TEST(evaluation, typedef_in_the_middle_of_a_line_starting_with_an_identifier)

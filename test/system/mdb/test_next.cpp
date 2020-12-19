@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/any_of.hpp>
 #include <metashell/system_test/error.hpp>
 #include <metashell/system_test/frame.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
@@ -73,26 +74,53 @@ TEST(mdb_next, fib_from_root)
 
 TEST(mdb_next, minus_1_multi_fib_from_after_step)
 {
+  const frame multi_fib_5_memoization{
+      type{"multi_fib<5>"}, _, _, event_kind::memoization};
+
   for (const std::string& nocache : nocaches())
   {
     metashell_instance mi;
     mi.command(multi_fibonacci_mp);
     mi.command("#msh mdb" + nocache + " int_<multi_fib<10>::value>");
 
-    ASSERT_EQ(frame(type("multi_fib<4>"), _, _, event_kind::memoization),
-              mi.command("step 15").front());
+    const json_string step_15 = mi.command("step 15").front();
 
-    ASSERT_EQ(frame(type("multi_fib<5>"), _, _, event_kind::memoization),
-              mi.command("next").front());
-
-    ASSERT_EQ(frame(type("multi_fib<6>"), _, _, event_kind::memoization),
-              mi.command("next").front());
-
-    if (caching_enabled(nocache))
+    if (step_15 == frame{type{"multi_fib<3>"}, _, _, event_kind::memoization})
     {
       ASSERT_EQ(
-          frame(type("multi_fib<6>"), _, _, event_kind::template_instantiation),
-          mi.command("next -1").front());
+          frame(type{"multi_fib<5>"}, _, _, event_kind::template_instantiation),
+          mi.command("next").front());
+    }
+    else
+    {
+      ASSERT_EQ(any_of<frame>(
+                    frame{type{"multi_fib<5>"}, _, _,
+                          event_kind::template_instantiation},
+                    frame{type{"multi_fib<4>"}, _, _, event_kind::memoization}),
+                step_15);
+    };
+
+    ASSERT_EQ(multi_fib_5_memoization, mi.command("next").front());
+
+    const json_string next = mi.command("next").front();
+    const json_string step_back = mi.command("next -1").front();
+
+    if (next != frame{type{"multi_fib<5>::value"}, _, _,
+                      event_kind::template_instantiation})
+    {
+      ASSERT_EQ(
+          frame(type{"multi_fib<6>"}, _, _, event_kind::memoization), next);
+
+      if (caching_enabled(nocache))
+      {
+        ASSERT_EQ(frame(type{"multi_fib<6>"}, _, _,
+                        event_kind::template_instantiation),
+                  step_back);
+      }
+    }
+    else if (caching_enabled(nocache))
+    {
+      ASSERT_EQ(multi_fib_5_memoization, step_back);
     }
   }
 }

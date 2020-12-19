@@ -79,14 +79,28 @@ TEST(mdb_frame, fib_step_2)
     mi.command("#msh mdb" + nocache + " int_<fib<10>::value>");
     mi.command("step 2");
 
-    ASSERT_EQ(frame(type("fib<8>"), _, _, event_kind::template_instantiation),
-              mi.command("frame 0").front());
+    const json_string frame0 = mi.command("frame 0").front();
 
-    ASSERT_EQ(frame(type("fib<10>"), _, _, event_kind::template_instantiation),
-              mi.command("frame 1").front());
+    if (frame0 == frame{type{"fib<10>"}, _, _, event_kind::memoization})
+    {
+      ASSERT_EQ(
+          frame{type{"int_<fib<10>::value>"}}, mi.command("frame 1").front());
 
-    ASSERT_EQ(
-        frame(type("int_<fib<10>::value>")), mi.command("frame 2").front());
+      ASSERT_EQ(
+          error{"Frame index out of range"}, mi.command("frame 2").front());
+    }
+    else
+    {
+      ASSERT_EQ(frame(type{"fib<8>"}, _, _, event_kind::template_instantiation),
+                mi.command("frame 0").front());
+
+      ASSERT_EQ(
+          frame(type{"fib<10>"}, _, _, event_kind::template_instantiation),
+          mi.command("frame 1").front());
+
+      ASSERT_EQ(
+          frame{type{"int_<fib<10>::value>"}}, mi.command("frame 2").front());
+    }
   }
 }
 

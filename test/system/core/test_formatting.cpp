@@ -17,6 +17,7 @@
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/type.hpp>
 
+#include <metashell/system_test/any_of.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/path_builder.hpp>
 
@@ -86,6 +87,7 @@ TEST(formatting, nested_mpl_vector)
   metashell_instance mi;
   mi.command("#include <" + vector_hpp + ">");
 
-  ASSERT_EQ(type("boost_::mpl::vector<boost_::mpl::vector<int> >"),
+  ASSERT_EQ(any_of<type>("boost_::mpl::vector<boost_::mpl::vector<int>>",
+                         "boost_::mpl::vector<boost_::mpl::vector<int> >"),
             mi.command("boost::mpl::vector<boost::mpl::vector<int>>").front());
 }

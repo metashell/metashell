@@ -671,6 +671,14 @@ define <2 x i1> @n38_overshift(<2 x i32> %x, <2 x i32> %y) {
 ; As usual, don't crash given constantexpr's :/
 @f.a = internal global i16 0
 define i1 @constantexpr() {
+; CHECK-LABEL: @constantexpr(
+; CHECK-NEXT:  entry:
+; CHECK-NEXT:    [[TMP0:%.*]] = load i16, i16* @f.a, align 2
+; CHECK-NEXT:    [[TMP1:%.*]] = lshr i16 [[TMP0]], 1
+; CHECK-NEXT:    [[TMP2:%.*]] = and i16 [[TMP1]], shl (i16 1, i16 zext (i1 icmp ne (i16 ptrtoint (i16* @f.a to i16), i16 1) to i16))
+; CHECK-NEXT:    [[TOBOOL:%.*]] = icmp ne i16 [[TMP2]], 0
+; CHECK-NEXT:    ret i1 [[TOBOOL]]
+;
 entry:
   %0 = load i16, i16* @f.a
   %shr = ashr i16 %0, 1
@@ -678,4 +686,24 @@ entry:
   %and = and i16 %shr1, 1
   %tobool = icmp ne i16 %and, 0
   ret i1 %tobool
+}
+
+; See https://bugs.llvm.org/show_bug.cgi?id=44802
+define i1 @pr44802(i3 %a, i3 %x, i3 %y) {
+; CHECK-LABEL: @pr44802(
+; CHECK-NEXT:    [[T0:%.*]] = icmp ne i3 [[A:%.*]], 0
+; CHECK-NEXT:    [[T1:%.*]] = zext i1 [[T0]] to i3
+; CHECK-NEXT:    [[T2:%.*]] = lshr i3 [[X:%.*]], [[T1]]
+; CHECK-NEXT:    [[T3:%.*]] = shl i3 [[Y:%.*]], [[T1]]
+; CHECK-NEXT:    [[T4:%.*]] = and i3 [[T2]], [[T3]]
+; CHECK-NEXT:    [[T5:%.*]] = icmp ne i3 [[T4]], 0
+; CHECK-NEXT:    ret i1 [[T5]]
+;
+  %t0 = icmp ne i3 %a, 0
+  %t1 = zext i1 %t0 to i3
+  %t2 = lshr i3 %x, %t1
+  %t3 = shl i3 %y, %t1
+  %t4 = and i3 %t2, %t3
+  %t5 = icmp ne i3 %t4, 0
+  ret i1 %t5
 }

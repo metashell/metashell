@@ -54,16 +54,10 @@ return:
   ret i32 %ret
 }
 
-define dso_local signext i32 @foo(i32 signext %x, i32 signext %y) local_unnamed_addr #0 {
+define dso_local signext i32 @foo(i32 signext %x, i32 signext %y) nounwind {
 ; CHECK-P9-LABEL: foo:
 ; CHECK-P9:       # %bb.0: # %entry
 ; CHECK-P9-NEXT:    mflr r0
-; CHECK-P9-NEXT:    .cfi_def_cfa_offset 80
-; CHECK-P9-NEXT:    .cfi_offset lr, 16
-; CHECK-P9-NEXT:    .cfi_offset r27, -40
-; CHECK-P9-NEXT:    .cfi_offset r28, -32
-; CHECK-P9-NEXT:    .cfi_offset r29, -24
-; CHECK-P9-NEXT:    .cfi_offset r30, -16
 ; CHECK-P9-NEXT:    std r27, -40(r1) # 8-byte Folded Spill
 ; CHECK-P9-NEXT:    std r28, -32(r1) # 8-byte Folded Spill
 ; CHECK-P9-NEXT:    std r29, -24(r1) # 8-byte Folded Spill
@@ -97,14 +91,12 @@ define dso_local signext i32 @foo(i32 signext %x, i32 signext %y) local_unnamed_
 ; CHECK-P9-NEXT:    bl bar
 ; CHECK-P9-NEXT:    nop
 ; CHECK-P9-NEXT:    mr r30, r3
-; CHECK-P9-NEXT:    extsw r3, r28
-; CHECK-P9-NEXT:    mulld r4, r3, r27
-; CHECK-P9-NEXT:    rldicl r5, r4, 1, 63
-; CHECK-P9-NEXT:    rldicl r4, r4, 32, 32
-; CHECK-P9-NEXT:    add r4, r4, r5
-; CHECK-P9-NEXT:    slwi r5, r4, 1
-; CHECK-P9-NEXT:    add r4, r4, r5
-; CHECK-P9-NEXT:    subf r3, r4, r3
+; CHECK-P9-NEXT:    mulhw r3, r28, r27
+; CHECK-P9-NEXT:    srwi r4, r3, 31
+; CHECK-P9-NEXT:    add r3, r3, r4
+; CHECK-P9-NEXT:    slwi r4, r3, 1
+; CHECK-P9-NEXT:    add r3, r3, r4
+; CHECK-P9-NEXT:    sub r3, r28, r3
 ; CHECK-P9-NEXT:    cmplwi r3, 1
 ; CHECK-P9-NEXT:    beq cr0, .LBB1_1
 ; CHECK-P9-NEXT:  # %bb.5: # %while.cond
@@ -140,10 +132,10 @@ define dso_local signext i32 @foo(i32 signext %x, i32 signext %y) local_unnamed_
 ; CHECK-P9-NEXT:  .LBB1_10: # %cleanup20
 ; CHECK-P9-NEXT:    addi r1, r1, 80
 ; CHECK-P9-NEXT:    ld r0, 16(r1)
-; CHECK-P9-NEXT:    mtlr r0
 ; CHECK-P9-NEXT:    ld r30, -16(r1) # 8-byte Folded Reload
 ; CHECK-P9-NEXT:    ld r29, -24(r1) # 8-byte Folded Reload
 ; CHECK-P9-NEXT:    ld r28, -32(r1) # 8-byte Folded Reload
+; CHECK-P9-NEXT:    mtlr r0
 ; CHECK-P9-NEXT:    ld r27, -40(r1) # 8-byte Folded Reload
 ; CHECK-P9-NEXT:    blr
 entry:

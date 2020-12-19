@@ -21,28 +21,44 @@
 
 #include <string>
 
-template <int N>
-metashell::system_test::type fib()
+namespace impl
 {
-  return metashell::system_test::type("fib<" + std::to_string(N) + ">");
-}
+  template <int Ver, int N>
+  struct fib
+  {
+    static metashell::system_test::type name()
+    {
+      const std::string ns = Ver > 0 ? "v" + std::to_string(Ver) + "::" : "";
+      return metashell::system_test::type{ns + "fib<" + std::to_string(N) +
+                                          ">"};
+    }
+
+    operator metashell::system_test::type() const { return name(); }
+
+    struct value
+    {
+      operator metashell::system_test::type() const
+      {
+        return metashell::system_test::type{fib<Ver, N>::name().name() +
+                                            "::value"};
+      }
+    };
+  };
+} // namespace impl
+
+template <int N>
+using fib = ::impl::fib<-1, N>;
 
 namespace v1
 {
   template <int N>
-  metashell::system_test::type fib()
-  {
-    return metashell::system_test::type("v1::fib<" + std::to_string(N) + ">");
-  }
+  using fib = ::impl::fib<1, N>;
 } // namespace v1
 
 namespace v2
 {
   template <int N>
-  metashell::system_test::type fib()
-  {
-    return metashell::system_test::type("v2::fib<" + std::to_string(N) + ">");
-  }
+  using fib = ::impl::fib<2, N>;
 } // namespace v2
 
 #endif
