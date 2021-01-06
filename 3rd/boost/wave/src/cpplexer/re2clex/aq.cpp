@@ -37,7 +37,7 @@ int aq_grow(aq_queue q)
     using namespace std;        // some systems have memcpy/realloc in std
     std::size_t new_size = q->max_size << 1;
     aq_stdelement* new_queue = (aq_stdelement*)realloc(q->queue,
-            new_size * sizeof(aq_stdelement));
+        new_size * sizeof(aq_stdelement));
 
     BOOST_ASSERT(NULL != q);
     BOOST_ASSERT(q->max_size < 100000);
@@ -62,7 +62,7 @@ int aq_grow(aq_queue q)
     {
         /* move the tail from the beginning to the end */
         memcpy(q->queue + q->max_size, q->queue,
-                (q->tail + 1) * sizeof(aq_stdelement));
+            (q->tail + 1) * sizeof(aq_stdelement));
         q->tail += q->max_size;
     }
     q->max_size = new_size;

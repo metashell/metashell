@@ -222,6 +222,16 @@ static char const *tok_names[] = {
     /* 430 */   "STATIC_ASSERT",
     /* 431 */   "THREADLOCAL",
     /* 432 */   "RAWSTRINGLIT",
+
+    /* 433 */   "T_CHAR8_T",
+    /* 434 */   "T_CONCEPT",
+    /* 435 */   "T_CONSTEVAL",
+    /* 436 */   "T_CONSTINIT",
+    /* 437 */   "T_CO_AWAIT",
+    /* 438 */   "T_CO_RETURN",
+    /* 439 */   "T_CO_YIELD",
+    /* 440 */   "T_REQUIRES",
+    /* 441 */   "T_SPACESHIP",
     };
 
     // make sure, I have not forgotten any commas (as I did more than once)
@@ -422,8 +432,18 @@ static char const *tok_values[] = {
     /* 428 */   "noexcept",
     /* 429 */   "nullptr",
     /* 430 */   "static_assert",
-    /* 431 */   "threadlocal",
+    /* 431 */   "thread_local",
     /* 432 */   "",   // extrawstringlit
+
+    /* 433 */   "char8_t",
+    /* 434 */   "concept",
+    /* 435 */   "consteval",
+    /* 436 */   "constinit",
+    /* 437 */   "co_await",
+    /* 438 */   "co_return",
+    /* 439 */   "co_yield",
+    /* 440 */   "requires",
+    /* 441 */   "<=>",
     };
 
     // make sure, I have not forgotten any commas (as I did more than once)
@@ -443,5 +463,3 @@ static char const *tok_values[] = {
 #ifdef BOOST_HAS_ABI_HEADERS
 #include BOOST_ABI_SUFFIX
 #endif
-
-

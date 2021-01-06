@@ -1258,9 +1258,13 @@ public:
 
          if ((boost::math::isfinite)(a) && (boost::math::isfinite)(b))
          {
-            if (b <= a)
+            if (a == b)
             {
-               return policies::raise_domain_error(function, "Arguments to integrate are in wrong order; integration over [a,b] must have b > a.", a, Policy());
+               return K(0);
+            }
+            if (b < a)
+            {
+               return -integrate(f, b, a, pL1);
             }
             Real avg = (a + b)*constants::half<Real>();
             Real scale = (b - a)*constants::half<Real>();

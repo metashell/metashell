@@ -12,6 +12,7 @@
 #include <boost/thread/lock_types.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/pthread/condition_variable_fwd.hpp>
+#include <boost/thread/pthread/pthread_helpers.hpp>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -93,12 +94,15 @@ namespace boost
         struct thread_exit_callback_node;
         struct tss_data_node
         {
-            boost::shared_ptr<boost::detail::tss_cleanup_function> func;
+            typedef void(*cleanup_func_t)(void*);
+            typedef void(*cleanup_caller_t)(cleanup_func_t, void*);
+
+            cleanup_caller_t caller;
+            cleanup_func_t func;
             void* value;
 
-            tss_data_node(boost::shared_ptr<boost::detail::tss_cleanup_function> func_,
-                          void* value_):
-                func(func_),value(value_)
+            tss_data_node(cleanup_caller_t caller_,cleanup_func_t func_,void* value_):
+                caller(caller_),func(func_),value(value_)
             {}
         };
 
@@ -209,11 +213,11 @@ namespace boost
                     check_for_interruption();
                     thread_info->cond_mutex=cond_mutex;
                     thread_info->current_cond=cond;
-                    BOOST_VERIFY(!pthread_mutex_lock(m));
+                    BOOST_VERIFY(!posix::pthread_mutex_lock(m));
                 }
                 else
                 {
-                    BOOST_VERIFY(!pthread_mutex_lock(m));
+                    BOOST_VERIFY(!posix::pthread_mutex_lock(m));
                 }
             }
             void unlock_if_locked()
@@ -221,14 +225,14 @@ namespace boost
               if ( ! done) {
                 if (set)
                 {
-                    BOOST_VERIFY(!pthread_mutex_unlock(m));
+                    BOOST_VERIFY(!posix::pthread_mutex_unlock(m));
                     lock_guard<mutex> guard(thread_info->data_mutex);
                     thread_info->cond_mutex=NULL;
                     thread_info->current_cond=NULL;
                 }
                 else
                 {
-                    BOOST_VERIFY(!pthread_mutex_unlock(m));
+                    BOOST_VERIFY(!posix::pthread_mutex_unlock(m));
                 }
                 done = true;
               }

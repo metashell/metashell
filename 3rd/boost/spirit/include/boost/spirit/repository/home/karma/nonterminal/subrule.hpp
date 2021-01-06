@@ -27,6 +27,7 @@
 #include <boost/spirit/home/support/nonterminal/locals.hpp>
 #include <boost/spirit/repository/home/support/subrule_context.hpp>
 
+#include <boost/static_assert.hpp>
 #include <boost/fusion/include/as_map.hpp>
 #include <boost/fusion/include/at_key.hpp>
 #include <boost/fusion/include/cons.hpp>
@@ -41,7 +42,10 @@
 #include <boost/mpl/identity.hpp>
 #include <boost/mpl/int.hpp>
 #include <boost/mpl/vector.hpp>
-#include <boost/type_traits/add_reference.hpp>
+#include <boost/proto/extends.hpp>
+#include <boost/proto/traits.hpp>
+#include <boost/type_traits/is_const.hpp>
+#include <boost/type_traits/is_reference.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/type_traits/remove_reference.hpp>
 
@@ -168,16 +172,13 @@ namespace boost { namespace spirit { namespace repository { namespace karma
                 >
             context_type;
 
-            // Create an attribute if none is supplied.
-            typedef traits::make_attribute<subrule_attr_type, Attribute> 
-                make_attribute;
+            typedef traits::transform_attribute<Attribute const
+              , subrule_attr_type, spirit::karma::domain> transform;
 
             // If you are seeing a compilation error here, you are probably
             // trying to use a subrule which has inherited attributes,
             // without passing values for them.
-            context_type context(*this
-              , traits::pre_transform<spirit::karma::domain, subrule_attr_type>(
-                      make_attribute::call(attr)));
+            context_type context(*this, transform::pre(attr));
 
             return def.binder(sink, context, delimiter);
         }
@@ -203,16 +204,14 @@ namespace boost { namespace spirit { namespace repository { namespace karma
                 >
             context_type;
 
-            // Create an attribute if none is supplied.
-            typedef traits::make_attribute<subrule_attr_type, Attribute> 
-                make_attribute;
+            typedef traits::transform_attribute<Attribute const
+              , subrule_attr_type, spirit::karma::domain> transform;
 
             // If you are seeing a compilation error here, you are probably
             // trying to use a subrule which has inherited attributes,
             // passing values of incompatible types for them.
             context_type context(*this
-              , traits::pre_transform<spirit::karma::domain, subrule_attr_type>(
-                        make_attribute::call(attr)), params, caller_context);
+              , transform::pre(attr), params, caller_context);
 
             return def.binder(sink, context, delimiter);
         }
@@ -395,8 +394,10 @@ namespace boost { namespace spirit { namespace repository { namespace karma
         typedef typename
             spirit::detail::attr_from_sig<sig_type>::type
         attr_type;
-        typedef typename add_reference<
-            typename add_const<attr_type>::type>::type attr_reference_type;
+        BOOST_STATIC_ASSERT_MSG(
+            !is_reference<attr_type>::value && !is_const<attr_type>::value,
+            "Const/reference qualifiers on Karma subrule attribute are meaningless");
+        typedef attr_type const& attr_reference_type;
 
         // parameter_types is a sequence of types passed as parameters to the subrule
         typedef typename
@@ -466,7 +467,7 @@ namespace boost { namespace spirit { namespace repository { namespace karma
                 def_type(compile<spirit::karma::domain>(expr), name_)));
         }
 
-#define SUBRULE_MODULUS_ASSIGN_OPERATOR(lhs_ref, rhs_ref)                     \
+#define BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR(lhs_ref, rhs_ref)        \
         template <typename Expr>                                              \
         friend typename group_type_helper<Expr, true>::type                   \
         operator%=(subrule lhs_ref sr, Expr rhs_ref expr)                     \
@@ -480,20 +481,20 @@ namespace boost { namespace spirit { namespace repository { namespace karma
         /**/
 
         // non-const versions needed to suppress proto's %= kicking in
-        SUBRULE_MODULUS_ASSIGN_OPERATOR(const&, const&)
+        BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR(const&, const&)
 #ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
-        SUBRULE_MODULUS_ASSIGN_OPERATOR(const&, &&)
+        BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR(const&, &&)
 #else
-        SUBRULE_MODULUS_ASSIGN_OPERATOR(const&, &)
+        BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR(const&, &)
 #endif
-        SUBRULE_MODULUS_ASSIGN_OPERATOR(&, const&)
+        BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR(&, const&)
 #ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
-        SUBRULE_MODULUS_ASSIGN_OPERATOR(&, &&)
+        BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR(&, &&)
 #else
-        SUBRULE_MODULUS_ASSIGN_OPERATOR(&, &)
+        BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR(&, &)
 #endif
 
-#undef SUBRULE_MODULUS_ASSIGN_OPERATOR
+#undef BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR
 
         std::string const& name() const
         {

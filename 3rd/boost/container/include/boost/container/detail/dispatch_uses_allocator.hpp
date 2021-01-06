@@ -110,10 +110,10 @@ template < typename ConstructAlloc
          , typename T
          , class ...Args
          >
-inline typename dtl::enable_if_and
+BOOST_CONTAINER_FORCEINLINE typename dtl::enable_if_and
    < void
    , dtl::is_not_pair<T>
-   , dtl::not_< uses_allocator<T, ArgAlloc> >
+   , dtl::not_< uses_allocator<T, typename remove_cvref<ArgAlloc>::type > >
    >::type dispatch_uses_allocator
    ( ConstructAlloc & construct_alloc, BOOST_FWD_REF(ArgAlloc) arg_alloc, T* p, BOOST_FWD_REF(Args)...args)
 {
@@ -127,10 +127,10 @@ template < typename ConstructAlloc
          , typename T
          , class ...Args
          >
-inline typename dtl::enable_if_and
+BOOST_CONTAINER_FORCEINLINE typename dtl::enable_if_and
    < void
    , dtl::is_not_pair<T>
-   , uses_allocator<T, ArgAlloc>
+   , uses_allocator<T, typename remove_cvref<ArgAlloc>::type>
    , is_constructible_with_allocator_prefix<T, ArgAlloc, Args...>
    >::type dispatch_uses_allocator
    ( ConstructAlloc& construct_alloc, BOOST_FWD_REF(ArgAlloc) arg_alloc, T* p, BOOST_FWD_REF(Args) ...args)
@@ -146,10 +146,10 @@ template < typename ConstructAlloc
          , typename T
          , class ...Args
          >
-inline typename dtl::enable_if_and
+BOOST_CONTAINER_FORCEINLINE typename dtl::enable_if_and
    < void
    , dtl::is_not_pair<T>
-   , uses_allocator<T, ArgAlloc>
+   , uses_allocator<T, typename remove_cvref<ArgAlloc>::type>
    , dtl::not_<is_constructible_with_allocator_prefix<T, ArgAlloc, Args...> >
    >::type dispatch_uses_allocator
    ( ConstructAlloc& construct_alloc, BOOST_FWD_REF(ArgAlloc) arg_alloc, T* p, BOOST_FWD_REF(Args)...args)
@@ -162,10 +162,10 @@ inline typename dtl::enable_if_and
 
 #define BOOST_CONTAINER_SCOPED_ALLOCATOR_DISPATCH_USES_ALLOCATOR_CODE(N) \
    template <typename ConstructAlloc, typename ArgAlloc, typename T BOOST_MOVE_I##N BOOST_MOVE_CLASS##N >\
-   inline typename dtl::enable_if_and\
+   BOOST_CONTAINER_FORCEINLINE typename dtl::enable_if_and\
       < void\
       , dtl::is_not_pair<T>\
-      , dtl::not_<uses_allocator<T, ArgAlloc> >\
+      , dtl::not_<uses_allocator<T, typename remove_cvref<ArgAlloc>::type> >\
       >::type\
       dispatch_uses_allocator\
       (ConstructAlloc &construct_alloc, BOOST_FWD_REF(ArgAlloc) arg_alloc, T* p BOOST_MOVE_I##N BOOST_MOVE_UREF##N)\
@@ -179,10 +179,10 @@ BOOST_MOVE_ITERATE_0TO9(BOOST_CONTAINER_SCOPED_ALLOCATOR_DISPATCH_USES_ALLOCATOR
 
 #define BOOST_CONTAINER_SCOPED_ALLOCATOR_DISPATCH_USES_ALLOCATOR_CODE(N) \
    template < typename ConstructAlloc, typename ArgAlloc, typename T BOOST_MOVE_I##N BOOST_MOVE_CLASS##N >\
-   inline typename dtl::enable_if_and\
+   BOOST_CONTAINER_FORCEINLINE typename dtl::enable_if_and\
       < void\
       , dtl::is_not_pair<T>\
-      , uses_allocator<T, ArgAlloc>\
+      , uses_allocator<T, typename remove_cvref<ArgAlloc>::type>\
       , is_constructible_with_allocator_prefix<T, ArgAlloc BOOST_MOVE_I##N BOOST_MOVE_TARG##N>\
       >::type\
       dispatch_uses_allocator\
@@ -197,10 +197,10 @@ BOOST_MOVE_ITERATE_0TO9(BOOST_CONTAINER_SCOPED_ALLOCATOR_DISPATCH_USES_ALLOCATOR
 
 #define BOOST_CONTAINER_SCOPED_ALLOCATOR_DISPATCH_USES_ALLOCATOR_CODE(N) \
    template < typename ConstructAlloc, typename ArgAlloc, typename T BOOST_MOVE_I##N BOOST_MOVE_CLASS##N >\
-   inline typename dtl::enable_if_and\
+   BOOST_CONTAINER_FORCEINLINE typename dtl::enable_if_and\
       < void\
       , dtl::is_not_pair<T>\
-      , uses_allocator<T, ArgAlloc>\
+      , uses_allocator<T, typename remove_cvref<ArgAlloc>::type>\
       , dtl::not_<is_constructible_with_allocator_prefix<T, ArgAlloc BOOST_MOVE_I##N BOOST_MOVE_TARG##N> >\
       >::type\
       dispatch_uses_allocator\
@@ -219,7 +219,7 @@ template < typename ConstructAlloc
          , typename ArgAlloc
          , typename Pair
          > inline 
-BOOST_CONTAINER_DOC1ST(void, typename dtl::enable_if<dtl::is_pair<Pair> >::type)
+BOOST_CONTAINER_DOC1ST(void, typename dtl::enable_if<dtl::is_pair<Pair> BOOST_MOVE_I void >::type)
    dispatch_uses_allocator
    ( ConstructAlloc & construct_alloc
    , BOOST_FWD_REF(ArgAlloc) arg_alloc
@@ -240,7 +240,7 @@ BOOST_CONTAINER_DOC1ST(void, typename dtl::enable_if<dtl::is_pair<Pair> >::type)
 template < typename ConstructAlloc
          , typename ArgAlloc
          , class Pair, class U, class V>
-BOOST_CONTAINER_DOC1ST(void, typename dtl::enable_if<dtl::is_pair<Pair> >::type)
+BOOST_CONTAINER_DOC1ST(void, typename dtl::enable_if<dtl::is_pair<Pair> BOOST_MOVE_I void>::type)
    dispatch_uses_allocator
    ( ConstructAlloc & construct_alloc
    , BOOST_FWD_REF(ArgAlloc) arg_alloc
@@ -260,7 +260,7 @@ BOOST_CONTAINER_DOC1ST(void, typename dtl::enable_if<dtl::is_pair<Pair> >::type)
 template < typename ConstructAlloc
          , typename ArgAlloc
          , class Pair, class Pair2>
-BOOST_CONTAINER_DOC1ST(void, typename dtl::enable_if< dtl::is_pair<Pair> >::type)
+BOOST_CONTAINER_DOC1ST(void, typename dtl::enable_if< dtl::is_pair<Pair> BOOST_MOVE_I void >::type)
    dispatch_uses_allocator
    (ConstructAlloc & construct_alloc
    , BOOST_FWD_REF(ArgAlloc) arg_alloc
@@ -286,7 +286,7 @@ typename dtl::enable_if_and
 template< typename ConstructAlloc, typename ArgAlloc, class Pair \
         , template<class, class, class, class, class, class, class, class, class, class> class BoostTuple \
          BOOST_MOVE_I_IF(BOOST_MOVE_OR(N,M)) BOOST_MOVE_CLASS##N BOOST_MOVE_I_IF(BOOST_MOVE_AND(N,M)) BOOST_MOVE_CLASSQ##M > \
-typename dtl::enable_if< dtl::is_pair<Pair> >::type\
+typename dtl::enable_if< dtl::is_pair<Pair> BOOST_MOVE_I void>::type\
    dispatch_uses_allocator( ConstructAlloc & construct_alloc, BOOST_FWD_REF(ArgAlloc) arg_alloc, Pair* pair, piecewise_construct_t\
       , BoostTuple<BOOST_MOVE_TARG##N  BOOST_MOVE_I##N BOOST_MOVE_REPEAT(BOOST_MOVE_SUB(10,N),::boost::tuples::null_type)> p\
       , BoostTuple<BOOST_MOVE_TARGQ##M BOOST_MOVE_I##M BOOST_MOVE_REPEAT(BOOST_MOVE_SUB(10,M),::boost::tuples::null_type)> q)\
@@ -330,7 +330,7 @@ BOOST_MOVE_ITER2D_0TOMAX(9, BOOST_DISPATCH_USES_ALLOCATOR_PIECEWISE_CONSTRUCT_BO
 
    template< typename ConstructAlloc, typename ArgAlloc, class Pair
            , template<class ...> class Tuple, class... Args1, class... Args2>
-   typename dtl::enable_if< dtl::is_pair<Pair> >::type
+   typename dtl::enable_if< dtl::is_pair<Pair>, void >::type
       dispatch_uses_allocator( ConstructAlloc & construct_alloc, BOOST_FWD_REF(ArgAlloc) arg_alloc, Pair* pair, piecewise_construct_t
                              , Tuple<Args1...> t1, Tuple<Args2...> t2)
    {
@@ -346,7 +346,7 @@ BOOST_MOVE_ITER2D_0TOMAX(9, BOOST_DISPATCH_USES_ALLOCATOR_PIECEWISE_CONSTRUCT_BO
    template< typename ConstructAlloc, typename ArgAlloc, class Pair\
            , template<class, class, class, class, class, class, class, class, class, class> class StdTuple\
             BOOST_MOVE_I_IF(BOOST_MOVE_OR(N,M)) BOOST_MOVE_CLASS##N BOOST_MOVE_I_IF(BOOST_MOVE_AND(N,M)) BOOST_MOVE_CLASSQ##M > \
-   typename dtl::enable_if< dtl::is_pair<Pair> >::type\
+   typename dtl::enable_if< dtl::is_pair<Pair> BOOST_MOVE_I void>::type\
       dispatch_uses_allocator(ConstructAlloc & construct_alloc, BOOST_FWD_REF(ArgAlloc) arg_alloc, Pair* pair, piecewise_construct_t\
                            , StdTuple<BOOST_MOVE_TARG##N  BOOST_MOVE_I##N BOOST_MOVE_REPEAT(BOOST_MOVE_SUB(10,N),::std::tr1::_Nil)> p\
                            , StdTuple<BOOST_MOVE_TARGQ##M BOOST_MOVE_I##M BOOST_MOVE_REPEAT(BOOST_MOVE_SUB(10,M),::std::tr1::_Nil)> q)\
@@ -380,7 +380,7 @@ BOOST_MOVE_ITER2D_0TOMAX(9, BOOST_DISPATCH_USES_ALLOCATOR_PIECEWISE_CONSTRUCT_BO
    template< typename ConstructAlloc, typename ArgAlloc, class Pair\
             , template<BOOST_MOVE_REPEAT(_VARIADIC_MAX, class), class, class, class> class StdTuple \
             BOOST_MOVE_I_IF(BOOST_MOVE_OR(N,M)) BOOST_MOVE_CLASS##N BOOST_MOVE_I_IF(BOOST_MOVE_AND(N,M)) BOOST_MOVE_CLASSQ##M > \
-   typename dtl::enable_if< dtl::is_pair<Pair> >::type\
+   typename dtl::enable_if< dtl::is_pair<Pair> BOOST_MOVE_I void>::type\
       dispatch_uses_allocator\
          ( ConstructAlloc & construct_alloc, BOOST_FWD_REF(ArgAlloc) arg_alloc, Pair* pair, piecewise_construct_t\
          , StdTuple<BOOST_MOVE_TARG##N  BOOST_MOVE_I##N BOOST_MOVE_REPEAT(BOOST_MOVE_SUB(BOOST_MOVE_ADD(_VARIADIC_MAX, 3),N),::std::_Nil) > p\
@@ -431,7 +431,7 @@ typename dtl::enable_if< dtl::is_pair<Pair>, void >::type
 #define BOOST_CONTAINER_DISPATCH_USES_ALLOCATOR_PAIR_TRY_EMPLACE_CODE(N) \
    template <typename ConstructAlloc, typename ArgAlloc, class Pair, class KeyType BOOST_MOVE_I##N BOOST_MOVE_CLASS##N >\
    inline typename dtl::enable_if\
-      < dtl::is_pair<Pair>, void >::type\
+      < dtl::is_pair<Pair> BOOST_MOVE_I void >::type\
       dispatch_uses_allocator\
       (ConstructAlloc &construct_alloc, BOOST_FWD_REF(ArgAlloc) arg_alloc, Pair* p, try_emplace_t, \
        BOOST_FWD_REF(KeyType) k BOOST_MOVE_I##N BOOST_MOVE_UREF##N)\

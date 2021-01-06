@@ -7,6 +7,7 @@
 #  define BOOST_MATH_TUPLE_HPP_INCLUDED
 #  include <boost/config.hpp>
 #  include <boost/detail/workaround.hpp>
+#  include <boost/math/tools/cxx03_warn.hpp>
 
 #if !defined(BOOST_NO_CXX11_HDR_TUPLE) && !BOOST_WORKAROUND(BOOST_GCC_VERSION, < 40500)
 
@@ -28,7 +29,7 @@ using ::std::tuple_element;
 
 }}
 
-#elif (defined(__BORLANDC__) && (__BORLANDC__ <= 0x600)) || defined(__IBMCPP__)
+#elif (defined(BOOST_BORLANDC) && (BOOST_BORLANDC <= 0x600)) || defined(__IBMCPP__)
 
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
@@ -56,7 +57,7 @@ struct tuple_element
    typedef typename boost::tuples::element<I,T>::type type;
 };
 
-#if !BOOST_WORKAROUND(__BORLANDC__, < 0x0582)
+#if !BOOST_WORKAROUND(BOOST_BORLANDC, < 0x0582)
 // [6.1.3.4] Element access
 using ::boost::get;
 #endif

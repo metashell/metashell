@@ -35,7 +35,7 @@ template <int N, int M = N%2>
 struct positive_power
 {
     template <typename T>
-    static T result(T base)
+    static BOOST_CXX14_CONSTEXPR T result(T base)
     {
         T power = positive_power<N/2>::result(base);
         return power * power;
@@ -46,7 +46,7 @@ template <int N>
 struct positive_power<N, 1>
 {
     template <typename T>
-    static T result(T base)
+    static BOOST_CXX14_CONSTEXPR T result(T base)
     {
         T power = positive_power<N/2>::result(base);
         return base * power * power;
@@ -57,7 +57,7 @@ template <>
 struct positive_power<1, 1>
 {
     template <typename T>
-    static T result(T base){ return base; }
+    static BOOST_CXX14_CONSTEXPR T result(T base){ return base; }
 };
 
 
@@ -65,7 +65,7 @@ template <int N, bool>
 struct power_if_positive
 {
     template <typename T, class Policy>
-    static T result(T base, const Policy&)
+    static BOOST_CXX14_CONSTEXPR T result(T base, const Policy&)
     { return positive_power<N>::result(base); }
 };
 
@@ -73,7 +73,7 @@ template <int N>
 struct power_if_positive<N, false>
 {
     template <typename T, class Policy>
-    static T result(T base, const Policy& policy)
+    static BOOST_CXX14_CONSTEXPR T result(T base, const Policy& policy)
     {
         if (base == 0)
         {
@@ -92,7 +92,7 @@ template <>
 struct power_if_positive<0, true>
 {
     template <typename T, class Policy>
-    static T result(T base, const Policy& policy)
+    static BOOST_CXX14_CONSTEXPR T result(T base, const Policy& policy)
     {
         if (base == 0)
         {
@@ -114,8 +114,8 @@ template <int N>
 struct select_power_if_positive
 {
     typedef typename mpl::greater_equal<
-                         mpl::int_<N>,
-                         mpl::int_<0>
+                         boost::integral_constant<int, N>,
+                         boost::integral_constant<int, 0>
                      >::type is_positive;
 
     typedef power_if_positive<N, is_positive::value> type;
@@ -126,15 +126,14 @@ struct select_power_if_positive
 
 
 template <int N, typename T, class Policy>
-inline typename tools::promote_args<T>::type pow(T base, const Policy& policy)
+BOOST_CXX14_CONSTEXPR inline typename tools::promote_args<T>::type pow(T base, const Policy& policy)
 { 
    typedef typename tools::promote_args<T>::type result_type;
    return detail::select_power_if_positive<N>::type::result(static_cast<result_type>(base), policy); 
 }
 
-
 template <int N, typename T>
-inline typename tools::promote_args<T>::type pow(T base)
+BOOST_CXX14_CONSTEXPR inline typename tools::promote_args<T>::type pow(T base)
 { return pow<N>(base, policies::policy<>()); }
 
 #ifdef BOOST_MSVC

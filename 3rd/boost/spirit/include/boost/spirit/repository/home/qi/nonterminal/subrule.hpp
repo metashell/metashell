@@ -27,6 +27,7 @@
 #include <boost/spirit/home/support/nonterminal/locals.hpp>
 #include <boost/spirit/repository/home/support/subrule_context.hpp>
 
+#include <boost/static_assert.hpp>
 #include <boost/fusion/include/as_map.hpp>
 #include <boost/fusion/include/at_key.hpp>
 #include <boost/fusion/include/cons.hpp>
@@ -41,7 +42,9 @@
 #include <boost/mpl/identity.hpp>
 #include <boost/mpl/int.hpp>
 #include <boost/mpl/vector.hpp>
-#include <boost/type_traits/add_reference.hpp>
+#include <boost/proto/extends.hpp>
+#include <boost/proto/traits.hpp>
+#include <boost/type_traits/is_reference.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/type_traits/remove_reference.hpp>
 
@@ -171,18 +174,13 @@ namespace boost { namespace spirit { namespace repository { namespace qi
                 >
             context_type;
 
-            // prepare attribute
-            typedef traits::make_attribute<
-                subrule_attr_type, Attribute> make_attribute;
-
             // do down-stream transformation, provides attribute for 
             // rhs parser
             typedef traits::transform_attribute<
-                typename make_attribute::type, subrule_attr_type, spirit::qi::domain> 
+                Attribute, subrule_attr_type, spirit::qi::domain> 
             transform;
 
-            typename make_attribute::type made_attr = make_attribute::call(attr);
-            typename transform::type attr_ = transform::pre(made_attr);
+            typename transform::type attr_ = transform::pre(attr);
 
             // If you are seeing a compilation error here, you are probably
             // trying to use a subrule which has inherited attributes,
@@ -193,12 +191,12 @@ namespace boost { namespace spirit { namespace repository { namespace qi
             {
                 // do up-stream transformation, this integrates the results 
                 // back into the original attribute value, if appropriate
-                traits::post_transform(attr, attr_);
+                transform::post(attr, attr_);
                 return true;
             }
 
             // inform attribute transformation of failed rhs
-            traits::fail_transform(attr, attr_);
+            transform::fail(attr);
             return false;
         }
 
@@ -225,18 +223,13 @@ namespace boost { namespace spirit { namespace repository { namespace qi
                 >
             context_type;
 
-            // prepare attribute
-            typedef traits::make_attribute<
-                subrule_attr_type, Attribute> make_attribute;
-
             // do down-stream transformation, provides attribute for 
             // rhs parser
             typedef traits::transform_attribute<
-                typename make_attribute::type, subrule_attr_type, spirit::qi::domain> 
+                Attribute, subrule_attr_type, spirit::qi::domain> 
             transform;
 
-            typename make_attribute::type made_attr = make_attribute::call(attr);
-            typename transform::type attr_ = transform::pre(made_attr);
+            typename transform::type attr_ = transform::pre(attr);
 
             // If you are seeing a compilation error here, you are probably
             // trying to use a subrule which has inherited attributes,
@@ -247,12 +240,12 @@ namespace boost { namespace spirit { namespace repository { namespace qi
             {
                 // do up-stream transformation, this integrates the results 
                 // back into the original attribute value, if appropriate
-                traits::post_transform(attr, attr_);
+                transform::post(attr, attr_);
                 return true;
             }
 
             // inform attribute transformation of failed rhs
-            traits::fail_transform(attr, attr_);
+            transform::fail(attr);
             return false;
         }
 
@@ -423,7 +416,10 @@ namespace boost { namespace spirit { namespace repository { namespace qi
         typedef typename
             spirit::detail::attr_from_sig<sig_type>::type
         attr_type;
-        typedef typename add_reference<attr_type>::type attr_reference_type;
+        BOOST_STATIC_ASSERT_MSG(
+            !is_reference<attr_type>::value,
+            "Reference qualifier on Qi subrule attribute type is meaningless");
+        typedef attr_type& attr_reference_type;
 
         // parameter_types is a sequence of types passed as parameters to the subrule
         typedef typename
@@ -493,7 +489,7 @@ namespace boost { namespace spirit { namespace repository { namespace qi
                 def_type(compile<spirit::qi::domain>(expr), name_)));
         }
 
-#define SUBRULE_MODULUS_ASSIGN_OPERATOR(lhs_ref, rhs_ref)                     \
+#define BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR(lhs_ref, rhs_ref)        \
         template <typename Expr>                                              \
         friend typename group_type_helper<Expr, true>::type                   \
         operator%=(subrule lhs_ref sr, Expr rhs_ref expr)                     \
@@ -507,20 +503,20 @@ namespace boost { namespace spirit { namespace repository { namespace qi
         /**/
 
         // non-const versions needed to suppress proto's %= kicking in
-        SUBRULE_MODULUS_ASSIGN_OPERATOR(const&, const&)
+        BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR(const&, const&)
 #ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
-        SUBRULE_MODULUS_ASSIGN_OPERATOR(const&, &&)
+        BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR(const&, &&)
 #else
-        SUBRULE_MODULUS_ASSIGN_OPERATOR(const&, &)
+        BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR(const&, &)
 #endif
-        SUBRULE_MODULUS_ASSIGN_OPERATOR(&, const&)
+        BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR(&, const&)
 #ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
-        SUBRULE_MODULUS_ASSIGN_OPERATOR(&, &&)
+        BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR(&, &&)
 #else
-        SUBRULE_MODULUS_ASSIGN_OPERATOR(&, &)
+        BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR(&, &)
 #endif
 
-#undef SUBRULE_MODULUS_ASSIGN_OPERATOR
+#undef BOOST_SPIRIT_SUBRULE_MODULUS_ASSIGN_OPERATOR
 
         std::string const& name() const
         {

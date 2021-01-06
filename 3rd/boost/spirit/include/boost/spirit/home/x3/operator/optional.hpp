@@ -23,7 +23,7 @@ namespace boost { namespace spirit { namespace x3
         typedef proxy<Subject, optional<Subject>> base_type;
         static bool const handles_container = true;
 
-        optional(Subject const& subject)
+        constexpr optional(Subject const& subject)
           : base_type(subject) {}
 
         using base_type::parse_subject;
@@ -52,7 +52,7 @@ namespace boost { namespace spirit { namespace x3
             value_type;
 
             // create a local value
-            value_type val = value_type();
+            value_type val{};
 
             if (this->subject.parse(first, last, context, rcontext, val))
             {
@@ -64,7 +64,7 @@ namespace boost { namespace spirit { namespace x3
     };
 
     template <typename Subject>
-    inline optional<typename extension::as_parser<Subject>::value_type>
+    constexpr optional<typename extension::as_parser<Subject>::value_type>
     operator-(Subject const& subject)
     {
         return { as_parser(subject) };

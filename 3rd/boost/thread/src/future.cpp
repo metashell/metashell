@@ -5,14 +5,7 @@
 
 #include <boost/thread/detail/config.hpp>
 
-#ifdef BOOST_NO_EXCEPTIONS
-namespace boost
-{
-    void shared_state_base::notify_deferred() {}
-}
-
-#else
-
+#ifndef BOOST_NO_EXCEPTIONS
 
 #include <boost/thread/futures/future_error_code.hpp>
 #include <string>
