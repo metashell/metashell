@@ -276,7 +276,7 @@ namespace boost
                             = current_thread_data->tss_data.begin();
                         if(current->second.func && (current->second.value!=0))
                         {
-                            (*current->second.func)(current->second.value);
+                            (*current->second.caller)(current->second.func,current->second.value);
                         }
                         current_thread_data->tss_data.erase(current);
                     }
@@ -522,12 +522,12 @@ namespace boost
         GetLogicalProcessorInformation(NULL, &size);
         if (ERROR_INSUFFICIENT_BUFFER != GetLastError())
             return 0;
+        const size_t Elements = size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
 
-        std::vector<SYSTEM_LOGICAL_PROCESSOR_INFORMATION> buffer(size);
+        std::vector<SYSTEM_LOGICAL_PROCESSOR_INFORMATION> buffer(Elements);
         if (GetLogicalProcessorInformation(&buffer.front(), &size) == FALSE)
             return 0;
 
-        const size_t Elements = size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
 
         for (size_t i = 0; i < Elements; ++i) {
             if (buffer[i].Relationship == RelationProcessorCore)
@@ -909,11 +909,12 @@ namespace boost
         }
 
         void add_new_tss_node(void const* key,
-                              boost::shared_ptr<tss_cleanup_function> func,
+                              detail::tss_data_node::cleanup_caller_t caller,
+                              detail::tss_data_node::cleanup_func_t func,
                               void* tss_data)
         {
             detail::thread_data_base* const current_thread_data(get_or_make_current_thread_data());
-            current_thread_data->tss_data.insert(std::make_pair(key,tss_data_node(func,tss_data)));
+            current_thread_data->tss_data.insert(std::make_pair(key,tss_data_node(caller,func,tss_data)));
         }
 
         void erase_tss_node(void const* key)
@@ -923,17 +924,19 @@ namespace boost
         }
 
         void set_tss_data(void const* key,
-                          boost::shared_ptr<tss_cleanup_function> func,
+                          detail::tss_data_node::cleanup_caller_t caller,
+                          detail::tss_data_node::cleanup_func_t func,
                           void* tss_data,bool cleanup_existing)
         {
             if(tss_data_node* const current_node=find_tss_data(key))
             {
                 if(cleanup_existing && current_node->func && (current_node->value!=0))
                 {
-                    (*current_node->func)(current_node->value);
+                    (*current_node->caller)(current_node->func,current_node->value);
                 }
                 if(func || (tss_data!=0))
                 {
+                    current_node->caller=caller;
                     current_node->func=func;
                     current_node->value=tss_data;
                 }
@@ -944,7 +947,7 @@ namespace boost
             }
             else if(func || (tss_data!=0))
             {
-                add_new_tss_node(key,func,tss_data);
+                add_new_tss_node(key,caller,func,tss_data);
             }
         }
     }

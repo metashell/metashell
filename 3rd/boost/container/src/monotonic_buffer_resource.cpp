@@ -141,6 +141,9 @@ void* monotonic_buffer_resource::do_allocate(std::size_t bytes, std::size_t alig
    //See if there is room in current buffer
    std::size_t aligner = 0u;
    if(this->remaining_storage(alignment, aligner) < bytes){
+      //The new buffer will be aligned to the strictest alignment so reset
+      //the aligner, which was needed for the old buffer.
+      aligner = 0u;
       //Update next_buffer_size to at least bytes
       this->increase_next_buffer_at_least_to(bytes);
       //Now allocate and update internal data

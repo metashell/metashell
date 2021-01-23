@@ -34,20 +34,22 @@ target_include_directories(
   ${LIB_TYPE} ${PROJECT_SOURCE_DIR}/include
 )
 
+target_include_directories(
+  ${PROJECT_NAME}
+  ${LIB_TYPE} ${PROJECT_SOURCE_DIR}/src
+)
+
 target_link_libraries(
   ${PROJECT_NAME}
   
   ${LIB_TYPE}
+    boost::align
     boost::assert
     boost::config
-)
-
-# Workaround on some systems (OSX + clang + Boost 1.55)
-target_compile_definitions(
-  ${PROJECT_NAME}
-  
-  ${LIB_TYPE}
-    BOOST_ATOMIC_FORCE_FALLBACK=1
+    boost::predef
+    boost::preprocessor
+    boost::static_assert
+    boost::type_traits
 )
 
 boost_lib(${LIB_TYPE} ${PROJECT_NAME})

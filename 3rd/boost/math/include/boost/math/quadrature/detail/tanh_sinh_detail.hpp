@@ -40,12 +40,12 @@ class tanh_sinh_detail
 public:
     tanh_sinh_detail(size_t max_refinements, const Real& min_complement) : m_max_refinements(max_refinements)
     {
-       typedef mpl::int_<initializer_selector> tag_type;
+       typedef boost::integral_constant<int, initializer_selector> tag_type;
        init(min_complement, tag_type());
     }
 
     template<class F>
-    Real integrate(const F f, Real* error, Real* L1, const char* function, Real left_min_complement, Real right_min_complement, Real tolerance, std::size_t* levels) const;
+    decltype(std::declval<F>()(std::declval<Real>(), std::declval<Real>())) integrate(const F f, Real* error, Real* L1, const char* function, Real left_min_complement, Real right_min_complement, Real tolerance, std::size_t* levels) const;
 
 private:
    const std::vector<Real>& get_abscissa_row(std::size_t n)const
@@ -88,12 +88,12 @@ private:
       return m_first_complements[n];
    }
 
-   void init(const Real& min_complement, const mpl::int_<0>&);
-   void init(const Real& min_complement, const mpl::int_<1>&);
-   void init(const Real& min_complement, const mpl::int_<2>&);
-   void init(const Real& min_complement, const mpl::int_<3>&);
+   void init(const Real& min_complement, const boost::integral_constant<int, 0>&);
+   void init(const Real& min_complement, const boost::integral_constant<int, 1>&);
+   void init(const Real& min_complement, const boost::integral_constant<int, 2>&);
+   void init(const Real& min_complement, const boost::integral_constant<int, 3>&);
 #ifdef BOOST_HAS_FLOAT128
-   void init(const Real& min_complement, const mpl::int_<4>&);
+   void init(const Real& min_complement, const boost::integral_constant<int, 4>&);
 #endif
    void prune_to_min_complement(const Real& m);
    void extend_refinements()const
@@ -161,7 +161,7 @@ private:
    {
       using std::log;
       using std::sqrt;
-      Real l = log(sqrt((2 - x) / x));
+      Real l = (log(2-x) - log(x))/2;
       return log((sqrt(4 * l * l + constants::pi<Real>() * constants::pi<Real>()) + 2 * l) / constants::pi<Real>());
    };
 
@@ -181,7 +181,7 @@ private:
 
 template<class Real, class Policy>
 template<class F>
-Real tanh_sinh_detail<Real, Policy>::integrate(const F f, Real* error, Real* L1, const char* function, Real left_min_complement, Real right_min_complement, Real tolerance, std::size_t* levels) const
+decltype(std::declval<F>()(std::declval<Real>(), std::declval<Real>())) tanh_sinh_detail<Real, Policy>::integrate(const F f, Real* error, Real* L1, const char* function, Real left_min_complement, Real right_min_complement, Real tolerance, std::size_t* levels) const
 {
     using std::abs;
     using std::fabs;
@@ -201,7 +201,7 @@ Real tanh_sinh_detail<Real, Policy>::integrate(const F f, Real* error, Real* L1,
     // indexes in each row, this may actually be one position to the left of max_left_position
     // in the case that is even.  Then, if we only evaluate f(-x_i) for abscissa values
     // i <= max_left_index we will never evaluate f(-x_i) at the left endpoint.
-    // max_right_position and max_right_index are defained similarly for the right boundary
+    // max_right_position and max_right_index are defined similarly for the right boundary
     // and are used to guard evaluation of f(x_i).
     //
     // max_left_position and max_right_position start off as the last element in row zero:
@@ -224,10 +224,12 @@ Real tanh_sinh_detail<Real, Policy>::integrate(const F f, Real* error, Real* L1,
     //
     BOOST_ASSERT(m_abscissas[0][max_left_position] < 0);
     BOOST_ASSERT(m_abscissas[0][max_right_position] < 0);
-
+    //
+    // The type of the result:
+    typedef decltype(std::declval<F>()(std::declval<Real>(), std::declval<Real>())) result_type;
 
     Real h = m_t_max / m_inital_row_length;
-    Real I0 = half_pi<Real>()*f(0, 1);
+    result_type I0 = half_pi<Real>()*f(0, 1);
     Real L1_I0 = abs(I0);
     for(size_t i = 1; i < m_abscissas[0].size(); ++i)
     {
@@ -243,7 +245,7 @@ Real tanh_sinh_detail<Real, Policy>::integrate(const F f, Real* error, Real* L1,
         }
         else
            xc = x - 1;
-        Real yp, ym;
+        result_type yp, ym;
         yp = i <= max_right_position ? f(x, -xc) : 0;
         ym = i <= max_left_position ? f(-x, xc) : 0;
         I0 += (yp + ym)*w;
@@ -257,12 +259,12 @@ Real tanh_sinh_detail<Real, Policy>::integrate(const F f, Real* error, Real* L1,
     // L1_I0 and L1_I1 are the absolute integral values.
     //
     size_t k = 1;
-    Real I1 = I0;
+    result_type I1 = I0;
     Real L1_I1 = L1_I0;
     Real err = 0;
     //
     // thrash_count is a heuristic - it counts how many time the error has actually increased
-    // rather than descreased, if this gets too high we abort...
+    // rather than decreased, if this gets too high we abort...
     //
     unsigned thrash_count = 0;
 
@@ -274,7 +276,7 @@ Real tanh_sinh_detail<Real, Policy>::integrate(const F f, Real* error, Real* L1,
         I1 = half<Real>()*I0;
         L1_I1 = half<Real>()*L1_I0;
         h *= half<Real>();
-        Real sum = 0;
+        result_type sum = 0;
         Real absum = 0;
         auto const& abscissa_row = this->get_abscissa_row(k);
         auto const& weight_row = this->get_weight_row(k);
@@ -283,7 +285,7 @@ Real tanh_sinh_detail<Real, Policy>::integrate(const F f, Real* error, Real* L1,
         // At the start of each new row we need to update the max left/right indexes
         // at which we can evaluate f(x_i).  The new logical position is simply twice
         // the old value.  The new max index is one position to the left of the new
-        // logical value (remmember each row contains only odd numbered positions).
+        // logical value (remember each row contains only odd numbered positions).
         // Then we have to make a single check, to see if one position to the right
         // is also in bounds (this is the new abscissa value in this row which is
         // known to be in between a value known to be in bounds, and one known to be
@@ -327,9 +329,9 @@ Real tanh_sinh_detail<Real, Policy>::integrate(const F f, Real* error, Real* L1,
                xc = x - 1;
             }
 
-            Real yp = j > max_right_index ? 0 : f(x, -xc);
-            Real ym = j > max_left_index ? 0 : f(-x, xc);
-            Real term = (yp + ym)*w;
+            result_type yp = j > max_right_index ? 0 : f(x, -xc);
+            result_type ym = j > max_left_index ? 0 : f(-x, xc);
+            result_type term = (yp + ym)*w;
             sum += term;
 
             // A question arises as to how accurately we actually need to estimate the L1 integral.
@@ -372,7 +374,7 @@ Real tanh_sinh_detail<Real, Policy>::integrate(const F f, Real* error, Real* L1,
         // parameters.  We could keep hunting until we find something, but that would handicap
         // integrals which really are zero.... so a compromise then!
         //
-        if (err <= tolerance*L1_I1)
+        if (err <= abs(tolerance*L1_I1))
         {
             break;
         }
@@ -397,7 +399,7 @@ Real tanh_sinh_detail<Real, Policy>::integrate(const F f, Real* error, Real* L1,
 }
 
 template<class Real, class Policy>
-void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const mpl::int_<0>&)
+void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const boost::integral_constant<int, 0>&)
 {
    using std::tanh;
    using std::sinh;
@@ -407,6 +409,7 @@ void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const mpl:
    using boost::math::constants::half_pi;
    using boost::math::constants::pi;
    using boost::math::constants::two_div_pi;
+   using boost::math::lltrunc;
 
    m_committed_refinements = 4;
    //
@@ -415,7 +418,7 @@ void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const mpl:
    // to ensure full precision as otherwise we chop off quite a chunk of the
    // range in *subsequent* rows.
    //
-   m_inital_row_length = itrunc(ceil(t_from_abscissa_complement(min_complement)));
+   m_inital_row_length = lltrunc(ceil(t_from_abscissa_complement(min_complement)));
    std::size_t first_complement = 0;
    m_t_max = m_inital_row_length;
    m_t_crossover = t_from_abscissa_complement(Real(0.5f));
@@ -477,7 +480,7 @@ void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const mpl:
 #endif
 
 template<class Real, class Policy>
-void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const mpl::int_<1>&)
+void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const boost::integral_constant<int, 1>&)
 {
    m_inital_row_length = 4;
    m_abscissas.reserve(m_max_refinements + 1);
@@ -506,8 +509,11 @@ void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const mpl:
    m_first_complements = {
       1, 0, 1, 1, 3, 5, 11, 22,
    };
-
+#ifndef BOOST_MATH_NO_ATOMIC_INT
    m_committed_refinements = static_cast<boost::math::detail::atomic_unsigned_integer_type>(m_abscissas.size() - 1);
+#else
+   m_committed_refinements = m_abscissas.size() - 1;
+#endif
 
    if (m_max_refinements >= m_abscissas.size())
    {
@@ -527,7 +533,7 @@ void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const mpl:
 }
 
 template<class Real, class Policy>
-void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const mpl::int_<2>&)
+void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const boost::integral_constant<int, 2>&)
 {
    m_inital_row_length = 5;
    m_abscissas.reserve(m_max_refinements + 1);
@@ -556,8 +562,11 @@ void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const mpl:
    m_first_complements = {
       1, 0, 1, 1, 3, 5, 11, 22,
    };
-
+#ifndef BOOST_MATH_NO_ATOMIC_INT
    m_committed_refinements = static_cast<boost::math::detail::atomic_unsigned_integer_type>(m_abscissas.size() - 1);
+#else
+   m_committed_refinements = m_abscissas.size() - 1;
+#endif
 
    if (m_max_refinements >= m_abscissas.size())
    {
@@ -576,7 +585,7 @@ void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const mpl:
 }
 
 template<class Real, class Policy>
-void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const mpl::int_<3>&)
+void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const boost::integral_constant<int, 3>&)
 {
    m_inital_row_length = 9;
    m_abscissas.reserve(m_max_refinements + 1);
@@ -605,8 +614,11 @@ void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const mpl:
    m_first_complements = {
       1, 0, 1, 1, 3, 5, 11, 22,
    };
-
+#ifndef BOOST_MATH_NO_ATOMIC_INT
    m_committed_refinements = static_cast<boost::math::detail::atomic_unsigned_integer_type>(m_abscissas.size() - 1);
+#else
+   m_committed_refinements = m_abscissas.size() - 1;
+#endif
 
    if (m_max_refinements >= m_abscissas.size())
    {
@@ -627,7 +639,7 @@ void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const mpl:
 #ifdef BOOST_HAS_FLOAT128
 
 template<class Real, class Policy>
-void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const mpl::int_<4>&)
+void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const boost::integral_constant<int, 4>&)
 {
    m_inital_row_length = 9;
    m_abscissas.reserve(m_max_refinements + 1);
@@ -656,8 +668,11 @@ void tanh_sinh_detail<Real, Policy>::init(const Real& min_complement, const mpl:
    m_first_complements = {
       1, 0, 1, 1, 3, 5, 11, 22,
    };
-
+#ifndef BOOST_MATH_NO_ATOMIC_INT
    m_committed_refinements = static_cast<boost::math::detail::atomic_unsigned_integer_type>(m_abscissas.size() - 1);
+#else
+   m_committed_refinements = m_abscissas.size() - 1;
+#endif
 
    if (m_max_refinements >= m_abscissas.size())
    {

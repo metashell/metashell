@@ -93,8 +93,24 @@ ticks_type WINAPI get_tick_count_init()
     boost::winapi::HMODULE_ hKernel32 = boost::winapi::GetModuleHandleW(L"kernel32.dll");
     if (hKernel32)
     {
+      // GetProcAddress returns a pointer to some function. It can return
+      // pointers to different functions, so it has to return something that is
+      // suitable to store any pointer to function. Microsoft chose FARPROC,
+      // which is int (WINAPI *)() on 32-bit Windows. The user is supposed to
+      // know the signature of the function he requests and perform a cast
+      // (which is a nop on this platform). The result is a pointer to function
+      // with the required signature, which is bitwise equal to what
+      // GetProcAddress returned.
+      // However, gcc >= 8 warns about that.
+#if defined(BOOST_GCC) && BOOST_GCC >= 80000
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
         boost::detail::win32::detail::gettickcount64_t p =
             (boost::detail::win32::detail::gettickcount64_t)boost::winapi::get_proc_address(hKernel32, "GetTickCount64");
+#if defined(BOOST_GCC) && BOOST_GCC >= 80000
+#pragma GCC diagnostic pop
+#endif
         if (p)
         {
             // Use native API

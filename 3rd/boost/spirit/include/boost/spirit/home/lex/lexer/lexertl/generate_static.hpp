@@ -18,9 +18,8 @@
 #include <boost/spirit/home/support/detail/lexer/state_machine.hpp>
 #include <boost/spirit/home/support/detail/lexer/debug.hpp>
 #include <boost/spirit/home/lex/lexer/lexertl/static_version.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/scoped_array.hpp>
+#include <locale>
 
 ///////////////////////////////////////////////////////////////////////////////
 namespace boost { namespace spirit { namespace lex { namespace lexertl
@@ -156,9 +155,7 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
         os_ << "struct lexer" << suffix << "\n{\n";
         os_ << "    // version number and feature-set of compatible static lexer engine\n";
         os_ << "    enum\n";
-        os_ << "    {\n        static_version = "
-            << boost::lexical_cast<std::basic_string<Char> >(SPIRIT_STATIC_LEXER_VERSION)
-            << ",\n";
+        os_ << "    {\n        static_version = " << SPIRIT_STATIC_LEXER_VERSION << ",\n";
         os_ << "        supports_bol = " << std::boolalpha << bol << ",\n";
         os_ << "        supports_eol = " << std::boolalpha << eol << "\n";
         os_ << "    };\n\n";
@@ -906,12 +903,18 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
             guard.replace(p, 1, L<Char>("_"));
             p = guard.find_first_of(L<Char>(": "), p);
         }
-        boost::to_upper(guard);
+        { // to_upper(guard)
+            typedef std::ctype<Char> facet_t;
+            facet_t const& facet = std::use_facet<facet_t>(std::locale());
+            typedef typename std::basic_string<Char>::iterator iter_t;
+            for (iter_t iter = guard.begin(),
+                        last = guard.end(); iter != last; ++iter)
+                *iter = facet.toupper(*iter);
+        }
 
         os_ << "#if !defined(BOOST_SPIRIT_LEXER_NEXT_TOKEN_" << guard << ")\n";
         os_ << "#define BOOST_SPIRIT_LEXER_NEXT_TOKEN_" << guard << "\n\n";
 
-        os_ << "#include <boost/detail/iterator.hpp>\n";
         os_ << "#include <boost/spirit/home/support/detail/lexer/char_traits.hpp>\n\n";
 
         generate_delimiter(os_);

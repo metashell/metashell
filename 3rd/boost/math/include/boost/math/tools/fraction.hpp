@@ -15,6 +15,7 @@
 #include <boost/type_traits/integral_constant.hpp>
 #include <boost/mpl/if.hpp>
 #include <boost/math/tools/precision.hpp>
+#include <boost/math/tools/complex.hpp>
 
 namespace boost{ namespace math{ namespace tools{
 
@@ -68,6 +69,25 @@ namespace detail
    {
    };
 
+   template <class T, bool = is_complex_type<T>::value>
+   struct tiny_value
+   {
+      // For float, double, and long double, 1/min_value<T>() is finite.
+      // But for mpfr_float and cpp_bin_float, 1/min_value<T>() is inf.
+      // Multiply the min by 16 so that the reciprocal doesn't overflow.
+      static T get() {
+         return 16*tools::min_value<T>();
+      }
+   };
+   template <class T>
+   struct tiny_value<T, true>
+   {
+      typedef typename T::value_type value_type;
+      static T get() {
+         return 16*tools::min_value<value_type>();
+      }
+   };
+
 } // namespace detail
 
 //
@@ -82,10 +102,10 @@ namespace detail
 //                -----
 //                b3 + ...
 //
-// Note that the first a0 returned by generator Gen is disarded.
+// Note that the first a0 returned by generator Gen is discarded.
 //
 template <class Gen, class U>
-inline typename detail::fraction_traits<Gen>::result_type continued_fraction_b(Gen& g, const U& factor, boost::uintmax_t& max_terms) 
+inline typename detail::fraction_traits<Gen>::result_type continued_fraction_b(Gen& g, const U& factor, boost::uintmax_t& max_terms)
       BOOST_NOEXCEPT_IF(BOOST_MATH_IS_FLOAT(typename detail::fraction_traits<Gen>::result_type) && noexcept(std::declval<Gen>()()))
 {
    BOOST_MATH_STD_USING // ADL of std names
@@ -93,32 +113,36 @@ inline typename detail::fraction_traits<Gen>::result_type continued_fraction_b(G
    typedef detail::fraction_traits<Gen> traits;
    typedef typename traits::result_type result_type;
    typedef typename traits::value_type value_type;
+   typedef typename integer_scalar_type<result_type>::type integer_type;
+   typedef typename scalar_type<result_type>::type scalar_type;
 
-   result_type tiny = tools::min_value<result_type>();
+   integer_type const zero(0), one(1);
+
+   result_type tiny = detail::tiny_value<result_type>::get();
+   scalar_type terminator = abs(factor);
 
    value_type v = g();
 
    result_type f, C, D, delta;
    f = traits::b(v);
-   if(f == 0)
+   if(f == zero)
       f = tiny;
    C = f;
    D = 0;
 
    boost::uintmax_t counter(max_terms);
-
    do{
       v = g();
       D = traits::b(v) + traits::a(v) * D;
-      if(D == 0)
+      if(D == result_type(0))
          D = tiny;
       C = traits::b(v) + traits::a(v) / C;
-      if(C == 0)
+      if(C == zero)
          C = tiny;
-      D = 1/D;
+      D = one/D;
       delta = C*D;
       f = f * delta;
-   }while((fabs(delta - 1) > factor) && --counter);
+   }while((abs(delta - one) > terminator) && --counter);
 
    max_terms = max_terms - counter;
 
@@ -183,15 +207,20 @@ inline typename detail::fraction_traits<Gen>::result_type continued_fraction_a(G
    typedef detail::fraction_traits<Gen> traits;
    typedef typename traits::result_type result_type;
    typedef typename traits::value_type value_type;
+   typedef typename integer_scalar_type<result_type>::type integer_type;
+   typedef typename scalar_type<result_type>::type scalar_type;
 
-   result_type tiny = tools::min_value<result_type>();
+   integer_type const zero(0), one(1);
+
+   result_type tiny = detail::tiny_value<result_type>::get();
+   scalar_type terminator = abs(factor);
 
    value_type v = g();
 
    result_type f, C, D, delta, a0;
    f = traits::b(v);
    a0 = traits::a(v);
-   if(f == 0)
+   if(f == zero)
       f = tiny;
    C = f;
    D = 0;
@@ -201,15 +230,15 @@ inline typename detail::fraction_traits<Gen>::result_type continued_fraction_a(G
    do{
       v = g();
       D = traits::b(v) + traits::a(v) * D;
-      if(D == 0)
+      if(D == zero)
          D = tiny;
       C = traits::b(v) + traits::a(v) / C;
-      if(C == 0)
+      if(C == zero)
          C = tiny;
-      D = 1/D;
+      D = one/D;
       delta = C*D;
       f = f * delta;
-   }while((fabs(delta - 1) > factor) && --counter);
+   }while((abs(delta - one) > terminator) && --counter);
 
    max_terms = max_terms - counter;
 
@@ -257,4 +286,3 @@ inline typename detail::fraction_traits<Gen>::result_type continued_fraction_a(G
 } // namespace boost
 
 #endif // BOOST_MATH_TOOLS_FRACTION_INCLUDED
-

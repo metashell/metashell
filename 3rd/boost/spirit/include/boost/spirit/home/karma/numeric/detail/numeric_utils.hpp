@@ -14,6 +14,7 @@
 #include <boost/config/no_tr1/cmath.hpp>
 #include <boost/limits.hpp>
 
+#include <boost/math/special_functions/fpclassify.hpp>
 #include <boost/type_traits/is_integral.hpp>
 #include <boost/spirit/home/support/char_class.hpp>
 #include <boost/spirit/home/support/unused.hpp>
@@ -297,9 +298,8 @@ namespace boost { namespace spirit { namespace traits
     {
         static bool call(T n)
         {
-            if (!std::numeric_limits<T>::has_infinity)
-                return false;
-            return (n == std::numeric_limits<T>::infinity()) ? true : false;
+            return std::numeric_limits<T>::has_infinity
+                && n == std::numeric_limits<T>::infinity();
         }
     };
 

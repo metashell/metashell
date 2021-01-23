@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <type_traits>
 
+#include <boost/config.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 
@@ -41,15 +42,16 @@ void
 apply_permutation(RandomAccessIterator1 item_begin, RandomAccessIterator1 item_end,
                   RandomAccessIterator2 ind_begin, RandomAccessIterator2 ind_end)
 {
-    using Diff = typename std::iterator_traits<RandomAccessIterator1>::difference_type;
+    typedef typename std::iterator_traits<RandomAccessIterator1>::difference_type Diff;
+    typedef typename std::iterator_traits<RandomAccessIterator2>::difference_type Index;
     using std::swap;
     Diff size = std::distance(item_begin, item_end);
     for (Diff i = 0; i < size; i++)
     {
-        auto current = i;
+        Diff current = i;
         while (i != ind_begin[current])
         {
-            auto next = ind_begin[current];
+            Index next = ind_begin[current];
             swap(item_begin[current], item_begin[next]);
             ind_begin[current] = current;
             current = next;
@@ -75,7 +77,7 @@ apply_reverse_permutation(
         RandomAccessIterator2 ind_begin,
         RandomAccessIterator2 ind_end)
 {
-    using Diff = typename std::iterator_traits<RandomAccessIterator2>::difference_type;
+    typedef typename std::iterator_traits<RandomAccessIterator2>::difference_type Diff;
     using std::swap;
     Diff length = std::distance(item_begin, item_end);
     for (Diff i = 0; i < length; i++)

@@ -7,14 +7,16 @@
 #include <boost/thread/detail/config.hpp>
 
 
-#if defined(BOOST_HAS_WINTHREADS) && defined(BOOST_THREAD_BUILD_DLL)
+#if defined(BOOST_THREAD_WIN32) && defined(BOOST_THREAD_BUILD_DLL)
 
     #include <boost/thread/detail/tss_hooks.hpp>
 
     #include <windows.h>
 
-    #if defined(__BORLANDC__)
+    #if defined(BOOST_BORLANDC)
         extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE /*hInstance*/, DWORD dwReason, LPVOID /*lpReserved*/)
+    #elif defined(BOOST_EMBTC)
+        extern "C" int _libmain(DWORD dwReason)
     #elif defined(_WIN32_WCE)
         extern "C" BOOL WINAPI DllMain(HANDLE /*hInstance*/, DWORD dwReason, LPVOID /*lpReserved*/)
     #else
@@ -73,7 +75,7 @@ namespace boost
     }
 }
 
-#else //defined(BOOST_HAS_WINTHREADS) && defined(BOOST_THREAD_BUILD_DLL)
+#else //defined(BOOST_THREAD_WIN32) && defined(BOOST_THREAD_BUILD_DLL)
 
 #ifdef _MSC_VER
 // Prevent LNK4221 warning with link=static
@@ -82,4 +84,4 @@ namespace boost { namespace link_static_warning_inhibit {
 } }
 #endif
 
-#endif //defined(BOOST_HAS_WINTHREADS) && defined(BOOST_THREAD_BUILD_DLL)
+#endif //defined(BOOST_THREAD_WIN32) && defined(BOOST_THREAD_BUILD_DLL)

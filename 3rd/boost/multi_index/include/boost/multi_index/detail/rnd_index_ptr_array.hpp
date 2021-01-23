@@ -1,4 +1,4 @@
-/* Copyright 2003-2018 Joaquin M Lopez Munoz.
+/* Copyright 2003-2020 Joaquin M Lopez Munoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -15,12 +15,10 @@
 
 #include <boost/config.hpp> /* keep it first to prevent nasty warns in MSVC */
 #include <algorithm>
-#include <boost/detail/allocator_utilities.hpp>
+#include <boost/multi_index/detail/allocator_traits.hpp>
 #include <boost/multi_index/detail/auto_space.hpp>
 #include <boost/multi_index/detail/rnd_index_node.hpp>
 #include <boost/noncopyable.hpp>
-#include <cstddef>
-#include <memory>
 
 namespace boost{
 
@@ -34,27 +32,23 @@ template<typename Allocator>
 class random_access_index_ptr_array:private noncopyable
 {
   typedef random_access_index_node_impl<
-    typename boost::detail::allocator::rebind_to<
+    typename rebind_alloc_for<
       Allocator,
       char
     >::type
-  >                                                     node_impl_type;
+  >                                         node_impl_type;
 
 public:
-  typedef typename node_impl_type::pointer              value_type;
-  typedef typename boost::detail::allocator::rebind_to<
+  typedef typename node_impl_type::pointer  value_type;
+  typedef typename rebind_alloc_for<
     Allocator,value_type
-  >::type                                               value_allocator;
-#ifdef BOOST_NO_CXX11_ALLOCATOR
-  typedef typename value_allocator::pointer             pointer;
-#else
-  typedef typename std::allocator_traits<
-    value_allocator
-  >::pointer                                            pointer;
-#endif
+  >::type                                   value_allocator;
+  typedef allocator_traits<value_allocator> alloc_traits;
+  typedef typename alloc_traits::pointer    pointer;
+  typedef typename alloc_traits::size_type  size_type;
 
   random_access_index_ptr_array(
-    const Allocator& al,value_type end_,std::size_t sz):
+    const Allocator& al,value_type end_,size_type sz):
     size_(sz),
     capacity_(sz),
     spc(al,capacity_+1)
@@ -63,8 +57,8 @@ public:
     end_->up()=end();
   }
 
-  std::size_t size()const{return size_;}
-  std::size_t capacity()const{return capacity_;}
+  size_type size()const{return size_;}
+  size_type capacity()const{return capacity_;}
 
   void room_for_one()
   {
@@ -73,7 +67,7 @@ public:
     }
   }
 
-  void reserve(std::size_t c)
+  void reserve(size_type c)
   {
     if(c>capacity_)set_capacity(c);
   }
@@ -85,7 +79,7 @@ public:
 
   pointer begin()const{return ptrs();}
   pointer end()const{return ptrs()+size_;}
-  pointer at(std::size_t n)const{return ptrs()+n;}
+  pointer at(size_type n)const{return ptrs()+n;}
 
   void push_back(value_type x)
   {
@@ -116,9 +110,17 @@ public:
     spc.swap(x.spc);
   }
 
+  template<typename BoolConstant>
+  void swap(random_access_index_ptr_array& x,BoolConstant swap_allocators)
+  {
+    std::swap(size_,x.size_);
+    std::swap(capacity_,x.capacity_);
+    spc.swap(x.spc,swap_allocators);
+  }
+
 private:
-  std::size_t                      size_;
-  std::size_t                      capacity_;
+  size_type                        size_;
+  size_type                        capacity_;
   auto_space<value_type,Allocator> spc;
 
   pointer ptrs()const
@@ -126,7 +128,7 @@ private:
     return spc.data();
   }
 
-  void set_capacity(std::size_t c)
+  void set_capacity(size_type c)
   {
     auto_space<value_type,Allocator> spc1(spc.get_allocator(),c+1);
     node_impl_type::transfer(begin(),end()+1,spc1.data());

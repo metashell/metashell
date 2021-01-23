@@ -15,7 +15,7 @@
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/reference.hpp>
 #include <boost/range/concepts.hpp>
-
+#include <boost/type_traits/declval.hpp>
 #include <utility>
 
 #if !defined(BOOST_NO_CXX11_DECLTYPE)
@@ -32,7 +32,7 @@ namespace boost
             typedef BOOST_DEDUCED_TYPENAME
                           range_reference<SinglePassRange>::type argument_type;
 
-            using result_type = decltype(std::declval<argument_type>().get() );
+            typedef decltype( boost::declval<argument_type>().get() ) result_type;
 
             result_type operator()( argument_type &&r ) const
             {
@@ -46,11 +46,11 @@ namespace boost
             : public transformed_range<unwrap_ref<SinglePassRange>,
                                        SinglePassRange>
         {
-            using base = transformed_range<unwrap_ref<SinglePassRange>,
-                                           SinglePassRange>;
+            typedef transformed_range<unwrap_ref<SinglePassRange>,
+                                           SinglePassRange> base;
         public:
-            using transform_fn_type = unwrap_ref<SinglePassRange>;
-            using source_range_type = SinglePassRange;
+            typedef unwrap_ref<SinglePassRange> transform_fn_type;
+            typedef SinglePassRange source_range_type;
 
             unwrap_ref_range(transform_fn_type fn, source_range_type &rng)
                 : base(fn, rng)

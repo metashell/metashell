@@ -126,6 +126,10 @@ cd tmp
  sed -i 's/^[ \t]*#[ \t]*pragma[ \t]*message.*//' \
    $(find "${BOOST_DIR}" -name '*.hpp')
 
+ rm \
+   "${BOOST_DIR}/atomic/src/wait_ops_windows.cpp" \
+   "${BOOST_DIR}/atomic/src/find_address_sse41.cpp"
+
 cd ..
 rm -rf tmp
 

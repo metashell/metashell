@@ -45,7 +45,7 @@ typedef boost::wave::cpplexer::lex_iterator<token_type> lexer_type;
 typedef std::list<token_type, boost::fast_pool_allocator<token_type> >
     token_sequence_type;
 
-template struct boost::wave::grammars::cpp_grammar_gen<lexer_type, token_sequence_type>;
+template struct BOOST_SYMBOL_VISIBLE boost::wave::grammars::cpp_grammar_gen<lexer_type, token_sequence_type>;
 
 // the suffix header occurs after all of the code
 #ifdef BOOST_HAS_ABI_HEADERS
@@ -53,4 +53,3 @@ template struct boost::wave::grammars::cpp_grammar_gen<lexer_type, token_sequenc
 #endif
 
 #endif // #if BOOST_WAVE_SEPARATE_GRAMMAR_INSTANTIATION != 0
-

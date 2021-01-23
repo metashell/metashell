@@ -118,6 +118,10 @@ namespace boost { namespace spirit { namespace x3
         {};
     }
 
+#if defined(BOOST_MSVC)
+# pragma warning(push)
+# pragma warning(disable: 4521) // multiple copy constructors specified
+#endif
     template <typename ...Types>
     struct variant
     {
@@ -222,6 +226,9 @@ namespace boost { namespace spirit { namespace x3
 
         variant_type var;
     };
+#if defined(BOOST_MSVC)
+# pragma warning(pop)
+#endif
 }}}
 
 namespace boost

@@ -41,7 +41,7 @@
 typedef boost::wave::cpplexer::lex_token<> token_type;
 
 // no need to change anything below
-template struct boost::wave::grammars::expression_grammar_gen<token_type>;
+template struct BOOST_SYMBOL_VISIBLE boost::wave::grammars::expression_grammar_gen<token_type>;
 
 // the suffix header occurs after all of the code
 #ifdef BOOST_HAS_ABI_HEADERS
@@ -49,4 +49,3 @@ template struct boost::wave::grammars::expression_grammar_gen<token_type>;
 #endif
 
 #endif // #if BOOST_WAVE_SEPARATE_GRAMMAR_INSTANTIATION != 0
-
