@@ -23,7 +23,7 @@ then
   if [ -e /etc/redhat-release ] || [ -e /etc/fedora-release ]
   then
     PLATFORM="fedora"
-    VERSION=$(rpm -q --queryformat '%{VERSION}\n' fedora-release | egrep -o '[0-9.]+')
+    VERSION=$(cat /etc/fedora-release | egrep -o '[0-9.]+')
   elif [ -e /etc/SuSE-release ]
   then
     PLATFORM="opensuse"
