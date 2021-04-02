@@ -379,6 +379,8 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-5-dev")
     elseif ("${PLATFORM_VERSION}" STREQUAL "18.04")
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-7-dev")
+    elseif ("${PLATFORM_VERSION}" STREQUAL "20.04" OR "${PLATFORM_VERSION}" STREQUAL "20.10")
+      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-10-dev")
     else()
       message(
         WARNING
