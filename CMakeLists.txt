@@ -404,6 +404,10 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
       ("${PLATFORM_VERSION}" STREQUAL "9.5")
     )
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-6-dev")
+    elseif (
+      ("${PLATFORM_VERSION}" STREQUAL "10.9")
+    )
+      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-8-dev")
     else()
       message(
         WARNING
