@@ -276,39 +276,6 @@ target_compile_definitions(
     METASHELL_PATCH=${PATCH_VERSION}
 )
 
-if (NOT DEFINED TESTS OR TESTS IN_LIST SYSTEM_TESTS)
-  set(SYSTEM_TEST_TARGETS )
-  set(SYSTEM_TEST_FILES )
-  foreach(T core pp mdb pdb)
-    set(TARGET metashell_${T}_system_test)
-
-    list(APPEND SYSTEM_TEST_TARGETS ${TARGET})
-    list(APPEND SYSTEM_TEST_FILES "$<TARGET_FILE:${TARGET}>")
-  endforeach(T)
-
-  set(
-    SYSTEM_TEST_ARCHIVE
-    "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_system_test_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}${METASHELL_PACKAGE_PLATFORM}_${CMAKE_SYSTEM_PROCESSOR}.tar.gz"
-  )
-
-  add_custom_target(
-    system_test_zip DEPENDS ${SYSTEM_TEST_TARGETS}
-    COMMAND
-      ${CMAKE_COMMAND} -E
-      tar "cfz" "${SYSTEM_TEST_ARCHIVE}" ${SYSTEM_TEST_FILES}
-  )
-else()
-  add_custom_target(
-    system_test_zip
-    COMMAND echo "Skipping system_test_zip because TESTS=${TESTS}"
-  )
-
-  message(
-    STATUS
-    "Skipping system test archive generation because TESTS=${TESTS}"
-  )
-endif()
-
 # Recursing
 subdirs(tools)
 
@@ -352,8 +319,8 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
   set(CPACK_PACKAGE_VERSION_MAJOR "${MAJOR_VERSION}")
   set(CPACK_PACKAGE_VERSION_MINOR "${MINOR_VERSION}")
   set(CPACK_PACKAGE_VERSION_PATCH "${PATCH_VERSION}")
-  set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}${METASHELL_PACKAGE_PLATFORM}_${CMAKE_SYSTEM_PROCESSOR}")
-  set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}")
+  set(CPACK_PACKAGE_FILE_NAME "metashell_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}${METASHELL_PACKAGE_PLATFORM}_${CMAKE_SYSTEM_PROCESSOR}")
+  set(CPACK_SOURCE_PACKAGE_FILE_NAME "metashell_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}")
   seT(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.txt")
 
   set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
@@ -437,3 +404,35 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
 
 endif(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
 
+if (NOT DEFINED TESTS OR TESTS IN_LIST SYSTEM_TESTS)
+  set(SYSTEM_TEST_TARGETS )
+  set(SYSTEM_TEST_FILES )
+  foreach(T core pp mdb pdb)
+    set(TARGET metashell_${T}_system_test)
+
+    list(APPEND SYSTEM_TEST_TARGETS ${TARGET})
+    list(APPEND SYSTEM_TEST_FILES "$<TARGET_FILE:${TARGET}>")
+  endforeach(T)
+
+  set(
+    SYSTEM_TEST_ARCHIVE
+    "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_system_test_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}${METASHELL_PACKAGE_PLATFORM}_${CMAKE_SYSTEM_PROCESSOR}.tar.gz"
+  )
+
+  add_custom_target(
+    system_test_zip DEPENDS ${SYSTEM_TEST_TARGETS}
+    COMMAND
+      ${CMAKE_COMMAND} -E
+      tar "cfz" "${SYSTEM_TEST_ARCHIVE}" ${SYSTEM_TEST_FILES}
+  )
+else()
+  add_custom_target(
+    system_test_zip
+    COMMAND echo "Skipping system_test_zip because TESTS=${TESTS}"
+  )
+
+  message(
+    STATUS
+    "Skipping system test archive generation because TESTS=${TESTS}"
+  )
+endif()
