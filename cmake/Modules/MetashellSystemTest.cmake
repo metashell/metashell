@@ -44,7 +44,7 @@ function(register_system_test TEST_TARGET_NAME)
     )
   endif()
 
-  if (NOT DEFINED TESTS OR TESTS STREQUAL "internal")
+  if (NOT DEFINED TESTS OR TESTS MATCHES "^internal.*")
     add_test(
       NAME ${TEST_TARGET_NAME}_internal_templight
       COMMAND
@@ -70,7 +70,7 @@ function(register_system_test TEST_TARGET_NAME)
     message(STATUS "Skipping internal system tests because TESTS=${TESTS}")
   endif()
 
-  if (NOT DEFINED TESTS OR TESTS STREQUAL "templight")
+  if (NOT DEFINED TESTS OR TESTS MATCHES "^templight.*")
     add_test(
       NAME ${TEST_TARGET_NAME}_templight
       COMMAND
@@ -106,7 +106,7 @@ function(register_system_test TEST_TARGET_NAME)
     message(STATUS "Skipping templight system tests because TESTS=${TESTS}")
   endif()
 
-  if (NOT DEFINED TESTS OR TESTS STREQUAL "clang")
+  if (NOT DEFINED TESTS OR TESTS MATCHES "^clang.*")
     add_test(
       NAME ${TEST_TARGET_NAME}_clang
       COMMAND
@@ -144,7 +144,7 @@ function(register_system_test TEST_TARGET_NAME)
 endfunction()
 
 function(register_gcc_system_test TEST_TARGET_NAME)
-  if (NOT DEFINED TESTS OR TESTS STREQUAL "gcc")
+  if (NOT DEFINED TESTS OR TESTS MATCHES "^gcc.*")
     if (GXX_FOUND)
       message(STATUS "Using ${GXX_BINARY} for gcc system test")
       add_test(
@@ -182,7 +182,7 @@ endfunction()
 
 function(register_msvc_system_test TEST_TARGET_NAME)
   if (WIN32)
-    if (NOT DEFINED TESTS OR TESTS STREQUAL "msvc")
+    if (NOT DEFINED TESTS OR TESTS MATCHES "^msvc.*")
       if (MSVC_FOUND)
         message(STATUS "cl.exe used in system tests: ${MSVC_CL_BINARY}")
 
@@ -221,7 +221,7 @@ function(register_msvc_system_test TEST_TARGET_NAME)
 endfunction()
 
 function(register_wave_system_test TEST_TARGET_NAME)
-  if (NOT DEFINED TESTS OR TESTS STREQUAL "wave")
+  if (NOT DEFINED TESTS OR TESTS MATCHES "^wave.*")
     add_test(
       NAME ${TEST_TARGET_NAME}_wave
       COMMAND

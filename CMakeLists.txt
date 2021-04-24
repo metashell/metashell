@@ -22,7 +22,11 @@ else()
   cmake_policy(VERSION 3.12)
 endif()
 
-set(SYSTEM_TESTS internal templight clang gcc msvc wave)
+foreach(ENGINE internal templight clang gcc msvc wave)
+  foreach(TEST_TYPE "" _core _pp _mdb _pdb)
+    list(APPEND SYSTEM_TESTS ${ENGINE}${TEST_TYPE})
+  endforeach()
+endforeach()
 set(VALID_TESTS ${SYSTEM_TESTS} unit auto)
 if (DEFINED TESTS AND NOT (TESTS IN_LIST VALID_TESTS))
   message(

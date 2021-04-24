@@ -10,9 +10,18 @@ compiler:
   - clang
 env:
   - TESTS=unit
-  - TESTS=internal
-  - TESTS=templight
-  - TESTS=clang
+  - TESTS=internal_core
+  - TESTS=internal_pp
+  - TESTS=internal_mdb
+  - TESTS=internal_pdb
+  - TESTS=templight_core
+  - TESTS=templight_pp
+  - TESTS=templight_mdb
+  - TESTS=templight_pdb
+  - TESTS=clang_core
+  - TESTS=clang_pp
+  - TESTS=clang_mdb
+  - TESTS=clang_pdb
   - TESTS=gcc
   - TESTS=wave
   - TESTS=auto
