@@ -90,13 +90,13 @@ def main():
         )
         bg_thread.start()
 
-        proc = subprocess.Popen(
+        with subprocess.Popen(
             cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
-        )
-        (out, err) = proc.communicate()
+        ) as proc:
+            out, err = proc.communicate()
 
     bg_thread.join()
 
