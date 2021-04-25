@@ -100,8 +100,8 @@ def main():
 
     bg_thread.join()
 
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+    sys.stdout.write(out.decode('utf-8'))
+    sys.stderr.write(err.decode('utf-8'))
     sys.exit(proc.returncode)
 
 
