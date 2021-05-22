@@ -39,5 +39,9 @@ target_link_libraries(
   metashell::system_test
 )
 
-register_wave_system_test(${PROJECT_NAME})
+if (NOT DEFINED TESTS OR TESTS MATCHES ".*_pdb$")
+  register_wave_system_test(${PROJECT_NAME})
+else()
+  message(STATUS "Skipping pdb system tests because TESTS=${TESTS}")
+endif()
 

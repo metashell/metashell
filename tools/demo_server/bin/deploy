@@ -106,7 +106,8 @@ class LogToFile:
     def start(self):
         """Start logging"""
         makedirs(os.path.dirname(self.filename), no_logging)
-        self.file_obj = open(self.filename, 'w')
+        self.file_obj = \
+            open(self.filename, 'w')  # pylint: disable=consider-using-with
         self('Start logging')
 
     def stop(self):
@@ -130,17 +131,17 @@ class LogToFile:
 def run_command(cmd, src_dir, log):
     """Run an external command"""
     log('Running command {0} in {1}'.format(' '.join(cmd), src_dir))
-    proc = subprocess.Popen(
+    with subprocess.Popen(
         cmd,
         cwd=src_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
-    )
-    out, err = proc.communicate()
-    log('Exit code: {0}'.format(proc.returncode))
-    log('Stdout: {0}'.format(out.decode('utf-8')))
-    log('Stderr: {0}'.format(err.decode('utf-8')))
-    return out, err, proc.returncode
+    ) as proc:
+        out, err = proc.communicate()
+        log('Exit code: {0}'.format(proc.returncode))
+        log('Stdout: {0}'.format(out.decode('utf-8')))
+        log('Stderr: {0}'.format(err.decode('utf-8')))
+        return out, err, proc.returncode
 
 
 def git(cwd, git_cmd, log):

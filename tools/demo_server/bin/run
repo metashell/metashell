@@ -68,8 +68,7 @@ def valid_version(ver):
     """Check if ver is a valid version number"""
     alnum = string.ascii_letters + string.digits
     whitelist = alnum + '_.-'
-    return \
-        all([c in whitelist for c in ver]) and any([c in alnum for c in ver])
+    return all(c in whitelist for c in ver) and any(c in alnum for c in ver)
 
 
 def valid_standard(std):

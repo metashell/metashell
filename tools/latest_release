@@ -24,7 +24,7 @@ import re
 
 def parse_version(tag):
     """Turn a tag into a version tuple"""
-    return tuple([int(n) for n in tag[1:].split('.')])
+    return tuple(int(n) for n in tag[1:].split('.'))
 
 
 def format_version(ver, show_dots):

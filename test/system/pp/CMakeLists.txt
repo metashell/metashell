@@ -41,8 +41,11 @@ target_link_libraries(
   metashell::system_test
 )
 
-register_system_test(${PROJECT_NAME})
-register_gcc_system_test(${PROJECT_NAME})
-register_msvc_system_test(${PROJECT_NAME})
-register_wave_system_test(${PROJECT_NAME})
-
+if (NOT DEFINED TESTS OR TESTS MATCHES ".*_pp$")
+  register_system_test(${PROJECT_NAME})
+  register_gcc_system_test(${PROJECT_NAME})
+  register_msvc_system_test(${PROJECT_NAME})
+  register_wave_system_test(${PROJECT_NAME})
+else()
+  message(STATUS "Skipping pp system tests because TESTS=${TESTS}")
+endif()

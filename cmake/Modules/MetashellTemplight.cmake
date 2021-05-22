@@ -113,7 +113,7 @@ function(copy_templight_next_to_binary INSTALL_COPIED_FILES)
         FILES "${MY_TEMPLIGHT}"
         DESTINATION bin
         PERMISSIONS
-          OWNER_READ OWNER_EXECUTE
+          OWNER_READ OWNER_EXECUTE OWNER_WRITE
           GROUP_READ GROUP_EXECUTE
           WORLD_READ WORLD_EXECUTE
         COMPONENT templight

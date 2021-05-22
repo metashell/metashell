@@ -90,18 +90,18 @@ def main():
         )
         bg_thread.start()
 
-        proc = subprocess.Popen(
+        with subprocess.Popen(
             cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
-        )
-        (out, err) = proc.communicate()
+        ) as proc:
+            out, err = proc.communicate()
 
     bg_thread.join()
 
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+    sys.stdout.write(out.decode('utf-8'))
+    sys.stderr.write(err.decode('utf-8'))
     sys.exit(proc.returncode)
 
 

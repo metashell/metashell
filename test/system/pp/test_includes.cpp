@@ -151,7 +151,7 @@ TEST(includes, sysroot)
   just::temp::directory tmp_dir;
   const boost::filesystem::path tmp(tmp_dir.path());
 
-  const auto dir = tmp / "usr" / "include";
+  const auto dir = tmp / "usr" / "local" / "include";
   create_directories(dir);
   just::file::write((dir / "test.hpp").string(), "typedef int x;");
 

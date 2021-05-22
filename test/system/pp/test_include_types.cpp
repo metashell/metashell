@@ -69,20 +69,14 @@ namespace
 
   bool can_engine_use_c_headers_without_cpp_headers(const std::string& engine_)
   {
-#ifdef _WIN32
-    constexpr bool on_windows = true;
+#ifdef __linux__
+    constexpr bool on_linux = true;
 #else
-    constexpr bool on_windows = false;
-#endif
-#ifdef __APPLE__
-    constexpr bool on_osx = true;
-#else
-    constexpr bool on_osx = false;
+    constexpr bool on_linux = false;
 #endif
 
-    return engine_ != "msvc" && engine_ != "internal" &&
-           !((uses_clang(engine_) || engine_ == "wave") &&
-             (on_windows || on_osx));
+    return engine_ != "msvc" && !uses_clang(engine_) &&
+           !(engine_ == "gcc" && on_linux) && engine_ != "wave";
   }
 
   void test_include_path_extensions(
