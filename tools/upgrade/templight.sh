@@ -50,7 +50,11 @@ then
 
   if [ -z "${GIT_TAG}" ]
   then
-    GIT_TAG="master"
+    echo
+    echo "Please provide a \"-t <tag>\" argument."
+    echo "For example: -t llvmorg-11.0.0"
+    echo
+    exit 1
   fi
 
   cd 3rd/templight
