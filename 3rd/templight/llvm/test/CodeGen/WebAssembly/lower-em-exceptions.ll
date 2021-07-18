@@ -1,12 +1,15 @@
-; RUN: opt < %s -wasm-lower-em-ehsjlj -S | FileCheck %s
+; RUN: opt < %s -wasm-lower-em-ehsjlj -S | FileCheck %s --check-prefixes=CHECK,NO-TLS
+; RUN: opt < %s -wasm-lower-em-ehsjlj -S --mattr=+atomics,+bulk-memory | FileCheck %s --check-prefixes=CHECK,TLS
 
 target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
 target triple = "wasm32-unknown-unknown"
 
 @_ZTIi = external constant i8*
 @_ZTIc = external constant i8*
-; CHECK-DAG: __THREW__ = external global i32
-; CHECK-DAG: __threwValue = external global i32
+; NO-TLS-DAG: __THREW__ = external global i32
+; NO-TLS-DAG: __threwValue = external global i32
+; TLS-DAG: __THREW__ = external thread_local(localexec) global i32
+; TLS-DAG: __threwValue = external thread_local(localexec) global i32
 
 ; Test invoke instruction with clauses (try-catch block)
 define void @clause() personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*) {
@@ -65,6 +68,9 @@ catch:                                            ; preds = %catch.dispatch
 }
 
 ; Test invoke instruction with filters (functions with throw(...) declaration)
+; Currently we don't support exception specifications correctly in JS glue code,
+; so we ignore all filters here.
+; See https://bugs.llvm.org/show_bug.cgi?id=50396.
 define void @filter() personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*) {
 ; CHECK-LABEL: @filter(
 entry:
@@ -88,12 +94,9 @@ lpad:                                             ; preds = %entry
   %2 = extractvalue { i8*, i32 } %0, 1
   br label %filter.dispatch
 ; CHECK: lpad:
-; CHECK-NEXT: %[[FMC:.*]] = call i8* @__cxa_find_matching_catch_4(i8* bitcast (i8** @_ZTIi to i8*), i8* bitcast (i8** @_ZTIc to i8*))
-; CHECK-NEXT: %[[IVI1:.*]] = insertvalue { i8*, i32 } undef, i8* %[[FMC]], 0
-; CHECK-NEXT: %[[TEMPRET0_VAL:.*]] = call i32 @getTempRet0()
-; CHECK-NEXT: %[[IVI2:.*]] = insertvalue { i8*, i32 } %[[IVI1]], i32 %[[TEMPRET0_VAL]], 1
-; CHECK-NEXT: extractvalue { i8*, i32 } %[[IVI2]], 0
-; CHECK-NEXT: extractvalue { i8*, i32 } %[[IVI2]], 1
+; We now temporarily ignore filters because of the bug, so we pass nothing to
+; __cxa_find_matching_catch
+; CHECK-NEXT: %[[FMC:.*]] = call i8* @__cxa_find_matching_catch_2()
 
 filter.dispatch:                                  ; preds = %lpad
   %ehspec.fails = icmp slt i32 %2, 0

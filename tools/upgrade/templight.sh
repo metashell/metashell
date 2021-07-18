@@ -124,7 +124,9 @@ then
       openmp \
       parallel-libs \
       polly \
-      pstl
+      pstl \
+      \
+      .github
 
   cd ../..
 else
