@@ -77,20 +77,24 @@ TEST(readme, getting_started)
   mi.command("#include <boost/mpl/vector.hpp>");
   mi.command("using namespace boost::mpl;");
   ASSERT_EQ(
-    type(
-      "boost::mpl::vector<"
-        "int, double, char,"
-        " mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na,"
-        " mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na,"
-        " mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na"
-      ">"
+    any_of<type>(
+      type{
+        "boost::mpl::vector<"
+          "int, double, char,"
+          " mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na,"
+          " mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na,"
+          " mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na"
+        ">"
+      },
+      type{"boost::mpl::vector<int, double, char>"}
     ),
     mi.command("vector<int, double, char>").front()
   );
 
   mi.command("#include <boost/mpl/push_front.hpp>");
   ASSERT_EQ(
-    type(
+    any_of<type>(
+    type{
       "boost::mpl::v_item<"
         "void,"
         " boost::mpl::vector<"
@@ -101,6 +105,8 @@ TEST(readme, getting_started)
         ">,"
         " 1"
       ">"
+    },
+    type{"boost::mpl::v_item<void, boost::mpl::vector<int, double, char>, 1>"}
     ),
     mi.command("push_front<vector<int, double, char>, void>::type").front()
   );
@@ -289,14 +295,16 @@ TEST(readme, how_to_template_argument_deduction)
   ASSERT_EQ(raw_text("Breakpoint 1: regex(\"foo\") reached"), cont[0]);
   ASSERT_EQ(
       any_of<frame>(
-          frame(type("foo<std::vector<int, std::allocator<int>>>"), _, _,
-                event_kind::template_instantiation),
-          frame(type("foo<std::__1::vector<int, std::__1::allocator<int>>>"), _,
-                _, event_kind::template_instantiation),
-          frame(type("foo<std::vector<int, std::allocator<int> > >"), _, _,
-                event_kind::template_instantiation),
-          frame(type("foo<std::__1::vector<int, std::__1::allocator<int> > >"),
-                _, _, event_kind::template_instantiation)),
+          frame{type{"foo<std::vector<int>>"}, _, _,
+                event_kind::template_instantiation},
+          frame{type{"foo<std::vector<int, std::allocator<int>>>"}, _, _,
+                event_kind::template_instantiation},
+          frame{type{"foo<std::__1::vector<int, std::__1::allocator<int>>>"}, _,
+                _, event_kind::template_instantiation},
+          frame{type{"foo<std::vector<int, std::allocator<int> > >"}, _, _,
+                event_kind::template_instantiation},
+          frame{type{"foo<std::__1::vector<int, std::__1::allocator<int> > >"},
+                _, _, event_kind::template_instantiation}),
       cont[1]);
 }
 

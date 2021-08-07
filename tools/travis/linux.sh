@@ -56,7 +56,7 @@ else
   mkdir -p "bin/${PLATFORM_ID}"
   cd "bin/${PLATFORM_ID}"
     ARCHIVE_NAME=templight_${PLATFORM_ID}.tar.bz2
-    wget https://github.com/metashell/templight_binary/releases/download/templight_d13e00/${ARCHIVE_NAME}
+    wget https://github.com/metashell/templight_binary/releases/download/templight_2d691c/${ARCHIVE_NAME}
     tar -xvjf ${ARCHIVE_NAME}
   cd ../..
 

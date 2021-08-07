@@ -30,7 +30,7 @@ fi
 mkdir -p "bin/${PLATFORM_ID}"
 cd "bin/${PLATFORM_ID}"
   ARCHIVE_NAME=templight_osx10.15.5_x86_64.tar.bz2
-  wget https://github.com/metashell/templight_binary/releases/download/templight_d13e00/${ARCHIVE_NAME}
+  wget https://github.com/metashell/templight_binary/releases/download/templight_2d691c/${ARCHIVE_NAME}
   tar -xvjf ${ARCHIVE_NAME}
 cd ../..
 
