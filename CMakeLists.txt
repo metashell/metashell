@@ -316,6 +316,7 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
     set(METASHELL_PACKAGE_PLATFORM "")
   endif()
 
+  set(CPACK_PACKAGE_NAME "metashell")
   set(CPACK_PACKAGE_DESCRIPTION "Metashell")
   set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "It is an interactive C++ template metaprogramming shell")
   set(CPACK_PACKAGE_VENDOR "Abel Sinkovics")
@@ -323,71 +324,19 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
   set(CPACK_PACKAGE_VERSION_MAJOR "${MAJOR_VERSION}")
   set(CPACK_PACKAGE_VERSION_MINOR "${MINOR_VERSION}")
   set(CPACK_PACKAGE_VERSION_PATCH "${PATCH_VERSION}")
-  set(CPACK_PACKAGE_FILE_NAME "metashell_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}${METASHELL_PACKAGE_PLATFORM}_${CMAKE_SYSTEM_PROCESSOR}")
-  set(CPACK_SOURCE_PACKAGE_FILE_NAME "metashell_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}")
-  seT(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.txt")
+  set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.txt")
+  set(CPACK_STRIP_FILES $<TARGET_FILE:metashell>)
 
   set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
   set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
   set(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
-
-  if (SUSE_LINUX)
-    set(CPACK_RPM_PACKAGE_REQUIRES "libstdc++-devel, glibc-devel")
-  elseif (FEDORA_LINUX)
-    set(
-      CPACK_RPM_PACKAGE_REQUIRES
-      "libstdc++-devel, glibc-headers, glibc-devel"
-    )
-  elseif (UBUNTU_LINUX)
-    if ("${PLATFORM_VERSION}" STREQUAL "14.04")
-      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-4.8-dev")
-    elseif (
-      ("${PLATFORM_VERSION}" STREQUAL "14.10")
-      OR ("${PLATFORM_VERSION}" STREQUAL "15.04")
-    )
-      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-4.9-dev")
-    elseif ("${PLATFORM_VERSION}" STREQUAL "16.04")
-      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-5-dev")
-    elseif ("${PLATFORM_VERSION}" STREQUAL "18.04")
-      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-7-dev")
-    elseif ("${PLATFORM_VERSION}" STREQUAL "20.04" OR "${PLATFORM_VERSION}" STREQUAL "20.10")
-      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-10-dev")
-    else()
-      message(
-        WARNING
-        "Unsupported Ubuntu version. Package dependencies will be invalid."
-      )
-    endif()
-    set(CPACK_SET_DESTDIR "on")
-    set(CPACK_PACKAGING_INSTALL_PREFIX "/tmp")
-  elseif (DEBIAN_LINUX)
-    if (
-      ("${PLATFORM_VERSION}" STREQUAL "7.6")
-      OR ("${PLATFORM_VERSION}" STREQUAL "7.7")
-    )
-      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++6-4.7-dev")
-    elseif (
-      ("${PLATFORM_VERSION}" STREQUAL "8.1")
-      OR ("${PLATFORM_VERSION}" STREQUAL "8.5")
-    )
-      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-4.9-dev")
-    elseif (
-      ("${PLATFORM_VERSION}" STREQUAL "9.5")
-    )
-      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-6-dev")
-    elseif (
-      ("${PLATFORM_VERSION}" STREQUAL "10.9")
-    )
-      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-8-dev")
-    else()
-      message(
-        WARNING
-        "Unsupported Debian version. Package dependencies will be invalid."
-      )
-    endif()
-    set(CPACK_SET_DESTDIR "on")
-    set(CPACK_PACKAGING_INSTALL_PREFIX "/tmp")
-  endif ()
+  set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+  set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
+  set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+  set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "libstdc++-dev | libc++-x.y-dev")
+  set(CPACK_RPM_PACKAGE_LICENSE "GPL-3.0")
+  set(CPACK_RPM_FILE_NAME RPM-DEFAULT)
+  set(CPACK_RPM_PACKAGE_REQUIRES "libstdc++-devel, glibc-devel")
 
   set(CPACK_COMPONENTS_ALL metashell templight)
   set(CPACK_ALL_INSTALL_TYPES full notemplight minimal)

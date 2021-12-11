@@ -1,0 +1,48 @@
+name: Release Linux
+
+on:
+  workflow_dispatch:
+  release:
+    types: published
+
+jobs:
+  run:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Build image
+      run: docker build . -f Dockerfile -t metashell:linux --build-arg J=2
+
+    - name: Run image
+      run: docker run -v $PWD:/tmp/devenv -t metashell:linux
+
+    - name: Extract informations
+      id: extract
+      shell: bash
+      run: |
+        echo "##[set-output name=tag;]$(echo ${GITHUB_REF##*/} | cut -c2-)"
+        echo "##[set-output name=upload_url;]$(curl -sL https://api.github.com/repos/metashell/metashell/releases/tags/${GITHUB_REF##*/} | jq -r '.upload_url')"
+
+    - name: Deploy .deb on Github
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.extract.outputs.upload_url }}
+        asset_path: build/metashell/metashell_${{ steps.extract.outputs.tag }}_amd64.deb
+        asset_name: metashell_${{ steps.extract.outputs.tag }}_amd64.deb
+        asset_content_type: application/vnd.debian.binary-package
+
+    - name: Deploy .rpm on Github
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.extract.outputs.upload_url }}
+        asset_path: build/metashell/metashell-${{ steps.extract.outputs.tag }}-1.x86_64.rpm
+        asset_name: metashell-${{ steps.extract.outputs.tag }}-1.x86_64.rpm
+        asset_content_type: application/x-rpm
