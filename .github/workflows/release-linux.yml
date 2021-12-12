@@ -25,7 +25,7 @@ jobs:
       shell: bash
       run: |
         echo "##[set-output name=tag;]$(egrep -o 'MAJOR_VERSION [0-9]+' CMakeLists.txt | egrep -o '[0-9]+').$(egrep -o 'MINOR_VERSION [0-9]+' CMakeLists.txt | egrep -o '[0-9]+').$(egrep -o 'PATCH_VERSION [0-9]+' CMakeLists.txt | egrep -o '[0-9]+')"
-        echo "##[set-output name=upload_url;]$(curl -sL https://api.github.com/repos/metashell/metashell/releases/tags/${GITHUB_REF##*/} | jq -r '.upload_url')"
+        echo "##[set-output name=upload_url;]$(curl -sL https://api.github.com/repos/${{ github.event.repository.full_name }}/releases/tags/${GITHUB_REF##*/} | jq -r '.upload_url')"
 
     - name: Deploy .deb on Github
       uses: actions/upload-release-asset@v1
