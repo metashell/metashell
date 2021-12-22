@@ -1,0 +1,39 @@
+name: Release Windows
+
+on:
+  workflow_dispatch:
+  release:
+    types: published
+
+jobs:
+  run:
+
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Visual Studio Developer Command Prompt
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Build
+      shell: cmd
+      run: |
+        cd "${{ github.workspace }}"
+        build.bat
+
+    - name: Extract informations
+      id: extract
+      shell: bash
+      run: python tools\\github_action_infos.py ${{ github.event.repository.full_name }} ${GITHUB_REF##*/}
+
+    - name: Deploy installer on Github
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.extract.outputs.upload_url }}
+        asset_path: bin/windows_x64/metashell/metashell-${{ steps.extract.outputs.tag }}-win64.exe
+        asset_name: metashell-${{ steps.extract.outputs.tag }}-win64.exe
+        asset_content_type: application/octet-stream

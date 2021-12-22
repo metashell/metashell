@@ -18,7 +18,7 @@ rem along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if not defined INCLUDE goto no_dev
 
-set PLATFORM_ID="windows_Win32"
+set PLATFORM_ID="windows_%VSCMD_ARG_TGT_ARCH%"
 
 set TESTS_ARG=
 if not defined tests goto after_tests
@@ -29,8 +29,8 @@ rem Build Templight
 if defined no_templight goto skip_templight
   md bin\%PLATFORM_ID%\templight
   cd bin\%PLATFORM_ID%\templight
-    cmake -DLLVM_ENABLE_PROJECTS=clang ..\..\..\3rd\templight\llvm
-    msbuild LLVM.sln /p:Configuration=Release /p:Platform="Win32" "/t:Clang executables\templight"
+    cmake -DLLVM_ENABLE_PROJECTS=clang -A %VSCMD_ARG_TGT_ARCH% -Thost=%VSCMD_ARG_TGT_ARCH% ..\..\..\3rd\templight\llvm
+    msbuild LLVM.sln /p:Configuration=Release "/t:Clang executables\templight"
     if errorlevel 1 goto no_dev
   cd ..\..\..
   goto build_metashell
@@ -43,7 +43,7 @@ md bin\%PLATFORM_ID%\metashell
 cd bin\%PLATFORM_ID%\metashell
   if defined METASHELL_NO_DOC_GENERATION cmake ..\..\.. %TESTS_ARG% -DMETASHELL_NO_DOC_GENERATION=1
   if not defined METASHELL_NO_DOC_GENERATION cmake ..\..\.. %TESTS_ARG%
-  msbuild metashell_project.sln /p:Configuration=Release /p:Platform="Win32"
+  msbuild metashell_project.sln /p:Configuration=Release
   if errorlevel 1 goto no_dev
 
   rem Run tests

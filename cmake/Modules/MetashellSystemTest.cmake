@@ -145,7 +145,7 @@ endfunction()
 
 function(register_gcc_system_test TEST_TARGET_NAME)
   if (NOT DEFINED TESTS OR TESTS MATCHES "^gcc.*")
-    if (GXX_FOUND)
+    if (GXX_FOUND AND NOT WIN32)
       message(STATUS "Using ${GXX_BINARY} for gcc system test")
       add_test(
         NAME ${TEST_TARGET_NAME}_gcc
