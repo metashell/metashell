@@ -21,6 +21,8 @@
 
 #include <boost/operators.hpp>
 
+#include <iosfwd>
+
 namespace metashell
 {
   namespace system_test
@@ -56,6 +58,8 @@ namespace metashell
       int _depth;
       int _number_of_children;
     };
+
+    std::ostream& operator<<(std::ostream&, const call_graph_node&);
 
     bool operator==(const call_graph_node& a_, const call_graph_node& b_);
   } // namespace system_test
