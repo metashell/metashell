@@ -49,6 +49,14 @@ namespace metashell
         return false;
       }
 
+      template <class SizeType>
+      bool RawNumber(const char* str_, SizeType length_, bool)
+      {
+        impl().not_empty();
+        impl().fail("Unexpected number: " + std::string{str_, length_});
+        return false;
+      }
+
       bool Int(int i_)
       {
         impl().not_empty();
