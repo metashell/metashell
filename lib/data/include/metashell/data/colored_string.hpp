@@ -18,7 +18,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/color.hpp>
-#include <metashell/data/visual_cpp_workaround.hpp>
 
 #include <boost/operators.hpp>
 
