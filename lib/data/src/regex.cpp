@@ -16,6 +16,8 @@
 
 #include <metashell/data/regex.hpp>
 
+#include <iostream>
+
 namespace metashell
 {
   namespace data

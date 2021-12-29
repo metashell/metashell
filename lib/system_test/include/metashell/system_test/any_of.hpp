@@ -20,6 +20,8 @@
 #include <algorithm>
 #include <vector>
 
+#include <iostream>
+
 namespace metashell
 {
   namespace system_test
@@ -39,6 +41,61 @@ namespace metashell
     private:
       std::vector<T> _choices;
     };
+
+    template <class T>
+    std::ostream& operator<<(std::ostream& out_, const any_of<T>& rhs_)
+    {
+      out_ << "any_of(";
+      bool first = true;
+      for (const T& choice : rhs_.choices())
+      {
+        if (first)
+        {
+          first = false;
+        }
+        else
+        {
+          out_ << ", ";
+        }
+        out_ << choice;
+      }
+      return out_ << ")";
+    }
+
+    template <class T>
+    std::ostream& operator<<(std::ostream& out_,
+                             const any_of<std::vector<T>>& rhs_)
+    {
+      out_ << "any_of(";
+      bool first = true;
+      for (const std::vector<T>& choice : rhs_.choices())
+      {
+        if (first)
+        {
+          first = false;
+        }
+        else
+        {
+          out_ << ", ";
+        }
+        out_ << "[";
+        bool inner_first = true;
+        for (const T& inner_choice : choice)
+        {
+          if (inner_first)
+          {
+            inner_first = false;
+          }
+          else
+          {
+            out_ << ", ";
+          }
+          out_ << inner_choice;
+        }
+        out_ << "]";
+      }
+      return out_ << ")";
+    }
 
     template <class T, class U>
     bool operator==(const any_of<T>& lhs_, const U& rhs_)

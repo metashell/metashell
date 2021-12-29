@@ -16,6 +16,8 @@
 
 #include <metashell/system_test/call_graph_node.hpp>
 
+#include <iostream>
+
 namespace metashell
 {
   namespace system_test
@@ -41,6 +43,12 @@ namespace metashell
       return a_.depth() == b_.depth() &&
              a_.number_of_children() == b_.number_of_children() &&
              a_.current_frame() == b_.current_frame();
+    }
+
+    std::ostream& operator<<(std::ostream& out_, const call_graph_node& node_)
+    {
+      return out_ << "call_graph_node(" << node_.current_frame() << ", "
+                  << node_.depth() << ", " << node_.number_of_children() << ")";
     }
   } // namespace system_test
 } // namespace metashell
