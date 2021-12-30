@@ -16,11 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if [ ! -d cmake ]
-then
-  echo "Please run this script from the root directory of the Metashell source code"
-  exit 1
-fi
+SRC_ROOT=$(dirname "$0")
 
 # Arguments
 if [ -z "${BUILD_THREADS}" ]
@@ -28,7 +24,7 @@ then
   BUILD_THREADS=1
 fi
 
-PLATFORM="$(tools/detect_platform.sh)"
+PLATFORM="$($SRC_ROOT/tools/detect_platform.sh)"
 CLANG_VERSION=10.0.1
 GRAPHVIZ_VERSION=2.40.1
 
@@ -80,7 +76,7 @@ ubuntu)
       git g++ cmake libreadline-dev zip python3-pip libtinfo5 \
       libtool automake autoconf libltdl-dev pkg-config bison flex
   sudo -H pip3 install pycodestyle pylint gitpython daemonize mkdocs cheetah3
-  PLATFORM_ID="$(tools/detect_platform.sh --id)"
+  PLATFORM_ID="$($SRC_ROOT/tools/detect_platform.sh --id)"
   CLANG_ARCHIVE="clang+llvm-${CLANG_VERSION}-x86_64-linux-gnu-ubuntu-16.04"
   mkdir -p "bin/${PLATFORM_ID}"
   cd "bin/${PLATFORM_ID}"
@@ -114,7 +110,7 @@ freebsd)
   pkg install -y git cmake gcc
   ;;
 openbsd)
-  if [ "$(tools/detect_platform.sh --version)" = "5.5" ]
+  if [ "$($SRC_ROOT/tools/detect_platform.sh --version)" = "5.5" ]
   then
     export PKG_PATH="ftp://ftp.fsn.hu/pub/OpenBSD/5.5/packages/$(machine -a)/"
     pkg_add git g++ cmake python
