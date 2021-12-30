@@ -24,6 +24,13 @@ then
   BUILD_THREADS=1
 fi
 
+if [ -z "${NO_SUDO}" ]
+then
+  SUDO=sudo
+else
+  SUDO=
+fi
+
 PLATFORM="$($SRC_ROOT/tools/detect_platform.sh)"
 CLANG_VERSION=10.0.1
 GRAPHVIZ_VERSION=2.40.1
@@ -31,19 +38,20 @@ GRAPHVIZ_VERSION=2.40.1
 # Show argument & config summary
 echo "Number of threads used: ${BUILD_THREADS}"
 echo "Platform: ${PLATFORM}"
+echo "sudo: ${SUDO}"
 
 case "${PLATFORM}" in
 arch)
   # If `gcc-multilib` is already installed, don't try to install plain `gcc`
   pacman -Qqs gcc-multilib > /dev/null
   if [ $? ]; then
-    sudo pacman --needed -S cmake git python readline
+    ${SUDO} pacman --needed -S cmake git python readline
   else
-    sudo pacman --needed -S cmake git python readline gcc
+    ${SUDO} pacman --needed -S cmake git python readline gcc
   fi
   ;;
 fedora)
-  sudo yum -y install \
+  ${SUDO} yum -y install \
     git \
     gcc \
     gcc-c++ \
@@ -54,10 +62,10 @@ fedora)
     make
   ;;
 gentoo)
-  sudo emerge dev-vcs/git dev-util/cmake sys-libs/libtermcap-compat app-arch/zip
+  ${SUDO} emerge dev-vcs/git dev-util/cmake sys-libs/libtermcap-compat app-arch/zip
   ;;
 opensuse)
-  sudo zypper --non-interactive install \
+  ${SUDO} zypper --non-interactive install \
     git \
     cmake \
     gcc-c++ \
@@ -70,12 +78,12 @@ ubuntu)
   apt-cache policy | grep universe > /dev/null
   if [ $? -ne 0 ]
   then
-    sudo apt-add-repository universe
+    ${SUDO} apt-add-repository universe
   fi
-  sudo apt-get -y install \
+  ${SUDO} apt-get -y install \
       git g++ cmake libreadline-dev zip python3-pip libtinfo5 \
       libtool automake autoconf libltdl-dev pkg-config bison flex
-  sudo -H pip3 install pycodestyle pylint gitpython daemonize mkdocs cheetah3
+  ${SUDO} -H pip3 install pycodestyle pylint gitpython daemonize mkdocs cheetah3
   PLATFORM_ID="$($SRC_ROOT/tools/detect_platform.sh --id)"
   CLANG_ARCHIVE="clang+llvm-${CLANG_VERSION}-x86_64-linux-gnu-ubuntu-16.04"
   mkdir -p "bin/${PLATFORM_ID}"
@@ -104,7 +112,7 @@ ubuntu)
   cd ../..
   ;;
 debian)
-  sudo apt-get -y install git g++ cmake libreadline-dev zip
+  ${SUDO} apt-get -y install git g++ cmake libreadline-dev zip
   ;;
 freebsd)
   pkg install -y git cmake gcc
