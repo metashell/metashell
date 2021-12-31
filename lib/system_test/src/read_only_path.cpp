@@ -65,7 +65,7 @@ namespace metashell
 #ifdef _WIN32
       return boost::filesystem::path(_temp.path()) / subpath();
 #else
-      return "/";
+      return "/proc";
 #endif
     }
   } // namespace system_test
