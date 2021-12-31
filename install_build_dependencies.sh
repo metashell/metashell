@@ -112,7 +112,7 @@ ubuntu)
   cd ../..
   ;;
 debian)
-  ${SUDO} apt-get -y install git g++ cmake libreadline-dev zip
+  ${SUDO} apt-get -y install git g++ cmake libreadline-dev zip python3 file rpm
   ;;
 freebsd)
   pkg install -y git cmake gcc
