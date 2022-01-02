@@ -34,7 +34,7 @@ elseif (USE_EDITLINE)
   target_link_libraries(${PROJECT_NAME} ${EDITLINE_LIBRARY})
   target_compile_definitions(${PROJECT_NAME} PRIVATE USE_EDITLINE)
 else()
-  find_package(Readline)
+  target_link_libraries(${PROJECT_NAME} readline)
 
   target_include_directories(${PROJECT_NAME} PUBLIC ${READLINE_INCLUDE_DIR})
   target_link_libraries(${PROJECT_NAME} ${READLINE_LIBRARY} termcap)
