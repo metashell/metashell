@@ -136,6 +136,7 @@ namespace metashell
         {
           boost::wave::language_support result =
               language_support(cfg_.config.standard);
+          result = boost::wave::enable_has_include(result);
           if (cfg_.long_long)
           {
             result = boost::wave::enable_long_long(result);
