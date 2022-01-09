@@ -22,6 +22,8 @@
 
 #include <metashell/core/engine_entry.hpp>
 
+#include <boost/filesystem/path.hpp>
+
 namespace metashell
 {
   namespace engine
@@ -32,6 +34,8 @@ namespace metashell
 
       core::engine_entry entry(bool use_internal_templight_,
                                data::executable_path metashell_binary_);
+
+      bool smaller(boost::filesystem::path, boost::filesystem::path);
     } // namespace templight
   } // namespace engine
 } // namespace metashell
