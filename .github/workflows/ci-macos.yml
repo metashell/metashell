@@ -13,4 +13,4 @@ jobs:
 
     - name: Build
       shell: bash
-      run: BUILD_THREADS=3 ./build.sh
+      run: NO_INSTALLER=1 BUILD_THREADS=3 ./build.sh
