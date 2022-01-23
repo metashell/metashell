@@ -33,7 +33,7 @@ namespace metashell
       boost::filesystem::path path() const;
 
     private:
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
       just::temp::directory _temp;
 #endif
     };
