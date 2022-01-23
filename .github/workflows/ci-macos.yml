@@ -1,0 +1,16 @@
+name: CI macOS
+
+on: [push, pull_request]
+
+jobs:
+  run:
+
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Build
+      shell: bash
+      run: NO_INSTALLER=1 BUILD_THREADS=3 ./build.sh

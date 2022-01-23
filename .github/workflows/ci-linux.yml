@@ -1,0 +1,18 @@
+name: CI Linux
+
+on: [push, pull_request]
+
+jobs:
+  run:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Build image
+      run: docker build . -f Dockerfile -t metashell:linux --build-arg J=2
+
+    - name: Run image
+      run: docker run -v $PWD:/tmp/devenv -t metashell:linux

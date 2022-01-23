@@ -1,0 +1,21 @@
+name: CI Windows
+
+on: [push, pull_request]
+
+jobs:
+  run:
+
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Visual Studio Developer Command Prompt
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Build
+      shell: cmd
+      run: |
+        cd "${{ github.workspace }}"
+        build.bat

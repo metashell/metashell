@@ -57,6 +57,9 @@ namespace metashell
       {
         throw std::runtime_error("Error creating " + p.string());
       }
+#elif defined(__APPLE__)
+      // make the directory readable and executable for all
+      chmod(_temp.path().c_str(), 0555);
 #endif
     }
 
@@ -64,8 +67,10 @@ namespace metashell
     {
 #ifdef _WIN32
       return boost::filesystem::path(_temp.path()) / subpath();
+#elif defined(__APPLE__)
+      return boost::filesystem::path(_temp.path());
 #else
-      return "/";
+      return "/proc";
 #endif
     }
   } // namespace system_test

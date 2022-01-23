@@ -23,7 +23,10 @@ jobs:
     - name: Extract informations
       id: extract
       shell: bash
-      run: tools/github_action_infos.py ${{ github.event.repository.full_name }} ${GITHUB_REF##*/}
+      run: |
+          tools/github_action_infos.py ${{ github.event.repository.full_name }} ${GITHUB_REF##*/}
+          echo '##[set-output name=platform_id;]debian11.1_x86_64'
+
 
     - name: Deploy .deb on Github
       uses: actions/upload-release-asset@v1
@@ -31,7 +34,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.extract.outputs.upload_url }}
-        asset_path: build/metashell/metashell_${{ steps.extract.outputs.tag }}_amd64.deb
+        asset_path: bin/${{ steps.extract.outputs.platform_id }}/metashell/metashell_${{ steps.extract.outputs.tag }}_amd64.deb
         asset_name: metashell_${{ steps.extract.outputs.tag }}_amd64.deb
         asset_content_type: application/vnd.debian.binary-package
 
@@ -41,6 +44,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.extract.outputs.upload_url }}
-        asset_path: build/metashell/metashell-${{ steps.extract.outputs.tag }}-1.x86_64.rpm
+        asset_path: bin/${{ steps.extract.outputs.platform_id }}/metashell/metashell-${{ steps.extract.outputs.tag }}-1.x86_64.rpm
         asset_name: metashell-${{ steps.extract.outputs.tag }}-1.x86_64.rpm
         asset_content_type: application/x-rpm
