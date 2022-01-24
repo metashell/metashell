@@ -270,6 +270,9 @@ if (WIN32)
   add_subdirectory(3rd/wineditline)
 else()
   add_subdirectory(3rd/termcap)
+  if (NOT USE_EDITLINE)
+    add_subdirectory(3rd/readline)
+  endif()
 endif()
 
 target_compile_definitions(

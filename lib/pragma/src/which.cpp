@@ -22,7 +22,6 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/range/adaptors.hpp>
 
 namespace metashell
 {
@@ -47,23 +46,12 @@ namespace metashell
                     iface::main_shell& shell_,
                     iface::displayer& displayer_) const
     {
-      using boost::adaptors::filtered;
-      using boost::adaptors::transformed;
-      using boost::filesystem::path;
-
       const parsed_arguments args = parse_arguments(
           data::tokens_to_string(name_begin_, name_end_).value(), args_begin_,
           args_end_);
-      const auto include_path =
-          shell_.engine().header_discoverer().include_path(
-              args.header.type, data::standard_headers_allowed::all);
-      const auto files =
-          include_path |
-          transformed(
-              std::function<path(const path&)>([&args](const path& path_) {
-                return path_ / args.header.path;
-              })) |
-          filtered([](const path& path_) { return exists(path_); });
+
+      const std::vector<boost::filesystem::path> files =
+          shell_.engine().header_discoverer().which(args.header);
 
       if (files.empty())
       {
@@ -74,8 +62,7 @@ namespace metashell
       }
       else if (args.all)
       {
-        displayer_.show_filename_list(
-            std::vector<path>(files.begin(), files.end()));
+        displayer_.show_filename_list(files);
       }
       else
       {

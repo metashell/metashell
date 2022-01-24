@@ -31,6 +31,8 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 
+#include <algorithm>
+
 namespace metashell
 {
   namespace engine
@@ -77,6 +79,66 @@ namespace metashell
           }
         }
 
+        bool is_number(const std::string_view& str_)
+        {
+          return !str_.empty() &&
+                 str_.find_first_not_of("0123456789") == std::string_view::npos;
+        }
+
+        std::vector<boost::filesystem::path>
+        search_for_standard_headers(const boost::filesystem::path& base_,
+                                    core::logger* logger_)
+        {
+          METASHELL_LOG(logger_, "Checking subdirs of " + base_.string() +
+                                     " for standard headers.");
+
+          const boost::filesystem::directory_iterator e;
+
+          std::optional<boost::filesystem::path> subdir = std::nullopt;
+          for (boost::filesystem::directory_iterator i{base_}; i != e; ++i)
+          {
+            if (exists(i->path() / "iostream"))
+            {
+              METASHELL_LOG(logger_, "Found subdir " + i->path().string());
+              if (!subdir || smaller(i->path(), *subdir))
+              {
+                subdir = i->path();
+              }
+            }
+            else
+            {
+              METASHELL_LOG(logger_, "Skipping " + i->path().string());
+            }
+          }
+
+          std::vector<boost::filesystem::path> result;
+
+          if (subdir)
+          {
+            METASHELL_LOG(logger_, "Choosing " + subdir->string());
+            result.push_back(*subdir);
+
+            const boost::filesystem::directory_iterator i =
+                std::find_if(boost::filesystem::directory_iterator{*subdir}, e,
+                             [](const boost::filesystem::directory_entry& e_) {
+                               return boost::starts_with(
+                                   e_.path().filename().string(), "x86_64-");
+                             });
+
+            if (i != e)
+            {
+              METASHELL_LOG(logger_, "Also adding " + i->path().string());
+              result.push_back(i->path());
+            }
+          }
+          else
+          {
+            METASHELL_LOG(logger_, "No subdir found.");
+          }
+
+          return result;
+        }
+
         template <bool UseInternalTemplight>
         std::unique_ptr<iface::engine>
         create_templight_engine(const data::shell_config& config_,
@@ -90,17 +152,71 @@ namespace metashell
         {
           using core::not_supported;
 
-          const data::command_line_argument_list extra_clang_args =
+          data::command_line_argument_list extra_clang_args =
               UseInternalTemplight ? config_.engine->args :
                                      config_.engine->args.tail();
 
-          const clang::binary cbin(
-              UseInternalTemplight,
-              clang::find_clang(UseInternalTemplight, *config_.engine,
-                                metashell_binary_, env_detector_, displayer_,
-                                logger_),
-              extra_clang_args, config_.cwd, internal_dir_, env_detector_,
-              logger_);
+          const data::executable_path binary_path = clang::find_clang(
+              UseInternalTemplight, *config_.engine, metashell_binary_,
+              env_detector_, displayer_, logger_);
+
+          clang::binary cbin{UseInternalTemplight,
+                             binary_path,
+                             extra_clang_args,
+                             config_.cwd,
+                             internal_dir_,
+                             env_detector_,
+                             logger_};
+
+          const data::command_line_argument stdinc{"-nostdinc"};
+          const data::command_line_argument stdincpp{"-nostdinc++"};
+          if (std::find_if(
+                  config_.engine->args.begin(), config_.engine->args.end(),
+                  [&stdinc,
+                   &stdincpp](const data::command_line_argument& arg_) {
+                    return arg_ == stdinc || arg_ == stdincpp;
+                  }) == config_.engine->args.end())
+          {
+            try
+            {
+              METASHELL_LOG(
+                  logger_, "Checking if the standard headers are available.");
+              const boost::filesystem::path test_header{"iostream"};
+              const std::vector<boost::filesystem::path> found =
+                  clang::header_discoverer{cbin}.which(data::include_argument{
+                      data::include_type::sys, test_header});
+
+              if (found.empty())
+              {
+                METASHELL_LOG(logger_, "<" + test_header.string() +
+                                           "> not found on include path.");
+                extra_clang_args.append_with_prefix(
+                    "-isystem",
+                    search_for_standard_headers("/usr/include/c++", logger_));
+              }
+              else
+              {
+                METASHELL_LOG(
+                    logger_,
+                    "Found " + found.front().string() +
+                        ". Assuming that all standard headers are available.");
+              }
+            }
+            catch (const std::exception& err)
+            {
+              METASHELL_LOG(
+                  logger_, std::string{"Checking standard headers failed: "} +
+                               err.what());
+            }
+          }
+
+          cbin = clang::binary{UseInternalTemplight,
+                               binary_path,
+                               extra_clang_args,
+                               config_.cwd,
+                               internal_dir_,
+                               env_detector_,
+                               logger_};
 
           return core::make_engine(
               name(UseInternalTemplight), config_.engine->name,
@@ -148,7 +264,8 @@ namespace metashell
                        data::markdown_string(
                            "Uses the "
                            "[Templight](https://github.com/mikael-s-persson/"
-                           "templight) shipped with Metashell. `<Clang args>` "
+                           "templight) shipped with Metashell. `<Clang "
+                           "args>` "
                            "are passed to the compiler as command "
                            "line-arguments."),
                        supported_features(), this_engine_internal_templight) :
@@ -162,10 +279,28 @@ namespace metashell
                            "templight). `<Clang args>` are passed to the "
                            "compiler as command line-arguments. Note that "
                            "Metashell requires C++11 or above. If your "
-                           "Templight uses such a standard by default, you can "
+                           "Templight uses such a standard by default, you "
+                           "can "
                            "omit the `-std` argument."),
                        supported_features(), this_engine_external_templight);
       }
+
+      bool smaller(boost::filesystem::path lhs_, boost::filesystem::path rhs_)
+      {
+        lhs_ = lhs_.filename();
+        rhs_ = rhs_.filename();
+
+        if (is_number(lhs_.string()))
+        {
+          return !is_number(rhs_.string()) ||
+                 std::stoll(lhs_.string()) < std::stoll(rhs_.string());
+        }
+        else
+        {
+          return !is_number(rhs_.string()) && lhs_ < rhs_;
+        }
+      }
+
     } // namespace templight
   } // namespace engine
 } // namespace metashell

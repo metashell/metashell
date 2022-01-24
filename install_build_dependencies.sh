@@ -45,9 +45,9 @@ arch)
   # If `gcc-multilib` is already installed, don't try to install plain `gcc`
   pacman -Qqs gcc-multilib > /dev/null
   if [ $? ]; then
-    ${SUDO} pacman --needed -S cmake git python readline
+    ${SUDO} pacman --needed -S cmake git python
   else
-    ${SUDO} pacman --needed -S cmake git python readline gcc
+    ${SUDO} pacman --needed -S cmake git python gcc
   fi
   ;;
 fedora)
@@ -56,7 +56,6 @@ fedora)
     gcc \
     gcc-c++ \
     cmake \
-    readline-devel \
     rpm-build \
     python \
     make
@@ -69,7 +68,6 @@ opensuse)
     git \
     cmake \
     gcc-c++ \
-    readline-devel \
     rpm-build \
     termcap \
     zip
@@ -81,7 +79,7 @@ ubuntu)
     ${SUDO} apt-add-repository universe
   fi
   ${SUDO} apt-get -y install \
-      git g++ cmake libreadline-dev zip python3-pip libtinfo5 \
+      git g++ cmake zip python3-pip libtinfo5 \
       libtool automake autoconf libltdl-dev pkg-config bison flex
   ${SUDO} -H pip3 install pycodestyle pylint gitpython daemonize mkdocs cheetah3
   PLATFORM_ID="$($SRC_ROOT/tools/detect_platform.sh --id)"
@@ -112,7 +110,7 @@ ubuntu)
   cd ../..
   ;;
 debian)
-  ${SUDO} apt-get -y install git g++ cmake libreadline-dev zip python3 file rpm
+  ${SUDO} apt-get -y install git g++ cmake zip python3 file rpm
   ;;
 freebsd)
   pkg install -y git cmake gcc
