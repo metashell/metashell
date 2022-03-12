@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <string>
 #include <cstdint>
+#include <limits>
 
 namespace templight {
 
