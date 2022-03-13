@@ -53,6 +53,7 @@
 #include "readline.h"
 #include "rlshell.h"
 #include "rlprivate.h"
+#include "xmalloc.h"
 
 static int utf8locale PARAMS((char *));
 
