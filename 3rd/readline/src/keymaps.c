@@ -36,7 +36,7 @@
 #include "readline.h"
 #include "rlconf.h"
 
-#include "emacs_keymap.c"
+#include "keymaps.h"
 
 #if defined (VI_MODE)
 #include "vi_keymap.c"
