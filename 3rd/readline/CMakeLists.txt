@@ -17,6 +17,10 @@
 project(readline)
 
 aux_source_directory(src SOURCES)
+
+# These c files are included directly keymaps.c intentionally
+list(REMOVE_ITEM SOURCES src/vi_keymap.c src/emacs_keymap.c)
+
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 disable_warnings(${PROJECT_NAME})
