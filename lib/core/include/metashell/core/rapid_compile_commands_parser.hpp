@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/command_line_argument_list.hpp>
 #include <metashell/data/shell_config.hpp>
 
 #include <metashell/core/rapid_handler.hpp>
@@ -56,7 +57,10 @@ namespace metashell
       bool _in_list = false;
       std::optional<data::shell_config_name> _name = std::nullopt;
       std::optional<data::shell_config_data> _data = std::nullopt;
+      std::optional<data::command_line_argument_list> _arguments = std::nullopt;
       std::optional<std::string> _key = std::nullopt;
+
+      void compile_command_available(const data::command_line_argument_list&);
     };
   } // namespace core
 } // namespace metashell

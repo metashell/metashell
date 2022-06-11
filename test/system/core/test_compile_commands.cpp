@@ -36,23 +36,53 @@ using pattern::_;
 
 namespace
 {
-  void write_compile_commands(metashell::iface::json_writer& out_,
-                              const boost::filesystem::path& cpp_path_,
-                              const boost::filesystem::path& bin_dir_,
-                              const std::string& command_)
+  void write_compile_commands_start(metashell::iface::json_writer& out_,
+                                    const boost::filesystem::path& bin_dir_)
   {
     out_.start_object();
 
     out_.key("directory");
     out_.string(bin_dir_.string());
+  }
 
-    out_.key("command");
-    out_.string(command_);
-
+  void write_compile_commands_end(metashell::iface::json_writer& out_,
+                                  const boost::filesystem::path& cpp_path_)
+  {
     out_.key("file");
     out_.string(cpp_path_.string());
 
     out_.end_object();
+  }
+
+  void write_compile_commands(metashell::iface::json_writer& out_,
+                              const boost::filesystem::path& cpp_path_,
+                              const boost::filesystem::path& bin_dir_,
+                              const std::string& command_)
+  {
+    write_compile_commands_start(out_, bin_dir_);
+
+    out_.key("command");
+    out_.string(command_);
+
+    write_compile_commands_end(out_, cpp_path_);
+  }
+
+  void write_compile_commands(metashell::iface::json_writer& out_,
+                              const boost::filesystem::path& cpp_path_,
+                              const boost::filesystem::path& bin_dir_,
+                              const std::vector<std::string>& arguments_)
+  {
+    write_compile_commands_start(out_, bin_dir_);
+
+    out_.key("arguments");
+    out_.start_array();
+    for (const std::string& arg : arguments_)
+    {
+      out_.string(arg);
+    }
+    out_.end_array();
+
+    write_compile_commands_end(out_, cpp_path_);
   }
 
   json_string config_names(const boost::filesystem::path& temp_dir_,
@@ -98,8 +128,8 @@ TEST(shell_compile_commands, creating_shell_configs)
     out.start_array();
     write_compile_commands(out, src_dir / "xa/foo.cpp", bin_dir,
                            "/foo/bar/g++ -Iasd -c xa/foo.cpp");
-    write_compile_commands(
-        out, src_dir / "xb/bar.cpp", bin_dir, "/foo/bar/g++ bar.cpp");
+    write_compile_commands(out, src_dir / "xb/bar.cpp", bin_dir,
+                           std::vector<std::string>{"/foo/bar/g++", "bar.cpp"});
     out.end_array();
   }
 

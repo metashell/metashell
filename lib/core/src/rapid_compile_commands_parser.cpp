@@ -32,8 +32,9 @@ namespace metashell
   {
     namespace
     {
+      template <class CommandLineArgumentInputRange>
       data::command_line_argument_list
-      parse_compiler_command(const data::shell_command_view& command_)
+      parse_compiler_command(const CommandLineArgumentInputRange& command_)
       {
         data::command_line_argument_list result;
 
@@ -67,15 +68,20 @@ namespace metashell
     {
       not_empty();
 
-      if (_in_list)
-      {
-        fail("Lists are expected as top level elements only");
-        return false;
-      }
-      else
+      if (!_in_list)
       {
         _in_list = true;
         return true;
+      }
+      else if (_data && _key == "arguments")
+      {
+        _arguments = data::command_line_argument_list{};
+        return true;
+      }
+      else
+      {
+        fail("Lists are expected as top level elements only");
+        return false;
       }
     }
 
@@ -83,21 +89,29 @@ namespace metashell
     {
       not_empty();
 
-      _in_list = false;
-
-      const auto prefix_len = common_prefix_length(
-          _configs |
-          boost::adaptors::transformed(
-              [](const data::shell_config& cfg_) { return cfg_.name; }));
-
-      const data::shell_config_name default_name("_");
-
-      for (data::shell_config& cfg : _configs)
+      if (_arguments)
       {
-        cfg.name = remove_prefix(cfg.name, prefix_len).value_or(default_name);
-        if (cfg.name.back().value().empty())
+        compile_command_available(parse_compiler_command(*_arguments));
+        _arguments = std::nullopt;
+      }
+      else
+      {
+        _in_list = false;
+
+        const auto prefix_len = common_prefix_length(
+            _configs |
+            boost::adaptors::transformed(
+                [](const data::shell_config& cfg_) { return cfg_.name; }));
+
+        const data::shell_config_name default_name("_");
+
+        for (data::shell_config& cfg : _configs)
         {
-          cfg.name += default_name;
+          cfg.name = remove_prefix(cfg.name, prefix_len).value_or(default_name);
+          if (cfg.name.back().value().empty())
+          {
+            cfg.name += default_name;
+          }
         }
       }
 
@@ -157,13 +171,8 @@ namespace metashell
       {
         if (*_key == "command")
         {
-          const auto removed = remove_multiple_arch_arguments(
+          compile_command_available(
               parse_compiler_command(data::shell_command_view(str_)));
-          if (removed.first)
-          {
-            _data->warnings.push_back(*removed.first);
-          }
-          _data->engine.default_value().args = removed.second;
         }
         else if (*_key == "file")
         {
@@ -172,6 +181,10 @@ namespace metashell
         else if (*_key == "directory")
         {
           _data->cwd = str_;
+        }
+        else if (_arguments)
+        {
+          _arguments->push_back(data::command_line_argument{str_});
         }
 
         return true;
@@ -196,6 +209,19 @@ namespace metashell
     rapid_compile_commands_parser::configs() const
     {
       return _configs;
+    }
+
+    void rapid_compile_commands_parser::compile_command_available(
+        const data::command_line_argument_list& cmd_)
+    {
+      assert(_data);
+
+      const auto removed = remove_multiple_arch_arguments(cmd_);
+      if (removed.first)
+      {
+        _data->warnings.push_back(*removed.first);
+      }
+      _data->engine.default_value().args = removed.second;
     }
   } // namespace core
 } // namespace metashell
