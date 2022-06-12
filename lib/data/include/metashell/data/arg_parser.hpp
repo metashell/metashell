@@ -158,7 +158,7 @@ namespace metashell
         return *this;
       }
 
-      template <size_t Len1, size_t Len2, class ValueType>
+      template <class ValueType, size_t Len1, size_t Len2>
       arg_parser& with_value(const char (&short_name_)[Len1],
                              const char (&long_name_)[Len2],
                              std::string desc_,
@@ -171,7 +171,7 @@ namespace metashell
             });
       }
 
-      template <size_t Len, class ValueType>
+      template <class ValueType, size_t Len>
       arg_parser& with_value(no_short_name_t short_name_,
                              const char (&long_name_)[Len],
                              std::string desc_,
@@ -184,7 +184,7 @@ namespace metashell
             });
       }
 
-      template <size_t Len, class ValueType>
+      template <class ValueType, size_t Len>
       arg_parser& with_value(const char (&short_name_)[Len],
                              std::string desc_,
                              std::vector<ValueType>& out_)
@@ -195,7 +195,7 @@ namespace metashell
             });
       }
 
-      template <size_t Len1, size_t Len2, class ValueType>
+      template <class ValueType, size_t Len1, size_t Len2>
       arg_parser& with_value(const char (&short_name_)[Len1],
                              const char (&long_name_)[Len2],
                              std::string desc_,
@@ -208,7 +208,7 @@ namespace metashell
             });
       }
 
-      template <size_t Len, class ValueType>
+      template <class ValueType, size_t Len>
       arg_parser& with_value(const char (&short_name_)[Len],
                              std::string desc_,
                              std::optional<ValueType>& out_)
@@ -219,7 +219,7 @@ namespace metashell
             });
       }
 
-      template <size_t Len1, size_t Len2, class ValueType>
+      template <class ValueType, size_t Len1, size_t Len2>
       arg_parser& with_value(const char (&short_name_)[Len1],
                              const char (&long_name_)[Len2],
                              std::string desc_,
@@ -232,7 +232,7 @@ namespace metashell
             });
       }
 
-      template <size_t Len, class ValueType>
+      template <class ValueType, size_t Len>
       arg_parser& with_value(no_short_name_t short_name_,
                              const char (&long_name_)[Len],
                              std::string desc_,
