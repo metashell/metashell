@@ -157,7 +157,7 @@ genFIRType<Fortran::common::TypeCategory::Character>(mlir::MLIRContext *context,
                                                      int KIND) {
   if (Fortran::evaluate::IsValidKindOfIntrinsicType(
           Fortran::common::TypeCategory::Character, KIND))
-    return fir::CharacterType::get(context, KIND);
+    return fir::CharacterType::get(context, KIND, 1);
   return {};
 }
 
@@ -167,7 +167,7 @@ genFIRType<Fortran::common::TypeCategory::Complex>(mlir::MLIRContext *context,
                                                    int KIND) {
   if (Fortran::evaluate::IsValidKindOfIntrinsicType(
           Fortran::common::TypeCategory::Complex, KIND))
-    return fir::CplxType::get(context, KIND);
+    return fir::ComplexType::get(context, KIND);
   return {};
 }
 
@@ -436,8 +436,8 @@ private:
     for (auto &ss : details.shape()) {
       auto lb = ss.lbound();
       auto ub = ss.ubound();
-      if (lb.isAssumed() && ub.isAssumed() && size == 1)
-        return {};
+      if (lb.isStar() && ub.isStar() && size == 1)
+        return {}; // assumed rank
       if (lb.isExplicit() && ub.isExplicit()) {
         auto &lbv = lb.GetExplicit();
         auto &ubv = ub.GetExplicit();

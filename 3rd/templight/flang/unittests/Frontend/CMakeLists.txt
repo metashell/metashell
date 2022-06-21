@@ -9,4 +9,7 @@ target_link_libraries(FlangFrontendTests
   flangFrontend
   flangFrontendTool
   FortranParser
+  FortranSemantics
+  FortranCommon
+  FortranEvaluate
 )

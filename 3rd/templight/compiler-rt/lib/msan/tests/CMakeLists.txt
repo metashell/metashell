@@ -9,7 +9,7 @@ set(MSAN_LIBCXX_CFLAGS
   -fsanitize=memory
   -fsanitize-memory-track-origins
   -Wno-pedantic
-  -Xclang -fdepfile-entry=${COMPILER_RT_OUTPUT_DIR}/share/msan_blacklist.txt
+  -Xclang -fdepfile-entry=${COMPILER_RT_OUTPUT_DIR}/share/msan_ignorelist.txt
   )
 
 # Unittest sources and build flags.
@@ -52,6 +52,7 @@ set(MSAN_UNITTEST_INSTRUMENTED_CFLAGS
   -mllvm -msan-keep-going=1
 )
 set(MSAN_UNITTEST_LINK_FLAGS
+  -nostdlib++
   ${COMPILER_RT_UNITTEST_LINK_FLAGS}
   -fsanitize=memory
   # Don't need -stdlib=libc++ because we explicitly list libc++.a in the linker

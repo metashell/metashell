@@ -1,4 +1,4 @@
-! RUN: %S/../test_errors.sh %s %t %f18 -fopenacc
+! RUN: %python %S/../test_errors.py %s %flang -fopenacc
 
 ! Check OpenACC restruction in branch in and out of some construct
 !

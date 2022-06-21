@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "type-code.h"
+#include "flang/Runtime/type-code.h"
 
 namespace Fortran::runtime {
 
@@ -33,6 +33,12 @@ TypeCode::TypeCode(TypeCategory f, int kind) {
     break;
   case TypeCategory::Real:
     switch (kind) {
+    case 2:
+      raw_ = CFI_type_half_float;
+      break;
+    case 3:
+      raw_ = CFI_type_bfloat;
+      break;
     case 4:
       raw_ = CFI_type_float;
       break;
@@ -40,8 +46,10 @@ TypeCode::TypeCode(TypeCategory f, int kind) {
       raw_ = CFI_type_double;
       break;
     case 10:
+      raw_ = CFI_type_extended_double;
+      break;
     case 16:
-      raw_ = CFI_type_long_double;
+      raw_ = CFI_type_float128;
       break;
     }
     break;
@@ -78,13 +86,13 @@ TypeCode::TypeCode(TypeCategory f, int kind) {
       raw_ = CFI_type_Bool;
       break;
     case 2:
-      raw_ = CFI_type_int_fast16_t;
+      raw_ = CFI_type_int_least16_t;
       break;
     case 4:
-      raw_ = CFI_type_int_fast32_t;
+      raw_ = CFI_type_int_least32_t;
       break;
     case 8:
-      raw_ = CFI_type_int_fast64_t;
+      raw_ = CFI_type_int_least64_t;
       break;
     }
     break;
@@ -107,26 +115,42 @@ TypeCode::GetCategoryAndKind() const {
     return std::make_pair(TypeCategory::Integer, 8);
   case CFI_type_int128_t:
     return std::make_pair(TypeCategory::Integer, 16);
+  case CFI_type_half_float:
+    return std::make_pair(TypeCategory::Real, 2);
+  case CFI_type_bfloat:
+    return std::make_pair(TypeCategory::Real, 3);
   case CFI_type_float:
     return std::make_pair(TypeCategory::Real, 4);
   case CFI_type_double:
     return std::make_pair(TypeCategory::Real, 8);
+  case CFI_type_extended_double:
+    return std::make_pair(TypeCategory::Real, 10);
   case CFI_type_long_double:
 #if __x86_64__
     return std::make_pair(TypeCategory::Real, 10);
 #else
     return std::make_pair(TypeCategory::Real, 16);
 #endif
+  case CFI_type_float128:
+    return std::make_pair(TypeCategory::Real, 16);
+  case CFI_type_half_float_Complex:
+    return std::make_pair(TypeCategory::Complex, 2);
+  case CFI_type_bfloat_Complex:
+    return std::make_pair(TypeCategory::Complex, 3);
   case CFI_type_float_Complex:
     return std::make_pair(TypeCategory::Complex, 4);
   case CFI_type_double_Complex:
     return std::make_pair(TypeCategory::Complex, 8);
+  case CFI_type_extended_double_Complex:
+    return std::make_pair(TypeCategory::Complex, 10);
   case CFI_type_long_double_Complex:
 #if __x86_64__
     return std::make_pair(TypeCategory::Complex, 10);
 #else
     return std::make_pair(TypeCategory::Complex, 16);
 #endif
+  case CFI_type_float128_Complex:
+    return std::make_pair(TypeCategory::Complex, 16);
   case CFI_type_char:
     return std::make_pair(TypeCategory::Character, 1);
   case CFI_type_char16_t:
@@ -135,13 +159,13 @@ TypeCode::GetCategoryAndKind() const {
     return std::make_pair(TypeCategory::Character, 4);
   case CFI_type_Bool:
     return std::make_pair(TypeCategory::Logical, 1);
-  case CFI_type_int_fast8_t:
+  case CFI_type_int_least8_t:
     return std::make_pair(TypeCategory::Logical, 1);
-  case CFI_type_int_fast16_t:
+  case CFI_type_int_least16_t:
     return std::make_pair(TypeCategory::Logical, 2);
-  case CFI_type_int_fast32_t:
+  case CFI_type_int_least32_t:
     return std::make_pair(TypeCategory::Logical, 4);
-  case CFI_type_int_fast64_t:
+  case CFI_type_int_least64_t:
     return std::make_pair(TypeCategory::Logical, 8);
   case CFI_type_struct:
     return std::make_pair(TypeCategory::Derived, 0);

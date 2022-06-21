@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/any_of.hpp>
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/type.hpp>
 
@@ -55,8 +56,8 @@ TEST(pretty_printing, basic_type)
   ASSERT_EQ(type("float"), get_output("float"));
   ASSERT_EQ(type("double"), get_output("double"));
   ASSERT_EQ(type("long double"), get_output("long double"));
-  ASSERT_EQ(
-      type("nullptr_t"), get_output("std::nullptr_t", "#include <cstddef>"));
+  ASSERT_EQ(any_of<type>(type{"nullptr_t"}, type{"std::nullptr_t"}),
+            get_output("std::nullptr_t", "#include <cstddef>"));
 }
 
 TEST(pretty_printing, qualified_type)
@@ -85,26 +86,29 @@ TEST(pretty_printing, type_alias)
 
 TEST(pretty_printing, array_type)
 {
-  ASSERT_EQ(type("float [3]"), get_output("decltype(foo)", "float foo[3];"));
-  ASSERT_EQ(
-      type("float [3][4]"), get_output("decltype(foo)", "float foo[3][4];"));
-  ASSERT_EQ(type("float [3][4][5]"),
+  ASSERT_EQ(any_of<type>(type{"float [3]"}, type{"float[3]"}),
+            get_output("decltype(foo)", "float foo[3];"));
+  ASSERT_EQ(any_of<type>(type{"float [3][4]"}, type{"float[3][4]"}),
+            get_output("decltype(foo)", "float foo[3][4];"));
+  ASSERT_EQ(any_of<type>(type{"float [3][4][5]"}, type{"float[3][4][5]"}),
             get_output("decltype(foo)", "float foo[3][4][5];"));
-  ASSERT_EQ(type("float const[3]"),
+  ASSERT_EQ(any_of<type>(type{"float const[3]"}, type{"const float[3]"}),
             get_output("decltype(foo)", "const float foo[] = {1, 2, 3};"));
 
   ASSERT_EQ(type("float (*)[3]"),
             get_output("decltype(&foo)", "float foo[] = {1, 2, 3};"));
 
-  ASSERT_EQ(type("float const (*)[3]"),
-            get_output("decltype(&foo)", "const float foo[] = {1, 2, 3};"));
+  ASSERT_EQ(
+      any_of<type>(type{"float const (*)[3]"}, type{"const float (*)[3]"}),
+      get_output("decltype(&foo)", "const float foo[] = {1, 2, 3};"));
 
   ASSERT_EQ(type("void (*(*)[3])(int, char, double)"),
             get_output("decltype(&foo)",
                        "typedef void (*fp)(int, char, double);"
                        "fp foo[3];"));
 
-  ASSERT_EQ(type("int const (*const (*)[3])[2]"),
+  ASSERT_EQ(any_of<type>(type{"int const (*const (*)[3])[2]"},
+                         type{"const int (*const (*)[3])[2]"}),
             get_output("decltype(&foo)",
                        "const int bar[2] = {0, 0};"
                        "const decltype(&bar) foo[3] = {0, 0, 0};"));

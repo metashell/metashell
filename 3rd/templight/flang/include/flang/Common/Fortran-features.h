@@ -29,7 +29,9 @@ ENUM_CLASS(LanguageFeature, BackslashEscapes, OldDebugLines,
     AdditionalFormats, BigIntLiterals, RealDoControls,
     EquivalenceNumericWithCharacter, AdditionalIntrinsics, AnonymousParents,
     OldLabelDoEndStatements, LogicalIntegerAssignment, EmptySourceFile,
-    ProgramReturn, ImplicitNoneTypeNever, ImplicitNoneTypeAlways)
+    ProgramReturn, ImplicitNoneTypeNever, ImplicitNoneTypeAlways,
+    ForwardRefDummyImplicitNone, OpenAccessAppend, BOZAsDefaultInteger,
+    DistinguishableSpecifics, DefaultSave, PointerInSeqType, NonCharacterFormat)
 
 using LanguageFeatures = EnumSet<LanguageFeature, LanguageFeature_enumSize>;
 
@@ -42,11 +44,13 @@ public:
     disable_.set(LanguageFeature::OpenMP);
     disable_.set(LanguageFeature::ImplicitNoneTypeNever);
     disable_.set(LanguageFeature::ImplicitNoneTypeAlways);
+    disable_.set(LanguageFeature::DefaultSave);
     // These features, if enabled, conflict with valid standard usage,
     // so there are disabled here by default.
     disable_.set(LanguageFeature::BackslashEscapes);
     disable_.set(LanguageFeature::LogicalAbbreviations);
     disable_.set(LanguageFeature::XOROperator);
+    disable_.set(LanguageFeature::OldStyleParameter);
   }
   LanguageFeatureControl(const LanguageFeatureControl &) = default;
   void Enable(LanguageFeature f, bool yes = true) { disable_.set(f, !yes); }

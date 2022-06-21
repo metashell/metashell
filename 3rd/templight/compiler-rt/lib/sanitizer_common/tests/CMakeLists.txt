@@ -3,24 +3,31 @@ include(CompilerRTCompile)
 clang_compiler_add_cxx_check()
 
 # FIXME: use SANITIZER_COMMON_SUPPORTED_ARCH here
-filter_available_targets(SANITIZER_UNITTEST_SUPPORTED_ARCH x86_64 i386 mips64 mips64el riscv64)
+filter_available_targets(SANITIZER_UNITTEST_SUPPORTED_ARCH x86_64 i386 mips64 mips64el riscv64 sparcv9 sparc)
 if(APPLE)
   darwin_filter_host_archs(SANITIZER_UNITTEST_SUPPORTED_ARCH SANITIZER_UNITTEST_SUPPORTED_ARCH)
 endif()
 
 set(SANITIZER_UNITTESTS
+  sanitizer_addrhashmap_test.cpp
   sanitizer_allocator_test.cpp
   sanitizer_atomic_test.cpp
   sanitizer_bitvector_test.cpp
   sanitizer_bvgraph_test.cpp
+  sanitizer_chained_origin_depot_test.cpp
   sanitizer_common_test.cpp
   sanitizer_deadlock_detector_test.cpp
+  sanitizer_dense_map_test.cpp
   sanitizer_flags_test.cpp
+  sanitizer_flat_map_test.cpp
   sanitizer_format_interceptor_test.cpp
+  sanitizer_hash_test.cpp
   sanitizer_ioctl_test.cpp
+  sanitizer_leb128_test.cpp
   sanitizer_libc_test.cpp
   sanitizer_linux_test.cpp
   sanitizer_list_test.cpp
+  sanitizer_lzw_test.cpp
   sanitizer_mac_test.cpp
   sanitizer_mutex_test.cpp
   sanitizer_nolibc_test.cpp
@@ -29,6 +36,7 @@ set(SANITIZER_UNITTESTS
   sanitizer_procmaps_test.cpp
   sanitizer_ring_buffer_test.cpp
   sanitizer_quarantine_test.cpp
+  sanitizer_stack_store_test.cpp
   sanitizer_stackdepot_test.cpp
   sanitizer_stacktrace_printer_test.cpp
   sanitizer_stacktrace_test.cpp
@@ -53,6 +61,7 @@ endforeach()
 set(SANITIZER_TEST_CFLAGS_COMMON
   ${COMPILER_RT_UNITTEST_CFLAGS}
   ${COMPILER_RT_GTEST_CFLAGS}
+  ${COMPILER_RT_GMOCK_CFLAGS}
   -I${COMPILER_RT_SOURCE_DIR}/include
   -I${COMPILER_RT_SOURCE_DIR}/lib
   -I${COMPILER_RT_SOURCE_DIR}/lib/sanitizer_common
@@ -150,7 +159,7 @@ macro(add_sanitizer_tests_for_arch arch)
   generate_compiler_rt_tests(SANITIZER_TEST_OBJECTS SanitizerUnitTests
     "Sanitizer-${arch}-Test" ${arch}
     RUNTIME "${SANITIZER_COMMON_LIB}"
-    SOURCES ${SANITIZER_UNITTESTS} ${COMPILER_RT_GTEST_SOURCE}
+    SOURCES ${SANITIZER_UNITTESTS} ${COMPILER_RT_GTEST_SOURCE} ${COMPILER_RT_GMOCK_SOURCE}
     COMPILE_DEPS ${SANITIZER_TEST_HEADERS}
     DEPS gtest
     CFLAGS  ${SANITIZER_TEST_CFLAGS_COMMON} ${extra_flags}
@@ -160,6 +169,7 @@ macro(add_sanitizer_tests_for_arch arch)
     # Test that the libc-independent part of sanitizer_common is indeed
     # independent of libc, by linking this binary without libc (here) and
     # executing it (unit test in sanitizer_nolibc_test.cpp).
+    get_target_flags_for_arch(${arch} TARGET_FLAGS)
     clang_compile(sanitizer_nolibc_test_main.${arch}.o
                   sanitizer_nolibc_test_main.cpp
                   CFLAGS ${SANITIZER_TEST_CFLAGS_COMMON} ${TARGET_FLAGS}
@@ -206,6 +216,7 @@ if(ANDROID)
     add_executable(SanitizerTest
       ${SANITIZER_UNITTESTS}
       ${COMPILER_RT_GTEST_SOURCE}
+      ${COMPILER_RT_GMOCK_SOURCE}
       $<TARGET_OBJECTS:RTSanitizerCommon.${arch}>
       $<TARGET_OBJECTS:RTSanitizerCommonLibc.${arch}>
       $<TARGET_OBJECTS:RTSanitizerCommonSymbolizer.${arch}>)

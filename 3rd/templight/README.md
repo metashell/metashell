@@ -19,7 +19,7 @@ Welcome to the LLVM project!
 
 The LLVM project has multiple components. The core of the project is
 itself called "LLVM". This contains all of the tools, libraries, and header
-files needed to process intermediate representations and converts it into
+files needed to process intermediate representations and convert them into
 object files.  Tools include an assembler, disassembler, bitcode analyzer, and
 bitcode optimizer.  It also contains basic regression tests.
 
@@ -50,11 +50,7 @@ This is an example work-flow and configuration to get and build the LLVM source:
 
      * ``cd llvm-project``
 
-     * ``mkdir build``
-
-     * ``cd build``
-
-     * ``cmake -G <generator> [options] ../llvm``
+     * ``cmake -S llvm -B build -G <generator> [options]``
 
         Some common build system generators are:
 
@@ -65,19 +61,27 @@ This is an example work-flow and configuration to get and build the LLVM source:
           solutions.
         * ``Xcode`` --- for generating Xcode projects.
 
-        Some Common options:
+        Some common options:
 
-        * ``-DLLVM_ENABLE_PROJECTS='...'`` --- semicolon-separated list of the LLVM
-          sub-projects you'd like to additionally build. Can include any of: clang,
-          clang-tools-extra, libcxx, libcxxabi, libunwind, lldb, compiler-rt, lld,
-          polly, or debuginfo-tests.
+        * ``-DLLVM_ENABLE_PROJECTS='...'`` and ``-DLLVM_ENABLE_RUNTIMES='...'`` ---
+          semicolon-separated list of the LLVM sub-projects and runtimes you'd like to
+          additionally build. ``LLVM_ENABLE_PROJECTS`` can include any of: clang,
+          clang-tools-extra, cross-project-tests, flang, libc, libclc, lld, lldb,
+          mlir, openmp, polly, or pstl. ``LLVM_ENABLE_RUNTIMES`` can include any of
+          libcxx, libcxxabi, libunwind, compiler-rt, libc or openmp. Some runtime
+          projects can be specified either in ``LLVM_ENABLE_PROJECTS`` or in
+          ``LLVM_ENABLE_RUNTIMES``.
 
           For example, to build LLVM, Clang, libcxx, and libcxxabi, use
-          ``-DLLVM_ENABLE_PROJECTS="clang;libcxx;libcxxabi"``.
+          ``-DLLVM_ENABLE_PROJECTS="clang" -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi"``.
 
         * ``-DCMAKE_INSTALL_PREFIX=directory`` --- Specify for *directory* the full
           path name of where you want the LLVM tools and libraries to be installed
-          (default ``/usr/local``).
+          (default ``/usr/local``). Be careful if you install runtime libraries: if
+          your system uses those provided by LLVM (like libc++ or libc++abi), you
+          must not overwrite your system's copy of those libraries, since that
+          could render your system unusable. In general, using something like
+          ``/usr`` is not advised, but ``/usr/local`` is fine.
 
         * ``-DCMAKE_BUILD_TYPE=type`` --- Valid options for *type* are Debug,
           Release, RelWithDebInfo, and MinSizeRel. Default is Debug.
@@ -85,7 +89,7 @@ This is an example work-flow and configuration to get and build the LLVM source:
         * ``-DLLVM_ENABLE_ASSERTIONS=On`` --- Compile with assertion checks enabled
           (default is Yes for Debug builds, No for all other build types).
 
-      * ``cmake --build . [-- [options] <target>]`` or your build system specified above
+      * ``cmake --build build [-- [options] <target>]`` or your build system specified above
         directly.
 
         * The default target (i.e. ``ninja`` or ``make``) will build all of LLVM.

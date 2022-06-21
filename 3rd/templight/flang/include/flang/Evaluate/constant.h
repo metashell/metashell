@@ -50,7 +50,7 @@ std::size_t TotalElementCount(const ConstantSubscripts &);
 
 // Validate dimension re-ordering like ORDER in RESHAPE.
 // On success, return a vector that can be used as dimOrder in
-// ConstantBound::IncrementSubscripts().
+// ConstantBounds::IncrementSubscripts().
 std::optional<std::vector<int>> ValidateDimensionOrder(
     int rank, const std::vector<int> &order);
 
@@ -65,6 +65,7 @@ public:
   const ConstantSubscripts &shape() const { return shape_; }
   const ConstantSubscripts &lbounds() const { return lbounds_; }
   void set_lbounds(ConstantSubscripts &&);
+  void SetLowerBoundsToOne();
   int Rank() const { return GetRank(shape_); }
   Constant<SubscriptInteger> SHAPE() const;
 
@@ -140,8 +141,8 @@ public:
     }
   }
 
-  // Apply subscripts.  An empty subscript list is allowed for
-  // a scalar constant.
+  // Apply subscripts.  Excess subscripts are ignored, including the
+  // case of a scalar.
   Element At(const ConstantSubscripts &) const;
 
   Constant Reshape(ConstantSubscripts &&) const;
@@ -168,6 +169,7 @@ public:
   bool empty() const;
   std::size_t size() const;
 
+  const Scalar<Result> &values() const { return values_; }
   ConstantSubscript LEN() const { return length_; }
 
   std::optional<Scalar<Result>> GetScalarValue() const {
@@ -180,6 +182,9 @@ public:
 
   // Apply subscripts, if any.
   Scalar<Result> At(const ConstantSubscripts &) const;
+
+  // Extract substring(s); returns nullopt for errors.
+  std::optional<Constant> Substring(ConstantSubscript, ConstantSubscript) const;
 
   Constant Reshape(ConstantSubscripts &&) const;
   llvm::raw_ostream &AsFortran(llvm::raw_ostream &) const;
@@ -195,8 +200,11 @@ private:
 };
 
 class StructureConstructor;
-using StructureConstructorValues =
-    std::map<SymbolRef, common::CopyableIndirection<Expr<SomeType>>>;
+struct ComponentCompare {
+  bool operator()(SymbolRef x, SymbolRef y) const;
+};
+using StructureConstructorValues = std::map<SymbolRef,
+    common::CopyableIndirection<Expr<SomeType>>, ComponentCompare>;
 
 template <>
 class Constant<SomeDerived>

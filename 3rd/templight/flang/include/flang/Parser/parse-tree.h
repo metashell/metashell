@@ -998,13 +998,26 @@ struct ComponentDecl {
       t;
 };
 
+// A %FILL component for a DEC STRUCTURE.  The name will be replaced
+// with a distinct compiler-generated name.
+struct FillDecl {
+  TUPLE_CLASS_BOILERPLATE(FillDecl);
+  std::tuple<Name, std::optional<ComponentArraySpec>, std::optional<CharLength>>
+      t;
+};
+
+struct ComponentOrFill {
+  UNION_CLASS_BOILERPLATE(ComponentOrFill);
+  std::variant<ComponentDecl, FillDecl> u;
+};
+
 // R737 data-component-def-stmt ->
 //        declaration-type-spec [[, component-attr-spec-list] ::]
 //        component-decl-list
 struct DataComponentDefStmt {
   TUPLE_CLASS_BOILERPLATE(DataComponentDefStmt);
   std::tuple<DeclarationTypeSpec, std::list<ComponentAttrSpec>,
-      std::list<ComponentDecl>>
+      std::list<ComponentOrFill>>
       t;
 };
 
@@ -1779,7 +1792,7 @@ struct Designator {
 struct Variable {
   UNION_CLASS_BOILERPLATE(Variable);
   mutable TypedExpr typedExpr;
-  parser::CharBlock GetSource() const;
+  CharBlock GetSource() const;
   std::variant<common::Indirection<Designator>,
       common::Indirection<FunctionReference>>
       u;
@@ -1836,6 +1849,7 @@ struct ArrayElement {
 // R933 allocate-object -> variable-name | structure-component
 struct AllocateObject {
   UNION_CLASS_BOILERPLATE(AllocateObject);
+  mutable TypedExpr typedExpr;
   std::variant<Name, StructureComponent> u;
 };
 
@@ -1907,6 +1921,7 @@ struct AllocateStmt {
 //        variable-name | structure-component | proc-pointer-name
 struct PointerObject {
   UNION_CLASS_BOILERPLATE(PointerObject);
+  mutable TypedExpr typedExpr;
   std::variant<Name, StructureComponent> u;
 };
 
@@ -3256,7 +3271,7 @@ struct Union {
 
 struct StructureStmt {
   TUPLE_CLASS_BOILERPLATE(StructureStmt);
-  std::tuple<Name, bool /*slashes*/, std::list<EntityDecl>> t;
+  std::tuple<std::optional<Name>, std::list<EntityDecl>> t;
 };
 
 struct StructureDef {
@@ -3592,7 +3607,7 @@ struct OpenMPDeclarativeConstruct {
 struct OmpCriticalDirective {
   TUPLE_CLASS_BOILERPLATE(OmpCriticalDirective);
   CharBlock source;
-  std::tuple<Verbatim, std::optional<Name>, std::optional<OmpClause>> t;
+  std::tuple<Verbatim, std::optional<Name>, OmpClauseList> t;
 };
 struct OmpEndCriticalDirective {
   TUPLE_CLASS_BOILERPLATE(OmpEndCriticalDirective);
@@ -3803,7 +3818,7 @@ struct OpenMPConstruct {
   UNION_CLASS_BOILERPLATE(OpenMPConstruct);
   std::variant<OpenMPStandaloneConstruct, OpenMPSectionsConstruct,
       OpenMPLoopConstruct, OpenMPBlockConstruct, OpenMPAtomicConstruct,
-      OpenMPExecutableAllocate, OpenMPDeclarativeAllocate,
+      OpenMPDeclarativeAllocate, OpenMPExecutableAllocate,
       OpenMPCriticalConstruct>
       u;
 };

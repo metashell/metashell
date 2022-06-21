@@ -1,5 +1,5 @@
 // -*- C++ -*-
-//===--------------------------- inttypes.h -------------------------------===//
+//===----------------------------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -259,4 +259,4 @@ uintmax_t wcstoumax(const wchar_t* restrict nptr, wchar_t** restrict endptr, int
 
 #endif // __cplusplus
 
-#endif  // _LIBCPP_INTTYPES_H
+#endif // _LIBCPP_INTTYPES_H

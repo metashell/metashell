@@ -44,18 +44,15 @@ struct ModHeader {
 
 static std::optional<SourceName> GetSubmoduleParent(const parser::Program &);
 static void CollectSymbols(const Scope &, SymbolVector &, SymbolVector &);
-static void PutEntity(llvm::raw_ostream &, const Symbol &);
-static void PutObjectEntity(llvm::raw_ostream &, const Symbol &);
-static void PutProcEntity(llvm::raw_ostream &, const Symbol &);
 static void PutPassName(llvm::raw_ostream &, const std::optional<SourceName> &);
-static void PutTypeParam(llvm::raw_ostream &, const Symbol &);
-static void PutEntity(
-    llvm::raw_ostream &, const Symbol &, std::function<void()>, Attrs);
 static void PutInit(llvm::raw_ostream &, const Symbol &, const MaybeExpr &);
 static void PutInit(llvm::raw_ostream &, const MaybeIntExpr &);
 static void PutBound(llvm::raw_ostream &, const Bound &);
-static llvm::raw_ostream &PutAttrs(llvm::raw_ostream &, Attrs,
-    const MaybeExpr & = std::nullopt, std::string before = ","s,
+static void PutShapeSpec(llvm::raw_ostream &, const ShapeSpec &);
+static void PutShape(
+    llvm::raw_ostream &, const ArraySpec &, char open, char close);
+llvm::raw_ostream &PutAttrs(llvm::raw_ostream &, Attrs,
+    const std::string * = nullptr, std::string before = ","s,
     std::string after = ""s);
 
 static llvm::raw_ostream &PutAttr(llvm::raw_ostream &, Attr);
@@ -81,8 +78,8 @@ private:
   const Scope &scope_;
   bool isInterface_{false};
   SymbolVector need_; // symbols that are needed
-  SymbolSet needSet_; // symbols already in need_
-  SymbolSet useSet_; // use-associations that might be needed
+  UnorderedSymbolSet needSet_; // symbols already in need_
+  UnorderedSymbolSet useSet_; // use-associations that might be needed
   std::set<SourceName> imports_; // imports from host that are needed
 
   void DoSymbol(const Symbol &);
@@ -177,17 +174,66 @@ std::string ModFileWriter::GetAsString(const Symbol &symbol) {
 }
 
 // Put out the visible symbols from scope.
-bool ModFileWriter::PutSymbols(const Scope &scope) {
+void ModFileWriter::PutSymbols(const Scope &scope) {
   SymbolVector sorted;
   SymbolVector uses;
   CollectSymbols(scope, sorted, uses);
   std::string buf; // stuff after CONTAINS in derived type
   llvm::raw_string_ostream typeBindings{buf};
   for (const Symbol &symbol : sorted) {
-    PutSymbol(typeBindings, symbol);
+    if (!symbol.test(Symbol::Flag::CompilerCreated)) {
+      PutSymbol(typeBindings, symbol);
+    }
   }
   for (const Symbol &symbol : uses) {
     PutUse(symbol);
+  }
+  for (const auto &set : scope.equivalenceSets()) {
+    if (!set.empty() &&
+        !set.front().symbol.test(Symbol::Flag::CompilerCreated)) {
+      char punctuation{'('};
+      decls_ << "equivalence";
+      for (const auto &object : set) {
+        decls_ << punctuation << object.AsFortran();
+        punctuation = ',';
+      }
+      decls_ << ")\n";
+    }
+  }
+  CHECK(typeBindings.str().empty());
+}
+
+// Emit components in order
+bool ModFileWriter::PutComponents(const Symbol &typeSymbol) {
+  const auto &scope{DEREF(typeSymbol.scope())};
+  std::string buf; // stuff after CONTAINS in derived type
+  llvm::raw_string_ostream typeBindings{buf};
+  UnorderedSymbolSet emitted;
+  SymbolVector symbols{scope.GetSymbols()};
+  // Emit type parameters first
+  for (const Symbol &symbol : symbols) {
+    if (symbol.has<TypeParamDetails>()) {
+      PutSymbol(typeBindings, symbol);
+      emitted.emplace(symbol);
+    }
+  }
+  // Emit components in component order.
+  const auto &details{typeSymbol.get<DerivedTypeDetails>()};
+  for (SourceName name : details.componentNames()) {
+    auto iter{scope.find(name)};
+    if (iter != scope.end()) {
+      const Symbol &component{*iter->second};
+      if (!component.test(Symbol::Flag::ParentComp)) {
+        PutSymbol(typeBindings, component);
+      }
+      emitted.emplace(component);
+    }
+  }
+  // Emit remaining symbols from the type's scope
+  for (const Symbol &symbol : symbols) {
+    if (emitted.find(symbol) == emitted.end()) {
+      PutSymbol(typeBindings, symbol);
+    }
   }
   if (auto str{typeBindings.str()}; !str.empty()) {
     CHECK(scope.IsDerivedType());
@@ -281,14 +327,18 @@ void ModFileWriter::PutSymbol(
       symbol.details());
 }
 
-void ModFileWriter::PutDerivedType(const Symbol &typeSymbol) {
+void ModFileWriter::PutDerivedType(
+    const Symbol &typeSymbol, const Scope *scope) {
   auto &details{typeSymbol.get<DerivedTypeDetails>()};
+  if (details.isDECStructure()) {
+    PutDECStructure(typeSymbol, scope);
+    return;
+  }
   PutAttrs(decls_ << "type", typeSymbol.attrs());
   if (const DerivedTypeSpec * extends{typeSymbol.GetParentTypeSpec()}) {
     decls_ << ",extends(" << extends->name() << ')';
   }
   decls_ << "::" << typeSymbol.name();
-  auto &typeScope{*typeSymbol.scope()};
   if (!details.paramNames().empty()) {
     char sep{'('};
     for (const auto &name : details.paramNames()) {
@@ -301,7 +351,7 @@ void ModFileWriter::PutDerivedType(const Symbol &typeSymbol) {
   if (details.sequence()) {
     decls_ << "sequence\n";
   }
-  bool contains{PutSymbols(typeScope)};
+  bool contains{PutComponents(typeSymbol)};
   if (!details.finals().empty()) {
     const char *sep{contains ? "final::" : "contains\nfinal::"};
     for (const auto &pair : details.finals()) {
@@ -313,6 +363,47 @@ void ModFileWriter::PutDerivedType(const Symbol &typeSymbol) {
     }
   }
   decls_ << "end type\n";
+}
+
+void ModFileWriter::PutDECStructure(
+    const Symbol &typeSymbol, const Scope *scope) {
+  if (emittedDECStructures_.find(typeSymbol) != emittedDECStructures_.end()) {
+    return;
+  }
+  if (!scope && context_.IsTempName(typeSymbol.name().ToString())) {
+    return; // defer until used
+  }
+  emittedDECStructures_.insert(typeSymbol);
+  decls_ << "structure ";
+  if (!context_.IsTempName(typeSymbol.name().ToString())) {
+    decls_ << typeSymbol.name();
+  }
+  if (scope && scope->kind() == Scope::Kind::DerivedType) {
+    // Nested STRUCTURE: emit entity declarations right now
+    // on the STRUCTURE statement.
+    bool any{false};
+    for (const auto &ref : scope->GetSymbols()) {
+      const auto *object{ref->detailsIf<ObjectEntityDetails>()};
+      if (object && object->type() &&
+          object->type()->category() == DeclTypeSpec::TypeDerived &&
+          &object->type()->derivedTypeSpec().typeSymbol() == &typeSymbol) {
+        if (any) {
+          decls_ << ',';
+        } else {
+          any = true;
+        }
+        decls_ << ref->name();
+        PutShape(decls_, object->shape(), '(', ')');
+        PutInit(decls_, *ref, object->init());
+        emittedDECFields_.insert(*ref);
+      } else if (any) {
+        break; // any later use of this structure will use RECORD/str/
+      }
+    }
+  }
+  decls_ << '\n';
+  PutComponents(typeSymbol);
+  decls_ << "end structure\n";
 }
 
 // Attributes that may be in a subprogram prefix
@@ -346,7 +437,7 @@ void ModFileWriter::PutSubprogram(const Symbol &symbol) {
   if (isInterface) {
     os << (isAbstract ? "abstract " : "") << "interface\n";
   }
-  PutAttrs(os, prefixAttrs, std::nullopt, ""s, " "s);
+  PutAttrs(os, prefixAttrs, nullptr, ""s, " "s);
   os << (details.isFunction() ? "function " : "subroutine ");
   os << symbol.name() << '(';
   int n = 0;
@@ -498,10 +589,11 @@ void CollectSymbols(
   for (const auto &pair : scope.commonBlocks()) {
     sorted.push_back(*pair.second);
   }
-  std::sort(sorted.end() - commonSize, sorted.end());
+  std::sort(
+      sorted.end() - commonSize, sorted.end(), SymbolSourcePositionCompare{});
 }
 
-void PutEntity(llvm::raw_ostream &os, const Symbol &symbol) {
+void ModFileWriter::PutEntity(llvm::raw_ostream &os, const Symbol &symbol) {
   std::visit(
       common::visitors{
           [&](const ObjectEntityDetails &) { PutObjectEntity(os, symbol); },
@@ -516,15 +608,15 @@ void PutEntity(llvm::raw_ostream &os, const Symbol &symbol) {
 }
 
 void PutShapeSpec(llvm::raw_ostream &os, const ShapeSpec &x) {
-  if (x.lbound().isAssumed()) {
-    CHECK(x.ubound().isAssumed());
-    os << "..";
+  if (x.lbound().isStar()) {
+    CHECK(x.ubound().isStar());
+    os << ".."; // assumed rank
   } else {
-    if (!x.lbound().isDeferred()) {
+    if (!x.lbound().isColon()) {
       PutBound(os, x.lbound());
     }
     os << ':';
-    if (!x.ubound().isDeferred()) {
+    if (!x.ubound().isColon()) {
       PutBound(os, x.ubound());
     }
   }
@@ -546,8 +638,19 @@ void PutShape(
   }
 }
 
-void PutObjectEntity(llvm::raw_ostream &os, const Symbol &symbol) {
+void ModFileWriter::PutObjectEntity(
+    llvm::raw_ostream &os, const Symbol &symbol) {
   auto &details{symbol.get<ObjectEntityDetails>()};
+  if (details.type() &&
+      details.type()->category() == DeclTypeSpec::TypeDerived) {
+    const Symbol &typeSymbol{details.type()->derivedTypeSpec().typeSymbol()};
+    if (typeSymbol.get<DerivedTypeDetails>().isDECStructure()) {
+      PutDerivedType(typeSymbol, &symbol.owner());
+      if (emittedDECFields_.find(symbol) != emittedDECFields_.end()) {
+        return; // symbol was emitted on STRUCTURE statement
+      }
+    }
+  }
   PutEntity(
       os, symbol, [&]() { PutType(os, DEREF(symbol.GetType())); },
       symbol.attrs());
@@ -557,9 +660,12 @@ void PutObjectEntity(llvm::raw_ostream &os, const Symbol &symbol) {
   os << '\n';
 }
 
-void PutProcEntity(llvm::raw_ostream &os, const Symbol &symbol) {
+void ModFileWriter::PutProcEntity(llvm::raw_ostream &os, const Symbol &symbol) {
   if (symbol.attrs().test(Attr::INTRINSIC)) {
     os << "intrinsic::" << symbol.name() << '\n';
+    if (symbol.attrs().test(Attr::PRIVATE)) {
+      os << "private::" << symbol.name() << '\n';
+    }
     return;
   }
   const auto &details{symbol.get<ProcEntityDetails>()};
@@ -590,7 +696,8 @@ void PutPassName(
     os << ",pass(" << *passName << ')';
   }
 }
-void PutTypeParam(llvm::raw_ostream &os, const Symbol &symbol) {
+
+void ModFileWriter::PutTypeParam(llvm::raw_ostream &os, const Symbol &symbol) {
   auto &details{symbol.get<TypeParamDetails>()};
   PutEntity(
       os, symbol,
@@ -621,9 +728,9 @@ void PutInit(llvm::raw_ostream &os, const MaybeIntExpr &init) {
 }
 
 void PutBound(llvm::raw_ostream &os, const Bound &x) {
-  if (x.isAssumed()) {
+  if (x.isStar()) {
     os << '*';
-  } else if (x.isDeferred()) {
+  } else if (x.isColon()) {
     os << ':';
   } else {
     x.GetExplicit()->AsFortran(os);
@@ -632,29 +739,26 @@ void PutBound(llvm::raw_ostream &os, const Bound &x) {
 
 // Write an entity (object or procedure) declaration.
 // writeType is called to write out the type.
-void PutEntity(llvm::raw_ostream &os, const Symbol &symbol,
+void ModFileWriter::PutEntity(llvm::raw_ostream &os, const Symbol &symbol,
     std::function<void()> writeType, Attrs attrs) {
   writeType();
-  MaybeExpr bindName;
-  std::visit(common::visitors{
-                 [&](const SubprogramDetails &x) { bindName = x.bindName(); },
-                 [&](const ObjectEntityDetails &x) { bindName = x.bindName(); },
-                 [&](const ProcEntityDetails &x) { bindName = x.bindName(); },
-                 [&](const auto &) {},
-             },
-      symbol.details());
-  PutAttrs(os, attrs, bindName);
-  os << "::" << symbol.name();
+  PutAttrs(os, attrs, symbol.GetBindName());
+  if (symbol.owner().kind() == Scope::Kind::DerivedType &&
+      context_.IsTempName(symbol.name().ToString())) {
+    os << "::%FILL";
+  } else {
+    os << "::" << symbol.name();
+  }
 }
 
 // Put out each attribute to os, surrounded by `before` and `after` and
 // mapped to lower case.
 llvm::raw_ostream &PutAttrs(llvm::raw_ostream &os, Attrs attrs,
-    const MaybeExpr &bindName, std::string before, std::string after) {
+    const std::string *bindName, std::string before, std::string after) {
   attrs.set(Attr::PUBLIC, false); // no need to write PUBLIC
   attrs.set(Attr::EXTERNAL, false); // no need to write EXTERNAL
   if (bindName) {
-    bindName->AsFortran(os << before << "bind(c, name=") << ')' << after;
+    os << before << "bind(c, name=\"" << *bindName << "\")" << after;
     attrs.set(Attr::BIND_C, false);
   }
   for (std::size_t i{0}; i < Attr_enumSize; ++i) {
@@ -795,7 +899,8 @@ static bool VerifyHeader(llvm::ArrayRef<char> content) {
   return expectSum == actualSum;
 }
 
-Scope *ModFileReader::Read(const SourceName &name, Scope *ancestor) {
+Scope *ModFileReader::Read(const SourceName &name,
+    std::optional<bool> isIntrinsic, Scope *ancestor, bool silent) {
   std::string ancestorName; // empty for module
   if (ancestor) {
     if (auto *scope{ancestor->FindSubmodule(name)}) {
@@ -803,23 +908,46 @@ Scope *ModFileReader::Read(const SourceName &name, Scope *ancestor) {
     }
     ancestorName = ancestor->GetName().value().ToString();
   } else {
-    auto it{context_.globalScope().find(name)};
-    if (it != context_.globalScope().end()) {
-      return it->second->scope();
+    if (!isIntrinsic.value_or(false)) {
+      auto it{context_.globalScope().find(name)};
+      if (it != context_.globalScope().end()) {
+        return it->second->scope();
+      }
+    }
+    if (isIntrinsic.value_or(true)) {
+      auto it{context_.intrinsicModulesScope().find(name)};
+      if (it != context_.intrinsicModulesScope().end()) {
+        return it->second->scope();
+      }
     }
   }
   parser::Parsing parsing{context_.allCookedSources()};
   parser::Options options;
   options.isModuleFile = true;
   options.features.Enable(common::LanguageFeature::BackslashEscapes);
-  options.searchDirectories = context_.searchDirectories();
+  if (!isIntrinsic.value_or(false)) {
+    options.searchDirectories = context_.searchDirectories();
+    // If a directory is in both lists, the intrinsic module directory
+    // takes precedence.
+    for (const auto &dir : context_.intrinsicModuleDirectories()) {
+      std::remove(options.searchDirectories.begin(),
+          options.searchDirectories.end(), dir);
+    }
+  }
+  if (isIntrinsic.value_or(true)) {
+    for (const auto &dir : context_.intrinsicModuleDirectories()) {
+      options.searchDirectories.push_back(dir);
+    }
+  }
   auto path{ModFileName(name, ancestorName, context_.moduleFileSuffix())};
   const auto *sourceFile{parsing.Prescan(path, options)};
   if (parsing.messages().AnyFatalError()) {
-    for (auto &msg : parsing.messages().messages()) {
-      std::string str{msg.ToString()};
-      Say(name, ancestorName, parser::MessageFixedText{str.c_str(), str.size()},
-          path);
+    if (!silent) {
+      for (auto &msg : parsing.messages().messages()) {
+        std::string str{msg.ToString()};
+        Say(name, ancestorName,
+            parser::MessageFixedText{str.c_str(), str.size()}, path);
+      }
     }
     return nullptr;
   }
@@ -839,10 +967,21 @@ Scope *ModFileReader::Read(const SourceName &name, Scope *ancestor) {
     return nullptr;
   }
   Scope *parentScope; // the scope this module/submodule goes into
+  if (!isIntrinsic.has_value()) {
+    for (const auto &dir : context_.intrinsicModuleDirectories()) {
+      if (sourceFile->path().size() > dir.size() &&
+          sourceFile->path().find(dir) == 0) {
+        isIntrinsic = true;
+        break;
+      }
+    }
+  }
+  Scope &topScope{isIntrinsic.value_or(false) ? context_.intrinsicModulesScope()
+                                              : context_.globalScope()};
   if (!ancestor) {
-    parentScope = &context_.globalScope();
+    parentScope = &topScope;
   } else if (std::optional<SourceName> parent{GetSubmoduleParent(*parseTree)}) {
-    parentScope = Read(*parent, ancestor);
+    parentScope = Read(*parent, false /*not intrinsic*/, ancestor, silent);
   } else {
     parentScope = ancestor;
   }
@@ -852,22 +991,25 @@ Scope *ModFileReader::Read(const SourceName &name, Scope *ancestor) {
   }
   Symbol &modSymbol{*pair.first->second};
   modSymbol.set(Symbol::Flag::ModFile);
-  ResolveNames(context_, *parseTree);
+  ResolveNames(context_, *parseTree, topScope);
   CHECK(modSymbol.has<ModuleDetails>());
   CHECK(modSymbol.test(Symbol::Flag::ModFile));
+  if (isIntrinsic.value_or(false)) {
+    modSymbol.attrs().set(Attr::INTRINSIC);
+  }
   return modSymbol.scope();
 }
 
 parser::Message &ModFileReader::Say(const SourceName &name,
     const std::string &ancestor, parser::MessageFixedText &&msg,
     const std::string &arg) {
-  return context_
-      .Say(name,
-          ancestor.empty()
-              ? "Error reading module file for module '%s'"_err_en_US
-              : "Error reading module file for submodule '%s' of module '%s'"_err_en_US,
-          name, ancestor)
-      .Attach(name, std::move(msg), arg);
+  return context_.Say(name, "Cannot read module file for %s: %s"_err_en_US,
+      parser::MessageFormattedText{ancestor.empty()
+              ? "module '%s'"_en_US
+              : "submodule '%s' of module '%s'"_en_US,
+          name, ancestor}
+          .MoveString(),
+      parser::MessageFormattedText{std::move(msg), arg}.MoveString());
 }
 
 // program was read from a .mod file for a submodule; return the name of the
