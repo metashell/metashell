@@ -14,6 +14,7 @@
 
 #include "flang/Common/Fortran.h"
 #include "flang/Evaluate/expression.h"
+#include "flang/Evaluate/shape.h"
 #include "flang/Evaluate/type.h"
 #include "flang/Evaluate/variable.h"
 #include "flang/Parser/message.h"
@@ -55,6 +56,8 @@ const DeclTypeSpec *FindParentTypeSpec(const DeclTypeSpec &);
 const DeclTypeSpec *FindParentTypeSpec(const Scope &);
 const DeclTypeSpec *FindParentTypeSpec(const Symbol &);
 
+const EquivalenceSet *FindEquivalenceSet(const Symbol &);
+
 enum class Tristate { No, Yes, Maybe };
 inline Tristate ToTristate(bool x) { return x ? Tristate::Yes : Tristate::No; }
 
@@ -93,28 +96,22 @@ bool IsPointerDummy(const Symbol &);
 bool IsBindCProcedure(const Symbol &);
 bool IsBindCProcedure(const Scope &);
 bool IsProcName(const Symbol &); // proc-name
-bool IsFunctionResultWithSameNameAsFunction(const Symbol &);
-bool IsExtensibleType(const DerivedTypeSpec *);
-bool IsBuiltinDerivedType(const DerivedTypeSpec *derived, const char *name);
-// Is this derived type TEAM_TYPE from module ISO_FORTRAN_ENV
-bool IsTeamType(const DerivedTypeSpec *);
-// Is this derived type either C_PTR or C_FUNPTR from module ISO_C_BINDING
-bool IsIsoCType(const DerivedTypeSpec *);
-bool IsEventTypeOrLockType(const DerivedTypeSpec *);
+// Returns a pointer to the function's symbol when true, else null
+const Symbol *IsFunctionResultWithSameNameAsFunction(const Symbol &);
 bool IsOrContainsEventOrLockComponent(const Symbol &);
 bool CanBeTypeBoundProc(const Symbol *);
 // Does a non-PARAMETER symbol have explicit initialization with =value or
-// =>target in its declaration, or optionally in a DATA statement? (Being
+// =>target in its declaration (but not in a DATA statement)? (Being
 // ALLOCATABLE or having a derived type with default component initialization
 // doesn't count; it must be a variable initialization that implies the SAVE
 // attribute, or a derived type component default value.)
-bool IsStaticallyInitialized(const Symbol &, bool ignoreDATAstatements = false);
+bool HasDeclarationInitializer(const Symbol &);
 // Is the symbol explicitly or implicitly initialized in any way?
-bool IsInitialized(const Symbol &, bool ignoreDATAstatements = false,
-    const Symbol *derivedType = nullptr);
+bool IsInitialized(const Symbol &, bool ignoreDATAstatements = false);
+// Is the symbol a component subject to deallocation or finalization?
+bool IsDestructible(const Symbol &, const Symbol *derivedType = nullptr);
 bool HasIntrinsicTypeName(const Symbol &);
 bool IsSeparateModuleProcedureInterface(const Symbol *);
-bool IsAutomatic(const Symbol &);
 bool HasAlternateReturns(const Symbol &);
 bool InCommonBlock(const Symbol &);
 
@@ -139,6 +136,9 @@ inline bool IsAllocatable(const Symbol &symbol) {
 inline bool IsAllocatableOrPointer(const Symbol &symbol) {
   return IsPointer(symbol) || IsAllocatable(symbol);
 }
+inline bool IsSave(const Symbol &symbol) {
+  return symbol.attrs().test(Attr::SAVE);
+}
 inline bool IsNamedConstant(const Symbol &symbol) {
   return symbol.attrs().test(Attr::PARAMETER);
 }
@@ -160,19 +160,15 @@ inline bool IsProtected(const Symbol &symbol) {
 inline bool IsImpliedDoIndex(const Symbol &symbol) {
   return symbol.owner().kind() == Scope::Kind::ImpliedDos;
 }
-bool IsFinalizable(const Symbol &);
-bool IsFinalizable(const DerivedTypeSpec &);
+bool IsFinalizable(
+    const Symbol &, std::set<const DerivedTypeSpec *> * = nullptr);
+bool IsFinalizable(
+    const DerivedTypeSpec &, std::set<const DerivedTypeSpec *> * = nullptr);
 bool HasImpureFinal(const DerivedTypeSpec &);
-bool IsCoarray(const Symbol &);
 bool IsInBlankCommon(const Symbol &);
-bool IsAutomaticObject(const Symbol &);
 inline bool IsAssumedSizeArray(const Symbol &symbol) {
   const auto *details{symbol.detailsIf<ObjectEntityDetails>()};
   return details && details->IsAssumedSize();
-}
-inline bool IsAssumedRankArray(const Symbol &symbol) {
-  const auto *details{symbol.detailsIf<ObjectEntityDetails>()};
-  return details && details->IsAssumedRank();
 }
 bool IsAssumedLengthCharacter(const Symbol &);
 bool IsExternal(const Symbol &);
@@ -210,7 +206,7 @@ std::list<SourceName> OrderParameterNames(const Symbol &);
 
 // Return an existing or new derived type instance
 const DeclTypeSpec &FindOrInstantiateDerivedType(Scope &, DerivedTypeSpec &&,
-    SemanticsContext &, DeclTypeSpec::Category = DeclTypeSpec::TypeDerived);
+    DeclTypeSpec::Category = DeclTypeSpec::TypeDerived);
 
 // When a subprogram defined in a submodule defines a separate module
 // procedure whose interface is defined in an ancestor (sub)module,
@@ -248,6 +244,10 @@ const Symbol *FindExternallyVisibleObject(
       expr.u);
 }
 
+// Apply GetUltimate(), then if the symbol is a generic procedure shadowing a
+// specific procedure of the same name, return it instead.
+const Symbol &BypassGeneric(const Symbol &);
+
 using SomeExpr = evaluate::Expr<evaluate::SomeType>;
 
 bool ExprHasTypeCategory(
@@ -256,9 +256,13 @@ bool ExprTypeKindIsDefault(
     const SomeExpr &expr, const SemanticsContext &context);
 
 struct GetExprHelper {
+  // Specializations for parse tree nodes that have a typedExpr member.
   static const SomeExpr *Get(const parser::Expr &);
   static const SomeExpr *Get(const parser::Variable &);
   static const SomeExpr *Get(const parser::DataStmtConstant &);
+  static const SomeExpr *Get(const parser::AllocateObject &);
+  static const SomeExpr *Get(const parser::PointerObject &);
+
   template <typename T>
   static const SomeExpr *Get(const common::Indirection<T> &x) {
     return Get(x.value());
@@ -267,6 +271,8 @@ struct GetExprHelper {
     return x ? Get(*x) : nullptr;
   }
   template <typename T> static const SomeExpr *Get(const T &x) {
+    static_assert(
+        !parser::HasTypedExpr<T>::value, "explicit Get overload must be added");
     if constexpr (ConstraintTrait<T>) {
       return Get(x.thing);
     } else if constexpr (WrapperTrait<T>) {
@@ -311,6 +317,13 @@ enum class ProcedureDefinitionClass {
 };
 
 ProcedureDefinitionClass ClassifyProcedure(const Symbol &);
+
+// Returns a list of storage associations due to EQUIVALENCE in a
+// scope; each storage association is a list of symbol references
+// in ascending order of scope offset.  Note that the scope may have
+// more EquivalenceSets than this function's result has storage
+// associations; these are closures over equivalences.
+std::list<std::list<SymbolRef>> GetStorageAssociations(const Scope &);
 
 // Derived type component iterator that provides a C++ LegacyForwardIterator
 // iterator over the Ordered, Direct, Ultimate or Potential components of a
@@ -452,7 +465,10 @@ public:
       name_iterator &nameIterator() { return nameIterator_; }
       name_iterator nameEnd() { return nameEnd_; }
       const Symbol &GetTypeSymbol() const { return derived_->typeSymbol(); }
-      const Scope &GetScope() const { return DEREF(derived_->scope()); }
+      const Scope &GetScope() const {
+        return derived_->scope() ? *derived_->scope()
+                                 : DEREF(GetTypeSymbol().scope());
+      }
       bool operator==(const ComponentPathNode &that) const {
         return &*derived_ == &*that.derived_ &&
             nameIterator_ == that.nameIterator_ &&
@@ -559,5 +575,12 @@ private:
 // Return the (possibly null) name of the ConstructNode
 const std::optional<parser::Name> &MaybeGetNodeName(
     const ConstructNode &construct);
+
+// Convert evaluate::GetShape() result into an ArraySpec
+std::optional<ArraySpec> ToArraySpec(
+    evaluate::FoldingContext &, const evaluate::Shape &);
+std::optional<ArraySpec> ToArraySpec(
+    evaluate::FoldingContext &, const std::optional<evaluate::Shape> &);
+
 } // namespace Fortran::semantics
 #endif // FORTRAN_SEMANTICS_TOOLS_H_

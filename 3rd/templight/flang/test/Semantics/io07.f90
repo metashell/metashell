@@ -1,4 +1,4 @@
-! RUN: %S/test_errors.sh %s %t %f18
+! RUN: %python %S/test_errors.py %s %flang_fc1
 1001 format(A)
 
      !ERROR: Format statement must be labeled
@@ -74,9 +74,9 @@
 
 8001 format(9G0.5)
 
-     !ERROR: Unexpected 'e' in 'G0' edit descriptor
+     !ERROR: A 'G0' edit descriptor must not have an 'e' value
 8101 format(9(G0.5e1))
 
-     !ERROR: Unexpected 'e' in 'G0' edit descriptor
+     !ERROR: A 'G0' edit descriptor must not have an 'e' value
 8102 format(9(G0.5  E 1))
 end

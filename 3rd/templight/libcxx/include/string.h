@@ -1,5 +1,5 @@
 // -*- C++ -*-
-//===--------------------------- string.h ---------------------------------===//
+//===----------------------------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -106,4 +106,4 @@ inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_PREFERRED_OVERLOAD
 }
 #endif
 
-#endif  // _LIBCPP_STRING_H
+#endif // _LIBCPP_STRING_H

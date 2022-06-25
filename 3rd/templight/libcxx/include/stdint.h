@@ -1,5 +1,5 @@
 // -*- C++ -*-
-//===---------------------------- stdint.h --------------------------------===//
+//===----------------------------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -122,4 +122,4 @@ Macros:
 
 #include_next <stdint.h>
 
-#endif  // _LIBCPP_STDINT_H
+#endif // _LIBCPP_STDINT_H

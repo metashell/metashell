@@ -124,6 +124,24 @@ macro(set_output_name output name arch)
   else()
     if(ANDROID AND ${arch} STREQUAL "i386")
       set(${output} "${name}-i686${COMPILER_RT_OS_SUFFIX}")
+    elseif("${arch}" MATCHES "^arm")
+      if(COMPILER_RT_DEFAULT_TARGET_ONLY)
+        set(triple "${COMPILER_RT_DEFAULT_TARGET_TRIPLE}")
+      else()
+        set(triple "${TARGET_TRIPLE}")
+      endif()
+      # Except for baremetal, when using arch-suffixed runtime library names,
+      # clang only looks for libraries named "arm" or "armhf", see
+      # getArchNameForCompilerRTLib in clang. Therefore, try to inspect both
+      # the arch name and the triple if it seems like we're building an armhf
+      # target.
+      if (COMPILER_RT_BAREMETAL_BUILD)
+        set(${output} "${name}-${arch}${COMPILER_RT_OS_SUFFIX}")
+      elseif ("${arch}" MATCHES "hf$" OR "${triple}" MATCHES "hf$")
+        set(${output} "${name}-armhf${COMPILER_RT_OS_SUFFIX}")
+      else()
+        set(${output} "${name}-arm${COMPILER_RT_OS_SUFFIX}")
+      endif()
     else()
       set(${output} "${name}-${arch}${COMPILER_RT_OS_SUFFIX}")
     endif()
@@ -133,7 +151,7 @@ endmacro()
 # Adds static or shared runtime for a list of architectures and operating
 # systems and puts it in the proper directory in the build and install trees.
 # add_compiler_rt_runtime(<name>
-#                         {OBJECT|STATIC|SHARED}
+#                         {OBJECT|STATIC|SHARED|MODULE}
 #                         ARCHS <architectures>
 #                         OS <os list>
 #                         SOURCES <source files>
@@ -146,8 +164,9 @@ endmacro()
 #                         PARENT_TARGET <convenience parent target>
 #                         ADDITIONAL_HEADERS <header files>)
 function(add_compiler_rt_runtime name type)
-  if(NOT type MATCHES "^(OBJECT|STATIC|SHARED)$")
-    message(FATAL_ERROR "type argument must be OBJECT, STATIC or SHARED")
+  if(NOT type MATCHES "^(OBJECT|STATIC|SHARED|MODULE)$")
+    message(FATAL_ERROR
+            "type argument must be OBJECT, STATIC, SHARED or MODULE")
     return()
   endif()
   cmake_parse_arguments(LIB
@@ -172,8 +191,11 @@ function(add_compiler_rt_runtime name type)
     endif()
     if(LLVM_BUILD_INSTRUMENTED MATCHES IR AND COMPILER_RT_HAS_FNO_PROFILE_GENERATE_FLAG)
       list(APPEND NO_PGO_FLAGS "-fno-profile-generate")
-    elseif(LLVM_BUILD_INSTRUMENTED AND COMPILER_RT_HAS_FNO_PROFILE_INSTR_GENERATE_FLAG)
+    elseif((LLVM_BUILD_INSTRUMENTED OR LLVM_BUILD_INSTRUMENTED_COVERAGE) AND COMPILER_RT_HAS_FNO_PROFILE_INSTR_GENERATE_FLAG)
       list(APPEND NO_PGO_FLAGS "-fno-profile-instr-generate")
+      if(LLVM_BUILD_INSTRUMENTED_COVERAGE AND COMPILER_RT_HAS_FNO_COVERAGE_MAPPING_FLAG)
+        list(APPEND NO_PGO_FLAGS "-fno-coverage-mapping")
+      endif()
     endif()
   endif()
 
@@ -238,7 +260,7 @@ function(add_compiler_rt_runtime name type)
       if(COMPILER_RT_USE_BUILTINS_LIBRARY AND NOT type STREQUAL "OBJECT" AND
          NOT name STREQUAL "clang_rt.builtins")
         get_compiler_rt_target(${arch} target)
-        find_compiler_rt_library(builtins ${target} builtins_${libname})
+        find_compiler_rt_library(builtins builtins_${libname} TARGET ${target})
         if(builtins_${libname} STREQUAL "NOTFOUND")
           message(FATAL_ERROR "Cannot find builtins library for the target architecture")
         endif()
@@ -355,7 +377,7 @@ function(add_compiler_rt_runtime name type)
         add_custom_command(TARGET ${libname}
           POST_BUILD  
           COMMAND codesign --sign - $<TARGET_FILE:${libname}>
-          WORKING_DIRECTORY ${COMPILER_RT_LIBRARY_OUTPUT_DIR}
+          WORKING_DIRECTORY ${COMPILER_RT_OUTPUT_LIBRARY_DIR}
         )
       endif()
     endif()
@@ -474,7 +496,7 @@ function(add_compiler_rt_test test_suite test_name arch)
   endif()
   add_custom_command(
     OUTPUT "${output_bin}"
-    COMMAND ${COMPILER_RT_TEST_COMPILER} ${TEST_OBJECTS} -o "${output_bin}"
+    COMMAND ${COMPILER_RT_TEST_CXX_COMPILER} ${TEST_OBJECTS} -o "${output_bin}"
             ${TEST_LINK_FLAGS}
     DEPENDS ${TEST_DEPS}
     )
@@ -495,7 +517,7 @@ macro(add_compiler_rt_resource_file target_name file_name component)
   add_custom_target(${target_name} DEPENDS ${dst_file})
   # Install in Clang resource directory.
   install(FILES ${file_name}
-    DESTINATION ${COMPILER_RT_INSTALL_PATH}/share
+    DESTINATION ${COMPILER_RT_INSTALL_DATA_DIR}
     COMPONENT ${component})
   add_dependencies(${component} ${target_name})
 
@@ -512,7 +534,7 @@ macro(add_compiler_rt_script name)
   add_custom_target(${name} DEPENDS ${dst})
   install(FILES ${dst}
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-    DESTINATION ${COMPILER_RT_INSTALL_PATH}/bin)
+    DESTINATION ${COMPILER_RT_INSTALL_BINARY_DIR})
 endmacro(add_compiler_rt_script src name)
 
 # Builds custom version of libc++ and installs it in <prefix>.
@@ -534,7 +556,7 @@ macro(add_custom_libcxx name prefix)
   if(LIBCXX_USE_TOOLCHAIN)
     set(compiler_args -DCMAKE_C_COMPILER=${COMPILER_RT_TEST_COMPILER}
                       -DCMAKE_CXX_COMPILER=${COMPILER_RT_TEST_CXX_COMPILER})
-    if(NOT COMPILER_RT_STANDALONE_BUILD AND NOT RUNTIMES_BUILD)
+    if(NOT COMPILER_RT_STANDALONE_BUILD AND NOT LLVM_RUNTIMES_BUILD)
       set(toolchain_deps $<TARGET_FILE:clang>)
       set(force_deps DEPENDS $<TARGET_FILE:clang>)
     endif()
@@ -543,13 +565,9 @@ macro(add_custom_libcxx name prefix)
                       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
   endif()
 
-  set(STAMP_DIR ${prefix}-stamps/)
-  set(BINARY_DIR ${prefix}-bins/)
-
   add_custom_target(${name}-clear
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${BINARY_DIR}
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${STAMP_DIR}
-    COMMENT "Clobbering ${name} build and stamp directories"
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${prefix}
+    COMMENT "Clobbering ${name} build directories"
     USES_TERMINAL
     )
   set_target_properties(${name}-clear PROPERTIES FOLDER "Compiler-RT Misc")
@@ -557,10 +575,9 @@ macro(add_custom_libcxx name prefix)
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${name}-clobber-stamp
     DEPENDS ${LIBCXX_DEPS} ${toolchain_deps}
-    COMMAND ${CMAKE_COMMAND} -E touch ${BINARY_DIR}/CMakeCache.txt
-    COMMAND ${CMAKE_COMMAND} -E touch ${STAMP_DIR}/${name}-mkdir
+    COMMAND ${CMAKE_COMMAND} -E touch ${prefix}/CMakeCache.txt
     COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/${name}-clobber-stamp
-    COMMENT "Clobbering bootstrap build and stamp directories"
+    COMMENT "Clobbering bootstrap build directories"
     )
 
   add_custom_target(${name}-clobber
@@ -582,6 +599,7 @@ macro(add_custom_libcxx name prefix)
     CMAKE_OBJCOPY
     CMAKE_OBJDUMP
     CMAKE_STRIP
+    CMAKE_READELF
     CMAKE_SYSROOT
     LIBCXX_HAS_MUSL_LIBC
     PYTHON_EXECUTABLE
@@ -606,10 +624,9 @@ macro(add_custom_libcxx name prefix)
 
   ExternalProject_Add(${name}
     DEPENDS ${name}-clobber ${LIBCXX_DEPS}
-    PREFIX ${prefix}
-    SOURCE_DIR ${COMPILER_RT_SOURCE_DIR}/cmake/Modules/CustomLibcxx
-    STAMP_DIR ${STAMP_DIR}
-    BINARY_DIR ${BINARY_DIR}
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/${name}
+    SOURCE_DIR ${LLVM_MAIN_SRC_DIR}/../runtimes
+    BINARY_DIR ${prefix}
     CMAKE_ARGS ${CMAKE_PASSTHROUGH_VARIABLES}
                ${compiler_args}
                -DCMAKE_C_FLAGS=${LIBCXX_C_FLAGS}
@@ -617,10 +634,17 @@ macro(add_custom_libcxx name prefix)
                -DCMAKE_BUILD_TYPE=Release
                -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
                -DLLVM_PATH=${LLVM_MAIN_SRC_DIR}
-               -DLLVM_BINARY_DIR=${prefix}
-               -DLLVM_LIBRARY_OUTPUT_INTDIR=${prefix}/lib
-               -DCOMPILER_RT_LIBCXX_PATH=${COMPILER_RT_LIBCXX_PATH}
-               -DCOMPILER_RT_LIBCXXABI_PATH=${COMPILER_RT_LIBCXXABI_PATH}
+               -DLLVM_ENABLE_RUNTIMES=libcxx|libcxxabi
+               -DLIBCXXABI_ENABLE_SHARED=OFF
+               -DLIBCXXABI_HERMETIC_STATIC_LIBRARY=ON
+               -DLIBCXXABI_INCLUDE_TESTS=OFF
+               -DLIBCXX_CXX_ABI=libcxxabi
+               -DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=OFF
+               -DLIBCXX_ENABLE_SHARED=OFF
+               -DLIBCXX_HERMETIC_STATIC_LIBRARY=ON
+               -DLIBCXX_INCLUDE_BENCHMARKS=OFF
+               -DLIBCXX_INCLUDE_TESTS=OFF
+               -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON
                ${LIBCXX_CMAKE_ARGS}
     INSTALL_COMMAND ""
     STEP_TARGETS configure build
@@ -628,14 +652,15 @@ macro(add_custom_libcxx name prefix)
     USES_TERMINAL_CONFIGURE 1
     USES_TERMINAL_BUILD 1
     USES_TERMINAL_INSTALL 1
+    LIST_SEPARATOR |
     EXCLUDE_FROM_ALL TRUE
     BUILD_BYPRODUCTS "${prefix}/lib/libc++.a" "${prefix}/lib/libc++abi.a"
     )
 
   if (CMAKE_GENERATOR MATCHES "Make")
-    set(run_clean "$(MAKE)" "-C" "${BINARY_DIR}" "clean")
+    set(run_clean "$(MAKE)" "-C" "${prefix}" "clean")
   else()
-    set(run_clean ${CMAKE_COMMAND} --build ${BINARY_DIR} --target clean
+    set(run_clean ${CMAKE_COMMAND} --build ${prefix} --target clean
                                    --config "$<CONFIG>")
   endif()
 
@@ -644,7 +669,7 @@ macro(add_custom_libcxx name prefix)
     COMMENT "Cleaning ${name}..."
     DEPENDEES configure
     ${force_deps}
-    WORKING_DIRECTORY ${BINARY_DIR}
+    WORKING_DIRECTORY ${prefix}
     EXCLUDE_FROM_MAIN 1
     USES_TERMINAL 1
     )

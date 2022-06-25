@@ -66,7 +66,6 @@ TEST(engine_switch, unused_arguments)
   ASSERT_EQ(comment(_), unused_argument({"-gz"}));
   ASSERT_EQ(comment(_), unused_argument({"-gz=none"}));
   ASSERT_EQ(comment(_), unused_argument({"-gz=zlib"}));
-  ASSERT_EQ(comment(_), unused_argument({"-gz=zlib-gnu"}));
   ASSERT_EQ(comment(_), unused_argument({"-gused"}));
   ASSERT_EQ(comment(_), unused_argument({"-gfull"}));
 #ifndef _WIN32

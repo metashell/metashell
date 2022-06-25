@@ -7,5 +7,5 @@
 #ifdef METASHELL_CLANG_REVISION
 #error METASHELL_CLANG_REVISION already defined
 #endif
-#define METASHELL_CLANG_REVISION "llvmorg-12.0.1"
+#define METASHELL_CLANG_REVISION "llvmorg-14.0.5"
 #endif

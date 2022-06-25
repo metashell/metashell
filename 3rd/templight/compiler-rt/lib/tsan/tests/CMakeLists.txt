@@ -14,12 +14,20 @@ set(TSAN_UNITTEST_CFLAGS
   -fno-rtti
 )
 
+if(COMPILER_RT_TSAN_DEBUG_OUTPUT)
+  # Need to match these flags with the runtime.
+  list(APPEND TSAN_UNITTEST_CFLAGS -DTSAN_COLLECT_STATS=1
+                                   -DTSAN_DEBUG_OUTPUT=2)
+endif()
+
+append_list_if(COMPILER_RT_HAS_MSSE4_2_FLAG -msse4.2 TSAN_UNITTEST_CFLAGS)
+
 set(TSAN_TEST_ARCH ${TSAN_SUPPORTED_ARCH})
 
-set(LINK_FLAGS ${COMPILER_RT_UNITTEST_LINK_FLAGS})
-foreach(lib ${SANITIZER_TEST_CXX_LIBRARIES})
-  list(APPEND LINK_FLAGS -l${lib})
-endforeach()
+set(LINK_FLAGS
+  ${COMPILER_RT_UNITTEST_LINK_FLAGS}
+  ${SANITIZER_TEST_CXX_LIBRARIES}
+  )
 
 if(APPLE)
 

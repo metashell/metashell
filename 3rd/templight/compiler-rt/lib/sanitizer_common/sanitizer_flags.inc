@@ -59,6 +59,8 @@ COMMON_FLAG(
     bool, log_exe_name, false,
     "Mention name of executable when reporting error and "
     "append executable name to logs (as in \"log_path.exe_name.pid\").")
+COMMON_FLAG(const char *, log_suffix, nullptr,
+            "String to append to log file name, e.g. \".txt\".")
 COMMON_FLAG(
     bool, log_to_syslog, (bool)SANITIZER_ANDROID || (bool)SANITIZER_MAC,
     "Write all sanitizer output to syslog in addition to other means of "
@@ -158,6 +160,10 @@ COMMON_FLAG(
 COMMON_FLAG(const char *, coverage_dir, ".",
             "Target directory for coverage dumps. Defaults to the current "
             "directory.")
+COMMON_FLAG(const char *, cov_8bit_counters_out, "",
+    "If non-empty, write 8bit counters to this file. ")
+COMMON_FLAG(const char *, cov_pcs_out, "",
+    "If non-empty, write the coverage pc table to this file. ")
 COMMON_FLAG(bool, full_address_space, false,
             "Sanitize complete address space; "
             "by default kernel area on 32-bit platforms will not be sanitized")
@@ -173,6 +179,7 @@ COMMON_FLAG(bool, use_madv_dontdump, true,
           "in core file.")
 COMMON_FLAG(bool, symbolize_inline_frames, true,
             "Print inlined frames in stacktraces. Defaults to true.")
+COMMON_FLAG(bool, demangle, true, "Print demangled symbols.")
 COMMON_FLAG(bool, symbolize_vs_style, false,
             "Print file locations in Visual Studio style (e.g: "
             " file(10,42): ...")
@@ -185,6 +192,8 @@ COMMON_FLAG(const char *, stack_trace_format, "DEFAULT",
             "Format string used to render stack frames. "
             "See sanitizer_stacktrace_printer.h for the format description. "
             "Use DEFAULT to get default format.")
+COMMON_FLAG(int, compress_stack_depot, 0,
+            "Compress stack depot to save memory.")
 COMMON_FLAG(bool, no_huge_pages_for_shadow, true,
             "If true, the shadow is not allowed to use huge pages. ")
 COMMON_FLAG(bool, strict_string_checks, false,

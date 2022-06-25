@@ -1,5 +1,5 @@
 // -*- C++ -*-
-//===--------------------------- stdexcept --------------------------------===//
+//===----------------------------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -209,7 +209,7 @@ public:
 #endif
 };
 
-}  // std
+} // namespace std
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
@@ -306,4 +306,4 @@ void __throw_underflow_error(const char*__msg)
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif  // _LIBCPP_STDEXCEPT
+#endif // _LIBCPP_STDEXCEPT

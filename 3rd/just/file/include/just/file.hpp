@@ -142,11 +142,7 @@ namespace just
     }
 
     template <class Container>
-    inline Container read(const std::string& filename_)
-    {
-      const std::vector<char> bytes = read<std::vector<char> >(filename_);
-      return Container(bytes.begin(), bytes.end());
-    }
+    Container read(const std::string&);
 
     template <>
     inline std::vector<char> read<std::vector<char> >(
@@ -154,6 +150,13 @@ namespace just
     )
     {
       return read(filename_);
+    }
+
+    template <class Container>
+    inline Container read(const std::string& filename_)
+    {
+      const std::vector<char> bytes = read<std::vector<char> >(filename_);
+      return Container(bytes.begin(), bytes.end());
     }
   }
 }

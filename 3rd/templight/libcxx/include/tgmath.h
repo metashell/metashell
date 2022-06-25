@@ -1,5 +1,5 @@
 // -*- C++ -*-
-//===-------------------------- tgmath.h ----------------------------------===//
+//===----------------------------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -31,6 +31,6 @@
 
 #include_next <tgmath.h>
 
-#endif  // __cplusplus
+#endif // __cplusplus
 
-#endif  // _LIBCPP_TGMATH_H
+#endif // _LIBCPP_TGMATH_H
