@@ -24,17 +24,16 @@
 #include <metashell/data/timeless_event_data.hpp>
 #include <metashell/data/type.hpp>
 
-#include <variant.hpp>
-
 #include <iosfwd>
 #include <optional>
 #include <string>
+#include <variant>
 
 namespace metashell
 {
   namespace data
   {
-    typedef mpark::variant<
+    typedef std::variant<
 #ifdef PREPROCESSOR_EVENT_KIND
 #error PREPROCESSOR_EVENT_KIND defined
 #endif

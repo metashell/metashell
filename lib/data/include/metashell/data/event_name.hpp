@@ -25,15 +25,14 @@
 
 #include <boost/filesystem/path.hpp>
 
-#include <variant.hpp>
+#include <variant>
 
 namespace metashell
 {
   namespace data
   {
-    typedef mpark::
-        variant<none_t, type, cpp_code, token, boost::filesystem::path>
-            event_name;
+    using event_name =
+        std::variant<none_t, type, cpp_code, token, boost::filesystem::path>;
 
     metaprogram_node to_metaprogram_node(const event_name& name_);
   } // namespace data

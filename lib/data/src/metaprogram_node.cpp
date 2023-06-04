@@ -17,6 +17,7 @@
 #include <metashell/data/metaprogram_node.hpp>
 
 #include <iostream>
+#include <variant>
 
 namespace metashell
 {
@@ -75,7 +76,7 @@ namespace metashell
     {
     }
 
-    const mpark::variant<type, token, cpp_code, boost::filesystem::path>&
+    const std::variant<type, token, cpp_code, boost::filesystem::path>&
     metaprogram_node::variant() const
     {
       return _value;
@@ -84,13 +85,13 @@ namespace metashell
     std::string to_string(const metaprogram_node& n_)
     {
       to_string_visitor v;
-      return mpark::visit(v, n_.variant());
+      return std::visit(v, n_.variant());
     }
 
     std::ostream& operator<<(std::ostream& out_, const metaprogram_node& n_)
     {
       ostream_visitor v(out_);
-      mpark::visit(v, n_.variant());
+      std::visit(v, n_.variant());
       return out_;
     }
 

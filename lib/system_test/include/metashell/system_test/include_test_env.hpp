@@ -27,13 +27,12 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/operators.hpp>
 
-#include <variant.hpp>
-
 #include <array>
 #include <iosfwd>
 #include <optional>
 #include <set>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace metashell
@@ -66,16 +65,14 @@ namespace metashell
       public:
         result(data::include_argument_type value_);
 
-        const mpark::
-            variant<none_t, system_used_t, data::include_argument_type>&
-            value() const;
+        const std::variant<none_t, system_used_t, data::include_argument_type>&
+        value() const;
 
         static result none();
         static result system_used();
 
       private:
-        mpark::variant<none_t, system_used_t, data::include_argument_type>
-            _value;
+        std::variant<none_t, system_used_t, data::include_argument_type> _value;
 
         result(none_t value_);
         result(system_used_t value_);

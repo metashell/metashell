@@ -20,17 +20,16 @@
 #include <metashell/data/macro_definition.hpp>
 #include <metashell/data/macro_undefinition.hpp>
 
-#include <variant.hpp>
-
 #include <iosfwd>
 #include <string>
+#include <variant>
 
 namespace metashell
 {
   namespace data
   {
     using macro_def_or_undef =
-        mpark::variant<macro_definition, macro_undefinition>;
+        std::variant<macro_definition, macro_undefinition>;
 
     command_line_argument clang_argument(const macro_def_or_undef&);
 

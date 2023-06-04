@@ -36,6 +36,4 @@ target_link_libraries(
   boost::utility
 
   just::console
-
-  mpark::variant
 )

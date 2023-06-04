@@ -24,6 +24,7 @@
 
 #include <gtest/gtest.h>
 
+#include <variant>
 #include <vector>
 
 using namespace metashell;
@@ -184,7 +185,7 @@ TEST(metaprogram, profiling_information)
   ASSERT_FALSE(i == mp.end());
 
   {
-    const data::frame* f = mpark::get_if<data::frame>(&*i);
+    const data::frame* f = std::get_if<data::frame>(&*i);
     ASSERT_TRUE(f);
     ASSERT_TRUE(bool(f->time_taken()));
     ASSERT_EQ(20, int(*f->time_taken()));
@@ -196,7 +197,7 @@ TEST(metaprogram, profiling_information)
   ASSERT_FALSE(i == mp.end());
 
   {
-    const data::frame* f = mpark::get_if<data::frame>(&*i);
+    const data::frame* f = std::get_if<data::frame>(&*i);
     ASSERT_TRUE(f);
     ASSERT_TRUE(bool(f->time_taken()));
     ASSERT_EQ(10, int(*f->time_taken()));
@@ -207,13 +208,13 @@ TEST(metaprogram, profiling_information)
   ++i;
   ASSERT_FALSE(i == mp.end());
 
-  ASSERT_TRUE(bool(mpark::get_if<data::pop_frame>(&*i)));
+  ASSERT_TRUE(bool(std::get_if<data::pop_frame>(&*i)));
 
   ++i;
   ASSERT_FALSE(i == mp.end());
 
   {
-    const data::frame* f = mpark::get_if<data::frame>(&*i);
+    const data::frame* f = std::get_if<data::frame>(&*i);
     ASSERT_TRUE(f);
     ASSERT_TRUE(bool(f->time_taken()));
     ASSERT_EQ(10, int(*f->time_taken()));

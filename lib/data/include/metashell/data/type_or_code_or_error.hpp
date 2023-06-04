@@ -17,12 +17,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <ostream>
-
-#include <variant.hpp>
-
 #include <metashell/data/blank.hpp>
 #include <metashell/data/type.hpp>
+
+#include <ostream>
+#include <variant>
 
 namespace metashell
 {
@@ -56,7 +55,7 @@ namespace metashell
       bool operator==(const type_or_code_or_error& other) const;
 
     private:
-      typedef mpark::variant<blank, type_type, code_type, error_type> data_type;
+      using data_type = std::variant<blank, type_type, code_type, error_type>;
       data_type data;
     };
 

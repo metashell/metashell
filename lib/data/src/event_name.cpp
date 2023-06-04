@@ -16,6 +16,8 @@
 
 #include <metashell/data/event_name.hpp>
 
+#include <variant>
+
 namespace metashell
 {
   namespace data
@@ -33,7 +35,7 @@ namespace metashell
 
     metaprogram_node to_metaprogram_node(const event_name& name_)
     {
-      return mpark::visit(
+      return std::visit(
           [](const auto& v) {
             return metaprogram_node(to_metaprogram_node_impl(v));
           },

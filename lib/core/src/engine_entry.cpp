@@ -23,6 +23,7 @@
 #include <boost/range/adaptor/transformed.hpp>
 
 #include <algorithm>
+#include <variant>
 
 namespace metashell
 {
@@ -115,7 +116,7 @@ namespace metashell
          const data::engine_arguments& engine_,
          logger* logger_)
     {
-      if (auto engine = mpark::get_if<data::real_engine_name>(&(engine_.name)))
+      if (auto engine = std::get_if<data::real_engine_name>(&(engine_.name)))
       {
         const auto eentry = engines_.find(*engine);
         if (eentry == engines_.end())

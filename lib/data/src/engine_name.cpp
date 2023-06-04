@@ -17,6 +17,7 @@
 #include <metashell/data/engine_name.hpp>
 
 #include <iostream>
+#include <variant>
 
 namespace metashell
 {
@@ -30,7 +31,7 @@ namespace metashell
 
     std::string to_string(engine_name e_)
     {
-      return mpark::visit([](auto name_) { return to_string(name_); }, e_);
+      return std::visit([](auto name_) { return to_string(name_); }, e_);
     }
 
     std::ostream& operator<<(std::ostream& out_, engine_name e_)

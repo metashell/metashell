@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <variant>
 
 namespace metashell
 {
@@ -145,7 +146,7 @@ namespace metashell
             update(*current_bt, (*history)[next_event]);
           }
         } while (next_event < read_event_count &&
-                 mpark::get_if<data::pop_frame>(&(*history)[next_event]));
+                 std::get_if<data::pop_frame>(&(*history)[next_event]));
 
         if (has_unread_event && next_event >= read_event_count)
         {
@@ -173,13 +174,13 @@ namespace metashell
             {
               update(*current_bt, *last);
             }
-            if (auto* f = mpark::get_if<data::frame>(&*last))
+            if (auto* f = std::get_if<data::frame>(&*last))
             {
               current_frame = *f;
             }
           }
         } while ((has_unread_event || next_event < read_event_count) && last &&
-                 mpark::get_if<data::pop_frame>(&*last));
+                 std::get_if<data::pop_frame>(&*last));
       }
     }
 
@@ -193,7 +194,7 @@ namespace metashell
         {
           --next_event;
         } while (next_event != 0 &&
-                 mpark::get_if<data::pop_frame>(&(*history)[next_event]));
+                 std::get_if<data::pop_frame>(&(*history)[next_event]));
         current_bt = std::nullopt;
 
         cache_current_frame();
@@ -256,7 +257,7 @@ namespace metashell
         assert(bool(history));
 
         current_frame = data::frame_only_event(
-            mpark::get<data::frame>((*history)[next_event]));
+            std::get<data::frame>((*history)[next_event]));
       }
     }
 
@@ -289,7 +290,7 @@ namespace metashell
                current_frame->event() != (*history)[next_event]))
           {
             if (const auto f =
-                    mpark::get_if<data::frame>(&(*history)[next_event]))
+                    std::get_if<data::frame>(&(*history)[next_event]))
             {
               current_frame = data::frame_only_event(*f);
             }

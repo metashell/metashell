@@ -25,9 +25,8 @@
 
 #include <boost/filesystem/path.hpp>
 
-#include <variant.hpp>
-
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace metashell
@@ -67,7 +66,7 @@ namespace metashell
       using running_process = pid_t;
 #endif
 
-      mpark::variant<running_process, data::status> _process;
+      std::variant<running_process, data::status> _process;
     };
   } // namespace process
 } // namespace metashell

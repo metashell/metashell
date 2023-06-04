@@ -16,13 +16,15 @@
 
 #include <metashell/core/event_cache.hpp>
 
+#include <variant>
+
 namespace metashell
 {
   namespace core
   {
     void event_cache::record(const data::event_data& event_)
     {
-      mpark::visit([this](const auto& det) { this->record(det); }, event_);
+      std::visit([this](const auto& det) { this->record(det); }, event_);
     }
 
     void event_cache::record(
@@ -59,14 +61,13 @@ namespace metashell
 
     data::list<data::event_data> event_cache::replay(data::event_data event_)
     {
-      return mpark::visit(
+      return std::visit(
           [this](auto& det) { return this->replay(std::move(det)); }, event_);
     }
 
     void event_cache::erase_related(const data::event_data& event_)
     {
-      mpark::visit(
-          [this](const auto& det) { this->erase_related(det); }, event_);
+      std::visit([this](const auto& det) { this->erase_related(det); }, event_);
     }
   } // namespace core
 } // namespace metashell

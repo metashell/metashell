@@ -17,6 +17,7 @@
 #include <metashell/mdb/forward_trace_iterator.hpp>
 
 #include <algorithm>
+#include <variant>
 
 namespace metashell
 {
@@ -58,7 +59,7 @@ namespace metashell
 
     void forward_trace_iterator::step_from(const data::debugger_event& event_)
     {
-      mpark::visit([this](const auto& f) { this->step_from(f); }, event_);
+      std::visit([this](const auto& f) { this->step_from(f); }, event_);
     }
 
     void forward_trace_iterator::step_from(const data::frame& frame_)
@@ -73,7 +74,7 @@ namespace metashell
 
     bool forward_trace_iterator::step_to(const data::debugger_event& event_)
     {
-      return mpark::visit(
+      return std::visit(
           [this](const auto& f) -> bool { return this->step_to(f); }, event_);
     }
 
@@ -94,7 +95,7 @@ namespace metashell
 
     void forward_trace_iterator::cache_current()
     {
-      auto p = mpark::get_if<data::frame>(&*at());
+      auto p = std::get_if<data::frame>(&*at());
       assert(p);
 
       if (!p->number_of_children() && _at_end)
@@ -103,7 +104,7 @@ namespace metashell
              i != e && !p->number_of_children();)
         {
           ++i;
-          p = mpark::get_if<data::frame>(&*at());
+          p = std::get_if<data::frame>(&*at());
           assert(p);
         }
       }
@@ -120,7 +121,7 @@ namespace metashell
     const data::call_graph_node& forward_trace_iterator::operator*() const
     {
       assert(!finished());
-      assert(mpark::get_if<data::frame>(&*at()) != nullptr);
+      assert(std::get_if<data::frame>(&*at()) != nullptr);
 
       return _current;
     }
