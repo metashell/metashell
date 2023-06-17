@@ -13,8 +13,6 @@
 
 #include "llvm/CodeGen/MachineFunctionPass.h"
 #include "llvm/CodeGen/MachineInstr.h"
-#include "llvm/CodeGen/MachineInstrBuilder.h"
-#include "llvm/CodeGen/MachineRegisterInfo.h"
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/CodeGen/TargetInstrInfo.h"
 #include "llvm/CodeGen/TargetRegisterInfo.h"
@@ -95,17 +93,17 @@ bool ExpandPostRA::LowerSubregToReg(MachineInstr *MI) {
   assert(SubIdx != 0 && "Invalid index for insert_subreg");
   Register DstSubReg = TRI->getSubReg(DstReg, SubIdx);
 
-  assert(Register::isPhysicalRegister(DstReg) &&
+  assert(DstReg.isPhysical() &&
          "Insert destination must be in a physical register");
-  assert(Register::isPhysicalRegister(InsReg) &&
+  assert(InsReg.isPhysical() &&
          "Inserted value must be in a physical register");
 
   LLVM_DEBUG(dbgs() << "subreg: CONVERTING: " << *MI);
 
   if (MI->allDefsAreDead()) {
     MI->setDesc(TII->get(TargetOpcode::KILL));
-    MI->RemoveOperand(3); // SubIdx
-    MI->RemoveOperand(1); // Imm
+    MI->removeOperand(3); // SubIdx
+    MI->removeOperand(1); // Imm
     LLVM_DEBUG(dbgs() << "subreg: replaced by: " << *MI);
     return true;
   }
@@ -117,8 +115,8 @@ bool ExpandPostRA::LowerSubregToReg(MachineInstr *MI) {
     // We must leave %rax live.
     if (DstReg != InsReg) {
       MI->setDesc(TII->get(TargetOpcode::KILL));
-      MI->RemoveOperand(3);     // SubIdx
-      MI->RemoveOperand(1);     // Imm
+      MI->removeOperand(3);     // SubIdx
+      MI->removeOperand(1);     // Imm
       LLVM_DEBUG(dbgs() << "subreg: replace by: " << *MI);
       return true;
     }

@@ -36,13 +36,13 @@ EXPORT module MODULE_NAME;
 // expected-error@-2 {{redefinition of module 'x'}}
 // expected-note-re@module-declaration.cpp:* {{loaded from '{{.*[/\\]}}x.pcm'}}
 #elif TEST == 7
-// expected-error@-5 {{expected ';'}} expected-error@-5 {{requires a type specifier}}
+// expected-error@-5 {{expected ';'}} expected-error@-5 {{a type specifier is required}}
 #elif TEST == 9
 // expected-warning@-7 {{unknown attribute 'fancy' ignored}}
 #elif TEST == 10
 // expected-error-re@-9 {{'maybe_unused' attribute cannot be applied to a module{{$}}}}
 #elif TEST == 1
-// expected-error@-11 {{definition of module 'z' is not available}}
+// expected-error@-11 {{module 'z' not found}}
 #else
 // expected-no-diagnostics
 #endif

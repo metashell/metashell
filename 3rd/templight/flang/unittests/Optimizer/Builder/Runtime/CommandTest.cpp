@@ -16,3 +16,42 @@ TEST_F(RuntimeCallTest, genCommandArgumentCountTest) {
   checkCallOp(result.getDefiningOp(), "_FortranAArgumentCount", /*nbArgs=*/0,
       /*addLocArgs=*/false);
 }
+
+TEST_F(RuntimeCallTest, genGetCommandArgument) {
+  mlir::Location loc = firBuilder->getUnknownLoc();
+  mlir::Type intTy = firBuilder->getDefaultIntegerType();
+  mlir::Type boxTy = fir::BoxType::get(firBuilder->getNoneType());
+  mlir::Value number = firBuilder->create<fir::UndefOp>(loc, intTy);
+  mlir::Value value = firBuilder->create<fir::UndefOp>(loc, boxTy);
+  mlir::Value length = firBuilder->create<fir::UndefOp>(loc, boxTy);
+  mlir::Value errmsg = firBuilder->create<fir::UndefOp>(loc, boxTy);
+  mlir::Value result = fir::runtime::genGetCommandArgument(
+      *firBuilder, loc, number, value, length, errmsg);
+  checkCallOp(result.getDefiningOp(), "_FortranAGetCommandArgument",
+      /*nbArgs=*/4,
+      /*addLocArgs=*/true);
+}
+
+TEST_F(RuntimeCallTest, genEnvVariableValue) {
+  mlir::Location loc = firBuilder->getUnknownLoc();
+  mlir::Type charTy = fir::BoxType::get(firBuilder->getNoneType());
+  mlir::Value name = firBuilder->create<fir::UndefOp>(loc, charTy);
+  mlir::Value value = firBuilder->create<fir::UndefOp>(loc, charTy);
+  mlir::Value trimName = firBuilder->create<fir::UndefOp>(loc, i1Ty);
+  mlir::Value errmsg = firBuilder->create<fir::UndefOp>(loc, charTy);
+  mlir::Value result = fir::runtime::genEnvVariableValue(
+      *firBuilder, loc, name, value, trimName, errmsg);
+  checkCallOp(result.getDefiningOp(), "_FortranAEnvVariableValue", /*nbArgs=*/4,
+      /*addLocArgs=*/true);
+}
+
+TEST_F(RuntimeCallTest, genEnvVariableLength) {
+  mlir::Location loc = firBuilder->getUnknownLoc();
+  mlir::Type charTy = fir::BoxType::get(firBuilder->getNoneType());
+  mlir::Value name = firBuilder->create<fir::UndefOp>(loc, charTy);
+  mlir::Value trimName = firBuilder->create<fir::UndefOp>(loc, i1Ty);
+  mlir::Value result =
+      fir::runtime::genEnvVariableLength(*firBuilder, loc, name, trimName);
+  checkCallOp(result.getDefiningOp(), "_FortranAEnvVariableLength",
+      /*nbArgs=*/2, /*addLocArgs=*/true);
+}

@@ -15,7 +15,7 @@
 #define LLVM_SUPPORT_KNOWNBITS_H
 
 #include "llvm/ADT/APInt.h"
-#include "llvm/ADT/Optional.h"
+#include <optional>
 
 namespace llvm {
 
@@ -218,6 +218,13 @@ public:
                      One.extractBits(NumBits, BitPosition));
   }
 
+  /// Concatenate the bits from \p Lo onto the bottom of *this.  This is
+  /// equivalent to:
+  ///   (this->zext(NewWidth) << Lo.getBitWidth()) | Lo.zext(NewWidth)
+  KnownBits concat(const KnownBits &Lo) const {
+    return KnownBits(Zero.concat(Lo.Zero), One.concat(Lo.One));
+  }
+
   /// Return KnownBits based on this, but updated given that the underlying
   /// value is known to be greater than or equal to Val.
   KnownBits makeGE(const APInt &Val) const;
@@ -324,7 +331,7 @@ public:
 
   /// Compute known bits resulting from multiplying LHS and RHS.
   static KnownBits mul(const KnownBits &LHS, const KnownBits &RHS,
-                       bool SelfMultiply = false);
+                       bool NoUndefSelfMultiply = false);
 
   /// Compute known bits from sign-extended multiply-hi.
   static KnownBits mulhs(const KnownBits &LHS, const KnownBits &RHS);
@@ -366,34 +373,34 @@ public:
   static KnownBits ashr(const KnownBits &LHS, const KnownBits &RHS);
 
   /// Determine if these known bits always give the same ICMP_EQ result.
-  static Optional<bool> eq(const KnownBits &LHS, const KnownBits &RHS);
+  static std::optional<bool> eq(const KnownBits &LHS, const KnownBits &RHS);
 
   /// Determine if these known bits always give the same ICMP_NE result.
-  static Optional<bool> ne(const KnownBits &LHS, const KnownBits &RHS);
+  static std::optional<bool> ne(const KnownBits &LHS, const KnownBits &RHS);
 
   /// Determine if these known bits always give the same ICMP_UGT result.
-  static Optional<bool> ugt(const KnownBits &LHS, const KnownBits &RHS);
+  static std::optional<bool> ugt(const KnownBits &LHS, const KnownBits &RHS);
 
   /// Determine if these known bits always give the same ICMP_UGE result.
-  static Optional<bool> uge(const KnownBits &LHS, const KnownBits &RHS);
+  static std::optional<bool> uge(const KnownBits &LHS, const KnownBits &RHS);
 
   /// Determine if these known bits always give the same ICMP_ULT result.
-  static Optional<bool> ult(const KnownBits &LHS, const KnownBits &RHS);
+  static std::optional<bool> ult(const KnownBits &LHS, const KnownBits &RHS);
 
   /// Determine if these known bits always give the same ICMP_ULE result.
-  static Optional<bool> ule(const KnownBits &LHS, const KnownBits &RHS);
+  static std::optional<bool> ule(const KnownBits &LHS, const KnownBits &RHS);
 
   /// Determine if these known bits always give the same ICMP_SGT result.
-  static Optional<bool> sgt(const KnownBits &LHS, const KnownBits &RHS);
+  static std::optional<bool> sgt(const KnownBits &LHS, const KnownBits &RHS);
 
   /// Determine if these known bits always give the same ICMP_SGE result.
-  static Optional<bool> sge(const KnownBits &LHS, const KnownBits &RHS);
+  static std::optional<bool> sge(const KnownBits &LHS, const KnownBits &RHS);
 
   /// Determine if these known bits always give the same ICMP_SLT result.
-  static Optional<bool> slt(const KnownBits &LHS, const KnownBits &RHS);
+  static std::optional<bool> slt(const KnownBits &LHS, const KnownBits &RHS);
 
   /// Determine if these known bits always give the same ICMP_SLE result.
-  static Optional<bool> sle(const KnownBits &LHS, const KnownBits &RHS);
+  static std::optional<bool> sle(const KnownBits &LHS, const KnownBits &RHS);
 
   /// Update known bits based on ANDing with RHS.
   KnownBits &operator&=(const KnownBits &RHS);
@@ -407,13 +414,19 @@ public:
   /// Compute known bits for the absolute value.
   KnownBits abs(bool IntMinIsPoison = false) const;
 
-  KnownBits byteSwap() {
+  KnownBits byteSwap() const {
     return KnownBits(Zero.byteSwap(), One.byteSwap());
   }
 
-  KnownBits reverseBits() {
+  KnownBits reverseBits() const {
     return KnownBits(Zero.reverseBits(), One.reverseBits());
   }
+
+  bool operator==(const KnownBits &Other) const {
+    return Zero == Other.Zero && One == Other.One;
+  }
+
+  bool operator!=(const KnownBits &Other) const { return !(*this == Other); }
 
   void print(raw_ostream &OS) const;
   void dump() const;

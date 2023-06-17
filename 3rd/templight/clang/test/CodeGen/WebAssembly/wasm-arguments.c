@@ -17,23 +17,23 @@ typedef struct {
 } s1;
 
 // Structs should be passed byval and not split up.
-// WEBASSEMBLY32: define void @struct_arg(%struct.s1* noundef byval(%struct.s1) align 4 %i)
-// WEBASSEMBLY64: define void @struct_arg(%struct.s1* noundef byval(%struct.s1) align 4 %i)
+// WEBASSEMBLY32: define void @struct_arg(ptr noundef byval(%struct.s1) align 4 %i)
+// WEBASSEMBLY64: define void @struct_arg(ptr noundef byval(%struct.s1) align 4 %i)
 
 // Except in the experimental multivalue ABI, where structs are passed in args
 // EXPERIMENTAL-MV: define void @struct_arg(i32 %i.0, i32 %i.1)
 void struct_arg(s1 i) {}
 
 // Structs should be returned sret and not simplified by the frontend.
-// WEBASSEMBLY32: define void @struct_ret(%struct.s1* noalias sret(%struct.s1) align 4 %agg.result)
+// WEBASSEMBLY32: define void @struct_ret(ptr noalias sret(%struct.s1) align 4 %agg.result)
 // WEBASSEMBLY32: ret void
-// WEBASSEMBLY64: define void @struct_ret(%struct.s1* noalias sret(%struct.s1) align 4 %agg.result)
+// WEBASSEMBLY64: define void @struct_ret(ptr noalias sret(%struct.s1) align 4 %agg.result)
 // WEBASSEMBLY64: ret void
 
 // Except with the experimental multivalue ABI, which returns structs by value
 // EXPERIMENTAL-MV: define %struct.s1 @struct_ret()
 // EXPERIMENTAL-MV: ret %struct.s1 %0
-s1 struct_ret() {
+s1 struct_ret(void) {
   s1 foo;
   return foo;
 }
@@ -53,7 +53,7 @@ void single_elem_arg(s2 i) {}
 // WEBASSEMBLY32: ret i32
 // WEBASSEMBLY64: define i32 @single_elem_ret()
 // EXPERIMENTAL-MV: define i32 @single_elem_ret()
-s2 single_elem_ret() {
+s2 single_elem_ret(void) {
   s2 foo;
   return foo;
 }
@@ -97,21 +97,21 @@ union simple_union {
 };
 
 // Unions should be passed as byval structs.
-// WEBASSEMBLY32: define void @union_arg(%union.simple_union* noundef byval(%union.simple_union) align 4 %s)
-// WEBASSEMBLY64: define void @union_arg(%union.simple_union* noundef byval(%union.simple_union) align 4 %s)
+// WEBASSEMBLY32: define void @union_arg(ptr noundef byval(%union.simple_union) align 4 %s)
+// WEBASSEMBLY64: define void @union_arg(ptr noundef byval(%union.simple_union) align 4 %s)
 // EXPERIMENTAL-MV: define void @union_arg(i32 %s.0)
 void union_arg(union simple_union s) {}
 
 // Unions should be returned sret and not simplified by the frontend.
-// WEBASSEMBLY32: define void @union_ret(%union.simple_union* noalias sret(%union.simple_union) align 4 %agg.result)
+// WEBASSEMBLY32: define void @union_ret(ptr noalias sret(%union.simple_union) align 4 %agg.result)
 // WEBASSEMBLY32: ret void
-// WEBASSEMBLY64: define void @union_ret(%union.simple_union* noalias sret(%union.simple_union) align 4 %agg.result)
+// WEBASSEMBLY64: define void @union_ret(ptr noalias sret(%union.simple_union) align 4 %agg.result)
 // WEBASSEMBLY64: ret void
 
 // The experimental multivalue ABI returns them by value, though.
 // EXPERIMENTAL-MV: define %union.simple_union @union_ret()
 // EXPERIMENTAL-MV: ret %union.simple_union %0
-union simple_union union_ret() {
+union simple_union union_ret(void) {
   union simple_union bar;
   return bar;
 }
@@ -123,18 +123,18 @@ typedef struct {
 } bitfield1;
 
 // Bitfields should be passed as byval structs.
-// WEBASSEMBLY32: define void @bitfield_arg(%struct.bitfield1* noundef byval(%struct.bitfield1) align 4 %bf1)
-// WEBASSEMBLY64: define void @bitfield_arg(%struct.bitfield1* noundef byval(%struct.bitfield1) align 4 %bf1)
-// EXPERIMENTAL-MV: define void @bitfield_arg(%struct.bitfield1* noundef byval(%struct.bitfield1) align 4 %bf1)
+// WEBASSEMBLY32: define void @bitfield_arg(ptr noundef byval(%struct.bitfield1) align 4 %bf1)
+// WEBASSEMBLY64: define void @bitfield_arg(ptr noundef byval(%struct.bitfield1) align 4 %bf1)
+// EXPERIMENTAL-MV: define void @bitfield_arg(ptr noundef byval(%struct.bitfield1) align 4 %bf1)
 void bitfield_arg(bitfield1 bf1) {}
 
 // And returned via sret pointers.
-// WEBASSEMBLY32: define void @bitfield_ret(%struct.bitfield1* noalias sret(%struct.bitfield1) align 4 %agg.result)
-// WEBASSEMBLY64: define void @bitfield_ret(%struct.bitfield1* noalias sret(%struct.bitfield1) align 4 %agg.result)
+// WEBASSEMBLY32: define void @bitfield_ret(ptr noalias sret(%struct.bitfield1) align 4 %agg.result)
+// WEBASSEMBLY64: define void @bitfield_ret(ptr noalias sret(%struct.bitfield1) align 4 %agg.result)
 
 // Except, of course, in the experimental multivalue ABI
 // EXPERIMENTAL-MV: define %struct.bitfield1 @bitfield_ret()
-bitfield1 bitfield_ret() {
+bitfield1 bitfield_ret(void) {
   bitfield1 baz;
   return baz;
 }

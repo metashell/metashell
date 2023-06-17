@@ -24,7 +24,6 @@
 #include "llvm/IR/Metadata.h"
 #include "llvm/IR/Module.h"
 #include "llvm/MC/StringTableBuilder.h"
-#include "llvm/Object/IRObjectFile.h"
 #include "llvm/Object/ModuleSymbolTable.h"
 #include "llvm/Object/SymbolicFile.h"
 #include "llvm/Support/Allocator.h"
@@ -290,7 +289,7 @@ Error Builder::addSymbol(const ModuleSymbolTable &Msymtab,
                                      inconvertibleErrorCode());
     Uncommon().CommonSize =
         GV->getParent()->getDataLayout().getTypeAllocSize(GV->getValueType());
-    Uncommon().CommonAlign = GVar->getAlignment();
+    Uncommon().CommonAlign = GVar->getAlign() ? GVar->getAlign()->value() : 0;
   }
 
   const GlobalObject *GO = GV->getAliaseeObject();

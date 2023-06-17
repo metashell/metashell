@@ -14,11 +14,11 @@
 #include "llvm/ProfileData/InstrProfReader.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/DenseMap.h"
-#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/ProfileSummary.h"
 #include "llvm/ProfileData/InstrProf.h"
+#include "llvm/ProfileData/MemProf.h"
 #include "llvm/ProfileData/ProfileCommon.h"
 #include "llvm/Support/Endian.h"
 #include "llvm/Support/Error.h"
@@ -27,7 +27,6 @@
 #include "llvm/Support/SwapByteOrder.h"
 #include "llvm/Support/SymbolRemappingReader.h"
 #include <algorithm>
-#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -43,19 +42,22 @@ using namespace llvm;
 static InstrProfKind getProfileKindFromVersion(uint64_t Version) {
   InstrProfKind ProfileKind = InstrProfKind::Unknown;
   if (Version & VARIANT_MASK_IR_PROF) {
-    ProfileKind |= InstrProfKind::IR;
+    ProfileKind |= InstrProfKind::IRInstrumentation;
   }
   if (Version & VARIANT_MASK_CSIR_PROF) {
-    ProfileKind |= InstrProfKind::CS;
+    ProfileKind |= InstrProfKind::ContextSensitive;
   }
   if (Version & VARIANT_MASK_INSTR_ENTRY) {
-    ProfileKind |= InstrProfKind::BB;
+    ProfileKind |= InstrProfKind::FunctionEntryInstrumentation;
   }
   if (Version & VARIANT_MASK_BYTE_COVERAGE) {
     ProfileKind |= InstrProfKind::SingleByteCoverage;
   }
   if (Version & VARIANT_MASK_FUNCTION_ENTRY_ONLY) {
     ProfileKind |= InstrProfKind::FunctionEntryOnly;
+  }
+  if (Version & VARIANT_MASK_MEMPROF) {
+    ProfileKind |= InstrProfKind::MemProf;
   }
   return ProfileKind;
 }
@@ -71,6 +73,91 @@ setupMemoryBuffer(const Twine &Path) {
 
 static Error initializeReader(InstrProfReader &Reader) {
   return Reader.readHeader();
+}
+
+/// Read a list of binary ids from a profile that consist of
+/// a. uint64_t binary id length
+/// b. uint8_t  binary id data
+/// c. uint8_t  padding (if necessary)
+/// This function is shared between raw and indexed profiles.
+/// Raw profiles are in host-endian format, and indexed profiles are in
+/// little-endian format. So, this function takes an argument indicating the
+/// associated endian format to read the binary ids correctly.
+static Error
+readBinaryIdsInternal(const MemoryBuffer &DataBuffer,
+                      const uint64_t BinaryIdsSize,
+                      const uint8_t *BinaryIdsStart,
+                      std::vector<llvm::object::BuildID> &BinaryIds,
+                      const llvm::support::endianness Endian) {
+  using namespace support;
+
+  if (BinaryIdsSize == 0)
+    return Error::success();
+
+  const uint8_t *BI = BinaryIdsStart;
+  const uint8_t *BIEnd = BinaryIdsStart + BinaryIdsSize;
+  const uint8_t *End =
+      reinterpret_cast<const uint8_t *>(DataBuffer.getBufferEnd());
+
+  while (BI < BIEnd) {
+    size_t Remaining = BIEnd - BI;
+    // There should be enough left to read the binary id length.
+    if (Remaining < sizeof(uint64_t))
+      return make_error<InstrProfError>(
+          instrprof_error::malformed,
+          "not enough data to read binary id length");
+
+    uint64_t BILen = 0;
+    if (Endian == little)
+      BILen = endian::readNext<uint64_t, little, unaligned>(BI);
+    else
+      BILen = endian::readNext<uint64_t, big, unaligned>(BI);
+
+    if (BILen == 0)
+      return make_error<InstrProfError>(instrprof_error::malformed,
+                                        "binary id length is 0");
+
+    Remaining = BIEnd - BI;
+    // There should be enough left to read the binary id data.
+    if (Remaining < alignToPowerOf2(BILen, sizeof(uint64_t)))
+      return make_error<InstrProfError>(
+          instrprof_error::malformed, "not enough data to read binary id data");
+
+    // Add binary id to the binary ids list.
+    BinaryIds.push_back(object::BuildID(BI, BI + BILen));
+
+    // Increment by binary id data length, which aligned to the size of uint64.
+    BI += alignToPowerOf2(BILen, sizeof(uint64_t));
+    if (BI > End)
+      return make_error<InstrProfError>(
+          instrprof_error::malformed,
+          "binary id section is greater than buffer size");
+  }
+
+  return Error::success();
+}
+
+static Error printBinaryIdsInternal(raw_ostream &OS,
+                                    const MemoryBuffer &DataBuffer,
+                                    uint64_t BinaryIdsSize,
+                                    const uint8_t *BinaryIdsStart,
+                                    llvm::support::endianness Endian) {
+  if (BinaryIdsSize == 0)
+    return Error::success();
+
+  std::vector<llvm::object::BuildID> BinaryIds;
+  if (Error E = readBinaryIdsInternal(DataBuffer, BinaryIdsSize, BinaryIdsStart,
+                                      BinaryIds, Endian))
+    return E;
+
+  OS << "Binary IDs: \n";
+  for (auto BI : BinaryIds) {
+    for (uint64_t I = 0; I < BI.size(); I++)
+      OS << format("%02x", BI[I]);
+    OS << "\n";
+  }
+
+  return Error::success();
 }
 
 Expected<std::unique_ptr<InstrProfReader>>
@@ -153,14 +240,6 @@ IndexedInstrProfReader::create(std::unique_ptr<MemoryBuffer> Buffer,
   return std::move(Result);
 }
 
-void InstrProfIterator::Increment() {
-  if (auto E = Reader->readNextRecord(Record)) {
-    // Handle errors in the reader.
-    InstrProfError::take(std::move(E));
-    *this = InstrProfIterator();
-  }
-}
-
 bool TextInstrProfReader::hasFormat(const MemoryBuffer &Buffer) {
   // Verify that this really looks like plain ASCII text by checking a
   // 'reasonable' number of characters (up to profile magic size).
@@ -180,16 +259,16 @@ Error TextInstrProfReader::readHeader() {
   while (Line->startswith(":")) {
     StringRef Str = Line->substr(1);
     if (Str.equals_insensitive("ir"))
-      ProfileKind |= InstrProfKind::IR;
+      ProfileKind |= InstrProfKind::IRInstrumentation;
     else if (Str.equals_insensitive("fe"))
-      ProfileKind |= InstrProfKind::FE;
+      ProfileKind |= InstrProfKind::FrontendInstrumentation;
     else if (Str.equals_insensitive("csir")) {
-      ProfileKind |= InstrProfKind::IR;
-      ProfileKind |= InstrProfKind::CS;
+      ProfileKind |= InstrProfKind::IRInstrumentation;
+      ProfileKind |= InstrProfKind::ContextSensitive;
     } else if (Str.equals_insensitive("entry_first"))
-      ProfileKind |= InstrProfKind::BB;
+      ProfileKind |= InstrProfKind::FunctionEntryInstrumentation;
     else if (Str.equals_insensitive("not_entry_first"))
-      ProfileKind &= ~InstrProfKind::BB;
+      ProfileKind &= ~InstrProfKind::FunctionEntryInstrumentation;
     else
       return error(instrprof_error::bad_header);
     ++Line;
@@ -454,7 +533,7 @@ Error RawInstrProfReader<IntPtrT>::readHeader(
     return error(instrprof_error::bad_header);
 
   std::unique_ptr<InstrProfSymtab> NewSymtab = std::make_unique<InstrProfSymtab>();
-  if (Error E = createSymtab(*NewSymtab.get()))
+  if (Error E = createSymtab(*NewSymtab))
     return E;
 
   Symtab = std::move(NewSymtab);
@@ -551,7 +630,9 @@ Error RawInstrProfReader<IntPtrT>::readValueProfilingData(
 
 template <class IntPtrT>
 Error RawInstrProfReader<IntPtrT>::readNextRecord(NamedInstrProfRecord &Record) {
-  if (atEnd())
+  // Keep reading profiles that consist of only headers and no profile data and
+  // counters.
+  while (atEnd())
     // At this point, ValueDataStart field points to the next header.
     if (Error E = readNextHeader(getNextHeaderPos()))
       return error(std::move(E));
@@ -577,54 +658,17 @@ Error RawInstrProfReader<IntPtrT>::readNextRecord(NamedInstrProfRecord &Record) 
   return success();
 }
 
-static size_t RoundUp(size_t size, size_t align) {
-  return (size + align - 1) & ~(align - 1);
+template <class IntPtrT>
+Error RawInstrProfReader<IntPtrT>::readBinaryIds(
+    std::vector<llvm::object::BuildID> &BinaryIds) {
+  return readBinaryIdsInternal(*DataBuffer, BinaryIdsSize, BinaryIdsStart,
+                               BinaryIds, getDataEndianness());
 }
 
 template <class IntPtrT>
 Error RawInstrProfReader<IntPtrT>::printBinaryIds(raw_ostream &OS) {
-  if (BinaryIdsSize == 0)
-    return success();
-
-  OS << "Binary IDs: \n";
-  const uint8_t *BI = BinaryIdsStart;
-  const uint8_t *BIEnd = BinaryIdsStart + BinaryIdsSize;
-  while (BI < BIEnd) {
-    size_t Remaining = BIEnd - BI;
-
-    // There should be enough left to read the binary ID size field.
-    if (Remaining < sizeof(uint64_t))
-      return make_error<InstrProfError>(
-          instrprof_error::malformed,
-          "not enough data to read binary id length");
-
-    uint64_t BinaryIdLen = swap(*reinterpret_cast<const uint64_t *>(BI));
-
-    // There should be enough left to read the binary ID size field, and the
-    // binary ID.
-    if (Remaining < sizeof(BinaryIdLen) + BinaryIdLen)
-      return make_error<InstrProfError>(
-          instrprof_error::malformed, "not enough data to read binary id data");
-
-    // Increment by binary id length data type size.
-    BI += sizeof(BinaryIdLen);
-    if (BI > (const uint8_t *)DataBuffer->getBufferEnd())
-      return make_error<InstrProfError>(
-          instrprof_error::malformed,
-          "binary id that is read is bigger than buffer size");
-
-    for (uint64_t I = 0; I < BinaryIdLen; I++)
-      OS << format("%02x", BI[I]);
-    OS << "\n";
-
-    // Increment by binary id data length, rounded to the next 8 bytes. This
-    // accounts for the zero-padding after each build ID.
-    BI += RoundUp(BinaryIdLen, sizeof(uint64_t));
-    if (BI > (const uint8_t *)DataBuffer->getBufferEnd())
-      return make_error<InstrProfError>(instrprof_error::malformed);
-  }
-
-  return success();
+  return printBinaryIdsInternal(OS, *DataBuffer, BinaryIdsSize, BinaryIdsStart,
+                                getDataEndianness());
 }
 
 namespace llvm {
@@ -942,26 +986,19 @@ Error IndexedInstrProfReader::readHeader() {
   if ((const unsigned char *)DataBuffer->getBufferEnd() - Cur < 24)
     return error(instrprof_error::truncated);
 
-  auto *Header = reinterpret_cast<const IndexedInstrProf::Header *>(Cur);
-  Cur += sizeof(IndexedInstrProf::Header);
+  auto HeaderOr = IndexedInstrProf::Header::readFromBuffer(Start);
+  if (!HeaderOr)
+    return HeaderOr.takeError();
 
-  // Check the magic number.
-  uint64_t Magic = endian::byte_swap<uint64_t, little>(Header->Magic);
-  if (Magic != IndexedInstrProf::Magic)
-    return error(instrprof_error::bad_magic);
+  const IndexedInstrProf::Header *Header = &HeaderOr.get();
+  Cur += Header->size();
 
-  // Read the version.
-  uint64_t FormatVersion = endian::byte_swap<uint64_t, little>(Header->Version);
-  if (GET_VERSION(FormatVersion) >
-      IndexedInstrProf::ProfVersion::CurrentVersion)
-    return error(instrprof_error::unsupported_version);
-
-  Cur = readSummary((IndexedInstrProf::ProfVersion)FormatVersion, Cur,
+  Cur = readSummary((IndexedInstrProf::ProfVersion)Header->formatVersion(), Cur,
                     /* UseCS */ false);
-  if (FormatVersion & VARIANT_MASK_CSIR_PROF)
-    Cur = readSummary((IndexedInstrProf::ProfVersion)FormatVersion, Cur,
-                      /* UseCS */ true);
-
+  if (Header->formatVersion() & VARIANT_MASK_CSIR_PROF)
+    Cur =
+        readSummary((IndexedInstrProf::ProfVersion)Header->formatVersion(), Cur,
+                    /* UseCS */ true);
   // Read the hash type and start offset.
   IndexedInstrProf::HashT HashType = static_cast<IndexedInstrProf::HashT>(
       endian::byte_swap<uint64_t, little>(Header->HashType));
@@ -970,16 +1007,70 @@ Error IndexedInstrProfReader::readHeader() {
 
   uint64_t HashOffset = endian::byte_swap<uint64_t, little>(Header->HashOffset);
 
-  // The rest of the file is an on disk hash table.
-  auto IndexPtr =
-      std::make_unique<InstrProfReaderIndex<OnDiskHashTableImplV3>>(
-          Start + HashOffset, Cur, Start, HashType, FormatVersion);
+  // The hash table with profile counts comes next.
+  auto IndexPtr = std::make_unique<InstrProfReaderIndex<OnDiskHashTableImplV3>>(
+      Start + HashOffset, Cur, Start, HashType, Header->formatVersion());
+
+  // The MemProfOffset field in the header is only valid when the format
+  // version is higher than 8 (when it was introduced).
+  if (GET_VERSION(Header->formatVersion()) >= 8 &&
+      Header->formatVersion() & VARIANT_MASK_MEMPROF) {
+    uint64_t MemProfOffset =
+        endian::byte_swap<uint64_t, little>(Header->MemProfOffset);
+
+    const unsigned char *Ptr = Start + MemProfOffset;
+    // The value returned from RecordTableGenerator.Emit.
+    const uint64_t RecordTableOffset =
+        support::endian::readNext<uint64_t, little, unaligned>(Ptr);
+    // The offset in the stream right before invoking
+    // FrameTableGenerator.Emit.
+    const uint64_t FramePayloadOffset =
+        support::endian::readNext<uint64_t, little, unaligned>(Ptr);
+    // The value returned from FrameTableGenerator.Emit.
+    const uint64_t FrameTableOffset =
+        support::endian::readNext<uint64_t, little, unaligned>(Ptr);
+
+    // Read the schema.
+    auto SchemaOr = memprof::readMemProfSchema(Ptr);
+    if (!SchemaOr)
+      return SchemaOr.takeError();
+    Schema = SchemaOr.get();
+
+    // Now initialize the table reader with a pointer into data buffer.
+    MemProfRecordTable.reset(MemProfRecordHashTable::Create(
+        /*Buckets=*/Start + RecordTableOffset,
+        /*Payload=*/Ptr,
+        /*Base=*/Start, memprof::RecordLookupTrait(Schema)));
+
+    // Initialize the frame table reader with the payload and bucket offsets.
+    MemProfFrameTable.reset(MemProfFrameHashTable::Create(
+        /*Buckets=*/Start + FrameTableOffset,
+        /*Payload=*/Start + FramePayloadOffset,
+        /*Base=*/Start, memprof::FrameLookupTrait()));
+  }
+
+  // BinaryIdOffset field in the header is only valid when the format version
+  // is higher than 9 (when it was introduced).
+  if (GET_VERSION(Header->formatVersion()) >= 9) {
+    uint64_t BinaryIdOffset =
+        endian::byte_swap<uint64_t, little>(Header->BinaryIdOffset);
+    const unsigned char *Ptr = Start + BinaryIdOffset;
+    // Read binary ids size.
+    BinaryIdsSize = support::endian::readNext<uint64_t, little, unaligned>(Ptr);
+    if (BinaryIdsSize % sizeof(uint64_t))
+      return error(instrprof_error::bad_header);
+    // Set the binary ids start.
+    BinaryIdsStart = Ptr;
+    if (BinaryIdsStart > (const unsigned char *)DataBuffer->getBufferEnd())
+      return make_error<InstrProfError>(instrprof_error::malformed,
+                                        "corrupted binary ids");
+  }
 
   // Load the remapping table now if requested.
   if (RemappingBuffer) {
-    Remapper = std::make_unique<
-        InstrProfReaderItaniumRemapper<OnDiskHashTableImplV3>>(
-        std::move(RemappingBuffer), *IndexPtr);
+    Remapper =
+        std::make_unique<InstrProfReaderItaniumRemapper<OnDiskHashTableImplV3>>(
+            std::move(RemappingBuffer), *IndexPtr);
     if (Error E = Remapper->populateRemappings())
       return E;
   } else {
@@ -991,32 +1082,98 @@ Error IndexedInstrProfReader::readHeader() {
 }
 
 InstrProfSymtab &IndexedInstrProfReader::getSymtab() {
-  if (Symtab.get())
-    return *Symtab.get();
+  if (Symtab)
+    return *Symtab;
 
   std::unique_ptr<InstrProfSymtab> NewSymtab = std::make_unique<InstrProfSymtab>();
-  if (Error E = Index->populateSymtab(*NewSymtab.get())) {
+  if (Error E = Index->populateSymtab(*NewSymtab)) {
     consumeError(error(InstrProfError::take(std::move(E))));
   }
 
   Symtab = std::move(NewSymtab);
-  return *Symtab.get();
+  return *Symtab;
 }
 
-Expected<InstrProfRecord>
-IndexedInstrProfReader::getInstrProfRecord(StringRef FuncName,
-                                           uint64_t FuncHash) {
+Expected<InstrProfRecord> IndexedInstrProfReader::getInstrProfRecord(
+    StringRef FuncName, uint64_t FuncHash, uint64_t *MismatchedFuncSum) {
   ArrayRef<NamedInstrProfRecord> Data;
+  uint64_t FuncSum = 0;
   Error Err = Remapper->getRecords(FuncName, Data);
   if (Err)
     return std::move(Err);
   // Found it. Look for counters with the right hash.
+
+  // A flag to indicate if the records are from the same type
+  // of profile (i.e cs vs nocs).
+  bool CSBitMatch = false;
+  auto getFuncSum = [](const std::vector<uint64_t> &Counts) {
+    uint64_t ValueSum = 0;
+    for (uint64_t CountValue : Counts) {
+      if (CountValue == (uint64_t)-1)
+        continue;
+      // Handle overflow -- if that happens, return max.
+      if (std::numeric_limits<uint64_t>::max() - CountValue <= ValueSum)
+        return std::numeric_limits<uint64_t>::max();
+      ValueSum += CountValue;
+    }
+    return ValueSum;
+  };
+
   for (const NamedInstrProfRecord &I : Data) {
     // Check for a match and fill the vector if there is one.
     if (I.Hash == FuncHash)
       return std::move(I);
+    if (NamedInstrProfRecord::hasCSFlagInHash(I.Hash) ==
+        NamedInstrProfRecord::hasCSFlagInHash(FuncHash)) {
+      CSBitMatch = true;
+      if (MismatchedFuncSum == nullptr)
+        continue;
+      FuncSum = std::max(FuncSum, getFuncSum(I.Counts));
+    }
   }
-  return error(instrprof_error::hash_mismatch);
+  if (CSBitMatch) {
+    if (MismatchedFuncSum != nullptr)
+      *MismatchedFuncSum = FuncSum;
+    return error(instrprof_error::hash_mismatch);
+  }
+  return error(instrprof_error::unknown_function);
+}
+
+Expected<memprof::MemProfRecord>
+IndexedInstrProfReader::getMemProfRecord(const uint64_t FuncNameHash) {
+  // TODO: Add memprof specific errors.
+  if (MemProfRecordTable == nullptr)
+    return make_error<InstrProfError>(instrprof_error::invalid_prof,
+                                      "no memprof data available in profile");
+  auto Iter = MemProfRecordTable->find(FuncNameHash);
+  if (Iter == MemProfRecordTable->end())
+    return make_error<InstrProfError>(
+        instrprof_error::unknown_function,
+        "memprof record not found for function hash " + Twine(FuncNameHash));
+
+  // Setup a callback to convert from frame ids to frame using the on-disk
+  // FrameData hash table.
+  memprof::FrameId LastUnmappedFrameId = 0;
+  bool HasFrameMappingError = false;
+  auto IdToFrameCallback = [&](const memprof::FrameId Id) {
+    auto FrIter = MemProfFrameTable->find(Id);
+    if (FrIter == MemProfFrameTable->end()) {
+      LastUnmappedFrameId = Id;
+      HasFrameMappingError = true;
+      return memprof::Frame(0, 0, 0, false);
+    }
+    return *FrIter;
+  };
+
+  memprof::MemProfRecord Record(*Iter, IdToFrameCallback);
+
+  // Check that all frame ids were successfully converted to frames.
+  if (HasFrameMappingError) {
+    return make_error<InstrProfError>(instrprof_error::hash_mismatch,
+                                      "memprof frame not found for frame id " +
+                                          Twine(LastUnmappedFrameId));
+  }
+  return Record;
 }
 
 Error IndexedInstrProfReader::getFunctionCounts(StringRef FuncName,
@@ -1043,6 +1200,17 @@ Error IndexedInstrProfReader::readNextRecord(NamedInstrProfRecord &Record) {
     RecordIndex = 0;
   }
   return success();
+}
+
+Error IndexedInstrProfReader::readBinaryIds(
+    std::vector<llvm::object::BuildID> &BinaryIds) {
+  return readBinaryIdsInternal(*DataBuffer, BinaryIdsSize, BinaryIdsStart,
+                               BinaryIds, llvm::support::little);
+}
+
+Error IndexedInstrProfReader::printBinaryIds(raw_ostream &OS) {
+  return printBinaryIdsInternal(OS, *DataBuffer, BinaryIdsSize, BinaryIdsStart,
+                                llvm::support::little);
 }
 
 void InstrProfReader::accumulateCounts(CountSumOrPercent &Sum, bool IsCS) {

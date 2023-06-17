@@ -17,22 +17,25 @@
 struct RuntimeCallTest : public testing::Test {
 public:
   void SetUp() override {
+    fir::support::loadDialects(context);
+
     mlir::OpBuilder builder(&context);
     auto loc = builder.getUnknownLoc();
 
     // Set up a Module with a dummy function operation inside.
     // Set the insertion point in the function entry block.
     mlir::ModuleOp mod = builder.create<mlir::ModuleOp>(loc);
-    mlir::FuncOp func = mlir::FuncOp::create(loc, "runtime_unit_tests_func",
-        builder.getFunctionType(llvm::None, llvm::None));
+    mlir::func::FuncOp func =
+        mlir::func::FuncOp::create(loc, "runtime_unit_tests_func",
+            builder.getFunctionType(std::nullopt, std::nullopt));
     auto *entryBlock = func.addEntryBlock();
     mod.push_back(mod);
     builder.setInsertionPointToStart(entryBlock);
 
-    fir::support::loadDialects(context);
     kindMap = std::make_unique<fir::KindMapping>(&context);
     firBuilder = std::make_unique<fir::FirOpBuilder>(mod, *kindMap);
 
+    i1Ty = firBuilder->getI1Type();
     i8Ty = firBuilder->getI8Type();
     i16Ty = firBuilder->getIntegerType(16);
     i32Ty = firBuilder->getI32Type();
@@ -51,6 +54,10 @@ public:
 
     seqTy10 = fir::SequenceType::get(fir::SequenceType::Shape(1, 10), i32Ty);
     boxTy = fir::BoxType::get(mlir::NoneType::get(firBuilder->getContext()));
+
+    char1Ty = fir::CharacterType::getSingleton(builder.getContext(), 1);
+    char2Ty = fir::CharacterType::getSingleton(builder.getContext(), 2);
+    char4Ty = fir::CharacterType::getSingleton(builder.getContext(), 4);
   }
 
   mlir::MLIRContext context;
@@ -58,6 +65,7 @@ public:
   std::unique_ptr<fir::FirOpBuilder> firBuilder;
 
   // Commonly used types
+  mlir::Type i1Ty;
   mlir::Type i8Ty;
   mlir::Type i16Ty;
   mlir::Type i32Ty;
@@ -73,6 +81,9 @@ public:
   mlir::Type c16Ty;
   mlir::Type seqTy10;
   mlir::Type boxTy;
+  mlir::Type char1Ty;
+  mlir::Type char2Ty;
+  mlir::Type char4Ty;
 };
 
 /// Check that the \p op is a `fir::CallOp` operation and its name matches
@@ -83,13 +94,13 @@ static inline void checkCallOp(mlir::Operation *op, llvm::StringRef fctName,
     unsigned nbArgs, bool addLocArgs = true) {
   EXPECT_TRUE(mlir::isa<fir::CallOp>(*op));
   auto callOp = mlir::dyn_cast<fir::CallOp>(*op);
-  EXPECT_TRUE(callOp.callee().hasValue());
-  mlir::SymbolRefAttr callee = *callOp.callee();
+  EXPECT_TRUE(callOp.getCallee().has_value());
+  mlir::SymbolRefAttr callee = *callOp.getCallee();
   EXPECT_EQ(fctName, callee.getRootReference().getValue());
   // sourceFile and sourceLine are added arguments.
   if (addLocArgs)
     nbArgs += 2;
-  EXPECT_EQ(nbArgs, callOp.args().size());
+  EXPECT_EQ(nbArgs, callOp.getArgs().size());
 }
 
 /// Check the call operation from the \p result value. In some cases the
@@ -131,8 +142,8 @@ static inline void checkBlockForCallOp(
   assert(block && "mlir::Block given is a nullptr");
   for (auto &op : block->getOperations()) {
     if (auto callOp = mlir::dyn_cast<fir::CallOp>(op)) {
-      if (fctName == callOp.callee()->getRootReference().getValue()) {
-        EXPECT_EQ(nbArgs, callOp.args().size());
+      if (fctName == callOp.getCallee()->getRootReference().getValue()) {
+        EXPECT_EQ(nbArgs, callOp.getArgs().size());
         return;
       }
     }

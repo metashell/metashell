@@ -154,11 +154,11 @@ entry:
 define i32 @test_zext_cmp6(i32 %a, i32 %b, i32 %c) {
 ; FASTLZCNT-LABEL: test_zext_cmp6:
 ; FASTLZCNT:       # %bb.0: # %entry
-; FASTLZCNT-NEXT:    lzcntl %edi, %eax
-; FASTLZCNT-NEXT:    lzcntl %esi, %ecx
-; FASTLZCNT-NEXT:    orl %eax, %ecx
+; FASTLZCNT-NEXT:    lzcntl %edi, %ecx
 ; FASTLZCNT-NEXT:    lzcntl %edx, %eax
+; FASTLZCNT-NEXT:    lzcntl %esi, %esi
 ; FASTLZCNT-NEXT:    orl %ecx, %eax
+; FASTLZCNT-NEXT:    orl %esi, %eax
 ; FASTLZCNT-NEXT:    shrl $5, %eax
 ; FASTLZCNT-NEXT:    retq
 ;
@@ -189,11 +189,11 @@ entry:
 define i32 @test_zext_cmp7(i32 %a, i32 %b, i32 %c) {
 ; FASTLZCNT-LABEL: test_zext_cmp7:
 ; FASTLZCNT:       # %bb.0: # %entry
-; FASTLZCNT-NEXT:    lzcntl %edi, %eax
-; FASTLZCNT-NEXT:    lzcntl %esi, %ecx
-; FASTLZCNT-NEXT:    orl %eax, %ecx
+; FASTLZCNT-NEXT:    lzcntl %edi, %ecx
 ; FASTLZCNT-NEXT:    lzcntl %edx, %eax
+; FASTLZCNT-NEXT:    lzcntl %esi, %esi
 ; FASTLZCNT-NEXT:    orl %ecx, %eax
+; FASTLZCNT-NEXT:    orl %esi, %eax
 ; FASTLZCNT-NEXT:    shrl $5, %eax
 ; FASTLZCNT-NEXT:    retq
 ;
@@ -236,16 +236,16 @@ define i32 @test_zext_cmp8(i32 %a, i32 %b, i32 %c, i32 %d) {
 ; NOFASTLZCNT-LABEL: test_zext_cmp8:
 ; NOFASTLZCNT:       # %bb.0: # %entry
 ; NOFASTLZCNT-NEXT:    testl %edi, %edi
-; NOFASTLZCNT-NEXT:    sete %dil
-; NOFASTLZCNT-NEXT:    testl %esi, %esi
 ; NOFASTLZCNT-NEXT:    sete %al
-; NOFASTLZCNT-NEXT:    orb %dil, %al
+; NOFASTLZCNT-NEXT:    testl %esi, %esi
+; NOFASTLZCNT-NEXT:    sete %sil
+; NOFASTLZCNT-NEXT:    orb %al, %sil
 ; NOFASTLZCNT-NEXT:    testl %edx, %edx
-; NOFASTLZCNT-NEXT:    sete %dl
+; NOFASTLZCNT-NEXT:    sete %al
 ; NOFASTLZCNT-NEXT:    testl %ecx, %ecx
 ; NOFASTLZCNT-NEXT:    sete %cl
-; NOFASTLZCNT-NEXT:    orb %dl, %cl
 ; NOFASTLZCNT-NEXT:    orb %al, %cl
+; NOFASTLZCNT-NEXT:    orb %sil, %cl
 ; NOFASTLZCNT-NEXT:    movzbl %cl, %eax
 ; NOFASTLZCNT-NEXT:    retq
 entry:

@@ -70,14 +70,18 @@ namespace metashell
           case 16:
             return event_kind::constraint_normalization;
           case 17:
-            return event_kind::parameter_mapping_substitution;
+            return event_kind::requirement_parameter_instantiation;
           case 18:
-            return event_kind::rewriting_operator_as_spaceship;
+            return event_kind::parameter_mapping_substitution;
           case 19:
-            return event_kind::initializing_structured_binding;
+            return event_kind::rewriting_operator_as_spaceship;
           case 20:
-            return event_kind::marking_class_dll_exported;
+            return event_kind::initializing_structured_binding;
           case 21:
+            return event_kind::marking_class_dll_exported;
+          case 22:
+            return event_kind::building_builtin_dump_struct_call;
+          case 23:
             return event_kind::memoization;
           default:
             throw data::exception(

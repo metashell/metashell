@@ -174,6 +174,9 @@ public:
   CCAssignFn *getCCAssignFn(CallingConv::ID CC, bool Return,
                             bool IsVarArg) const;
 
+  AtomicExpansionKind
+  shouldExpandAtomicRMWInIR(AtomicRMWInst *RMW) const override;
+
 private:
   unsigned GetAlignedArgumentStackSize(unsigned StackSize,
                                        SelectionDAG &DAG) const;
@@ -220,6 +223,8 @@ private:
   SDValue LowerGlobalAddress(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerVASTART(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerDYNAMIC_STACKALLOC(SDValue Op, SelectionDAG &DAG) const;
+  SDValue LowerShiftLeftParts(SDValue Op, SelectionDAG &DAG) const;
+  SDValue LowerShiftRightParts(SDValue Op, SelectionDAG &DAG, bool IsSRA) const;
 
   SDValue LowerCallResult(SDValue Chain, SDValue InFlag,
                           CallingConv::ID CallConv, bool IsVarArg,

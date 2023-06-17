@@ -50,7 +50,7 @@ LTOModule::LTOModule(std::unique_ptr<Module> M, MemoryBufferRef MBRef,
   SymTab.addModule(Mod.get());
 }
 
-LTOModule::~LTOModule() {}
+LTOModule::~LTOModule() = default;
 
 /// isBitcodeFile - Returns 'true' if the file (or memory contents) is LLVM
 /// bitcode.
@@ -229,8 +229,8 @@ LTOModule::makeLTOModule(MemoryBufferRef Buffer, const TargetOptions &options,
       CPU = "cyclone";
   }
 
-  TargetMachine *target =
-      march->createTargetMachine(TripleStr, CPU, FeatureStr, options, None);
+  TargetMachine *target = march->createTargetMachine(TripleStr, CPU, FeatureStr,
+                                                     options, std::nullopt);
 
   std::unique_ptr<LTOModule> Ret(new LTOModule(std::move(M), Buffer, target));
   Ret->parseSymbols();

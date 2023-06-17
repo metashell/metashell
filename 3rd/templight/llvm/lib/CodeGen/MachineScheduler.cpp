@@ -32,7 +32,6 @@
 #include "llvm/CodeGen/MachineOperand.h"
 #include "llvm/CodeGen/MachinePassRegistry.h"
 #include "llvm/CodeGen/MachineRegisterInfo.h"
-#include "llvm/CodeGen/Passes.h"
 #include "llvm/CodeGen/RegisterClassInfo.h"
 #include "llvm/CodeGen/RegisterPressure.h"
 #include "llvm/CodeGen/ScheduleDAG.h"
@@ -94,8 +93,17 @@ cl::opt<bool> VerifyScheduling(
 cl::opt<bool> ViewMISchedDAGs(
     "view-misched-dags", cl::Hidden,
     cl::desc("Pop up a window to show MISched dags after they are processed"));
+cl::opt<bool> PrintDAGs("misched-print-dags", cl::Hidden,
+                        cl::desc("Print schedule DAGs"));
+cl::opt<bool> MISchedDumpReservedCycles(
+    "misched-dump-reserved-cycles", cl::Hidden, cl::init(false),
+    cl::desc("Dump resource usage at schedule boundary."));
 #else
 const bool ViewMISchedDAGs = false;
+const bool PrintDAGs = false;
+#ifdef LLVM_ENABLE_DUMP
+const bool MISchedDumpReservedCycles = false;
+#endif // LLVM_ENABLE_DUMP
 #endif // NDEBUG
 
 } // end namespace llvm
@@ -113,10 +121,6 @@ static cl::opt<std::string> SchedOnlyFunc("misched-only-func", cl::Hidden,
   cl::desc("Only schedule this function"));
 static cl::opt<unsigned> SchedOnlyBlock("misched-only-block", cl::Hidden,
                                         cl::desc("Only schedule this MBB#"));
-static cl::opt<bool> PrintDAGs("misched-print-dags", cl::Hidden,
-                              cl::desc("Print schedule DAGs"));
-#else
-static const bool PrintDAGs = false;
 #endif // NDEBUG
 
 /// Avoid quadratic complexity in unusually large basic blocks by limiting the
@@ -752,7 +756,7 @@ void ScheduleDAGMI::moveInstruction(
 }
 
 bool ScheduleDAGMI::checkSchedLimit() {
-#ifndef NDEBUG
+#if LLVM_ENABLE_ABI_BREAKING_CHECKS && !defined(NDEBUG)
   if (NumInstrsScheduled == MISchedCutoff && MISchedCutoff != ~0U) {
     CurrentTop = CurrentBottom;
     return false;
@@ -920,12 +924,10 @@ void ScheduleDAGMI::placeDebugValues() {
     MachineBasicBlock::iterator OrigPrevMI = P.second;
     if (&*RegionBegin == DbgValue)
       ++RegionBegin;
-    BB->splice(++OrigPrevMI, BB, DbgValue);
-    if (OrigPrevMI == std::prev(RegionEnd))
+    BB->splice(std::next(OrigPrevMI), BB, DbgValue);
+    if (RegionEnd != BB->end() && OrigPrevMI == &*RegionEnd)
       RegionEnd = DbgValue;
   }
-  DbgValues.clear();
-  FirstDbgValue = nullptr;
 }
 
 #if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
@@ -959,7 +961,7 @@ void ScheduleDAGMILive::collectVRegUses(SUnit &SU) {
       continue;
 
     Register Reg = MO.getReg();
-    if (!Register::isVirtualRegister(Reg))
+    if (!Reg.isVirtual())
       continue;
 
     // Ignore re-defs.
@@ -1120,7 +1122,7 @@ void ScheduleDAGMILive::updatePressureDiffs(
   for (const RegisterMaskPair &P : LiveUses) {
     Register Reg = P.RegUnit;
     /// FIXME: Currently assuming single-use physregs.
-    if (!Register::isVirtualRegister(Reg))
+    if (!Reg.isVirtual())
       continue;
 
     if (ShouldTrackLaneMasks) {
@@ -1344,7 +1346,7 @@ unsigned ScheduleDAGMILive::computeCyclicCriticalPath() {
   // Visit each live out vreg def to find def/use pairs that cross iterations.
   for (const RegisterMaskPair &P : RPTracker.getPressure().LiveOutRegs) {
     Register Reg = P.RegUnit;
-    if (!Register::isVirtualRegister(Reg))
+    if (!Reg.isVirtual())
       continue;
     const LiveInterval &LI = LIS->getInterval(Reg);
     const VNInfo *DefVNI = LI.getVNInfoBefore(LIS->getMBBEndIdx(BB));
@@ -1702,7 +1704,7 @@ void BaseMemOpClusterMutation::collectMemOpRecords(
                         << ", Width: " << Width << "\n");
     }
 #ifndef NDEBUG
-    for (auto *Op : BaseOps)
+    for (const auto *Op : BaseOps)
       assert(Op);
 #endif
   }
@@ -1827,12 +1829,12 @@ void CopyConstrain::constrainLocalCopy(SUnit *CopySU, ScheduleDAGMILive *DAG) {
   // Check for pure vreg copies.
   const MachineOperand &SrcOp = Copy->getOperand(1);
   Register SrcReg = SrcOp.getReg();
-  if (!Register::isVirtualRegister(SrcReg) || !SrcOp.readsReg())
+  if (!SrcReg.isVirtual() || !SrcOp.readsReg())
     return;
 
   const MachineOperand &DstOp = Copy->getOperand(0);
   Register DstReg = DstOp.getReg();
-  if (!Register::isVirtualRegister(DstReg) || DstOp.isDead())
+  if (!DstReg.isVirtual() || DstOp.isDead())
     return;
 
   // Check if either the dest or source is local. If it's live across a back
@@ -2008,7 +2010,7 @@ void SchedBoundary::reset() {
   ReservedCycles.clear();
   ReservedCyclesIndex.clear();
   ResourceGroupSubUnitMasks.clear();
-#ifndef NDEBUG
+#if LLVM_ENABLE_ABI_BREAKING_CHECKS
   // Track the maximum number of stall cycles that could arise either from the
   // latency of a DAG edge or the number of cycles that a processor resource is
   // reserved (SchedBoundary::ReservedCycles).
@@ -2196,7 +2198,7 @@ bool SchedBoundary::checkHazard(SUnit *SU) {
       unsigned NRCycle, InstanceIdx;
       std::tie(NRCycle, InstanceIdx) = getNextResourceCycle(SC, ResIdx, Cycles);
       if (NRCycle > CurrCycle) {
-#ifndef NDEBUG
+#if LLVM_ENABLE_ABI_BREAKING_CHECKS
         MaxObservedStall = std::max(Cycles, MaxObservedStall);
 #endif
         LLVM_DEBUG(dbgs() << "  SU(" << SU->NodeNum << ") "
@@ -2263,7 +2265,7 @@ void SchedBoundary::releaseNode(SUnit *SU, unsigned ReadyCycle, bool InPQueue,
                                 unsigned Idx) {
   assert(SU->getInstr() && "Scheduled SUnit must have instr");
 
-#ifndef NDEBUG
+#if LLVM_ENABLE_ABI_BREAKING_CHECKS
   // ReadyCycle was been bumped up to the CurrCycle when this node was
   // scheduled, but CurrCycle may have been eagerly advanced immediately after
   // scheduling, so may now be greater than ReadyCycle.
@@ -2593,6 +2595,28 @@ SUnit *SchedBoundary::pickOnlyChoice() {
 }
 
 #if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
+
+/// Dump the content of the \ref ReservedCycles vector for the
+/// resources that are used in the basic block.
+///
+LLVM_DUMP_METHOD void SchedBoundary::dumpReservedCycles() const {
+  if (!SchedModel->hasInstrSchedModel())
+    return;
+
+  unsigned ResourceCount = SchedModel->getNumProcResourceKinds();
+  unsigned StartIdx = 0;
+
+  for (unsigned ResIdx = 0; ResIdx < ResourceCount; ++ResIdx) {
+    const unsigned NumUnits = SchedModel->getProcResource(ResIdx)->NumUnits;
+    std::string ResName = SchedModel->getResourceName(ResIdx);
+    for (unsigned UnitIdx = 0; UnitIdx < NumUnits; ++UnitIdx) {
+      dbgs() << ResName << "(" << UnitIdx
+             << ") = " << ReservedCycles[StartIdx + UnitIdx] << "\n";
+    }
+    StartIdx += NumUnits;
+  }
+}
+
 // This is useful information to dump after bumpNode.
 // Note that the Queue contents are more useful before pickNodeFromQueue.
 LLVM_DUMP_METHOD void SchedBoundary::dumpScheduledState() const {
@@ -2615,6 +2639,8 @@ LLVM_DUMP_METHOD void SchedBoundary::dumpScheduledState() const {
          << "\n  ExpectedLatency: " << ExpectedLatency << "c\n"
          << (IsResourceLimited ? "  - Resource" : "  - Latency")
          << " limited.\n";
+  if (MISchedDumpReservedCycles)
+    dumpReservedCycles();
 }
 #endif
 
@@ -3106,12 +3132,12 @@ int biasPhysReg(const SUnit *SU, bool isTop) {
     unsigned UnscheduledOper = isTop ? 0 : 1;
     // If we have already scheduled the physreg produce/consumer, immediately
     // schedule the copy.
-    if (Register::isPhysicalRegister(MI->getOperand(ScheduledOper).getReg()))
+    if (MI->getOperand(ScheduledOper).getReg().isPhysical())
       return 1;
     // If the physreg is at the boundary, defer it. Otherwise schedule it
     // immediately to free the dependent. We can hoist the copy later.
     bool AtBoundary = isTop ? !SU->NumSuccsLeft : !SU->NumPredsLeft;
-    if (Register::isPhysicalRegister(MI->getOperand(UnscheduledOper).getReg()))
+    if (MI->getOperand(UnscheduledOper).getReg().isPhysical())
       return AtBoundary ? -1 : 1;
   }
 
@@ -3121,7 +3147,7 @@ int biasPhysReg(const SUnit *SU, bool isTop) {
     // physical registers.
     bool DoBias = true;
     for (const MachineOperand &Op : MI->defs()) {
-      if (Op.isReg() && !Register::isPhysicalRegister(Op.getReg())) {
+      if (Op.isReg() && !Op.getReg().isPhysical()) {
         DoBias = false;
         break;
       }

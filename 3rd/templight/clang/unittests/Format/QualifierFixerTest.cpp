@@ -133,6 +133,8 @@ TEST_F(QualifierFixerTest, RotateTokens) {
             tok::kw_static);
   EXPECT_EQ(LeftRightQualifierAlignmentFixer::getTokenFromQualifier("restrict"),
             tok::kw_restrict);
+  EXPECT_EQ(LeftRightQualifierAlignmentFixer::getTokenFromQualifier("friend"),
+            tok::kw_friend);
 }
 
 TEST_F(QualifierFixerTest, FailQualifierInvalidConfiguration) {
@@ -196,8 +198,8 @@ TEST_F(QualifierFixerTest, QualifierRight) {
 TEST_F(QualifierFixerTest, QualifiersCustomOrder) {
   FormatStyle Style = getLLVMStyle();
   Style.QualifierAlignment = FormatStyle::QAS_Left;
-  Style.QualifierOrder = {"inline", "constexpr", "static",
-                          "const",  "volatile",  "type"};
+  Style.QualifierOrder = {"friend", "inline",   "constexpr", "static",
+                          "const",  "volatile", "type"};
 
   verifyFormat("const volatile int a;", "const volatile int a;", Style);
   verifyFormat("const volatile int a;", "volatile const int a;", Style);
@@ -216,6 +218,15 @@ TEST_F(QualifierFixerTest, QualifiersCustomOrder) {
   verifyFormat("constexpr static LPINT Bar;", "static constexpr LPINT Bar;",
                Style);
   verifyFormat("const const int a;", "const int const a;", Style);
+
+  verifyFormat(
+      "friend constexpr auto operator<=>(const foo &, const foo &) = default;",
+      "constexpr friend auto operator<=>(const foo &, const foo &) = default;",
+      Style);
+  verifyFormat(
+      "friend constexpr bool operator==(const foo &, const foo &) = default;",
+      "constexpr bool friend operator==(const foo &, const foo &) = default;",
+      Style);
 }
 
 TEST_F(QualifierFixerTest, LeftRightQualifier) {
@@ -318,6 +329,8 @@ TEST_F(QualifierFixerTest, RightQualifier) {
   verifyFormat("Foo<int> const &a", "const Foo<int> &a", Style);
   verifyFormat("Foo<int>::iterator const &a", "const Foo<int>::iterator &a",
                Style);
+  verifyFormat("::Foo<int>::iterator const &a", "const ::Foo<int>::iterator &a",
+               Style);
 
   verifyFormat("Foo(int a, "
                "unsigned b, // c-style args\n"
@@ -355,6 +368,8 @@ TEST_F(QualifierFixerTest, RightQualifier) {
 
   verifyFormat("void fn(Foo<T> const &i);", "void fn(const Foo<T> &i);", Style);
   verifyFormat("void fns(ns::S const &s);", "void fns(const ns::S &s);", Style);
+  verifyFormat("void fns(::ns::S const &s);", "void fns(const ::ns::S &s);",
+               Style);
   verifyFormat("void fn(ns::Foo<T> const &i);", "void fn(const ns::Foo<T> &i);",
                Style);
   verifyFormat("void fns(ns::ns2::S const &s);",
@@ -405,6 +420,16 @@ TEST_F(QualifierFixerTest, RightQualifier) {
 
   // don't adjust macros
   verifyFormat("const INTPTR a;", "const INTPTR a;", Style);
+
+  // Pointers to members
+  verifyFormat("int S::*a;", Style);
+  verifyFormat("int const S::*a;", "const int S:: *a;", Style);
+  verifyFormat("int const S::*const a;", "const int S::* const a;", Style);
+  verifyFormat("int A::*const A::*p1;", Style);
+  verifyFormat("float (C::*p)(int);", Style);
+  verifyFormat("float (C::*const p)(int);", Style);
+  verifyFormat("float (C::*p)(int) const;", Style);
+  verifyFormat("float const (C::*p)(int);", "const float (C::*p)(int);", Style);
 }
 
 TEST_F(QualifierFixerTest, LeftQualifier) {
@@ -444,6 +469,8 @@ TEST_F(QualifierFixerTest, LeftQualifier) {
   verifyFormat("const unsigned char *a;", "unsigned char const *a;", Style);
   verifyFormat("const Foo<int> &a", "Foo<int> const &a", Style);
   verifyFormat("const Foo<int>::iterator &a", "Foo<int>::iterator const &a",
+               Style);
+  verifyFormat("const ::Foo<int>::iterator &a", "::Foo<int>::iterator const &a",
                Style);
 
   verifyFormat("const int a;", "int const a;", Style);
@@ -508,6 +535,8 @@ TEST_F(QualifierFixerTest, LeftQualifier) {
 
   verifyFormat("void fn(const Foo<T> &i);", "void fn(Foo<T> const &i);", Style);
   verifyFormat("void fns(const ns::S &s);", "void fns(ns::S const &s);", Style);
+  verifyFormat("void fns(const ::ns::S &s);", "void fns(::ns::S const &s);",
+               Style);
   verifyFormat("void fn(const ns::Foo<T> &i);", "void fn(ns::Foo<T> const &i);",
                Style);
   verifyFormat("void fns(const ns::ns2::S &s);",
@@ -546,6 +575,16 @@ TEST_F(QualifierFixerTest, LeftQualifier) {
 
   // don't adjust macros
   verifyFormat("INTPTR const a;", "INTPTR const a;", Style);
+
+  // Pointers to members
+  verifyFormat("int S::*a;", Style);
+  verifyFormat("const int S::*a;", "int const S:: *a;", Style);
+  verifyFormat("const int S::*const a;", "int const S::* const a;", Style);
+  verifyFormat("int A::*const A::*p1;", Style);
+  verifyFormat("float (C::*p)(int);", Style);
+  verifyFormat("float (C::*const p)(int);", Style);
+  verifyFormat("float (C::*p)(int) const;", Style);
+  verifyFormat("const float (C::*p)(int);", "float const (C::*p)(int);", Style);
 }
 
 TEST_F(QualifierFixerTest, ConstVolatileQualifiersOrder) {
@@ -715,9 +754,10 @@ TEST_F(QualifierFixerTest, IsQualifierType) {
   ConfiguredTokens.push_back(tok::kw_inline);
   ConfiguredTokens.push_back(tok::kw_restrict);
   ConfiguredTokens.push_back(tok::kw_constexpr);
+  ConfiguredTokens.push_back(tok::kw_friend);
 
-  auto Tokens =
-      annotate("const static inline auto restrict int double long constexpr");
+  auto Tokens = annotate(
+      "const static inline auto restrict int double long constexpr friend");
 
   EXPECT_TRUE(LeftRightQualifierAlignmentFixer::isQualifierOrType(
       Tokens[0], ConfiguredTokens));
@@ -737,6 +777,8 @@ TEST_F(QualifierFixerTest, IsQualifierType) {
       Tokens[7], ConfiguredTokens));
   EXPECT_TRUE(LeftRightQualifierAlignmentFixer::isQualifierOrType(
       Tokens[8], ConfiguredTokens));
+  EXPECT_TRUE(LeftRightQualifierAlignmentFixer::isQualifierOrType(
+      Tokens[9], ConfiguredTokens));
 
   auto NotTokens = annotate("for while do Foo Bar ");
 
@@ -815,6 +857,8 @@ TEST_F(QualifierFixerTest, NoOpQualifierReplacements) {
   ReplacementCount = 0;
   EXPECT_EQ(ReplacementCount, 0);
   verifyFormat("static const uint32 foo[] = {0, 31};", Style);
+  verifyFormat("#define MACRO static const", Style);
+  verifyFormat("using sc = static const", Style);
   EXPECT_EQ(ReplacementCount, 0);
 }
 
@@ -858,6 +902,21 @@ TEST_F(QualifierFixerTest, QualifierTemplates) {
                Style);
 }
 
+TEST_F(QualifierFixerTest, WithConstraints) {
+  FormatStyle Style = getLLVMStyle();
+  Style.QualifierAlignment = FormatStyle::QAS_Custom;
+  Style.QualifierOrder = {"constexpr", "type"};
+
+  verifyFormat("template <typename T>\n"
+               "  requires Concept<F>\n"
+               "constexpr constructor();",
+               Style);
+  verifyFormat("template <typename T>\n"
+               "  requires Concept1<F> && Concept2<F>\n"
+               "constexpr constructor();",
+               Style);
+}
+
 TEST_F(QualifierFixerTest, DisableRegions) {
   FormatStyle Style = getLLVMStyle();
   Style.QualifierAlignment = FormatStyle::QAS_Custom;
@@ -878,6 +937,41 @@ TEST_F(QualifierFixerTest, DisableRegions) {
                "// clang-format on\n"
                "int const inline static a = 0;\n",
                Style);
+}
+
+TEST_F(QualifierFixerTest, TemplatesRight) {
+  FormatStyle Style = getLLVMStyle();
+  Style.QualifierAlignment = FormatStyle::QAS_Custom;
+  Style.QualifierOrder = {"type", "const"};
+
+  verifyFormat("template <typename T>\n"
+               "  requires Concept<T const>\n"
+               "void f();",
+               "template <typename T>\n"
+               "  requires Concept<const T>\n"
+               "void f();",
+               Style);
+  verifyFormat("TemplateType<T const> t;", "TemplateType<const T> t;", Style);
+  verifyFormat("TemplateType<Container const> t;",
+               "TemplateType<const Container> t;", Style);
+}
+
+TEST_F(QualifierFixerTest, TemplatesLeft) {
+  FormatStyle Style = getLLVMStyle();
+  Style.QualifierAlignment = FormatStyle::QAS_Custom;
+  Style.QualifierOrder = {"const", "type"};
+
+  verifyFormat("template <const T> t;", "template <T const> t;", Style);
+  verifyFormat("template <typename T>\n"
+               "  requires Concept<const T>\n"
+               "void f();",
+               "template <typename T>\n"
+               "  requires Concept<T const>\n"
+               "void f();",
+               Style);
+  verifyFormat("TemplateType<const T> t;", "TemplateType<T const> t;", Style);
+  verifyFormat("TemplateType<const Container> t;",
+               "TemplateType<Container const> t;", Style);
 }
 
 } // namespace format

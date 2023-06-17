@@ -17,8 +17,7 @@
 ; CHECK-NEXT:       - .offset:         24
 ; CHECK-NEXT:         .size:           8
 ; CHECK-NEXT:         .value_kind:     hidden_global_offset_z
-; CHECK-NEXT:       - .address_space:  global
-; CHECK-NEXT:         .offset:         32
+; CHECK-NEXT:       - .offset:         32
 ; CHECK-NEXT:         .size:           8
 ; CHECK-NEXT:         .value_kind:     hidden_hostcall_buffer
 ; CHECK:          .language:       OpenCL C
@@ -47,8 +46,5 @@ attributes #0 = { sanitize_address "amdgpu-implicitarg-num-bytes"="48" }
 
 !opencl.ocl.version = !{!90}
 !90 = !{i32 2, i32 0}
-
-!llvm.module.flags = !{!0}
-!0 = !{i32 4, !"amdgpu_hostcall", i32 1}
 
 ; CHECK: AMDGPU HSA Metadata Parser Test: PASS

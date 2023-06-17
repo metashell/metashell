@@ -61,11 +61,14 @@ enum ID {
 #undef OPTION
 };
 
-#define PREFIX(NAME, VALUE) const char *const NAME[] = VALUE;
+#define PREFIX(NAME, VALUE)                                                    \
+  static constexpr StringLiteral NAME##_init[] = VALUE;                        \
+  static constexpr ArrayRef<StringLiteral> NAME(NAME##_init,                   \
+                                                std::size(NAME##_init) - 1);
 #include "Opts.inc"
 #undef PREFIX
 
-const opt::OptTable::Info InfoTable[] = {
+static constexpr opt::OptTable::Info InfoTable[] = {
 #define OPTION(PREFIX, NAME, ID, KIND, GROUP, ALIAS, ALIASARGS, FLAGS, PARAM,  \
                HELPTEXT, METAVAR, VALUES)                                      \
   {                                                                            \
@@ -77,12 +80,22 @@ const opt::OptTable::Info InfoTable[] = {
 #undef OPTION
 };
 
-class ReadobjOptTable : public opt::OptTable {
+class ReadobjOptTable : public opt::GenericOptTable {
 public:
-  ReadobjOptTable() : OptTable(InfoTable) { setGroupedShortOptions(true); }
+  ReadobjOptTable() : opt::GenericOptTable(InfoTable) {
+    setGroupedShortOptions(true);
+  }
 };
 
 enum OutputFormatTy { bsd, sysv, posix, darwin, just_symbols };
+
+enum SortSymbolKeyTy {
+  NAME = 0,
+  TYPE = 1,
+  UNKNOWN = 100,
+  // TODO: add ADDRESS, SIZE as needed.
+};
+
 } // namespace
 
 namespace opts {
@@ -113,6 +126,7 @@ static bool StringTable;
 static bool Symbols;
 static bool UnwindInfo;
 static cl::boolOrDefault SectionMapping;
+static SmallVector<SortSymbolKeyTy> SortKeys;
 
 // ELF specific options.
 static bool DynamicTable;
@@ -152,6 +166,10 @@ static bool COFFTLSDirectory;
 
 // XCOFF specific options.
 static bool XCOFFAuxiliaryHeader;
+static bool XCOFFLoaderSectionHeader;
+static bool XCOFFLoaderSectionSymbol;
+static bool XCOFFLoaderSectionRelocation;
+static bool XCOFFExceptionSection;
 
 OutputStyleTy Output = OutputStyleTy::LLVM;
 static std::vector<std::string> InputFilenames;
@@ -253,6 +271,19 @@ static void parseOptions(const opt::InputArgList &Args) {
   opts::ProgramHeaders = Args.hasArg(OPT_program_headers);
   opts::RawRelr = Args.hasArg(OPT_raw_relr);
   opts::SectionGroups = Args.hasArg(OPT_section_groups);
+  if (Arg *A = Args.getLastArg(OPT_sort_symbols_EQ)) {
+    std::string SortKeysString = A->getValue();
+    for (StringRef KeyStr : llvm::split(A->getValue(), ",")) {
+      SortSymbolKeyTy KeyType = StringSwitch<SortSymbolKeyTy>(KeyStr)
+                                    .Case("name", SortSymbolKeyTy::NAME)
+                                    .Case("type", SortSymbolKeyTy::TYPE)
+                                    .Default(SortSymbolKeyTy::UNKNOWN);
+      if (KeyType == SortSymbolKeyTy::UNKNOWN)
+        error("--sort-symbols value should be 'name' or 'type', but was '" +
+              Twine(KeyStr) + "'");
+      opts::SortKeys.push_back(KeyType);
+    }
+  }
   opts::VersionInfo = Args.hasArg(OPT_version_info);
 
   // Mach-O specific options.
@@ -279,6 +310,11 @@ static void parseOptions(const opt::InputArgList &Args) {
 
   // XCOFF specific options.
   opts::XCOFFAuxiliaryHeader = Args.hasArg(OPT_auxiliary_header);
+  opts::XCOFFLoaderSectionHeader = Args.hasArg(OPT_loader_section_header);
+  opts::XCOFFLoaderSectionSymbol = Args.hasArg(OPT_loader_section_symbols);
+  opts::XCOFFLoaderSectionRelocation =
+      Args.hasArg(OPT_loader_section_relocations);
+  opts::XCOFFExceptionSection = Args.hasArg(OPT_exception_section);
 
   opts::InputFilenames = Args.getAllArgValues(OPT_INPUT);
 }
@@ -334,16 +370,46 @@ static void dumpObject(ObjectFile &Obj, ScopedPrinter &Writer,
                        toString(std::move(ContentErr));
 
   ObjDumper *Dumper;
+  std::optional<SymbolComparator> SymComp;
   Expected<std::unique_ptr<ObjDumper>> DumperOrErr = createDumper(Obj, Writer);
   if (!DumperOrErr)
     reportError(DumperOrErr.takeError(), FileStr);
   Dumper = (*DumperOrErr).get();
 
+  if (!opts::SortKeys.empty()) {
+    if (Dumper->canCompareSymbols()) {
+      SymComp = SymbolComparator();
+      for (SortSymbolKeyTy Key : opts::SortKeys) {
+        switch (Key) {
+        case NAME:
+          SymComp->addPredicate([Dumper](SymbolRef LHS, SymbolRef RHS) {
+            return Dumper->compareSymbolsByName(LHS, RHS);
+          });
+          break;
+        case TYPE:
+          SymComp->addPredicate([Dumper](SymbolRef LHS, SymbolRef RHS) {
+            return Dumper->compareSymbolsByType(LHS, RHS);
+          });
+          break;
+        case UNKNOWN:
+          llvm_unreachable("Unsupported sort key");
+        }
+      }
+
+    } else {
+      reportWarning(createStringError(
+                        errc::invalid_argument,
+                        "--sort-symbols is not supported yet for this format"),
+                    FileStr);
+    }
+  }
   Dumper->printFileSummary(FileStr, Obj, opts::InputFilenames, A);
 
   if (opts::FileHeaders)
     Dumper->printFileHeaders();
 
+  // Auxiliary header in XOCFF is right after the file header, so print the data
+  // here.
   if (Obj.isXCOFF() && opts::XCOFFAuxiliaryHeader)
     Dumper->printAuxiliaryHeader();
 
@@ -374,7 +440,7 @@ static void dumpObject(ObjectFile &Obj, ScopedPrinter &Writer,
   if (opts::UnwindInfo)
     Dumper->printUnwindInfo();
   if (opts::Symbols || opts::DynamicSymbols)
-    Dumper->printSymbols(opts::Symbols, opts::DynamicSymbols);
+    Dumper->printSymbols(opts::Symbols, opts::DynamicSymbols, SymComp);
   if (!opts::StringDump.empty())
     Dumper->printSectionsAsString(Obj, opts::StringDump);
   if (!opts::HexDump.empty())
@@ -451,6 +517,18 @@ static void dumpObject(ObjectFile &Obj, ScopedPrinter &Writer,
     if (opts::CGProfile)
       Dumper->printCGProfile();
   }
+
+  if (Obj.isXCOFF()) {
+    if (opts::XCOFFLoaderSectionHeader || opts::XCOFFLoaderSectionSymbol ||
+        opts::XCOFFLoaderSectionRelocation)
+      Dumper->printLoaderSection(opts::XCOFFLoaderSectionHeader,
+                                 opts::XCOFFLoaderSectionSymbol,
+                                 opts::XCOFFLoaderSectionRelocation);
+
+    if (opts::XCOFFExceptionSection)
+      Dumper->printExceptionSection();
+  }
+
   if (opts::PrintStackMap)
     Dumper->printStackMap();
   if (opts::PrintStackSizes)
@@ -554,7 +632,7 @@ std::unique_ptr<ScopedPrinter> createWriter() {
   return std::make_unique<ScopedPrinter>(fouts());
 }
 
-int main(int argc, char *argv[]) {
+int llvm_readobj_main(int argc, char **argv) {
   InitLLVM X(argc, argv);
   BumpPtrAllocator A;
   StringSaver Saver(A);

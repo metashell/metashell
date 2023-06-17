@@ -22,7 +22,6 @@ namespace clang {
 namespace targets {
 
 class LLVM_LIBRARY_VISIBILITY WebAssemblyTargetInfo : public TargetInfo {
-  static const Builtin::Info BuiltinInfo[];
 
   enum SIMDEnum {
     NoSIMD,
@@ -39,6 +38,7 @@ class LLVM_LIBRARY_VISIBILITY WebAssemblyTargetInfo : public TargetInfo {
   bool HasMultivalue = false;
   bool HasTailCall = false;
   bool HasReferenceTypes = false;
+  bool HasExtendedConst = false;
 
   std::string ABI;
 
@@ -95,10 +95,10 @@ private:
     return VoidPtrBuiltinVaList;
   }
 
-  ArrayRef<const char *> getGCCRegNames() const final { return None; }
+  ArrayRef<const char *> getGCCRegNames() const final { return std::nullopt; }
 
   ArrayRef<TargetInfo::GCCRegAlias> getGCCRegAliases() const final {
-    return None;
+    return std::nullopt;
   }
 
   bool validateAsmConstraint(const char *&Name,

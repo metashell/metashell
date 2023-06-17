@@ -35,7 +35,7 @@ __global X gx;
 kernel void k() {
   // Check that the constructor for px calls the __private constructor.
   // CHECK: %px = alloca %struct.X
-  // CHECK-NEXT: call spir_func void @_ZN1XC1Ev(%struct.X* {{.*}}%px)
+  // CHECK-NEXT: call spir_func void @_ZN1XC1Ev(ptr {{.*}}%px)
   __private X px;
 
   __constant X cx1;

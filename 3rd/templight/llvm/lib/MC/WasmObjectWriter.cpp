@@ -11,7 +11,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/ADT/STLExtras.h"
-#include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/BinaryFormat/Wasm.h"
 #include "llvm/BinaryFormat/WasmTraits.h"
 #include "llvm/Config/llvm-config.h"
@@ -31,7 +30,6 @@
 #include "llvm/Support/EndianStream.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/LEB128.h"
-#include "llvm/Support/StringSaver.h"
 #include <vector>
 
 using namespace llvm;
@@ -74,7 +72,7 @@ struct WasmDataSegment {
 // A wasm function to be written into the function section.
 struct WasmFunction {
   uint32_t SigIndex;
-  const MCSymbolWasm *Sym;
+  MCSection *Section;
 };
 
 // A wasm global to be written into the global section.
@@ -125,12 +123,11 @@ struct WasmCustomSection {
   StringRef Name;
   MCSectionWasm *Section;
 
-  uint32_t OutputContentsOffset;
-  uint32_t OutputIndex;
+  uint32_t OutputContentsOffset = 0;
+  uint32_t OutputIndex = InvalidIndex;
 
   WasmCustomSection(StringRef Name, MCSectionWasm *Section)
-      : Name(Name), Section(Section), OutputContentsOffset(0),
-        OutputIndex(InvalidIndex) {}
+      : Name(Name), Section(Section) {}
 };
 
 #if !defined(NDEBUG)
@@ -719,7 +716,7 @@ static void addData(SmallVectorImpl<char> &DataBytes,
                     MCSectionWasm &DataSection) {
   LLVM_DEBUG(errs() << "addData: " << DataSection.getName() << "\n");
 
-  DataBytes.resize(alignTo(DataBytes.size(), DataSection.getAlignment()));
+  DataBytes.resize(alignTo(DataBytes.size(), DataSection.getAlign()));
 
   for (const MCFragment &Frag : DataSection) {
     if (Frag.hasInstructions())
@@ -934,25 +931,29 @@ void WasmObjectWriter::writeGlobalSection(ArrayRef<wasm::WasmGlobal> Globals) {
   for (const wasm::WasmGlobal &Global : Globals) {
     encodeULEB128(Global.Type.Type, W->OS);
     W->OS << char(Global.Type.Mutable);
-    W->OS << char(Global.InitExpr.Opcode);
-    switch (Global.Type.Type) {
-    case wasm::WASM_TYPE_I32:
-      encodeSLEB128(0, W->OS);
-      break;
-    case wasm::WASM_TYPE_I64:
-      encodeSLEB128(0, W->OS);
-      break;
-    case wasm::WASM_TYPE_F32:
-      writeI32(0);
-      break;
-    case wasm::WASM_TYPE_F64:
-      writeI64(0);
-      break;
-    case wasm::WASM_TYPE_EXTERNREF:
-      writeValueType(wasm::ValType::EXTERNREF);
-      break;
-    default:
-      llvm_unreachable("unexpected type");
+    if (Global.InitExpr.Extended) {
+      llvm_unreachable("extected init expressions not supported");
+    } else {
+      W->OS << char(Global.InitExpr.Inst.Opcode);
+      switch (Global.Type.Type) {
+      case wasm::WASM_TYPE_I32:
+        encodeSLEB128(0, W->OS);
+        break;
+      case wasm::WASM_TYPE_I64:
+        encodeSLEB128(0, W->OS);
+        break;
+      case wasm::WASM_TYPE_F32:
+        writeI32(0);
+        break;
+      case wasm::WASM_TYPE_F64:
+        writeI64(0);
+        break;
+      case wasm::WASM_TYPE_EXTERNREF:
+        writeValueType(wasm::ValType::EXTERNREF);
+        break;
+      default:
+        llvm_unreachable("unexpected type");
+      }
     }
     W->OS << char(wasm::WASM_OPCODE_END);
   }
@@ -1057,15 +1058,12 @@ uint32_t WasmObjectWriter::writeCodeSection(const MCAssembler &Asm,
   encodeULEB128(Functions.size(), W->OS);
 
   for (const WasmFunction &Func : Functions) {
-    auto &FuncSection = static_cast<MCSectionWasm &>(Func.Sym->getSection());
+    auto *FuncSection = static_cast<MCSectionWasm *>(Func.Section);
 
-    int64_t Size = 0;
-    if (!Func.Sym->getSize()->evaluateAsAbsolute(Size, Layout))
-      report_fatal_error(".size expression must be evaluatable");
-
+    int64_t Size = Layout.getSectionAddressSize(FuncSection);
     encodeULEB128(Size, W->OS);
-    FuncSection.setSectionOffset(W->OS.tell() - Section.ContentsOffset);
-    Asm.writeSectionData(W->OS, &FuncSection, Layout);
+    FuncSection->setSectionOffset(W->OS.tell() - Section.ContentsOffset);
+    Asm.writeSectionData(W->OS, FuncSection, Layout);
   }
 
   // Apply fixups.
@@ -1500,7 +1498,7 @@ uint64_t WasmObjectWriter::writeOneObject(MCAssembler &Asm,
 
     if (Section.isWasmData()) {
       uint32_t SegmentIndex = DataSegments.size();
-      DataSize = alignTo(DataSize, Section.getAlignment());
+      DataSize = alignTo(DataSize, Section.getAlign());
       DataSegments.emplace_back();
       WasmDataSegment &Segment = DataSegments.back();
       Segment.Name = SectionName;
@@ -1510,7 +1508,7 @@ uint64_t WasmObjectWriter::writeOneObject(MCAssembler &Asm,
       Segment.Offset = DataSize;
       Segment.Section = &Section;
       addData(Segment.Data, Section);
-      Segment.Alignment = Log2_32(Section.getAlignment());
+      Segment.Alignment = Log2(Section.getAlign());
       Segment.LinkingFlags = Section.getSegmentFlags();
       DataSize += Segment.Data.size();
       Section.setSegmentIndex(SegmentIndex);
@@ -1569,9 +1567,9 @@ uint64_t WasmObjectWriter::writeOneObject(MCAssembler &Asm,
         continue;
 
       const auto &WS = static_cast<const MCSymbolWasm &>(S);
-      LLVM_DEBUG(dbgs()
-                 << "MCSymbol: "
-                 << toString(WS.getType().getValueOr(wasm::WASM_SYMBOL_TYPE_DATA))
+      LLVM_DEBUG(
+          dbgs() << "MCSymbol: "
+                 << toString(WS.getType().value_or(wasm::WASM_SYMBOL_TYPE_DATA))
                  << " '" << S << "'"
                  << " isDefined=" << S.isDefined() << " isExternal="
                  << S.isExternal() << " isTemporary=" << S.isTemporary()
@@ -1590,15 +1588,11 @@ uint64_t WasmObjectWriter::writeOneObject(MCAssembler &Asm,
             report_fatal_error(
                 "function sections must contain one function each");
 
-          if (WS.getSize() == nullptr)
-            report_fatal_error(
-                "function symbols must have a size set with .size");
-
           // A definition. Write out the function body.
           Index = NumFunctionImports + Functions.size();
           WasmFunction Func;
           Func.SigIndex = getFunctionType(WS);
-          Func.Sym = &WS;
+          Func.Section = &WS.getSection();
           assert(WasmIndices.count(&WS) == 0);
           WasmIndices[&WS] = Index;
           Functions.push_back(Func);
@@ -1661,21 +1655,22 @@ uint64_t WasmObjectWriter::writeOneObject(MCAssembler &Asm,
           wasm::WasmGlobal Global;
           Global.Type = WS.getGlobalType();
           Global.Index = NumGlobalImports + Globals.size();
+          Global.InitExpr.Extended = false;
           switch (Global.Type.Type) {
           case wasm::WASM_TYPE_I32:
-            Global.InitExpr.Opcode = wasm::WASM_OPCODE_I32_CONST;
+            Global.InitExpr.Inst.Opcode = wasm::WASM_OPCODE_I32_CONST;
             break;
           case wasm::WASM_TYPE_I64:
-            Global.InitExpr.Opcode = wasm::WASM_OPCODE_I64_CONST;
+            Global.InitExpr.Inst.Opcode = wasm::WASM_OPCODE_I64_CONST;
             break;
           case wasm::WASM_TYPE_F32:
-            Global.InitExpr.Opcode = wasm::WASM_OPCODE_F32_CONST;
+            Global.InitExpr.Inst.Opcode = wasm::WASM_OPCODE_F32_CONST;
             break;
           case wasm::WASM_TYPE_F64:
-            Global.InitExpr.Opcode = wasm::WASM_OPCODE_F64_CONST;
+            Global.InitExpr.Inst.Opcode = wasm::WASM_OPCODE_F64_CONST;
             break;
           case wasm::WASM_TYPE_EXTERNREF:
-            Global.InitExpr.Opcode = wasm::WASM_OPCODE_REF_NULL;
+            Global.InitExpr.Inst.Opcode = wasm::WASM_OPCODE_REF_NULL;
             break;
           default:
             llvm_unreachable("unexpected type");
@@ -1807,7 +1802,7 @@ uint64_t WasmObjectWriter::writeOneObject(MCAssembler &Asm,
 
     wasm::WasmSymbolInfo Info;
     Info.Name = WS.getName();
-    Info.Kind = WS.getType().getValueOr(wasm::WASM_SYMBOL_TYPE_DATA);
+    Info.Kind = WS.getType().value_or(wasm::WASM_SYMBOL_TYPE_DATA);
     Info.Flags = Flags;
     if (!WS.isData()) {
       assert(WasmIndices.count(&WS) > 0);
@@ -1874,7 +1869,8 @@ uint64_t WasmObjectWriter::writeOneObject(MCAssembler &Asm,
     const MCFragment &AlignFrag = *IT;
     if (AlignFrag.getKind() != MCFragment::FT_Align)
       report_fatal_error(".init_array section should be aligned");
-    if (cast<MCAlignFragment>(AlignFrag).getAlignment() != (is64Bit() ? 8 : 4))
+    if (cast<MCAlignFragment>(AlignFrag).getAlignment() !=
+        Align(is64Bit() ? 8 : 4))
       report_fatal_error(".init_array section should be aligned for pointers");
 
     const MCFragment &Frag = *std::next(IT);

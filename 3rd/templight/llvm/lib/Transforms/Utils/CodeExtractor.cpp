@@ -15,7 +15,6 @@
 #include "llvm/Transforms/Utils/CodeExtractor.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/DenseMap.h"
-#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SetVector.h"
 #include "llvm/ADT/SmallPtrSet.h"
@@ -53,7 +52,6 @@
 #include "llvm/IR/User.h"
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Verifier.h"
-#include "llvm/Pass.h"
 #include "llvm/Support/BlockFrequency.h"
 #include "llvm/Support/BranchProbability.h"
 #include "llvm/Support/Casting.h"
@@ -62,12 +60,10 @@
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
-#include "llvm/Transforms/Utils/Local.h"
 #include <cassert>
 #include <cstdint>
 #include <iterator>
 #include <map>
-#include <set>
 #include <utility>
 #include <vector>
 
@@ -141,7 +137,7 @@ static bool isBlockValidForExtraction(const BasicBlock &BB,
       if (auto *UBB = CSI->getUnwindDest())
         if (!Result.count(UBB))
           return false;
-      for (auto *HBB : CSI->handlers())
+      for (const auto *HBB : CSI->handlers())
         if (!Result.count(const_cast<BasicBlock*>(HBB)))
           return false;
       continue;
@@ -249,9 +245,10 @@ CodeExtractor::CodeExtractor(ArrayRef<BasicBlock *> BBs, DominatorTree *DT,
                              bool AggregateArgs, BlockFrequencyInfo *BFI,
                              BranchProbabilityInfo *BPI, AssumptionCache *AC,
                              bool AllowVarArgs, bool AllowAlloca,
-                             std::string Suffix)
+                             BasicBlock *AllocationBlock, std::string Suffix)
     : DT(DT), AggregateArgs(AggregateArgs || AggregateArgsOpt), BFI(BFI),
-      BPI(BPI), AC(AC), AllowVarArgs(AllowVarArgs),
+      BPI(BPI), AC(AC), AllocationBlock(AllocationBlock),
+      AllowVarArgs(AllowVarArgs),
       Blocks(buildExtractionBlockSet(BBs, DT, AllowVarArgs, AllowAlloca)),
       Suffix(Suffix) {}
 
@@ -260,7 +257,7 @@ CodeExtractor::CodeExtractor(DominatorTree &DT, Loop &L, bool AggregateArgs,
                              BranchProbabilityInfo *BPI, AssumptionCache *AC,
                              std::string Suffix)
     : DT(&DT), AggregateArgs(AggregateArgs || AggregateArgsOpt), BFI(BFI),
-      BPI(BPI), AC(AC), AllowVarArgs(false),
+      BPI(BPI), AC(AC), AllocationBlock(nullptr), AllowVarArgs(false),
       Blocks(buildExtractionBlockSet(L.getBlocks(), &DT,
                                      /* AllowVarArgs */ false,
                                      /* AllowAlloca */ false)),
@@ -833,6 +830,7 @@ Function *CodeExtractor::constructFunction(const ValueSet &inputs,
   std::vector<Type *> ParamTy;
   std::vector<Type *> AggParamTy;
   ValueSet StructValues;
+  const DataLayout &DL = M->getDataLayout();
 
   // Add the types of the input values to the function's argument list
   for (Value *value : inputs) {
@@ -851,7 +849,8 @@ Function *CodeExtractor::constructFunction(const ValueSet &inputs,
       AggParamTy.push_back(output->getType());
       StructValues.insert(output);
     } else
-      ParamTy.push_back(PointerType::getUnqual(output->getType()));
+      ParamTy.push_back(
+          PointerType::get(output->getType(), DL.getAllocaAddrSpace()));
   }
 
   assert(
@@ -866,7 +865,7 @@ Function *CodeExtractor::constructFunction(const ValueSet &inputs,
   StructType *StructTy = nullptr;
   if (AggregateArgs && !AggParamTy.empty()) {
     StructTy = StructType::get(M->getContext(), AggParamTy);
-    ParamTy.push_back(PointerType::getUnqual(StructTy));
+    ParamTy.push_back(PointerType::get(StructTy, DL.getAllocaAddrSpace()));
   }
 
   LLVM_DEBUG({
@@ -904,29 +903,27 @@ Function *CodeExtractor::constructFunction(const ValueSet &inputs,
       // Those attributes cannot be propagated safely. Explicitly list them
       // here so we get a warning if new attributes are added.
       case Attribute::AllocSize:
-      case Attribute::ArgMemOnly:
       case Attribute::Builtin:
       case Attribute::Convergent:
-      case Attribute::InaccessibleMemOnly:
-      case Attribute::InaccessibleMemOrArgMemOnly:
       case Attribute::JumpTable:
       case Attribute::Naked:
       case Attribute::NoBuiltin:
       case Attribute::NoMerge:
       case Attribute::NoReturn:
       case Attribute::NoSync:
-      case Attribute::ReadNone:
-      case Attribute::ReadOnly:
       case Attribute::ReturnsTwice:
       case Attribute::Speculatable:
       case Attribute::StackAlignment:
       case Attribute::WillReturn:
-      case Attribute::WriteOnly:
+      case Attribute::AllocKind:
+      case Attribute::PresplitCoroutine:
+      case Attribute::Memory:
         continue;
       // Those attributes should be safe to propagate to the extracted function.
       case Attribute::AlwaysInline:
       case Attribute::Cold:
       case Attribute::DisableSanitizerInstrumentation:
+      case Attribute::FnRetThunkExtern:
       case Attribute::Hot:
       case Attribute::NoRecurse:
       case Attribute::InlineHint:
@@ -939,6 +936,7 @@ Function *CodeExtractor::constructFunction(const ValueSet &inputs,
       case Attribute::NonLazyBind:
       case Attribute::NoRedZone:
       case Attribute::NoUnwind:
+      case Attribute::NoSanitizeBounds:
       case Attribute::NoSanitizeCoverage:
       case Attribute::NullPointerIsValid:
       case Attribute::OptForFuzzing:
@@ -961,9 +959,12 @@ Function *CodeExtractor::constructFunction(const ValueSet &inputs,
       case Attribute::NoCfCheck:
       case Attribute::MustProgress:
       case Attribute::NoProfile:
+      case Attribute::SkipProfile:
         break;
       // These attributes cannot be applied to functions.
       case Attribute::Alignment:
+      case Attribute::AllocatedPointer:
+      case Attribute::AllocAlign:
       case Attribute::ByVal:
       case Attribute::Dereferenceable:
       case Attribute::DereferenceableOrNull:
@@ -976,6 +977,8 @@ Function *CodeExtractor::constructFunction(const ValueSet &inputs,
       case Attribute::NoUndef:
       case Attribute::NonNull:
       case Attribute::Preallocated:
+      case Attribute::ReadNone:
+      case Attribute::ReadOnly:
       case Attribute::Returned:
       case Attribute::SExt:
       case Attribute::StructRet:
@@ -985,6 +988,7 @@ Function *CodeExtractor::constructFunction(const ValueSet &inputs,
       case Attribute::ZExt:
       case Attribute::ImmArg:
       case Attribute::ByRef:
+      case Attribute::WriteOnly:
       //  These are not really attributes.
       case Attribute::None:
       case Attribute::EndAttrKinds:
@@ -995,7 +999,7 @@ Function *CodeExtractor::constructFunction(const ValueSet &inputs,
 
     newFunction->addFnAttr(Attr);
   }
-  newFunction->getBasicBlockList().push_back(newRootNode);
+  newFunction->insert(newFunction->end(), newRootNode);
 
   // Create scalar and aggregate iterators to name all of the arguments we
   // inserted.
@@ -1190,9 +1194,10 @@ CallInst *CodeExtractor::emitCallAndSwitchStatement(Function *newFunction,
 
     // Allocate a struct at the beginning of this function
     StructArgTy = StructType::get(newFunction->getContext(), ArgTypes);
-    Struct = new AllocaInst(StructArgTy, DL.getAllocaAddrSpace(), nullptr,
-                            "structArg",
-                            &codeReplacer->getParent()->front().front());
+    Struct = new AllocaInst(
+        StructArgTy, DL.getAllocaAddrSpace(), nullptr, "structArg",
+        AllocationBlock ? &*AllocationBlock->getFirstInsertionPt()
+                        : &codeReplacer->getParent()->front().front());
     params.push_back(Struct);
 
     // Store aggregated inputs in the struct.
@@ -1203,7 +1208,7 @@ CallInst *CodeExtractor::emitCallAndSwitchStatement(Function *newFunction,
         Idx[1] = ConstantInt::get(Type::getInt32Ty(Context), i);
         GetElementPtrInst *GEP = GetElementPtrInst::Create(
             StructArgTy, Struct, Idx, "gep_" + StructValues[i]->getName());
-        codeReplacer->getInstList().push_back(GEP);
+        GEP->insertInto(codeReplacer, codeReplacer->end());
         new StoreInst(StructValues[i], GEP, codeReplacer);
         NumAggregatedInputs++;
       }
@@ -1221,7 +1226,7 @@ CallInst *CodeExtractor::emitCallAndSwitchStatement(Function *newFunction,
     if (auto DL = newFunction->getEntryBlock().getTerminator()->getDebugLoc())
       call->setDebugLoc(DL);
   }
-  codeReplacer->getInstList().push_back(call);
+  call->insertInto(codeReplacer, codeReplacer->end());
 
   // Set swifterror parameter attributes.
   for (unsigned SwiftErrArgNo : SwiftErrorArgs) {
@@ -1241,7 +1246,7 @@ CallInst *CodeExtractor::emitCallAndSwitchStatement(Function *newFunction,
       Idx[1] = ConstantInt::get(Type::getInt32Ty(Context), aggIdx);
       GetElementPtrInst *GEP = GetElementPtrInst::Create(
           StructArgTy, Struct, Idx, "gep_reload_" + outputs[i]->getName());
-      codeReplacer->getInstList().push_back(GEP);
+      GEP->insertInto(codeReplacer, codeReplacer->end());
       Output = GEP;
       ++aggIdx;
     } else {
@@ -1253,8 +1258,8 @@ CallInst *CodeExtractor::emitCallAndSwitchStatement(Function *newFunction,
                                   codeReplacer);
     Reloads.push_back(load);
     std::vector<User *> Users(outputs[i]->user_begin(), outputs[i]->user_end());
-    for (unsigned u = 0, e = Users.size(); u != e; ++u) {
-      Instruction *inst = cast<Instruction>(Users[u]);
+    for (User *U : Users) {
+      Instruction *inst = cast<Instruction>(U);
       if (!Blocks.count(inst->getParent()))
         inst->replaceUsesOfWith(outputs[i], load);
     }
@@ -1430,21 +1435,17 @@ CallInst *CodeExtractor::emitCallAndSwitchStatement(Function *newFunction,
 }
 
 void CodeExtractor::moveCodeToFunction(Function *newFunction) {
-  Function *oldFunc = (*Blocks.begin())->getParent();
-  Function::BasicBlockListType &oldBlocks = oldFunc->getBasicBlockList();
-  Function::BasicBlockListType &newBlocks = newFunction->getBasicBlockList();
-
   auto newFuncIt = newFunction->front().getIterator();
   for (BasicBlock *Block : Blocks) {
     // Delete the basic block from the old function, and the list of blocks
-    oldBlocks.remove(Block);
+    Block->removeFromParent();
 
     // Insert this basic block into the new function
     // Insert the original blocks after the entry block created
     // for the new function. The entry block may be followed
     // by a set of exit blocks at this point, but these exit
     // blocks better be placed at the end of the new function.
-    newFuncIt = newBlocks.insertAfter(newFuncIt, Block);
+    newFuncIt = newFunction->insert(std::next(newFuncIt), Block);
   }
 }
 
@@ -1533,7 +1534,8 @@ static void fixupDebugInfoPostExtraction(Function &OldFunc, Function &NewFunc,
   assert(OldSP->getUnit() && "Missing compile unit for subprogram");
   DIBuilder DIB(*OldFunc.getParent(), /*AllowUnresolved=*/false,
                 OldSP->getUnit());
-  auto SPType = DIB.createSubroutineType(DIB.getOrCreateTypeArray(None));
+  auto SPType =
+      DIB.createSubroutineType(DIB.getOrCreateTypeArray(std::nullopt));
   DISubprogram::DISPFlags SPFlags = DISubprogram::SPFlagDefinition |
                                     DISubprogram::SPFlagOptimized |
                                     DISubprogram::SPFlagLocalToUnit;
@@ -1550,18 +1552,25 @@ static void fixupDebugInfoPostExtraction(Function &OldFunc, Function &NewFunc,
   //     point to a variable in the wrong scope.
   SmallDenseMap<DINode *, DINode *> RemappedMetadata;
   SmallVector<Instruction *, 4> DebugIntrinsicsToDelete;
+  DenseMap<const MDNode *, MDNode *> Cache;
   for (Instruction &I : instructions(NewFunc)) {
     auto *DII = dyn_cast<DbgInfoIntrinsic>(&I);
     if (!DII)
       continue;
 
-    // Point the intrinsic to a fresh label within the new function.
+    // Point the intrinsic to a fresh label within the new function if the
+    // intrinsic was not inlined from some other function.
     if (auto *DLI = dyn_cast<DbgLabelInst>(&I)) {
+      if (DLI->getDebugLoc().getInlinedAt())
+        continue;
       DILabel *OldLabel = DLI->getLabel();
       DINode *&NewLabel = RemappedMetadata[OldLabel];
-      if (!NewLabel)
-        NewLabel = DILabel::get(Ctx, NewSP, OldLabel->getName(),
+      if (!NewLabel) {
+        DILocalScope *NewScope = DILocalScope::cloneScopeForSubprogram(
+            *OldLabel->getScope(), *NewSP, Ctx, Cache);
+        NewLabel = DILabel::get(Ctx, NewScope, OldLabel->getName(),
                                 OldLabel->getFile(), OldLabel->getLine());
+      }
       DLI->setArgOperand(0, MetadataAsValue::get(Ctx, NewLabel));
       continue;
     }
@@ -1582,17 +1591,23 @@ static void fixupDebugInfoPostExtraction(Function &OldFunc, Function &NewFunc,
       DebugIntrinsicsToDelete.push_back(DVI);
       continue;
     }
-
-    // Point the intrinsic to a fresh variable within the new function.
-    DILocalVariable *OldVar = DVI->getVariable();
-    DINode *&NewVar = RemappedMetadata[OldVar];
-    if (!NewVar)
-      NewVar = DIB.createAutoVariable(
-          NewSP, OldVar->getName(), OldVar->getFile(), OldVar->getLine(),
-          OldVar->getType(), /*AlwaysPreserve=*/false, DINode::FlagZero,
-          OldVar->getAlignInBits());
-    DVI->setVariable(cast<DILocalVariable>(NewVar));
+    // If the variable was in the scope of the old function, i.e. it was not
+    // inlined, point the intrinsic to a fresh variable within the new function.
+    if (!DVI->getDebugLoc().getInlinedAt()) {
+      DILocalVariable *OldVar = DVI->getVariable();
+      DINode *&NewVar = RemappedMetadata[OldVar];
+      if (!NewVar) {
+        DILocalScope *NewScope = DILocalScope::cloneScopeForSubprogram(
+            *OldVar->getScope(), *NewSP, Ctx, Cache);
+        NewVar = DIB.createAutoVariable(
+            NewScope, OldVar->getName(), OldVar->getFile(), OldVar->getLine(),
+            OldVar->getType(), /*AlwaysPreserve=*/false, DINode::FlagZero,
+            OldVar->getAlignInBits());
+      }
+      DVI->setVariable(cast<DILocalVariable>(NewVar));
+    }
   }
+
   for (auto *DII : DebugIntrinsicsToDelete)
     DII->eraseFromParent();
   DIB.finalizeSubprogram(NewSP);
@@ -1601,13 +1616,13 @@ static void fixupDebugInfoPostExtraction(Function &OldFunc, Function &NewFunc,
   // function.
   for (Instruction &I : instructions(NewFunc)) {
     if (const DebugLoc &DL = I.getDebugLoc())
-      I.setDebugLoc(DILocation::get(Ctx, DL.getLine(), DL.getCol(), NewSP));
+      I.setDebugLoc(
+          DebugLoc::replaceInlinedAtSubprogram(DL, *NewSP, Ctx, Cache));
 
     // Loop info metadata may contain line locations. Fix them up.
-    auto updateLoopInfoLoc = [&Ctx, NewSP](Metadata *MD) -> Metadata * {
+    auto updateLoopInfoLoc = [&Ctx, &Cache, NewSP](Metadata *MD) -> Metadata * {
       if (auto *Loc = dyn_cast_or_null<DILocation>(MD))
-        return DILocation::get(Ctx, Loc->getLine(), Loc->getColumn(), NewSP,
-                               nullptr);
+        return DebugLoc::replaceInlinedAtSubprogram(Loc, *NewSP, Ctx, Cache);
       return MD;
     };
     updateLoopMetadataDebugLocations(I, updateLoopInfoLoc);
@@ -1648,14 +1663,14 @@ CodeExtractor::extractCodeRegion(const CodeExtractorAnalysisCache &CEAC,
     }
   }
 
-  // Remove @llvm.assume calls that will be moved to the new function from the
-  // old function's assumption cache.
+  // Remove CondGuardInsts that will be moved to the new function from the old
+  // function's assumption cache.
   for (BasicBlock *Block : Blocks) {
     for (Instruction &I : llvm::make_early_inc_range(*Block)) {
-      if (auto *AI = dyn_cast<AssumeInst>(&I)) {
+      if (auto *CI = dyn_cast<CondGuardInst>(&I)) {
         if (AC)
-          AC->unregisterAssumption(AI);
-        AI->eraseFromParent();
+          AC->unregisterAssumption(CI);
+        CI->eraseFromParent();
       }
     }
   }
@@ -1720,7 +1735,7 @@ CodeExtractor::extractCodeRegion(const CodeExtractorAnalysisCache &CEAC,
       });
     });
   }
-  newFuncRoot->getInstList().push_back(BranchI);
+  BranchI->insertInto(newFuncRoot, newFuncRoot->end());
 
   ValueSet SinkingCands, HoistingCands;
   BasicBlock *CommonExit = nullptr;
@@ -1771,9 +1786,9 @@ CodeExtractor::extractCodeRegion(const CodeExtractorAnalysisCache &CEAC,
   // Update the entry count of the function.
   if (BFI) {
     auto Count = BFI->getProfileCountFromFreq(EntryFreq.getFrequency());
-    if (Count.hasValue())
+    if (Count)
       newFunction->setEntryCount(
-          ProfileCount(Count.getValue(), Function::PCT_Real)); // FIXME
+          ProfileCount(*Count, Function::PCT_Real)); // FIXME
     BFI->setBlockFreq(codeReplacer, EntryFreq.getFrequency());
   }
 
@@ -1849,7 +1864,7 @@ bool CodeExtractor::verifyAssumptionCache(const Function &OldFunc,
                                           const Function &NewFunc,
                                           AssumptionCache *AC) {
   for (auto AssumeVH : AC->assumptions()) {
-    auto *I = dyn_cast_or_null<CallInst>(AssumeVH);
+    auto *I = dyn_cast_or_null<CondGuardInst>(AssumeVH);
     if (!I)
       continue;
 
@@ -1861,7 +1876,7 @@ bool CodeExtractor::verifyAssumptionCache(const Function &OldFunc,
     // that were previously in the old function, but that have now been moved
     // to the new function.
     for (auto AffectedValVH : AC->assumptionsFor(I->getOperand(0))) {
-      auto *AffectedCI = dyn_cast_or_null<CallInst>(AffectedValVH);
+      auto *AffectedCI = dyn_cast_or_null<CondGuardInst>(AffectedValVH);
       if (!AffectedCI)
         continue;
       if (AffectedCI->getFunction() != &OldFunc)

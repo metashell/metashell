@@ -6,23 +6,22 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file contains a pass that keeps track of @llvm.assume intrinsics in
-// the functions of a module.
+// This file contains a pass that keeps track of @llvm.assume and
+// @llvm.experimental.guard intrinsics in the functions of a module.
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/Analysis/AssumeBundleQueries.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/Analysis/AssumeBundleQueries.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/IR/PatternMatch.h"
 #include "llvm/InitializePasses.h"
@@ -31,7 +30,6 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
-#include <algorithm>
 #include <cassert>
 #include <utility>
 
@@ -107,7 +105,7 @@ findAffectedValues(CallBase *CI, TargetTransformInfo *TTI,
         if (match(V, m_BitwiseLogic(m_Value(A), m_Value(B)))) {
           AddAffected(A);
           AddAffected(B);
-        // (A << C) or (A >>_s C) or (A >>_u C) where C is some constant.
+          // (A << C) or (A >>_s C) or (A >>_u C) where C is some constant.
         } else if (match(V, m_Shift(m_Value(A), m_ConstantInt()))) {
           AddAffected(A);
         }
@@ -115,15 +113,22 @@ findAffectedValues(CallBase *CI, TargetTransformInfo *TTI,
 
       AddAffectedFromEq(A);
       AddAffectedFromEq(B);
+    } else if (Pred == ICmpInst::ICMP_NE) {
+      Value *X, *Y;
+      // Handle (a & b != 0). If a/b is a power of 2 we can use this
+      // information.
+      if (match(A, m_And(m_Value(X), m_Value(Y))) && match(B, m_Zero())) {
+        AddAffected(X);
+        AddAffected(Y);
+      }
+    } else if (Pred == ICmpInst::ICMP_ULT) {
+      Value *X;
+      // Handle (A + C1) u< C2, which is the canonical form of A > C3 && A < C4,
+      // and recognized by LVI at least.
+      if (match(A, m_Add(m_Value(X), m_ConstantInt())) &&
+          match(B, m_ConstantInt()))
+        AddAffected(X);
     }
-
-    Value *X;
-    // Handle (A + C1) u< C2, which is the canonical form of A > C3 && A < C4,
-    // and recognized by LVI at least.
-    if (Pred == ICmpInst::ICMP_ULT &&
-        match(A, m_Add(m_Value(X), m_ConstantInt())) &&
-        match(B, m_ConstantInt()))
-      AddAffected(X);
   }
 
   if (TTI) {
@@ -135,7 +140,7 @@ findAffectedValues(CallBase *CI, TargetTransformInfo *TTI,
   }
 }
 
-void AssumptionCache::updateAffectedValues(AssumeInst *CI) {
+void AssumptionCache::updateAffectedValues(CondGuardInst *CI) {
   SmallVector<AssumptionCache::ResultElem, 16> Affected;
   findAffectedValues(CI, TTI, Affected);
 
@@ -148,7 +153,7 @@ void AssumptionCache::updateAffectedValues(AssumeInst *CI) {
   }
 }
 
-void AssumptionCache::unregisterAssumption(AssumeInst *CI) {
+void AssumptionCache::unregisterAssumption(CondGuardInst *CI) {
   SmallVector<AssumptionCache::ResultElem, 16> Affected;
   findAffectedValues(CI, TTI, Affected);
 
@@ -212,7 +217,7 @@ void AssumptionCache::scanFunction() {
   // to this cache.
   for (BasicBlock &B : F)
     for (Instruction &I : B)
-      if (isa<AssumeInst>(&I))
+      if (isa<CondGuardInst>(&I))
         AssumeHandles.push_back({&I, ExprResultIdx});
 
   // Mark the scan as complete.
@@ -220,10 +225,10 @@ void AssumptionCache::scanFunction() {
 
   // Update affected values.
   for (auto &A : AssumeHandles)
-    updateAffectedValues(cast<AssumeInst>(A));
+    updateAffectedValues(cast<CondGuardInst>(A));
 }
 
-void AssumptionCache::registerAssumption(AssumeInst *CI) {
+void AssumptionCache::registerAssumption(CondGuardInst *CI) {
   // If we haven't scanned the function yet, just drop this assumption. It will
   // be found when we scan later.
   if (!Scanned)
@@ -233,9 +238,9 @@ void AssumptionCache::registerAssumption(AssumeInst *CI) {
 
 #ifndef NDEBUG
   assert(CI->getParent() &&
-         "Cannot register @llvm.assume call not in a basic block");
+         "Cannot a register CondGuardInst not in a basic block");
   assert(&F == CI->getParent()->getParent() &&
-         "Cannot register @llvm.assume call not in this function");
+         "Cannot a register CondGuardInst not in this function");
 
   // We expect the number of assumptions to be small, so in an asserts build
   // check that we don't accumulate duplicates and that all assumptions point
@@ -247,8 +252,8 @@ void AssumptionCache::registerAssumption(AssumeInst *CI) {
 
     assert(&F == cast<Instruction>(VH)->getParent()->getParent() &&
            "Cached assumption not inside this function!");
-    assert(match(cast<CallInst>(VH), m_Intrinsic<Intrinsic::assume>()) &&
-           "Cached something other than a call to @llvm.assume!");
+    assert(isa<CondGuardInst>(VH) &&
+           "Cached something other than CondGuardInst!");
     assert(AssumptionSet.insert(VH).second &&
            "Cache contains multiple copies of a call!");
   }

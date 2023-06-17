@@ -70,10 +70,12 @@ TEMPLATE_EVENT_KIND(defining_synthesized_function,           "DefiningSynthesize
 TEMPLATE_EVENT_KIND(constraints_check,                       "ConstraintsCheck",                     flat)
 TEMPLATE_EVENT_KIND(constraint_substitution,                 "ConstraintSubstitution",               flat)
 TEMPLATE_EVENT_KIND(constraint_normalization,                "ConstraintNormalization",              flat)
+TEMPLATE_EVENT_KIND(requirement_parameter_instantiation,     "RequirementParameterInstantiation",    flat)
 TEMPLATE_EVENT_KIND(parameter_mapping_substitution,          "ParameterMappingSubstitution",         flat)
 TEMPLATE_EVENT_KIND(rewriting_operator_as_spaceship,         "RewritingOperatorAsSpaceship",         flat)
 TEMPLATE_EVENT_KIND(initializing_structured_binding,         "InitializingStructuredBinding",        flat)
 TEMPLATE_EVENT_KIND(marking_class_dll_exported,              "MarkingClassDllexported",              flat)
+TEMPLATE_EVENT_KIND(building_builtin_dump_struct_call,       "BuildingBuiltinDumpStructCall",        open)
 TEMPLATE_EVENT_KIND(memoization,                             "Memoization",                          open)
 TEMPLATE_EVENT_KIND(template_end,                            "TemplateEnd",                          close)
 TEMPLATE_EVENT_KIND(non_template_type,                       "NonTemplateType",                      open) // Used only if an evaluation result is not a template

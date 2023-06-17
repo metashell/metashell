@@ -16,6 +16,7 @@
 #include "RISCV.h"
 #include "RISCVTargetMachine.h"
 #include "llvm/CodeGen/SelectionDAGISel.h"
+#include "llvm/Support/KnownBits.h"
 
 // RISCV-specific code to select RISCV machine instructions for
 // SelectionDAG operations.
@@ -24,12 +25,13 @@ class RISCVDAGToDAGISel : public SelectionDAGISel {
   const RISCVSubtarget *Subtarget = nullptr;
 
 public:
-  explicit RISCVDAGToDAGISel(RISCVTargetMachine &TargetMachine)
-      : SelectionDAGISel(TargetMachine) {}
+  static char ID;
 
-  StringRef getPassName() const override {
-    return "RISCV DAG->DAG Pattern Instruction Selection";
-  }
+  RISCVDAGToDAGISel() = delete;
+
+  explicit RISCVDAGToDAGISel(RISCVTargetMachine &TargetMachine,
+                             CodeGenOpt::Level OptLevel)
+      : SelectionDAGISel(ID, TargetMachine, OptLevel) {}
 
   bool runOnMachineFunction(MachineFunction &MF) override {
     Subtarget = &MF.getSubtarget<RISCVSubtarget>();
@@ -44,8 +46,11 @@ public:
   bool SelectInlineAsmMemoryOperand(const SDValue &Op, unsigned ConstraintID,
                                     std::vector<SDValue> &OutOps) override;
 
-  bool SelectAddrFI(SDValue Addr, SDValue &Base);
-  bool SelectBaseAddr(SDValue Addr, SDValue &Base);
+  bool SelectAddrFrameIndex(SDValue Addr, SDValue &Base, SDValue &Offset);
+  bool SelectFrameAddrRegImm(SDValue Addr, SDValue &Base, SDValue &Offset);
+  bool SelectAddrRegImm(SDValue Addr, SDValue &Base, SDValue &Offset);
+
+  bool tryShrinkShlLogicImm(SDNode *Node);
 
   bool selectShiftMask(SDValue N, unsigned ShiftWidth, SDValue &ShAmt);
   bool selectShiftMaskXLen(SDValue N, SDValue &ShAmt) {
@@ -56,9 +61,23 @@ public:
   }
 
   bool selectSExti32(SDValue N, SDValue &Val);
-  bool selectZExti32(SDValue N, SDValue &Val);
+  bool selectZExtBits(SDValue N, unsigned Bits, SDValue &Val);
+  template <unsigned Bits> bool selectZExtBits(SDValue N, SDValue &Val) {
+    return selectZExtBits(N, Bits, Val);
+  }
 
-  bool hasAllNBitUsers(SDNode *Node, unsigned Bits) const;
+  bool selectSHXADDOp(SDValue N, unsigned ShAmt, SDValue &Val);
+  template <unsigned ShAmt> bool selectSHXADDOp(SDValue N, SDValue &Val) {
+    return selectSHXADDOp(N, ShAmt, Val);
+  }
+
+  bool selectSHXADD_UWOp(SDValue N, unsigned ShAmt, SDValue &Val);
+  template <unsigned ShAmt> bool selectSHXADD_UWOp(SDValue N, SDValue &Val) {
+    return selectSHXADD_UWOp(N, ShAmt, Val);
+  }
+
+  bool hasAllNBitUsers(SDNode *Node, unsigned Bits,
+                       const unsigned Depth = 0) const;
   bool hasAllHUsers(SDNode *Node) const { return hasAllNBitUsers(Node, 16); }
   bool hasAllWUsers(SDNode *Node) const { return hasAllNBitUsers(Node, 32); }
 
@@ -115,14 +134,18 @@ public:
 #include "RISCVGenDAGISel.inc"
 
 private:
-  bool doPeepholeLoadStoreADDI(SDNode *Node);
   bool doPeepholeSExtW(SDNode *Node);
+  bool doPeepholeMaskedRVV(SDNode *Node);
+  bool doPeepholeMergeVVMFold();
+  bool performVMergeToVAdd(SDNode *N);
+  bool performCombineVMergeAndVOps(SDNode *N, bool IsTA);
 };
 
 namespace RISCV {
 struct VLSEGPseudo {
   uint16_t NF : 4;
   uint16_t Masked : 1;
+  uint16_t IsTU : 1;
   uint16_t Strided : 1;
   uint16_t FF : 1;
   uint16_t Log2SEW : 3;
@@ -133,6 +156,7 @@ struct VLSEGPseudo {
 struct VLXSEGPseudo {
   uint16_t NF : 4;
   uint16_t Masked : 1;
+  uint16_t IsTU : 1;
   uint16_t Ordered : 1;
   uint16_t Log2SEW : 3;
   uint16_t LMUL : 3;
@@ -187,6 +211,13 @@ struct VLX_VSXPseudo {
   uint16_t Pseudo;
 };
 
+struct RISCVMaskedPseudoInfo {
+  uint16_t MaskedPseudo;
+  uint16_t UnmaskedPseudo;
+  uint16_t UnmaskedTUPseudo;
+  uint8_t MaskOpIdx;
+};
+
 #define GET_RISCVVSSEGTable_DECL
 #define GET_RISCVVLSEGTable_DECL
 #define GET_RISCVVLXSEGTable_DECL
@@ -195,6 +226,7 @@ struct VLX_VSXPseudo {
 #define GET_RISCVVSETable_DECL
 #define GET_RISCVVLXTable_DECL
 #define GET_RISCVVSXTable_DECL
+#define GET_RISCVMaskedPseudosTable_DECL
 #include "RISCVGenSearchableTables.inc"
 } // namespace RISCV
 

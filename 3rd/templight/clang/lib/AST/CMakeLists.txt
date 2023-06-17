@@ -3,6 +3,7 @@ set(LLVM_LINK_COMPONENTS
   Core
   FrontendOpenMP
   Support
+  TargetParser
   )
 
 # FIXME: the entry points to the interpreter should be moved out of clangAST
@@ -91,12 +92,14 @@ add_clang_library(clangAST
   MicrosoftMangle.cpp
   NestedNameSpecifier.cpp
   NSAPI.cpp
+  ODRDiagsEmitter.cpp
   ODRHash.cpp
   OpenMPClause.cpp
   OSLog.cpp
   ParentMap.cpp
   PrintfFormatString.cpp
   QualTypeNames.cpp
+  Randstruct.cpp
   RawCommentList.cpp
   RecordLayout.cpp
   RecordLayoutBuilder.cpp

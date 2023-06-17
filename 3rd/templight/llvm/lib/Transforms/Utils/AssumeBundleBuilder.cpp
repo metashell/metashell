@@ -18,6 +18,7 @@
 #include "llvm/IR/InstIterator.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Operator.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/DebugCounter.h"
@@ -253,7 +254,7 @@ struct AssumeBuilderState {
     unsigned DerefSize = MemInst->getModule()
                              ->getDataLayout()
                              .getTypeStoreSize(AccType)
-                             .getKnownMinSize();
+                             .getKnownMinValue();
     if (DerefSize != 0) {
       addKnowledge({Attribute::Dereferenceable, DerefSize, Pointer});
       if (!NullPointerIsDefined(MemInst->getFunction(),

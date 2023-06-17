@@ -1,16 +1,16 @@
-// RUN: %clang_cc1 -triple amdgcn-amd-amdhsa -fcuda-is-device -std=c++11 \
+// RUN: %clang_cc1 -no-opaque-pointers -triple amdgcn-amd-amdhsa -fcuda-is-device -std=c++11 \
 // RUN:   -emit-llvm -o - -x hip %s | FileCheck \
 // RUN:   -check-prefixes=COMMON,DEV,NORDC-D %s
 
-// RUN: %clang_cc1 -triple amdgcn-amd-amdhsa -fcuda-is-device -std=c++11 \
+// RUN: %clang_cc1 -no-opaque-pointers -triple amdgcn-amd-amdhsa -fcuda-is-device -std=c++11 \
 // RUN:   -emit-llvm -fgpu-rdc -cuid=abc -o - -x hip %s > %t.dev
 // RUN: cat %t.dev | FileCheck -check-prefixes=COMMON,DEV,RDC-D %s
 
-// RUN: %clang_cc1 -triple x86_64-gnu-linux -std=c++11 \
+// RUN: %clang_cc1 -no-opaque-pointers -triple x86_64-gnu-linux -std=c++11 \
 // RUN:   -emit-llvm -o - -x hip %s | FileCheck \
 // RUN:   -check-prefixes=COMMON,HOST,NORDC %s
 
-// RUN: %clang_cc1 -triple x86_64-gnu-linux -std=c++11 \
+// RUN: %clang_cc1 -no-opaque-pointers -triple x86_64-gnu-linux -std=c++11 \
 // RUN:   -emit-llvm -fgpu-rdc -cuid=abc -o - -x hip %s > %t.host
 // RUN: cat %t.host | FileCheck -check-prefixes=COMMON,HOST,RDC %s
 
@@ -144,9 +144,9 @@ float load3() {
 // HOST:  %3 = getelementptr inbounds [100 x %struct.vec], [100 x %struct.vec]* %2, i64 0, i64 1, i32 1
 // HOST:  %4 = ptrtoint float* %3 to i64
 // HOST:  %5 = sub i64 %4, %1
-// HOST:  %6 = sdiv exact i64 %5, 4
-// HOST:  %7 = sitofp i64 %6 to float
-// HOST:  ret float %7
+// HOST:  %sub.ptr.div = sdiv exact i64 %5, 4
+// HOST:  %conv = sitofp i64 %sub.ptr.div to float
+// HOST:  ret float %conv
 float addr_taken2() {
   return (float)reinterpret_cast<long>(&(v2[1].y)-&(v[1].x));
 }
