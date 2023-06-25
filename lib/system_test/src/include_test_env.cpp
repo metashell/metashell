@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <variant>
 
 using pattern::_;
 
@@ -95,9 +96,9 @@ namespace metashell
 
     include_test_env::result::result(system_used_t value_) : _value(value_) {}
 
-    const mpark::variant<include_test_env::none_t,
-                         include_test_env::system_used_t,
-                         data::include_argument_type>&
+    const std::variant<include_test_env::none_t,
+                       include_test_env::system_used_t,
+                       data::include_argument_type>&
     include_test_env::result::value() const
     {
       return _value;
@@ -121,7 +122,7 @@ namespace metashell
 
     std::string to_string(const include_test_env::result& res_)
     {
-      return mpark::visit([](auto v) { return to_string(v); }, res_.value());
+      return std::visit([](auto v) { return to_string(v); }, res_.value());
     }
 
     std::ostream& operator<<(std::ostream& out_,

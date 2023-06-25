@@ -17,6 +17,7 @@
 #include <metashell/data/frame_only_event.hpp>
 
 #include <cassert>
+#include <variant>
 
 namespace metashell
 {
@@ -28,7 +29,7 @@ namespace metashell
 
     const frame& frame_only_event::operator*() const
     {
-      const auto p = mpark::get_if<frame>(&_event);
+      const auto p = std::get_if<frame>(&_event);
       assert(p);
       return *p;
     }

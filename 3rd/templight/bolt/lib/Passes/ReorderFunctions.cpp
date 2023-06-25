@@ -55,12 +55,10 @@ ReorderFunctions("reorder-functions",
   cl::ZeroOrMore,
   cl::cat(BoltOptCategory));
 
-static cl::opt<bool>
-ReorderFunctionsUseHotSize("reorder-functions-use-hot-size",
-  cl::desc("use a function's hot size when doing clustering"),
-  cl::init(true),
-  cl::ZeroOrMore,
-  cl::cat(BoltOptCategory));
+static cl::opt<bool> ReorderFunctionsUseHotSize(
+    "reorder-functions-use-hot-size",
+    cl::desc("use a function's hot size when doing clustering"), cl::init(true),
+    cl::cat(BoltOptCategory));
 
 static cl::opt<std::string>
 FunctionOrderFile("function-order",
@@ -81,11 +79,9 @@ LinkSectionsFile("generate-link-sections",
   cl::cat(BoltOptCategory));
 
 static cl::opt<bool>
-UseEdgeCounts("use-edge-counts",
-  cl::desc("use edge count data when doing clustering"),
-  cl::init(true),
-  cl::ZeroOrMore,
-  cl::cat(BoltOptCategory));
+    UseEdgeCounts("use-edge-counts",
+                  cl::desc("use edge count data when doing clustering"),
+                  cl::init(true), cl::cat(BoltOptCategory));
 
 static cl::opt<bool>
 CgFromPerfData("cg-from-perf-data",
@@ -95,12 +91,10 @@ CgFromPerfData("cg-from-perf-data",
   cl::ZeroOrMore,
   cl::cat(BoltOptCategory));
 
-static cl::opt<bool>
-CgIgnoreRecursiveCalls("cg-ignore-recursive-calls",
-  cl::desc("ignore recursive calls when constructing the call graph"),
-  cl::init(true),
-  cl::ZeroOrMore,
-  cl::cat(BoltOptCategory));
+static cl::opt<bool> CgIgnoreRecursiveCalls(
+    "cg-ignore-recursive-calls",
+    cl::desc("ignore recursive calls when constructing the call graph"),
+    cl::init(true), cl::cat(BoltOptCategory));
 
 static cl::opt<bool>
 CgUseSplitHotSize("cg-use-split-hot-size",
@@ -134,9 +128,21 @@ void ReorderFunctions::reorder(std::vector<Cluster> &&Clusters,
     }
   }
 
+  // Assign valid index for functions with valid profile.
+  for (auto &It : BFs) {
+    BinaryFunction &BF = It.second;
+    if (!BF.hasValidIndex() && BF.hasValidProfile())
+      BF.setIndex(Index++);
+  }
+
   if (opts::ReorderFunctions == RT_NONE)
     return;
 
+  printStats(Clusters, FuncAddr);
+}
+
+void ReorderFunctions::printStats(const std::vector<Cluster> &Clusters,
+                                  const std::vector<uint64_t> &FuncAddr) {
   if (opts::Verbosity == 0) {
 #ifndef NDEBUG
     if (!DebugFlag || !isCurrentDebugType("hfsort"))
@@ -151,7 +157,7 @@ void ReorderFunctions::reorder(std::vector<Cluster> &&Clusters,
   PrintDetailed |=
     (DebugFlag && isCurrentDebugType("hfsort") && opts::Verbosity > 0);
 #endif
-  TotalSize   = 0;
+  uint64_t TotalSize   = 0;
   uint64_t CurPage     = 0;
   uint64_t Hotfuncs    = 0;
   double TotalDistance = 0;
@@ -162,7 +168,7 @@ void ReorderFunctions::reorder(std::vector<Cluster> &&Clusters,
   if (PrintDetailed)
     outs() << "BOLT-INFO: Function reordering page layout\n"
            << "BOLT-INFO: ============== page 0 ==============\n";
-  for (Cluster &Cluster : Clusters) {
+  for (const Cluster &Cluster : Clusters) {
     if (PrintDetailed)
       outs() << format(
           "BOLT-INFO: -------- density = %.3lf (%u / %u) --------\n",
@@ -242,9 +248,7 @@ void ReorderFunctions::reorder(std::vector<Cluster> &&Clusters,
                      TotalCalls2MB, 100 * TotalCalls2MB / TotalCalls);
 }
 
-namespace {
-
-std::vector<std::string> readFunctionOrderFile() {
+std::vector<std::string> ReorderFunctions::readFunctionOrderFile() {
   std::vector<std::string> FunctionNames;
   std::ifstream FuncsFile(opts::FunctionOrderFile, std::ios::in);
   if (!FuncsFile) {
@@ -258,27 +262,24 @@ std::vector<std::string> readFunctionOrderFile() {
   return FunctionNames;
 }
 
-}
-
 void ReorderFunctions::runOnFunctions(BinaryContext &BC) {
   auto &BFs = BC.getBinaryFunctions();
   if (opts::ReorderFunctions != RT_NONE &&
       opts::ReorderFunctions != RT_EXEC_COUNT &&
       opts::ReorderFunctions != RT_USER) {
-    Cg = buildCallGraph(BC,
-                        [](const BinaryFunction &BF) {
-                          if (!BF.hasProfile())
-                            return true;
-                          if (BF.getState() != BinaryFunction::State::CFG)
-                            return true;
-                          return false;
-                        },
-                        opts::CgFromPerfData,
-                        false, // IncludeColdCalls
-                        opts::ReorderFunctionsUseHotSize,
-                        opts::CgUseSplitHotSize,
-                        opts::UseEdgeCounts,
-                        opts::CgIgnoreRecursiveCalls);
+    Cg = buildCallGraph(
+        BC,
+        [](const BinaryFunction &BF) {
+          if (!BF.hasProfile())
+            return true;
+          if (BF.getState() != BinaryFunction::State::CFG)
+            return true;
+          return false;
+        },
+        opts::CgFromPerfData,
+        /*IncludeSplitCalls=*/false, opts::ReorderFunctionsUseHotSize,
+        opts::CgUseSplitHotSize, opts::UseEdgeCounts,
+        opts::CgIgnoreRecursiveCalls);
     Cg.normalizeArcWeights();
   }
 
@@ -291,28 +292,26 @@ void ReorderFunctions::runOnFunctions(BinaryContext &BC) {
     {
       std::vector<BinaryFunction *> SortedFunctions(BFs.size());
       uint32_t Index = 0;
-      std::transform(BFs.begin(),
-                     BFs.end(),
-                     SortedFunctions.begin(),
-                     [](std::pair<const uint64_t, BinaryFunction> &BFI) {
-                       return &BFI.second;
-                     });
-      std::stable_sort(SortedFunctions.begin(), SortedFunctions.end(),
-                       [&](const BinaryFunction *A, const BinaryFunction *B) {
-                         if (A->isIgnored())
-                           return false;
-                         const size_t PadA = opts::padFunction(*A);
-                         const size_t PadB = opts::padFunction(*B);
-                         if (!PadA || !PadB) {
-                           if (PadA)
-                             return true;
-                           if (PadB)
-                             return false;
-                         }
-                         return !A->hasProfile() &&
-                           (B->hasProfile() ||
-                            (A->getExecutionCount() > B->getExecutionCount()));
-                       });
+      llvm::transform(BFs, SortedFunctions.begin(),
+                      [](std::pair<const uint64_t, BinaryFunction> &BFI) {
+                        return &BFI.second;
+                      });
+      llvm::stable_sort(SortedFunctions, [&](const BinaryFunction *A,
+                                             const BinaryFunction *B) {
+        if (A->isIgnored())
+          return false;
+        const size_t PadA = opts::padFunction(*A);
+        const size_t PadB = opts::padFunction(*B);
+        if (!PadA || !PadB) {
+          if (PadA)
+            return true;
+          if (PadB)
+            return false;
+        }
+        return !A->hasProfile() &&
+               (B->hasProfile() ||
+                (A->getExecutionCount() > B->getExecutionCount()));
+      });
       for (BinaryFunction *BF : SortedFunctions)
         if (BF->hasProfile())
           BF->setIndex(Index++);
@@ -340,7 +339,7 @@ void ReorderFunctions::runOnFunctions(BinaryContext &BC) {
         BinaryData *BD = BC.getBinaryDataByName(Function);
         if (!BD) {
           uint32_t LocalID = 1;
-          while(1) {
+          while (true) {
             // If we can't find the main symbol name, look for alternates.
             const std::string FuncName =
                 Function + "/" + std::to_string(LocalID);
@@ -408,24 +407,22 @@ void ReorderFunctions::runOnFunctions(BinaryContext &BC) {
 
   if (FuncsFile || LinkSectionsFile) {
     std::vector<BinaryFunction *> SortedFunctions(BFs.size());
-    std::transform(BFs.begin(), BFs.end(), SortedFunctions.begin(),
-                   [](std::pair<const uint64_t, BinaryFunction> &BFI) {
-                     return &BFI.second;
-                   });
+    llvm::transform(BFs, SortedFunctions.begin(),
+                    [](std::pair<const uint64_t, BinaryFunction> &BFI) {
+                      return &BFI.second;
+                    });
 
     // Sort functions by index.
-    std::stable_sort(
-      SortedFunctions.begin(),
-      SortedFunctions.end(),
-      [](const BinaryFunction *A, const BinaryFunction *B) {
-        if (A->hasValidIndex() && B->hasValidIndex())
-          return A->getIndex() < B->getIndex();
-        if (A->hasValidIndex() && !B->hasValidIndex())
-          return true;
-        if (!A->hasValidIndex() && B->hasValidIndex())
-          return false;
-        return A->getAddress() < B->getAddress();
-      });
+    llvm::stable_sort(SortedFunctions,
+                      [](const BinaryFunction *A, const BinaryFunction *B) {
+                        if (A->hasValidIndex() && B->hasValidIndex())
+                          return A->getIndex() < B->getIndex();
+                        if (A->hasValidIndex() && !B->hasValidIndex())
+                          return true;
+                        if (!A->hasValidIndex() && B->hasValidIndex())
+                          return false;
+                        return A->getAddress() < B->getAddress();
+                      });
 
     for (const BinaryFunction *Func : SortedFunctions) {
       if (!Func->hasValidIndex())
@@ -439,7 +436,7 @@ void ReorderFunctions::runOnFunctions(BinaryContext &BC) {
       if (LinkSectionsFile) {
         const char *Indent = "";
         std::vector<StringRef> AllNames = Func->getNames();
-        std::sort(AllNames.begin(), AllNames.end());
+        llvm::sort(AllNames);
         for (StringRef Name : AllNames) {
           const size_t SlashPos = Name.find('/');
           if (SlashPos != std::string::npos) {

@@ -31,6 +31,7 @@
 #include <cmath>
 #include <optional>
 #include <stdexcept>
+#include <variant>
 
 namespace metashell
 {
@@ -597,7 +598,7 @@ namespace metashell
           const auto match_count =
               std::count_if(mp->begin(false), mp->end(),
                             [&bp](const data::debugger_event& e) {
-                              const auto p = mpark::get_if<data::frame>(&e);
+                              const auto p = std::get_if<data::frame>(&e);
                               return p && bp.match(p->node());
                             });
 

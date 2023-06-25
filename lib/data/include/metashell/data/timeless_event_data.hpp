@@ -20,13 +20,13 @@
 #include <metashell/data/event_kind.hpp>
 #include <metashell/data/timeless_event_details.hpp>
 
-#include <variant.hpp>
+#include <variant>
 
 namespace metashell
 {
   namespace data
   {
-    typedef mpark::variant<
+    typedef std::variant<
 #ifdef PREPROCESSOR_EVENT_KIND
 #error PREPROCESSOR_EVENT_KIND defined
 #endif

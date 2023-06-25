@@ -550,6 +550,27 @@ TEST(mdb_forwardtrace, from_root_on_errored_metaprogram)
       call_graph{
         {
           {frame{type{"int_<fib<5>::value>"}}, 0, 3},
+          {frame{ fib<5>{}, _, _, event_kind::template_instantiation}, 1, 0},
+          {frame{ fib<5>{}, _, _, event_kind::memoization}, 1, 0},
+          {frame{ fib<5>::value{}, _, _, event_kind::template_instantiation}, 1, 6},
+          {frame{  fib<3>{}, _, _, event_kind::template_instantiation}, 2, 0},
+          {frame{  fib<3>{}, _, _, event_kind::memoization}, 2, 0},
+          {frame{  fib<3>::value{}, _, _, event_kind::template_instantiation}, 2, 4},
+          {frame{   fib<1>{}, _, _, event_kind::memoization}, 3, 0},
+          {frame{   fib<2>{}, _, _, event_kind::template_instantiation}, 3, 0},
+          {frame{   fib<2>{}, _, _, event_kind::memoization}, 3, 0},
+          {frame{   fib<2>::value{}, _, _, event_kind::template_instantiation}, 3, 1},
+          {frame{    fib<0>{}, _, _, event_kind::memoization}, 4, 0},
+          {frame{  fib<4>{}, _, _, event_kind::template_instantiation}, 2, 0},
+          {frame{  fib<4>{}, _, _, event_kind::memoization}, 2, 0},
+          {frame{  fib<4>::value{}, _, _, event_kind::template_instantiation}, 2, 2},
+          {frame{   fib<2>{}, _, _, event_kind::memoization}, 3, 0},
+          {frame{   fib<3>{}, _, _, event_kind::memoization}, 3, 0}
+        }
+      },
+      call_graph{
+        {
+          {frame{type{"int_<fib<5>::value>"}}, 0, 3},
           { frame{fib<5>{}, _, _, event_kind::template_instantiation}, 1, 0},
           { frame{fib<5>{}, _, _, event_kind::memoization}, 1, 0},
           { frame{fib<5>::value{}, _, _, event_kind::template_instantiation}, 1, 3},

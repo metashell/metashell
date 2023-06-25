@@ -26,30 +26,29 @@
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/iterator_range.hpp>
 
-#include <variant.hpp>
-
 #include <cassert>
 #include <iosfwd>
 #include <sstream>
 #include <string>
+#include <variant>
 
 namespace metashell
 {
   namespace data
   {
-    using token = mpark::variant<token_<token_category::unknown>,
+    using token = std::variant<token_<token_category::unknown>,
 
-                                 token_<token_category::character_literal>,
-                                 token_<token_category::floating_literal>,
-                                 token_<token_category::identifier>,
-                                 token_<token_category::integer_literal>,
-                                 token_<token_category::string_literal>,
-                                 token_<token_category::bool_literal>,
-                                 token_<token_category::whitespace>,
-                                 token_<token_category::comment>,
-                                 token_<token_category::keyword>,
-                                 token_<token_category::operator_token>,
-                                 token_<token_category::preprocessor>>;
+                               token_<token_category::character_literal>,
+                               token_<token_category::floating_literal>,
+                               token_<token_category::identifier>,
+                               token_<token_category::integer_literal>,
+                               token_<token_category::string_literal>,
+                               token_<token_category::bool_literal>,
+                               token_<token_category::whitespace>,
+                               token_<token_category::comment>,
+                               token_<token_category::keyword>,
+                               token_<token_category::operator_token>,
+                               token_<token_category::preprocessor>>;
 
     token make_token(cpp_code, token_type);
 
@@ -97,7 +96,7 @@ namespace metashell
     template <token_category Category>
     bool operator==(const token& lhs_, const token_<Category>& rhs_)
     {
-      const auto t = mpark::get_if<token_<Category>>(&lhs_);
+      const auto t = std::get_if<token_<Category>>(&lhs_);
       return t && *t == rhs_;
     }
 
@@ -193,7 +192,7 @@ namespace mindent
 
     static token_type change_value(string_type value_, token_type t_)
     {
-      mpark::visit(
+      std::visit(
           [&value_](auto& token_) {
             token_.value() = metashell::data::cpp_code(std::move(value_));
           },

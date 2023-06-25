@@ -146,7 +146,7 @@ def run_command(cmd, src_dir, log):
 
 def git(cwd, git_cmd, log):
     """Run a git command. Returns standard output"""
-    cmd = ['git']
+    cmd = ['git', '-c', 'protocol.file.allow=always']
     cmd.extend(git_cmd)
     out, err, returncode = run_command(cmd, cwd, log)
     if returncode == 0:

@@ -21,6 +21,7 @@
 #include <boost/algorithm/string/join.hpp>
 
 #include <iostream>
+#include <variant>
 
 namespace metashell
 {
@@ -56,7 +57,7 @@ namespace metashell
       {
         std::cerr << action->second.standard_error;
         std::cout << action->second.standard_output;
-        if (auto e = mpark::get_if<data::proc_exit>(&action->second.status))
+        if (auto e = std::get_if<data::proc_exit>(&action->second.status))
         {
           return *e;
         }

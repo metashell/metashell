@@ -18,6 +18,7 @@
 
 #include <sstream>
 #include <stdexcept>
+#include <variant>
 
 namespace metashell
 {
@@ -169,7 +170,7 @@ namespace metashell
 
         for (const auto& macro : cfg_.config.macros)
         {
-          mpark::visit([&ctx_](const auto& m_) { apply(ctx_, m_); }, macro);
+          std::visit([&ctx_](const auto& m_) { wave::apply(ctx_, m_); }, macro);
         }
       }
 

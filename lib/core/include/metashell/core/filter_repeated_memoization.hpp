@@ -24,6 +24,7 @@
 
 #include <optional>
 #include <set>
+#include <variant>
 #include <vector>
 
 namespace metashell
@@ -64,7 +65,7 @@ namespace metashell
             if (_events.mode() == data::metaprogram_mode::full)
             {
               _instantiations[inst].insert(
-                  mpark::get<data::event_details<
+                  std::get<data::event_details<
                       data::event_kind::template_instantiation>>(*event)
                       .what);
             }
@@ -73,7 +74,7 @@ namespace metashell
           {
             auto mem_as_inst = data::timeless_event_details<
                 data::event_kind::template_instantiation>(
-                mpark::get<data::event_details<data::event_kind::memoization>>(
+                std::get<data::event_details<data::event_kind::memoization>>(
                     *event)
                     .what);
 

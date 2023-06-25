@@ -1,11 +1,11 @@
-// RUN: %clang_cc1 -std=c++2a -fexceptions -emit-llvm %s -triple x86_64-linux-gnu -o - | FileCheck %s --check-prefixes=CHECK,CHECK-ITANIUM,CHECK-64BIT
-// RUN: %clang_cc1 -std=c++2a -fexceptions -emit-llvm %s -triple x86_64-windows -o - | FileCheck %s --check-prefixes=CHECK,CHECK-MSABI,CHECK-MSABI64,CHECK-64BIT
-// RUN: %clang_cc1 -std=c++2a -fexceptions -emit-llvm %s -triple i386-windows -o - | FileCheck %s --check-prefixes=CHECK,CHECK-MSABI,CHECK-MSABI32,CHECK-32BIT
+// RUN: %clang_cc1 -no-opaque-pointers -std=c++2a -fexceptions -emit-llvm %s -triple x86_64-linux-gnu -o - | FileCheck %s --check-prefixes=CHECK,CHECK-ITANIUM,CHECK-64BIT
+// RUN: %clang_cc1 -no-opaque-pointers -std=c++2a -fexceptions -emit-llvm %s -triple x86_64-windows -o - | FileCheck %s --check-prefixes=CHECK,CHECK-MSABI,CHECK-MSABI64,CHECK-64BIT
+// RUN: %clang_cc1 -no-opaque-pointers -std=c++2a -fexceptions -emit-llvm %s -triple i386-windows -o - | FileCheck %s --check-prefixes=CHECK,CHECK-MSABI,CHECK-MSABI32,CHECK-32BIT
 
 // PR46908: ensure the IR passes the verifier with optimizations enabled.
-// RUN: %clang_cc1 -std=c++2a -fexceptions -emit-llvm-only %s -triple x86_64-linux-gnu -O2
-// RUN: %clang_cc1 -std=c++2a -fexceptions -emit-llvm-only %s -triple x86_64-windows -O2
-// RUN: %clang_cc1 -std=c++2a -fexceptions -emit-llvm-only %s -triple i386-windows -O2
+// RUN: %clang_cc1 -no-opaque-pointers -std=c++2a -fexceptions -emit-llvm-only %s -triple x86_64-linux-gnu -O2
+// RUN: %clang_cc1 -no-opaque-pointers -std=c++2a -fexceptions -emit-llvm-only %s -triple x86_64-windows -O2
+// RUN: %clang_cc1 -no-opaque-pointers -std=c++2a -fexceptions -emit-llvm-only %s -triple i386-windows -O2
 
 namespace std {
   using size_t = decltype(sizeof(0));
@@ -90,14 +90,13 @@ void delete_D(D *d) { delete d; }
 // For MS, we don't add a new vtable slot to the primary vtable for the virtual
 // destructor. Instead we cast to the VDel base class.
 // CHECK-MSABI: bitcast {{.*}} %[[d]]
-// CHECK-MSABI64-NEXT: getelementptr {{.*}}, i64 8
-// CHECK-MSABI32-NEXT: getelementptr {{.*}}, i32 4
-// CHECK-MSABI-NEXT: %[[d:.*]] = bitcast i8*
+// CHECK-MSABI64-NEXT: %[[d:.*]] = getelementptr {{.*}}, i64 8
+// CHECK-MSABI32-NEXT: %[[d:.*]] = getelementptr {{.*}}, i32 4
 //
 // CHECK: %[[VTABLE:.*]] = load
 // CHECK: %[[DTOR:.*]] = load
 //
-// CHECK: call {{void|noundef i8\*|x86_thiscallcc noundef i8\*}} %[[DTOR]](%{{.*}}* {{[^,]*}} %[[d]]
+// CHECK: call {{void|noundef i8\*|x86_thiscallcc noundef i8\*}} %[[DTOR]]({{.*}}*{{[^,]*}} %[[d]]
 // CHECK-MSABI-SAME: , i32 noundef 1)
 // CHECK-NOT: call
 // CHECK: }

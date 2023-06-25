@@ -24,10 +24,9 @@
 
 #include <metashell/iface/environment_detector.hpp>
 
-#include <variant.hpp>
-
 #include <iosfwd>
 #include <map>
+#include <variant>
 
 namespace metashell
 {
@@ -38,7 +37,7 @@ namespace metashell
       bool with_error;
     };
 
-    using parse_config_result = mpark::variant<data::config, exit>;
+    using parse_config_result = std::variant<data::config, exit>;
 
     parse_config_result
     parse_config(int argc_,

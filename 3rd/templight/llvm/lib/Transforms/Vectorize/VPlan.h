@@ -10,14 +10,12 @@
 /// This file contains the declarations of the Vectorization Plan base classes:
 /// 1. VPBasicBlock and VPRegionBlock that inherit from a common pure virtual
 ///    VPBlockBase, together implementing a Hierarchical CFG;
-/// 2. Specializations of GraphTraits that allow VPBlockBase graphs to be
-///    treated as proper graphs for generic algorithms;
-/// 3. Pure virtual VPRecipeBase serving as the base class for recipes contained
+/// 2. Pure virtual VPRecipeBase serving as the base class for recipes contained
 ///    within VPBasicBlocks;
-/// 4. VPInstruction, a concrete Recipe and VPUser modeling a single planned
+/// 3. VPInstruction, a concrete Recipe and VPUser modeling a single planned
 ///    instruction;
-/// 5. The VPlan class holding a candidate for vectorization;
-/// 6. The VPlanPrinter class providing a way to print a plan in dot format;
+/// 4. The VPlan class holding a candidate for vectorization;
+/// 5. The VPlanPrinter class providing a way to print a plan in dot format;
 /// These are documented in docs/VectorizationPlan.rst.
 //
 //===----------------------------------------------------------------------===//
@@ -25,27 +23,24 @@
 #ifndef LLVM_TRANSFORMS_VECTORIZE_VPLAN_H
 #define LLVM_TRANSFORMS_VECTORIZE_VPLAN_H
 
-#include "VPlanLoopInfo.h"
 #include "VPlanValue.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/DepthFirstIterator.h"
-#include "llvm/ADT/GraphTraits.h"
-#include "llvm/ADT/Optional.h"
+#include "llvm/ADT/MapVector.h"
 #include "llvm/ADT/SmallBitVector.h"
 #include "llvm/ADT/SmallPtrSet.h"
-#include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/ADT/ilist.h"
 #include "llvm/ADT/ilist_node.h"
+#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/VectorUtils.h"
 #include "llvm/IR/DebugLoc.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/Support/InstructionCost.h"
+#include "llvm/IR/FMF.h"
+#include "llvm/Transforms/Utils/LoopVersioning.h"
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
-#include <map>
 #include <string>
 
 namespace llvm {
@@ -54,23 +49,34 @@ class BasicBlock;
 class DominatorTree;
 class InductionDescriptor;
 class InnerLoopVectorizer;
+class IRBuilderBase;
 class LoopInfo;
+class PredicateScalarEvolution;
 class raw_ostream;
 class RecurrenceDescriptor;
-class Value;
+class SCEV;
+class Type;
 class VPBasicBlock;
 class VPRegionBlock;
 class VPlan;
 class VPReplicateRecipe;
 class VPlanSlp;
+class Value;
+
+namespace Intrinsic {
+typedef unsigned ID;
+}
 
 /// Returns a calculation for the total number of elements for a given \p VF.
 /// For fixed width vectors this value is a constant, whereas for scalable
 /// vectors it is an expression determined at runtime.
-Value *getRuntimeVF(IRBuilder<> &B, Type *Ty, ElementCount VF);
+Value *getRuntimeVF(IRBuilderBase &B, Type *Ty, ElementCount VF);
 
 /// Return a value for Step multiplied by VF.
-Value *createStepForVF(IRBuilder<> &B, Type *Ty, ElementCount VF, int64_t Step);
+Value *createStepForVF(IRBuilderBase &B, Type *Ty, ElementCount VF,
+                       int64_t Step);
+
+const SCEV *createTripCountSCEV(Type *IdxTy, PredicatedScalarEvolution &PSE);
 
 /// A range of powers-of-2 vectorization factors with fixed start and
 /// adjustable end. The range includes start and excludes end, e.g.,:
@@ -151,7 +157,7 @@ public:
 
   /// Returns an expression describing the lane index that can be used at
   /// runtime.
-  Value *getAsRuntimeExpr(IRBuilder<> &Builder, const ElementCount &VF) const;
+  Value *getAsRuntimeExpr(IRBuilderBase &Builder, const ElementCount &VF) const;
 
   /// Returns the Kind of lane offset.
   Kind getKind() const { return LaneKind; }
@@ -199,10 +205,10 @@ struct VPIteration {
 /// needed for generating the output IR.
 struct VPTransformState {
   VPTransformState(ElementCount VF, unsigned UF, LoopInfo *LI,
-                   DominatorTree *DT, IRBuilder<> &Builder,
+                   DominatorTree *DT, IRBuilderBase &Builder,
                    InnerLoopVectorizer *ILV, VPlan *Plan)
-      : VF(VF), UF(UF), LI(LI), DT(DT), Builder(Builder), ILV(ILV), Plan(Plan) {
-  }
+      : VF(VF), UF(UF), LI(LI), DT(DT), Builder(Builder), ILV(ILV), Plan(Plan),
+        LVer(nullptr) {}
 
   /// The chosen Vectorization and Unroll Factors of the loop being vectorized.
   ElementCount VF;
@@ -211,7 +217,7 @@ struct VPTransformState {
   /// Hold the indices to generate specific scalar instructions. Null indicates
   /// that all instances are to be generated, using either scalar or vector
   /// instructions.
-  Optional<VPIteration> Instance;
+  std::optional<VPIteration> Instance;
 
   struct DataState {
     /// A type for vectorized values in the new loop. Each value from the
@@ -298,6 +304,27 @@ struct VPTransformState {
     Iter->second[Instance.Part][CacheIdx] = V;
   }
 
+  /// Add additional metadata to \p To that was not present on \p Orig.
+  ///
+  /// Currently this is used to add the noalias annotations based on the
+  /// inserted memchecks.  Use this for instructions that are *cloned* into the
+  /// vector loop.
+  void addNewMetadata(Instruction *To, const Instruction *Orig);
+
+  /// Add metadata from one instruction to another.
+  ///
+  /// This includes both the original MDs from \p From and additional ones (\see
+  /// addNewMetadata).  Use this for *newly created* instructions in the vector
+  /// loop.
+  void addMetadata(Instruction *To, Instruction *From);
+
+  /// Similar to the previous function but it adds the metadata to a
+  /// vector of instructions.
+  void addMetadata(ArrayRef<Value *> To, Instruction *From);
+
+  /// Set the debug location in the builder using the debug location in \p V.
+  void setDebugLocFromInst(const Value *V);
+
   /// Hold state information used when constructing the CFG of the output IR,
   /// traversing the VPBasicBlocks and generating corresponding IR BasicBlocks.
   struct CFGState {
@@ -308,26 +335,19 @@ struct VPTransformState {
     /// header BasicBlock.
     BasicBlock *PrevBB = nullptr;
 
-    /// The last IR BasicBlock in the output IR. Set to the new latch
-    /// BasicBlock, used for placing the newly created BasicBlocks.
-    BasicBlock *LastBB = nullptr;
-
-    /// The IR BasicBlock that is the preheader of the vector loop in the output
-    /// IR.
-    /// FIXME: The vector preheader should also be modeled in VPlan, so any code
-    /// that needs to be added to the preheader gets directly generated by
-    /// VPlan. There should be no need to manage a pointer to the IR BasicBlock.
-    BasicBlock *VectorPreHeader = nullptr;
+    /// The last IR BasicBlock in the output IR. Set to the exit block of the
+    /// vector loop.
+    BasicBlock *ExitBB = nullptr;
 
     /// A mapping of each VPBasicBlock to the corresponding BasicBlock. In case
     /// of replication, maps the BasicBlock of the last replica created.
     SmallDenseMap<VPBasicBlock *, BasicBlock *> VPBB2IRBB;
 
-    /// Vector of VPBasicBlocks whose terminator instruction needs to be fixed
-    /// up at the end of vector code generation.
-    SmallVector<VPBasicBlock *, 8> VPBBsToFix;
-
     CFGState() = default;
+
+    /// Returns the BasicBlock* mapped to the pre-header of the loop region
+    /// containing \p R.
+    BasicBlock *getPreheaderBBFor(VPRecipeBase *R);
   } CFG;
 
   /// Hold a pointer to LoopInfo to register new basic blocks in the loop.
@@ -337,7 +357,7 @@ struct VPTransformState {
   DominatorTree *DT;
 
   /// Hold a reference to the IRBuilder used to generate output IR code.
-  IRBuilder<> &Builder;
+  IRBuilderBase &Builder;
 
   VPValue2ValueTy VPValue2Value;
 
@@ -353,41 +373,16 @@ struct VPTransformState {
   /// Holds recipes that may generate a poison value that is used after
   /// vectorization, even when their operands are not poison.
   SmallPtrSet<VPRecipeBase *, 16> MayGeneratePoisonRecipes;
-};
 
-/// VPUsers instance used by VPBlockBase to manage CondBit and the block
-/// predicate. Currently VPBlockUsers are used in VPBlockBase for historical
-/// reasons, but in the future the only VPUsers should either be recipes or
-/// live-outs.VPBlockBase uses.
-struct VPBlockUser : public VPUser {
-  VPBlockUser() : VPUser({}, VPUserID::Block) {}
+  /// The loop object for the current parent region, or nullptr.
+  Loop *CurrentVectorLoop = nullptr;
 
-  VPValue *getSingleOperandOrNull() {
-    if (getNumOperands() == 1)
-      return getOperand(0);
-
-    return nullptr;
-  }
-  const VPValue *getSingleOperandOrNull() const {
-    if (getNumOperands() == 1)
-      return getOperand(0);
-
-    return nullptr;
-  }
-
-  void resetSingleOpUser(VPValue *NewVal) {
-    assert(getNumOperands() <= 1 && "Didn't expect more than one operand!");
-    if (!NewVal) {
-      if (getNumOperands() == 1)
-        removeLastOperand();
-      return;
-    }
-
-    if (getNumOperands() == 1)
-      setOperand(0, NewVal);
-    else
-      addOperand(NewVal);
-  }
+  /// LoopVersioning.  It's only set up (non-null) if memchecks were
+  /// used.
+  ///
+  /// This is currently only used to add no-alias metadata based on the
+  /// memchecks.  The actually versioning is performed manually.
+  std::unique_ptr<LoopVersioning> LVer;
 };
 
 /// VPBlockBase is the building block of the Hierarchical Control-Flow Graph.
@@ -409,16 +404,6 @@ class VPBlockBase {
 
   /// List of successor blocks.
   SmallVector<VPBlockBase *, 1> Successors;
-
-  /// Successor selector managed by a VPUser. For blocks with zero or one
-  /// successors, there is no operand. Otherwise there is exactly one operand
-  /// which is the branch condition.
-  VPBlockUser CondBitUser;
-
-  /// If the block is predicated, its predicate is stored as an operand of this
-  /// VPUser to maintain the def-use relations. Otherwise there is no operand
-  /// here.
-  VPBlockUser PredicateUser;
 
   /// VPlan containing the block. Can only be set on the entry block of the
   /// plan.
@@ -493,11 +478,11 @@ public:
   const VPBasicBlock *getEntryBasicBlock() const;
   VPBasicBlock *getEntryBasicBlock();
 
-  /// \return the VPBasicBlock that is the exit of this VPBlockBase,
+  /// \return the VPBasicBlock that is the exiting this VPBlockBase,
   /// recursively, if the latter is a VPRegionBlock. Otherwise, if this
   /// VPBlockBase is a VPBasicBlock, it is returned.
-  const VPBasicBlock *getExitBasicBlock() const;
-  VPBasicBlock *getExitBasicBlock();
+  const VPBasicBlock *getExitingBasicBlock() const;
+  VPBasicBlock *getExitingBasicBlock();
 
   const VPBlocksTy &getSuccessors() const { return Successors; }
   VPBlocksTy &getSuccessors() { return Successors; }
@@ -565,20 +550,6 @@ public:
     return getEnclosingBlockWithPredecessors()->getSinglePredecessor();
   }
 
-  /// \return the condition bit selecting the successor.
-  VPValue *getCondBit();
-  /// \return the condition bit selecting the successor.
-  const VPValue *getCondBit() const;
-  /// Set the condition bit selecting the successor.
-  void setCondBit(VPValue *CV);
-
-  /// \return the block's predicate.
-  VPValue *getPredicate();
-  /// \return the block's predicate.
-  const VPValue *getPredicate() const;
-  /// Set the block's predicate.
-  void setPredicate(VPValue *Pred);
-
   /// Set a given VPBlockBase \p Successor as the single successor of this
   /// VPBlockBase. This VPBlockBase is not added as predecessor of \p Successor.
   /// This VPBlockBase must have no successors.
@@ -588,14 +559,11 @@ public:
   }
 
   /// Set two given VPBlockBases \p IfTrue and \p IfFalse to be the two
-  /// successors of this VPBlockBase. \p Condition is set as the successor
-  /// selector. This VPBlockBase is not added as predecessor of \p IfTrue or \p
-  /// IfFalse. This VPBlockBase must have no successors.
-  void setTwoSuccessors(VPBlockBase *IfTrue, VPBlockBase *IfFalse,
-                        VPValue *Condition) {
+  /// successors of this VPBlockBase. This VPBlockBase is not added as
+  /// predecessor of \p IfTrue or \p IfFalse. This VPBlockBase must have no
+  /// successors.
+  void setTwoSuccessors(VPBlockBase *IfTrue, VPBlockBase *IfFalse) {
     assert(Successors.empty() && "Setting two successors when others exist.");
-    assert(Condition && "Setting two successors without condition!");
-    setCondBit(Condition);
     appendSuccessor(IfTrue);
     appendSuccessor(IfFalse);
   }
@@ -612,15 +580,12 @@ public:
   /// Remove all the predecessor of this block.
   void clearPredecessors() { Predecessors.clear(); }
 
-  /// Remove all the successors of this block and set to null its condition bit
-  void clearSuccessors() {
-    Successors.clear();
-    setCondBit(nullptr);
-  }
+  /// Remove all the successors of this block.
+  void clearSuccessors() { Successors.clear(); }
 
   /// The method which generates the output IR that correspond to this
   /// VPBlockBase, thereby "executing" the VPlan.
-  virtual void execute(struct VPTransformState *State) = 0;
+  virtual void execute(VPTransformState *State) = 0;
 
   /// Delete all blocks reachable from a given VPBlockBase, inclusive.
   static void deleteCFG(VPBlockBase *Entry);
@@ -665,6 +630,32 @@ public:
 #endif
 };
 
+/// A value that is used outside the VPlan. The operand of the user needs to be
+/// added to the associated LCSSA phi node.
+class VPLiveOut : public VPUser {
+  PHINode *Phi;
+
+public:
+  VPLiveOut(PHINode *Phi, VPValue *Op)
+      : VPUser({Op}, VPUser::VPUserID::LiveOut), Phi(Phi) {}
+
+  /// Fixup the wrapped LCSSA phi node in the unique exit block.  This simply
+  /// means we need to add the appropriate incoming value from the middle
+  /// block as exiting edges from the scalar epilogue loop (if present) are
+  /// already in place, and we exit the vector loop exclusively to the middle
+  /// block.
+  void fixPhi(VPlan &Plan, VPTransformState &State);
+
+  /// Returns true if the VPLiveOut uses scalars of operand \p Op.
+  bool usesScalars(const VPValue *Op) const override {
+    assert(is_contained(operands(), Op) &&
+           "Op must be an operand of the recipe");
+    return true;
+  }
+
+  PHINode *getPhi() const { return Phi; }
+};
+
 /// VPRecipeBase is a base class modeling a sequence of one or more output IR
 /// instructions. VPRecipeBase owns the the VPValues it defines through VPDef
 /// and is responsible for deleting its defined values. Single-value
@@ -694,11 +685,14 @@ public:
 
   /// The method which generates the output IR instructions that correspond to
   /// this VPRecipe, thereby "executing" the VPlan.
-  virtual void execute(struct VPTransformState &State) = 0;
+  virtual void execute(VPTransformState &State) = 0;
 
   /// Insert an unlinked recipe into a basic block immediately before
   /// the specified recipe.
   void insertBefore(VPRecipeBase *InsertPos);
+  /// Insert an unlinked recipe into \p BB immediately before the insertion
+  /// point \p IP;
+  void insertBefore(VPBasicBlock &BB, iplist<VPRecipeBase>::iterator IP);
 
   /// Insert an unlinked Recipe into a basic block immediately after
   /// the specified Recipe.
@@ -759,29 +753,24 @@ public:
   bool mayReadOrWriteMemory() const {
     return mayReadFromMemory() || mayWriteToMemory();
   }
-
-  /// Returns true if the recipe only uses the first lane of operand \p Op.
-  /// Conservatively returns false.
-  virtual bool onlyFirstLaneUsed(const VPValue *Op) const {
-    assert(is_contained(operands(), Op) &&
-           "Op must be an operand of the recipe");
-    return false;
-  }
 };
 
-inline bool VPUser::classof(const VPDef *Def) {
-  return Def->getVPDefID() == VPRecipeBase::VPInstructionSC ||
-         Def->getVPDefID() == VPRecipeBase::VPWidenSC ||
-         Def->getVPDefID() == VPRecipeBase::VPWidenCallSC ||
-         Def->getVPDefID() == VPRecipeBase::VPWidenSelectSC ||
-         Def->getVPDefID() == VPRecipeBase::VPWidenGEPSC ||
-         Def->getVPDefID() == VPRecipeBase::VPBlendSC ||
-         Def->getVPDefID() == VPRecipeBase::VPInterleaveSC ||
-         Def->getVPDefID() == VPRecipeBase::VPReplicateSC ||
-         Def->getVPDefID() == VPRecipeBase::VPReductionSC ||
-         Def->getVPDefID() == VPRecipeBase::VPBranchOnMaskSC ||
-         Def->getVPDefID() == VPRecipeBase::VPWidenMemoryInstructionSC;
-}
+// Helper macro to define common classof implementations for recipes.
+#define VP_CLASSOF_IMPL(VPDefID)                                               \
+  static inline bool classof(const VPDef *D) {                                 \
+    return D->getVPDefID() == VPDefID;                                         \
+  }                                                                            \
+  static inline bool classof(const VPValue *V) {                               \
+    auto *R = V->getDefiningRecipe();                                          \
+    return R && R->getVPDefID() == VPDefID;                                    \
+  }                                                                            \
+  static inline bool classof(const VPUser *U) {                                \
+    auto *R = dyn_cast<VPRecipeBase>(U);                                       \
+    return R && R->getVPDefID() == VPDefID;                                    \
+  }                                                                            \
+  static inline bool classof(const VPRecipeBase *R) {                          \
+    return R->getVPDefID() == VPDefID;                                         \
+  }
 
 /// This is a concrete Recipe that models a single VPlan-level instruction.
 /// While as any Recipe it may generate a sequence of IR instructions when
@@ -803,7 +792,12 @@ public:
     ActiveLaneMask,
     CanonicalIVIncrement,
     CanonicalIVIncrementNUW,
+    // The next two are similar to the above, but instead increment the
+    // canonical IV separately for each unrolled part.
+    CanonicalIVIncrementForPart,
+    CanonicalIVIncrementForPartNUW,
     BranchOnCount,
+    BranchOnCond
   };
 
 private:
@@ -811,6 +805,9 @@ private:
   OpcodeTy Opcode;
   FastMathFlags FMF;
   DebugLoc DL;
+
+  /// An optional name that can be used for the generated IR instruction.
+  const std::string Name;
 
   /// Utility method serving execute(): generates a single instance of the
   /// modeled instruction.
@@ -820,38 +817,20 @@ protected:
   void setUnderlyingInstr(Instruction *I) { setUnderlyingValue(I); }
 
 public:
-  VPInstruction(unsigned Opcode, ArrayRef<VPValue *> Operands, DebugLoc DL)
-      : VPRecipeBase(VPRecipeBase::VPInstructionSC, Operands),
-        VPValue(VPValue::VPVInstructionSC, nullptr, this), Opcode(Opcode),
-        DL(DL) {}
+  VPInstruction(unsigned Opcode, ArrayRef<VPValue *> Operands, DebugLoc DL,
+                const Twine &Name = "")
+      : VPRecipeBase(VPDef::VPInstructionSC, Operands), VPValue(this),
+        Opcode(Opcode), DL(DL), Name(Name.str()) {}
 
   VPInstruction(unsigned Opcode, std::initializer_list<VPValue *> Operands,
-                DebugLoc DL = {})
-      : VPInstruction(Opcode, ArrayRef<VPValue *>(Operands), DL) {}
+                DebugLoc DL = {}, const Twine &Name = "")
+      : VPInstruction(Opcode, ArrayRef<VPValue *>(Operands), DL, Name) {}
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPValue *V) {
-    return V->getVPValueID() == VPValue::VPVInstructionSC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPInstructionSC)
 
   VPInstruction *clone() const {
     SmallVector<VPValue *, 2> Operands(operands());
-    return new VPInstruction(Opcode, Operands, DL);
-  }
-
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPDef *R) {
-    return R->getVPDefID() == VPRecipeBase::VPInstructionSC;
-  }
-
-  /// Extra classof implementations to allow directly casting from VPUser ->
-  /// VPInstruction.
-  static inline bool classof(const VPUser *U) {
-    auto *R = dyn_cast<VPRecipeBase>(U);
-    return R && R->getVPDefID() == VPRecipeBase::VPInstructionSC;
-  }
-  static inline bool classof(const VPRecipeBase *R) {
-    return R->getVPDefID() == VPRecipeBase::VPInstructionSC;
+    return new VPInstruction(Opcode, Operands, DL, Name);
   }
 
   unsigned getOpcode() const { return Opcode; }
@@ -892,6 +871,7 @@ public:
     case Instruction::Unreachable:
     case Instruction::Fence:
     case Instruction::AtomicRMW:
+    case VPInstruction::BranchOnCond:
     case VPInstruction::BranchOnCount:
       return false;
     default:
@@ -914,6 +894,8 @@ public:
     case VPInstruction::ActiveLaneMask:
     case VPInstruction::CanonicalIVIncrement:
     case VPInstruction::CanonicalIVIncrementNUW:
+    case VPInstruction::CanonicalIVIncrementForPart:
+    case VPInstruction::CanonicalIVIncrementForPartNUW:
     case VPInstruction::BranchOnCount:
       return true;
     };
@@ -928,18 +910,11 @@ class VPWidenRecipe : public VPRecipeBase, public VPValue {
 public:
   template <typename IterT>
   VPWidenRecipe(Instruction &I, iterator_range<IterT> Operands)
-      : VPRecipeBase(VPRecipeBase::VPWidenSC, Operands),
-        VPValue(VPValue::VPVWidenSC, &I, this) {}
+      : VPRecipeBase(VPDef::VPWidenSC, Operands), VPValue(this, &I) {}
 
   ~VPWidenRecipe() override = default;
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPDef *D) {
-    return D->getVPDefID() == VPRecipeBase::VPWidenSC;
-  }
-  static inline bool classof(const VPValue *V) {
-    return V->getVPValueID() == VPValue::VPVWidenSC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPWidenSC)
 
   /// Produce widened copies of all Ingredients.
   void execute(VPTransformState &State) override;
@@ -953,19 +928,20 @@ public:
 
 /// A recipe for widening Call instructions.
 class VPWidenCallRecipe : public VPRecipeBase, public VPValue {
+  /// ID of the vector intrinsic to call when widening the call. If set the
+  /// Intrinsic::not_intrinsic, a library call will be used instead.
+  Intrinsic::ID VectorIntrinsicID;
 
 public:
   template <typename IterT>
-  VPWidenCallRecipe(CallInst &I, iterator_range<IterT> CallArguments)
-      : VPRecipeBase(VPRecipeBase::VPWidenCallSC, CallArguments),
-        VPValue(VPValue::VPVWidenCallSC, &I, this) {}
+  VPWidenCallRecipe(CallInst &I, iterator_range<IterT> CallArguments,
+                    Intrinsic::ID VectorIntrinsicID)
+      : VPRecipeBase(VPDef::VPWidenCallSC, CallArguments), VPValue(this, &I),
+        VectorIntrinsicID(VectorIntrinsicID) {}
 
   ~VPWidenCallRecipe() override = default;
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPDef *D) {
-    return D->getVPDefID() == VPRecipeBase::VPWidenCallSC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPWidenCallSC)
 
   /// Produce a widened version of the call instruction.
   void execute(VPTransformState &State) override;
@@ -987,16 +963,12 @@ public:
   template <typename IterT>
   VPWidenSelectRecipe(SelectInst &I, iterator_range<IterT> Operands,
                       bool InvariantCond)
-      : VPRecipeBase(VPRecipeBase::VPWidenSelectSC, Operands),
-        VPValue(VPValue::VPVWidenSelectSC, &I, this),
+      : VPRecipeBase(VPDef::VPWidenSelectSC, Operands), VPValue(this, &I),
         InvariantCond(InvariantCond) {}
 
   ~VPWidenSelectRecipe() override = default;
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPDef *D) {
-    return D->getVPDefID() == VPRecipeBase::VPWidenSelectSC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPWidenSelectSC)
 
   /// Produce a widened version of the select instruction.
   void execute(VPTransformState &State) override;
@@ -1016,15 +988,13 @@ class VPWidenGEPRecipe : public VPRecipeBase, public VPValue {
 public:
   template <typename IterT>
   VPWidenGEPRecipe(GetElementPtrInst *GEP, iterator_range<IterT> Operands)
-      : VPRecipeBase(VPRecipeBase::VPWidenGEPSC, Operands),
-        VPValue(VPWidenGEPSC, GEP, this),
+      : VPRecipeBase(VPDef::VPWidenGEPSC, Operands), VPValue(this, GEP),
         IsIndexLoopInvariant(GEP->getNumIndices(), false) {}
 
   template <typename IterT>
   VPWidenGEPRecipe(GetElementPtrInst *GEP, iterator_range<IterT> Operands,
                    Loop *OrigLoop)
-      : VPRecipeBase(VPRecipeBase::VPWidenGEPSC, Operands),
-        VPValue(VPValue::VPVWidenGEPSC, GEP, this),
+      : VPRecipeBase(VPDef::VPWidenGEPSC, Operands), VPValue(this, GEP),
         IsIndexLoopInvariant(GEP->getNumIndices(), false) {
     IsPtrLoopInvariant = OrigLoop->isLoopInvariant(GEP->getPointerOperand());
     for (auto Index : enumerate(GEP->indices()))
@@ -1033,10 +1003,7 @@ public:
   }
   ~VPWidenGEPRecipe() override = default;
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPDef *D) {
-    return D->getVPDefID() == VPRecipeBase::VPWidenGEPSC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPWidenGEPSC)
 
   /// Generate the gep nodes.
   void execute(VPTransformState &State) override;
@@ -1049,35 +1016,30 @@ public:
 };
 
 /// A recipe for handling phi nodes of integer and floating-point inductions,
-/// producing their vector and scalar values.
+/// producing their vector values.
 class VPWidenIntOrFpInductionRecipe : public VPRecipeBase, public VPValue {
   PHINode *IV;
   const InductionDescriptor &IndDesc;
-  bool NeedsScalarIV;
   bool NeedsVectorIV;
 
 public:
-  VPWidenIntOrFpInductionRecipe(PHINode *IV, VPValue *Start,
+  VPWidenIntOrFpInductionRecipe(PHINode *IV, VPValue *Start, VPValue *Step,
                                 const InductionDescriptor &IndDesc,
-                                bool NeedsScalarIV, bool NeedsVectorIV)
-      : VPRecipeBase(VPWidenIntOrFpInductionSC, {Start}), VPValue(IV, this),
-        IV(IV), IndDesc(IndDesc), NeedsScalarIV(NeedsScalarIV),
+                                bool NeedsVectorIV)
+      : VPRecipeBase(VPDef::VPWidenIntOrFpInductionSC, {Start, Step}),
+        VPValue(this, IV), IV(IV), IndDesc(IndDesc),
         NeedsVectorIV(NeedsVectorIV) {}
 
-  VPWidenIntOrFpInductionRecipe(PHINode *IV, VPValue *Start,
+  VPWidenIntOrFpInductionRecipe(PHINode *IV, VPValue *Start, VPValue *Step,
                                 const InductionDescriptor &IndDesc,
-                                TruncInst *Trunc, bool NeedsScalarIV,
-                                bool NeedsVectorIV)
-      : VPRecipeBase(VPWidenIntOrFpInductionSC, {Start}), VPValue(Trunc, this),
-        IV(IV), IndDesc(IndDesc), NeedsScalarIV(NeedsScalarIV),
+                                TruncInst *Trunc, bool NeedsVectorIV)
+      : VPRecipeBase(VPDef::VPWidenIntOrFpInductionSC, {Start, Step}),
+        VPValue(this, Trunc), IV(IV), IndDesc(IndDesc),
         NeedsVectorIV(NeedsVectorIV) {}
 
   ~VPWidenIntOrFpInductionRecipe() override = default;
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPDef *D) {
-    return D->getVPDefID() == VPRecipeBase::VPWidenIntOrFpInductionSC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPWidenIntOrFpInductionSC)
 
   /// Generate the vectorized and scalarized versions of the phi node as
   /// needed by their users.
@@ -1093,6 +1055,10 @@ public:
   VPValue *getStartValue() { return getOperand(0); }
   const VPValue *getStartValue() const { return getOperand(0); }
 
+  /// Returns the step value of the induction.
+  VPValue *getStepValue() { return getOperand(1); }
+  const VPValue *getStepValue() const { return getOperand(1); }
+
   /// Returns the first defined value as TruncInst, if it is one or nullptr
   /// otherwise.
   TruncInst *getTruncInst() {
@@ -1101,6 +1067,8 @@ public:
   const TruncInst *getTruncInst() const {
     return dyn_cast_or_null<TruncInst>(getVPValue(0)->getUnderlyingValue());
   }
+
+  PHINode *getPHINode() { return IV; }
 
   /// Returns the induction descriptor for the recipe.
   const InductionDescriptor &getInductionDescriptor() const { return IndDesc; }
@@ -1115,9 +1083,6 @@ public:
     return TruncI ? TruncI->getType() : IV->getType();
   }
 
-  /// Returns true if a scalar phi needs to be created for the induction.
-  bool needsScalarIV() const { return NeedsScalarIV; }
-
   /// Returns true if a vector phi needs to be created for the induction.
   bool needsVectorIV() const { return NeedsVectorIV; }
 };
@@ -1126,11 +1091,30 @@ public:
 /// phis for first order recurrences, pointer inductions and reductions. The
 /// start value is the first operand of the recipe and the incoming value from
 /// the backedge is the second operand.
+///
+/// Inductions are modeled using the following sub-classes:
+///  * VPCanonicalIVPHIRecipe: Canonical scalar induction of the vector loop,
+///    starting at a specified value (zero for the main vector loop, the resume
+///    value for the epilogue vector loop) and stepping by 1. The induction
+///    controls exiting of the vector loop by comparing against the vector trip
+///    count. Produces a single scalar PHI for the induction value per
+///    iteration.
+///  * VPWidenIntOrFpInductionRecipe: Generates vector values for integer and
+///    floating point inductions with arbitrary start and step values. Produces
+///    a vector PHI per-part.
+///  * VPDerivedIVRecipe: Converts the canonical IV value to the corresponding
+///    value of an IV with different start and step values. Produces a single
+///    scalar value per iteration
+///  * VPScalarIVStepsRecipe: Generates scalar values per-lane based on a
+///    canonical or derived induction.
+///  * VPWidenPointerInductionRecipe: Generate vector and scalar values for a
+///    pointer induction. Produces either a vector PHI per-part or scalar values
+///    per-lane based on the canonical induction.
 class VPHeaderPHIRecipe : public VPRecipeBase, public VPValue {
 protected:
-  VPHeaderPHIRecipe(unsigned char VPVID, unsigned char VPDefID, PHINode *Phi,
+  VPHeaderPHIRecipe(unsigned char VPDefID, PHINode *Phi,
                     VPValue *Start = nullptr)
-      : VPRecipeBase(VPDefID, {}), VPValue(VPVID, Phi, this) {
+      : VPRecipeBase(VPDefID, {}), VPValue(this, Phi) {
     if (Start)
       addOperand(Start);
   }
@@ -1140,18 +1124,13 @@ public:
 
   /// Method to support type inquiry through isa, cast, and dyn_cast.
   static inline bool classof(const VPRecipeBase *B) {
-    return B->getVPDefID() == VPRecipeBase::VPCanonicalIVPHISC ||
-           B->getVPDefID() == VPRecipeBase::VPFirstOrderRecurrencePHISC ||
-           B->getVPDefID() == VPRecipeBase::VPReductionPHISC ||
-           B->getVPDefID() == VPRecipeBase::VPWidenIntOrFpInductionSC ||
-           B->getVPDefID() == VPRecipeBase::VPWidenPHISC;
+    return B->getVPDefID() >= VPDef::VPFirstHeaderPHISC &&
+           B->getVPDefID() <= VPDef::VPLastPHISC;
   }
   static inline bool classof(const VPValue *V) {
-    return V->getVPValueID() == VPValue::VPVCanonicalIVPHISC ||
-           V->getVPValueID() == VPValue::VPVFirstOrderRecurrencePHISC ||
-           V->getVPValueID() == VPValue::VPVReductionPHISC ||
-           V->getVPValueID() == VPValue::VPVWidenIntOrFpInductionSC ||
-           V->getVPValueID() == VPValue::VPVWidenPHISC;
+    auto *B = V->getDefiningRecipe();
+    return B && B->getVPDefID() >= VPRecipeBase::VPFirstHeaderPHISC &&
+           B->getVPDefID() <= VPRecipeBase::VPLastPHISC;
   }
 
   /// Generate the phi nodes.
@@ -1167,6 +1146,12 @@ public:
   VPValue *getStartValue() {
     return getNumOperands() == 0 ? nullptr : getOperand(0);
   }
+  VPValue *getStartValue() const {
+    return getNumOperands() == 0 ? nullptr : getOperand(0);
+  }
+
+  /// Update the start value of the recipe.
+  void setStartValue(VPValue *V) { setOperand(0, V); }
 
   /// Returns the incoming value from the loop backedge.
   VPValue *getBackedgeValue() {
@@ -1175,9 +1160,47 @@ public:
 
   /// Returns the backedge value as a recipe. The backedge value is guaranteed
   /// to be a recipe.
-  VPRecipeBase *getBackedgeRecipe() {
-    return cast<VPRecipeBase>(getBackedgeValue()->getDef());
+  VPRecipeBase &getBackedgeRecipe() {
+    return *getBackedgeValue()->getDefiningRecipe();
   }
+};
+
+class VPWidenPointerInductionRecipe : public VPHeaderPHIRecipe {
+  const InductionDescriptor &IndDesc;
+
+  bool IsScalarAfterVectorization;
+
+public:
+  /// Create a new VPWidenPointerInductionRecipe for \p Phi with start value \p
+  /// Start.
+  VPWidenPointerInductionRecipe(PHINode *Phi, VPValue *Start, VPValue *Step,
+                                const InductionDescriptor &IndDesc,
+                                bool IsScalarAfterVectorization)
+      : VPHeaderPHIRecipe(VPDef::VPWidenPointerInductionSC, Phi),
+        IndDesc(IndDesc),
+        IsScalarAfterVectorization(IsScalarAfterVectorization) {
+    addOperand(Start);
+    addOperand(Step);
+  }
+
+  ~VPWidenPointerInductionRecipe() override = default;
+
+  VP_CLASSOF_IMPL(VPDef::VPWidenPointerInductionSC)
+
+  /// Generate vector values for the pointer induction.
+  void execute(VPTransformState &State) override;
+
+  /// Returns true if only scalar values will be generated.
+  bool onlyScalarsGenerated(ElementCount VF);
+
+  /// Returns the induction descriptor for the recipe.
+  const InductionDescriptor &getInductionDescriptor() const { return IndDesc; }
+
+#if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
+  /// Print the recipe.
+  void print(raw_ostream &O, const Twine &Indent,
+             VPSlotTracker &SlotTracker) const override;
+#endif
 };
 
 /// A recipe for handling header phis that are widened in the vector loop.
@@ -1190,23 +1213,14 @@ class VPWidenPHIRecipe : public VPHeaderPHIRecipe {
 public:
   /// Create a new VPWidenPHIRecipe for \p Phi with start value \p Start.
   VPWidenPHIRecipe(PHINode *Phi, VPValue *Start = nullptr)
-      : VPHeaderPHIRecipe(VPVWidenPHISC, VPWidenPHISC, Phi) {
+      : VPHeaderPHIRecipe(VPDef::VPWidenPHISC, Phi) {
     if (Start)
       addOperand(Start);
   }
 
   ~VPWidenPHIRecipe() override = default;
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPRecipeBase *B) {
-    return B->getVPDefID() == VPRecipeBase::VPWidenPHISC;
-  }
-  static inline bool classof(const VPHeaderPHIRecipe *R) {
-    return R->getVPDefID() == VPRecipeBase::VPWidenPHISC;
-  }
-  static inline bool classof(const VPValue *V) {
-    return V->getVPValueID() == VPValue::VPVWidenPHISC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPWidenPHISC)
 
   /// Generate the phi/select nodes.
   void execute(VPTransformState &State) override;
@@ -1235,18 +1249,12 @@ public:
 /// second operand.
 struct VPFirstOrderRecurrencePHIRecipe : public VPHeaderPHIRecipe {
   VPFirstOrderRecurrencePHIRecipe(PHINode *Phi, VPValue &Start)
-      : VPHeaderPHIRecipe(VPVFirstOrderRecurrencePHISC,
-                          VPFirstOrderRecurrencePHISC, Phi, &Start) {}
+      : VPHeaderPHIRecipe(VPDef::VPFirstOrderRecurrencePHISC, Phi, &Start) {}
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPRecipeBase *R) {
-    return R->getVPDefID() == VPRecipeBase::VPFirstOrderRecurrencePHISC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPFirstOrderRecurrencePHISC)
+
   static inline bool classof(const VPHeaderPHIRecipe *R) {
-    return R->getVPDefID() == VPRecipeBase::VPFirstOrderRecurrencePHISC;
-  }
-  static inline bool classof(const VPValue *V) {
-    return V->getVPValueID() == VPValue::VPVFirstOrderRecurrencePHISC;
+    return R->getVPDefID() == VPDef::VPFirstOrderRecurrencePHISC;
   }
 
   void execute(VPTransformState &State) override;
@@ -1277,22 +1285,17 @@ public:
   VPReductionPHIRecipe(PHINode *Phi, const RecurrenceDescriptor &RdxDesc,
                        VPValue &Start, bool IsInLoop = false,
                        bool IsOrdered = false)
-      : VPHeaderPHIRecipe(VPVReductionPHISC, VPReductionPHISC, Phi, &Start),
+      : VPHeaderPHIRecipe(VPDef::VPReductionPHISC, Phi, &Start),
         RdxDesc(RdxDesc), IsInLoop(IsInLoop), IsOrdered(IsOrdered) {
     assert((!IsOrdered || IsInLoop) && "IsOrdered requires IsInLoop");
   }
 
   ~VPReductionPHIRecipe() override = default;
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPRecipeBase *R) {
-    return R->getVPDefID() == VPRecipeBase::VPReductionPHISC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPReductionPHISC)
+
   static inline bool classof(const VPHeaderPHIRecipe *R) {
-    return R->getVPDefID() == VPRecipeBase::VPReductionPHISC;
-  }
-  static inline bool classof(const VPValue *V) {
-    return V->getVPValueID() == VPValue::VPVReductionPHISC;
+    return R->getVPDefID() == VPDef::VPReductionPHISC;
   }
 
   /// Generate the phi/select nodes.
@@ -1325,18 +1328,14 @@ public:
   /// respective masks, ordered [I0, M0, I1, M1, ...]. Note that a single value
   /// might be incoming with a full mask for which there is no VPValue.
   VPBlendRecipe(PHINode *Phi, ArrayRef<VPValue *> Operands)
-      : VPRecipeBase(VPBlendSC, Operands),
-        VPValue(VPValue::VPVBlendSC, Phi, this), Phi(Phi) {
+      : VPRecipeBase(VPDef::VPBlendSC, Operands), VPValue(this, Phi), Phi(Phi) {
     assert(Operands.size() > 0 &&
            ((Operands.size() == 1) || (Operands.size() % 2 == 0)) &&
            "Expected either a single incoming value or a positive even number "
            "of operands");
   }
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPDef *D) {
-    return D->getVPDefID() == VPRecipeBase::VPBlendSC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPBlendSC)
 
   /// Return the number of incoming values, taking into account that a single
   /// incoming value has no mask.
@@ -1363,9 +1362,8 @@ public:
            "Op must be an operand of the recipe");
     // Recursing through Blend recipes only, must terminate at header phi's the
     // latest.
-    return all_of(users(), [this](VPUser *U) {
-      return cast<VPRecipeBase>(U)->onlyFirstLaneUsed(this);
-    });
+    return all_of(users(),
+                  [this](VPUser *U) { return U->onlyFirstLaneUsed(this); });
   }
 };
 
@@ -1381,7 +1379,7 @@ class VPInterleaveRecipe : public VPRecipeBase {
 public:
   VPInterleaveRecipe(const InterleaveGroup<Instruction> *IG, VPValue *Addr,
                      ArrayRef<VPValue *> StoredValues, VPValue *Mask)
-      : VPRecipeBase(VPInterleaveSC, {Addr}), IG(IG) {
+      : VPRecipeBase(VPDef::VPInterleaveSC, {Addr}), IG(IG) {
     for (unsigned i = 0; i < IG->getFactor(); ++i)
       if (Instruction *I = IG->getMember(i)) {
         if (I->getType()->isVoidTy())
@@ -1398,10 +1396,7 @@ public:
   }
   ~VPInterleaveRecipe() override = default;
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPDef *D) {
-    return D->getVPDefID() == VPRecipeBase::VPInterleaveSC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPInterleaveSC)
 
   /// Return the address accessed by this recipe.
   VPValue *getAddr() const {
@@ -1440,6 +1435,13 @@ public:
   unsigned getNumStoreOperands() const {
     return getNumOperands() - (HasMask ? 2 : 1);
   }
+
+  /// The recipe only uses the first lane of the address.
+  bool onlyFirstLaneUsed(const VPValue *Op) const override {
+    assert(is_contained(operands(), Op) &&
+           "Op must be an operand of the recipe");
+    return Op == getAddr() && !llvm::is_contained(getStoredValues(), Op);
+  }
 };
 
 /// A recipe to represent inloop reduction operations, performing a reduction on
@@ -1455,18 +1457,15 @@ public:
   VPReductionRecipe(const RecurrenceDescriptor *R, Instruction *I,
                     VPValue *ChainOp, VPValue *VecOp, VPValue *CondOp,
                     const TargetTransformInfo *TTI)
-      : VPRecipeBase(VPRecipeBase::VPReductionSC, {ChainOp, VecOp}),
-        VPValue(VPValue::VPVReductionSC, I, this), RdxDesc(R), TTI(TTI) {
+      : VPRecipeBase(VPDef::VPReductionSC, {ChainOp, VecOp}), VPValue(this, I),
+        RdxDesc(R), TTI(TTI) {
     if (CondOp)
       addOperand(CondOp);
   }
 
   ~VPReductionRecipe() override = default;
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPValue *V) {
-    return V->getVPValueID() == VPValue::VPVReductionSC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPReductionSC)
 
   /// Generate the reduction in the loop
   void execute(VPTransformState &State) override;
@@ -1505,7 +1504,7 @@ public:
   template <typename IterT>
   VPReplicateRecipe(Instruction *I, iterator_range<IterT> Operands,
                     bool IsUniform, bool IsPredicated = false)
-      : VPRecipeBase(VPReplicateSC, Operands), VPValue(VPVReplicateSC, I, this),
+      : VPRecipeBase(VPDef::VPReplicateSC, Operands), VPValue(this, I),
         IsUniform(IsUniform), IsPredicated(IsPredicated) {
     // Retain the previous behavior of predicateInstructions(), where an
     // insert-element of a predicated instruction got hoisted into the
@@ -1517,14 +1516,7 @@ public:
 
   ~VPReplicateRecipe() override = default;
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPDef *D) {
-    return D->getVPDefID() == VPRecipeBase::VPReplicateSC;
-  }
-
-  static inline bool classof(const VPValue *V) {
-    return V->getVPValueID() == VPValue::VPVReplicateSC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPReplicateSC)
 
   /// Generate replicas of the desired Ingredient. Replicas will be generated
   /// for all parts and lanes unless a specific part and lane are specified in
@@ -1551,21 +1543,25 @@ public:
            "Op must be an operand of the recipe");
     return isUniform();
   }
+
+  /// Returns true if the recipe uses scalars of operand \p Op.
+  bool usesScalars(const VPValue *Op) const override {
+    assert(is_contained(operands(), Op) &&
+           "Op must be an operand of the recipe");
+    return true;
+  }
 };
 
 /// A recipe for generating conditional branches on the bits of a mask.
 class VPBranchOnMaskRecipe : public VPRecipeBase {
 public:
   VPBranchOnMaskRecipe(VPValue *BlockInMask)
-      : VPRecipeBase(VPBranchOnMaskSC, {}) {
+      : VPRecipeBase(VPDef::VPBranchOnMaskSC, {}) {
     if (BlockInMask) // nullptr means all-one mask.
       addOperand(BlockInMask);
   }
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPDef *D) {
-    return D->getVPDefID() == VPRecipeBase::VPBranchOnMaskSC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPBranchOnMaskSC)
 
   /// Generate the extraction of the appropriate bit from the block mask and the
   /// conditional branch.
@@ -1590,6 +1586,13 @@ public:
     // Mask is optional.
     return getNumOperands() == 1 ? getOperand(0) : nullptr;
   }
+
+  /// Returns true if the recipe uses scalars of operand \p Op.
+  bool usesScalars(const VPValue *Op) const override {
+    assert(is_contained(operands(), Op) &&
+           "Op must be an operand of the recipe");
+    return true;
+  }
 };
 
 /// VPPredInstPHIRecipe is a recipe for generating the phi nodes needed when
@@ -1602,14 +1605,10 @@ public:
   /// Construct a VPPredInstPHIRecipe given \p PredInst whose value needs a phi
   /// nodes after merging back from a Branch-on-Mask.
   VPPredInstPHIRecipe(VPValue *PredV)
-      : VPRecipeBase(VPPredInstPHISC, PredV),
-        VPValue(VPValue::VPVPredInstPHI, nullptr, this) {}
+      : VPRecipeBase(VPDef::VPPredInstPHISC, PredV), VPValue(this) {}
   ~VPPredInstPHIRecipe() override = default;
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPDef *D) {
-    return D->getVPDefID() == VPRecipeBase::VPPredInstPHISC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPPredInstPHISC)
 
   /// Generates phi nodes for live-outs as needed to retain SSA form.
   void execute(VPTransformState &State) override;
@@ -1619,6 +1618,13 @@ public:
   void print(raw_ostream &O, const Twine &Indent,
              VPSlotTracker &SlotTracker) const override;
 #endif
+
+  /// Returns true if the recipe uses scalars of operand \p Op.
+  bool usesScalars(const VPValue *Op) const override {
+    assert(is_contained(operands(), Op) &&
+           "Op must be an operand of the recipe");
+    return true;
+  }
 };
 
 /// A Recipe for widening load/store operations.
@@ -1627,7 +1633,7 @@ public:
 /// - For store: Address, stored value, optional mask
 /// TODO: We currently execute only per-part unless a specific instance is
 /// provided.
-class VPWidenMemoryInstructionRecipe : public VPRecipeBase, public VPValue {
+class VPWidenMemoryInstructionRecipe : public VPRecipeBase {
   Instruction &Ingredient;
 
   // Whether the loaded-from / stored-to addresses are consecutive.
@@ -1649,27 +1655,23 @@ class VPWidenMemoryInstructionRecipe : public VPRecipeBase, public VPValue {
 public:
   VPWidenMemoryInstructionRecipe(LoadInst &Load, VPValue *Addr, VPValue *Mask,
                                  bool Consecutive, bool Reverse)
-      : VPRecipeBase(VPWidenMemoryInstructionSC, {Addr}),
-        VPValue(VPValue::VPVMemoryInstructionSC, &Load, this), Ingredient(Load),
-        Consecutive(Consecutive), Reverse(Reverse) {
+      : VPRecipeBase(VPDef::VPWidenMemoryInstructionSC, {Addr}),
+        Ingredient(Load), Consecutive(Consecutive), Reverse(Reverse) {
     assert((Consecutive || !Reverse) && "Reverse implies consecutive");
+    new VPValue(this, &Load);
     setMask(Mask);
   }
 
   VPWidenMemoryInstructionRecipe(StoreInst &Store, VPValue *Addr,
                                  VPValue *StoredValue, VPValue *Mask,
                                  bool Consecutive, bool Reverse)
-      : VPRecipeBase(VPWidenMemoryInstructionSC, {Addr, StoredValue}),
-        VPValue(VPValue::VPVMemoryInstructionSC, &Store, this),
+      : VPRecipeBase(VPDef::VPWidenMemoryInstructionSC, {Addr, StoredValue}),
         Ingredient(Store), Consecutive(Consecutive), Reverse(Reverse) {
     assert((Consecutive || !Reverse) && "Reverse implies consecutive");
     setMask(Mask);
   }
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPDef *D) {
-    return D->getVPDefID() == VPRecipeBase::VPWidenMemoryInstructionSC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPWidenMemoryInstructionSC)
 
   /// Return the address accessed by this recipe.
   VPValue *getAddr() const {
@@ -1714,9 +1716,39 @@ public:
            "Op must be an operand of the recipe");
 
     // Widened, consecutive memory operations only demand the first lane of
-    // their address.
-    return Op == getAddr() && isConsecutive();
+    // their address, unless the same operand is also stored. That latter can
+    // happen with opaque pointers.
+    return Op == getAddr() && isConsecutive() &&
+           (!isStore() || Op != getStoredValue());
   }
+
+  Instruction &getIngredient() const { return Ingredient; }
+};
+
+/// Recipe to expand a SCEV expression.
+class VPExpandSCEVRecipe : public VPRecipeBase, public VPValue {
+  const SCEV *Expr;
+  ScalarEvolution &SE;
+
+public:
+  VPExpandSCEVRecipe(const SCEV *Expr, ScalarEvolution &SE)
+      : VPRecipeBase(VPDef::VPExpandSCEVSC, {}), VPValue(this), Expr(Expr),
+        SE(SE) {}
+
+  ~VPExpandSCEVRecipe() override = default;
+
+  VP_CLASSOF_IMPL(VPDef::VPExpandSCEVSC)
+
+  /// Generate a canonical vector induction variable of the vector loop, with
+  void execute(VPTransformState &State) override;
+
+#if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
+  /// Print the recipe.
+  void print(raw_ostream &O, const Twine &Indent,
+             VPSlotTracker &SlotTracker) const override;
+#endif
+
+  const SCEV *getSCEV() const { return Expr; }
 };
 
 /// Canonical scalar induction phi of the vector loop. Starting at the specified
@@ -1728,15 +1760,14 @@ class VPCanonicalIVPHIRecipe : public VPHeaderPHIRecipe {
 
 public:
   VPCanonicalIVPHIRecipe(VPValue *StartV, DebugLoc DL)
-      : VPHeaderPHIRecipe(VPValue::VPVCanonicalIVPHISC, VPCanonicalIVPHISC,
-                          nullptr, StartV),
-        DL(DL) {}
+      : VPHeaderPHIRecipe(VPDef::VPCanonicalIVPHISC, nullptr, StartV), DL(DL) {}
 
   ~VPCanonicalIVPHIRecipe() override = default;
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPDef *D) {
-    return D->getVPDefID() == VPCanonicalIVPHISC;
+  VP_CLASSOF_IMPL(VPDef::VPCanonicalIVPHISC)
+
+  static inline bool classof(const VPHeaderPHIRecipe *D) {
+    return D->getVPDefID() == VPDef::VPCanonicalIVPHISC;
   }
 
   /// Generate the canonical scalar induction phi of the vector loop.
@@ -1759,31 +1790,52 @@ public:
            "Op must be an operand of the recipe");
     return true;
   }
+
+  /// Check if the induction described by \p ID is canonical, i.e.  has the same
+  /// start, step (of 1), and type as the canonical IV.
+  bool isCanonical(const InductionDescriptor &ID, Type *Ty) const;
+};
+
+/// A recipe for generating the active lane mask for the vector loop that is
+/// used to predicate the vector operations.
+/// TODO: It would be good to use the existing VPWidenPHIRecipe instead and
+/// remove VPActiveLaneMaskPHIRecipe.
+class VPActiveLaneMaskPHIRecipe : public VPHeaderPHIRecipe {
+  DebugLoc DL;
+
+public:
+  VPActiveLaneMaskPHIRecipe(VPValue *StartMask, DebugLoc DL)
+      : VPHeaderPHIRecipe(VPDef::VPActiveLaneMaskPHISC, nullptr, StartMask),
+        DL(DL) {}
+
+  ~VPActiveLaneMaskPHIRecipe() override = default;
+
+  VP_CLASSOF_IMPL(VPDef::VPActiveLaneMaskPHISC)
+
+  static inline bool classof(const VPHeaderPHIRecipe *D) {
+    return D->getVPDefID() == VPDef::VPActiveLaneMaskPHISC;
+  }
+
+  /// Generate the active lane mask phi of the vector loop.
+  void execute(VPTransformState &State) override;
+
+#if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
+  /// Print the recipe.
+  void print(raw_ostream &O, const Twine &Indent,
+             VPSlotTracker &SlotTracker) const override;
+#endif
 };
 
 /// A Recipe for widening the canonical induction variable of the vector loop.
 class VPWidenCanonicalIVRecipe : public VPRecipeBase, public VPValue {
 public:
   VPWidenCanonicalIVRecipe(VPCanonicalIVPHIRecipe *CanonicalIV)
-      : VPRecipeBase(VPWidenCanonicalIVSC, {CanonicalIV}),
-        VPValue(VPValue::VPVWidenCanonicalIVSC, nullptr, this) {}
+      : VPRecipeBase(VPDef::VPWidenCanonicalIVSC, {CanonicalIV}),
+        VPValue(this) {}
 
   ~VPWidenCanonicalIVRecipe() override = default;
 
-  /// Method to support type inquiry through isa, cast, and dyn_cast.
-  static inline bool classof(const VPDef *D) {
-    return D->getVPDefID() == VPRecipeBase::VPWidenCanonicalIVSC;
-  }
-
-  /// Extra classof implementations to allow directly casting from VPUser ->
-  /// VPWidenCanonicalIVRecipe.
-  static inline bool classof(const VPUser *U) {
-    auto *R = dyn_cast<VPRecipeBase>(U);
-    return R && R->getVPDefID() == VPRecipeBase::VPWidenCanonicalIVSC;
-  }
-  static inline bool classof(const VPRecipeBase *R) {
-    return R->getVPDefID() == VPRecipeBase::VPWidenCanonicalIVSC;
-  }
+  VP_CLASSOF_IMPL(VPDef::VPWidenCanonicalIVSC)
 
   /// Generate a canonical vector induction variable of the vector loop, with
   /// start = {<Part*VF, Part*VF+1, ..., Part*VF+VF-1> for 0 <= Part < UF}, and
@@ -1798,8 +1850,86 @@ public:
 
   /// Returns the scalar type of the induction.
   const Type *getScalarType() const {
-    return cast<VPCanonicalIVPHIRecipe>(getOperand(0)->getDef())
+    return cast<VPCanonicalIVPHIRecipe>(getOperand(0)->getDefiningRecipe())
         ->getScalarType();
+  }
+};
+
+/// A recipe for converting the canonical IV value to the corresponding value of
+/// an IV with different start and step values, using Start + CanonicalIV *
+/// Step.
+class VPDerivedIVRecipe : public VPRecipeBase, public VPValue {
+  /// The type of the result value. It may be smaller than the type of the
+  /// induction and in this case it will get truncated to ResultTy.
+  Type *ResultTy;
+
+  /// Induction descriptor for the induction the canonical IV is transformed to.
+  const InductionDescriptor &IndDesc;
+
+public:
+  VPDerivedIVRecipe(const InductionDescriptor &IndDesc, VPValue *Start,
+                    VPCanonicalIVPHIRecipe *CanonicalIV, VPValue *Step,
+                    Type *ResultTy)
+      : VPRecipeBase(VPDef::VPDerivedIVSC, {Start, CanonicalIV, Step}),
+        VPValue(this), ResultTy(ResultTy), IndDesc(IndDesc) {}
+
+  ~VPDerivedIVRecipe() override = default;
+
+  VP_CLASSOF_IMPL(VPDef::VPDerivedIVSC)
+
+  /// Generate the transformed value of the induction at offset StartValue (1.
+  /// operand) + IV (2. operand) * StepValue (3, operand).
+  void execute(VPTransformState &State) override;
+
+#if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
+  /// Print the recipe.
+  void print(raw_ostream &O, const Twine &Indent,
+             VPSlotTracker &SlotTracker) const override;
+#endif
+
+  VPValue *getStartValue() const { return getOperand(0); }
+  VPValue *getCanonicalIV() const { return getOperand(1); }
+  VPValue *getStepValue() const { return getOperand(2); }
+
+  /// Returns true if the recipe only uses the first lane of operand \p Op.
+  bool onlyFirstLaneUsed(const VPValue *Op) const override {
+    assert(is_contained(operands(), Op) &&
+           "Op must be an operand of the recipe");
+    return true;
+  }
+};
+
+/// A recipe for handling phi nodes of integer and floating-point inductions,
+/// producing their scalar values.
+class VPScalarIVStepsRecipe : public VPRecipeBase, public VPValue {
+  const InductionDescriptor &IndDesc;
+
+public:
+  VPScalarIVStepsRecipe(const InductionDescriptor &IndDesc, VPValue *IV,
+                        VPValue *Step)
+      : VPRecipeBase(VPDef::VPScalarIVStepsSC, {IV, Step}), VPValue(this),
+        IndDesc(IndDesc) {}
+
+  ~VPScalarIVStepsRecipe() override = default;
+
+  VP_CLASSOF_IMPL(VPDef::VPScalarIVStepsSC)
+
+  /// Generate the scalarized versions of the phi node as needed by their users.
+  void execute(VPTransformState &State) override;
+
+#if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
+  /// Print the recipe.
+  void print(raw_ostream &O, const Twine &Indent,
+             VPSlotTracker &SlotTracker) const override;
+#endif
+
+  VPValue *getStepValue() const { return getOperand(1); }
+
+  /// Returns true if the recipe only uses the first lane of operand \p Op.
+  bool onlyFirstLaneUsed(const VPValue *Op) const override {
+    assert(is_contained(operands(), Op) &&
+           "Op must be an operand of the recipe");
+    return true;
   }
 };
 
@@ -1878,7 +2008,7 @@ public:
 
   /// The method which generates the output IR instructions that correspond to
   /// this VPBasicBlock, thereby "executing" the VPlan.
-  void execute(struct VPTransformState *State) override;
+  void execute(VPTransformState *State) override;
 
   /// Return the position of the first non-phi node recipe in the block.
   iterator getFirstNonPhi();
@@ -1895,6 +2025,8 @@ public:
   /// SplitAt to the new block. Returns the new block.
   VPBasicBlock *splitAt(iterator SplitAt);
 
+  VPRegionBlock *getEnclosingLoopRegion();
+
 #if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
   /// Print this VPBsicBlock to \p O, prefixing all lines with \p Indent. \p
   /// SlotTracker is used to print unnamed VPValue's using consequtive numbers.
@@ -1906,6 +2038,14 @@ public:
   using VPBlockBase::print; // Get the print(raw_stream &O) version.
 #endif
 
+  /// If the block has multiple successors, return the branch recipe terminating
+  /// the block. If there are no or only a single successor, return nullptr;
+  VPRecipeBase *getTerminator();
+  const VPRecipeBase *getTerminator() const;
+
+  /// Returns true if the block is exiting it's parent region.
+  bool isExiting() const;
+
 private:
   /// Create an IR BasicBlock to hold the output instructions generated by this
   /// VPBasicBlock, and return it. Update the CFGState accordingly.
@@ -1913,7 +2053,7 @@ private:
 };
 
 /// VPRegionBlock represents a collection of VPBasicBlocks and VPRegionBlocks
-/// which form a Single-Entry-Single-Exit subgraph of the output IR CFG.
+/// which form a Single-Entry-Single-Exiting subgraph of the output IR CFG.
 /// A VPRegionBlock may indicate that its contents are to be replicated several
 /// times. This is designed to support predicated scalarization, in which a
 /// scalar if-then code structure needs to be generated VF * UF times. Having
@@ -1924,25 +2064,26 @@ class VPRegionBlock : public VPBlockBase {
   /// Hold the Single Entry of the SESE region modelled by the VPRegionBlock.
   VPBlockBase *Entry;
 
-  /// Hold the Single Exit of the SESE region modelled by the VPRegionBlock.
-  VPBlockBase *Exit;
+  /// Hold the Single Exiting block of the SESE region modelled by the
+  /// VPRegionBlock.
+  VPBlockBase *Exiting;
 
   /// An indicator whether this region is to generate multiple replicated
   /// instances of output IR corresponding to its VPBlockBases.
   bool IsReplicator;
 
 public:
-  VPRegionBlock(VPBlockBase *Entry, VPBlockBase *Exit,
+  VPRegionBlock(VPBlockBase *Entry, VPBlockBase *Exiting,
                 const std::string &Name = "", bool IsReplicator = false)
-      : VPBlockBase(VPRegionBlockSC, Name), Entry(Entry), Exit(Exit),
+      : VPBlockBase(VPRegionBlockSC, Name), Entry(Entry), Exiting(Exiting),
         IsReplicator(IsReplicator) {
     assert(Entry->getPredecessors().empty() && "Entry block has predecessors.");
-    assert(Exit->getSuccessors().empty() && "Exit block has successors.");
+    assert(Exiting->getSuccessors().empty() && "Exit block has successors.");
     Entry->setParent(this);
-    Exit->setParent(this);
+    Exiting->setParent(this);
   }
   VPRegionBlock(const std::string &Name = "", bool IsReplicator = false)
-      : VPBlockBase(VPRegionBlockSC, Name), Entry(nullptr), Exit(nullptr),
+      : VPBlockBase(VPRegionBlockSC, Name), Entry(nullptr), Exiting(nullptr),
         IsReplicator(IsReplicator) {}
 
   ~VPRegionBlock() override {
@@ -1970,22 +2111,22 @@ public:
     EntryBlock->setParent(this);
   }
 
-  // FIXME: DominatorTreeBase is doing 'A->getParent()->front()'. 'front' is a
-  // specific interface of llvm::Function, instead of using
-  // GraphTraints::getEntryNode. We should add a new template parameter to
-  // DominatorTreeBase representing the Graph type.
-  VPBlockBase &front() const { return *Entry; }
+  const VPBlockBase *getExiting() const { return Exiting; }
+  VPBlockBase *getExiting() { return Exiting; }
 
-  const VPBlockBase *getExit() const { return Exit; }
-  VPBlockBase *getExit() { return Exit; }
-
-  /// Set \p ExitBlock as the exit VPBlockBase of this VPRegionBlock. \p
-  /// ExitBlock must have no successors.
-  void setExit(VPBlockBase *ExitBlock) {
-    assert(ExitBlock->getSuccessors().empty() &&
+  /// Set \p ExitingBlock as the exiting VPBlockBase of this VPRegionBlock. \p
+  /// ExitingBlock must have no successors.
+  void setExiting(VPBlockBase *ExitingBlock) {
+    assert(ExitingBlock->getSuccessors().empty() &&
            "Exit block cannot have successors.");
-    Exit = ExitBlock;
-    ExitBlock->setParent(this);
+    Exiting = ExitingBlock;
+    ExitingBlock->setParent(this);
+  }
+
+  /// Returns the pre-header VPBasicBlock of the loop region.
+  VPBasicBlock *getPreheaderVPBB() {
+    assert(!isReplicator() && "should only get pre-header of loop regions");
+    return getSinglePredecessor()->getExitingBasicBlock();
   }
 
   /// An indicator whether this region is to generate multiple replicated
@@ -1994,7 +2135,7 @@ public:
 
   /// The method which generates the output IR instructions that correspond to
   /// this VPRegionBlock, thereby "executing" the VPlan.
-  void execute(struct VPTransformState *State) override;
+  void execute(VPTransformState *State) override;
 
   void dropAllReferences(VPValue *NewValue) override;
 
@@ -2009,258 +2150,6 @@ public:
              VPSlotTracker &SlotTracker) const override;
   using VPBlockBase::print; // Get the print(raw_stream &O) version.
 #endif
-};
-
-//===----------------------------------------------------------------------===//
-// GraphTraits specializations for VPlan Hierarchical Control-Flow Graphs     //
-//===----------------------------------------------------------------------===//
-
-// The following set of template specializations implement GraphTraits to treat
-// any VPBlockBase as a node in a graph of VPBlockBases. It's important to note
-// that VPBlockBase traits don't recurse into VPRegioBlocks, i.e., if the
-// VPBlockBase is a VPRegionBlock, this specialization provides access to its
-// successors/predecessors but not to the blocks inside the region.
-
-template <> struct GraphTraits<VPBlockBase *> {
-  using NodeRef = VPBlockBase *;
-  using ChildIteratorType = SmallVectorImpl<VPBlockBase *>::iterator;
-
-  static NodeRef getEntryNode(NodeRef N) { return N; }
-
-  static inline ChildIteratorType child_begin(NodeRef N) {
-    return N->getSuccessors().begin();
-  }
-
-  static inline ChildIteratorType child_end(NodeRef N) {
-    return N->getSuccessors().end();
-  }
-};
-
-template <> struct GraphTraits<const VPBlockBase *> {
-  using NodeRef = const VPBlockBase *;
-  using ChildIteratorType = SmallVectorImpl<VPBlockBase *>::const_iterator;
-
-  static NodeRef getEntryNode(NodeRef N) { return N; }
-
-  static inline ChildIteratorType child_begin(NodeRef N) {
-    return N->getSuccessors().begin();
-  }
-
-  static inline ChildIteratorType child_end(NodeRef N) {
-    return N->getSuccessors().end();
-  }
-};
-
-// Inverse order specialization for VPBasicBlocks. Predecessors are used instead
-// of successors for the inverse traversal.
-template <> struct GraphTraits<Inverse<VPBlockBase *>> {
-  using NodeRef = VPBlockBase *;
-  using ChildIteratorType = SmallVectorImpl<VPBlockBase *>::iterator;
-
-  static NodeRef getEntryNode(Inverse<NodeRef> B) { return B.Graph; }
-
-  static inline ChildIteratorType child_begin(NodeRef N) {
-    return N->getPredecessors().begin();
-  }
-
-  static inline ChildIteratorType child_end(NodeRef N) {
-    return N->getPredecessors().end();
-  }
-};
-
-// The following set of template specializations implement GraphTraits to
-// treat VPRegionBlock as a graph and recurse inside its nodes. It's important
-// to note that the blocks inside the VPRegionBlock are treated as VPBlockBases
-// (i.e., no dyn_cast is performed, VPBlockBases specialization is used), so
-// there won't be automatic recursion into other VPBlockBases that turn to be
-// VPRegionBlocks.
-
-template <>
-struct GraphTraits<VPRegionBlock *> : public GraphTraits<VPBlockBase *> {
-  using GraphRef = VPRegionBlock *;
-  using nodes_iterator = df_iterator<NodeRef>;
-
-  static NodeRef getEntryNode(GraphRef N) { return N->getEntry(); }
-
-  static nodes_iterator nodes_begin(GraphRef N) {
-    return nodes_iterator::begin(N->getEntry());
-  }
-
-  static nodes_iterator nodes_end(GraphRef N) {
-    // df_iterator::end() returns an empty iterator so the node used doesn't
-    // matter.
-    return nodes_iterator::end(N);
-  }
-};
-
-template <>
-struct GraphTraits<const VPRegionBlock *>
-    : public GraphTraits<const VPBlockBase *> {
-  using GraphRef = const VPRegionBlock *;
-  using nodes_iterator = df_iterator<NodeRef>;
-
-  static NodeRef getEntryNode(GraphRef N) { return N->getEntry(); }
-
-  static nodes_iterator nodes_begin(GraphRef N) {
-    return nodes_iterator::begin(N->getEntry());
-  }
-
-  static nodes_iterator nodes_end(GraphRef N) {
-    // df_iterator::end() returns an empty iterator so the node used doesn't
-    // matter.
-    return nodes_iterator::end(N);
-  }
-};
-
-template <>
-struct GraphTraits<Inverse<VPRegionBlock *>>
-    : public GraphTraits<Inverse<VPBlockBase *>> {
-  using GraphRef = VPRegionBlock *;
-  using nodes_iterator = df_iterator<NodeRef>;
-
-  static NodeRef getEntryNode(Inverse<GraphRef> N) {
-    return N.Graph->getExit();
-  }
-
-  static nodes_iterator nodes_begin(GraphRef N) {
-    return nodes_iterator::begin(N->getExit());
-  }
-
-  static nodes_iterator nodes_end(GraphRef N) {
-    // df_iterator::end() returns an empty iterator so the node used doesn't
-    // matter.
-    return nodes_iterator::end(N);
-  }
-};
-
-/// Iterator to traverse all successors of a VPBlockBase node. This includes the
-/// entry node of VPRegionBlocks. Exit blocks of a region implicitly have their
-/// parent region's successors. This ensures all blocks in a region are visited
-/// before any blocks in a successor region when doing a reverse post-order
-// traversal of the graph.
-template <typename BlockPtrTy>
-class VPAllSuccessorsIterator
-    : public iterator_facade_base<VPAllSuccessorsIterator<BlockPtrTy>,
-                                  std::forward_iterator_tag, VPBlockBase> {
-  BlockPtrTy Block;
-  /// Index of the current successor. For VPBasicBlock nodes, this simply is the
-  /// index for the successor array. For VPRegionBlock, SuccessorIdx == 0 is
-  /// used for the region's entry block, and SuccessorIdx - 1 are the indices
-  /// for the successor array.
-  size_t SuccessorIdx;
-
-  static BlockPtrTy getBlockWithSuccs(BlockPtrTy Current) {
-    while (Current && Current->getNumSuccessors() == 0)
-      Current = Current->getParent();
-    return Current;
-  }
-
-  /// Templated helper to dereference successor \p SuccIdx of \p Block. Used by
-  /// both the const and non-const operator* implementations.
-  template <typename T1> static T1 deref(T1 Block, unsigned SuccIdx) {
-    if (auto *R = dyn_cast<VPRegionBlock>(Block)) {
-      if (SuccIdx == 0)
-        return R->getEntry();
-      SuccIdx--;
-    }
-
-    // For exit blocks, use the next parent region with successors.
-    return getBlockWithSuccs(Block)->getSuccessors()[SuccIdx];
-  }
-
-public:
-  VPAllSuccessorsIterator(BlockPtrTy Block, size_t Idx = 0)
-      : Block(Block), SuccessorIdx(Idx) {}
-  VPAllSuccessorsIterator(const VPAllSuccessorsIterator &Other)
-      : Block(Other.Block), SuccessorIdx(Other.SuccessorIdx) {}
-
-  VPAllSuccessorsIterator &operator=(const VPAllSuccessorsIterator &R) {
-    Block = R.Block;
-    SuccessorIdx = R.SuccessorIdx;
-    return *this;
-  }
-
-  static VPAllSuccessorsIterator end(BlockPtrTy Block) {
-    BlockPtrTy ParentWithSuccs = getBlockWithSuccs(Block);
-    unsigned NumSuccessors = ParentWithSuccs
-                                 ? ParentWithSuccs->getNumSuccessors()
-                                 : Block->getNumSuccessors();
-
-    if (auto *R = dyn_cast<VPRegionBlock>(Block))
-      return {R, NumSuccessors + 1};
-    return {Block, NumSuccessors};
-  }
-
-  bool operator==(const VPAllSuccessorsIterator &R) const {
-    return Block == R.Block && SuccessorIdx == R.SuccessorIdx;
-  }
-
-  const VPBlockBase *operator*() const { return deref(Block, SuccessorIdx); }
-
-  BlockPtrTy operator*() { return deref(Block, SuccessorIdx); }
-
-  VPAllSuccessorsIterator &operator++() {
-    SuccessorIdx++;
-    return *this;
-  }
-
-  VPAllSuccessorsIterator operator++(int X) {
-    VPAllSuccessorsIterator Orig = *this;
-    SuccessorIdx++;
-    return Orig;
-  }
-};
-
-/// Helper for GraphTraits specialization that traverses through VPRegionBlocks.
-template <typename BlockTy> class VPBlockRecursiveTraversalWrapper {
-  BlockTy Entry;
-
-public:
-  VPBlockRecursiveTraversalWrapper(BlockTy Entry) : Entry(Entry) {}
-  BlockTy getEntry() { return Entry; }
-};
-
-/// GraphTraits specialization to recursively traverse VPBlockBase nodes,
-/// including traversing through VPRegionBlocks.  Exit blocks of a region
-/// implicitly have their parent region's successors. This ensures all blocks in
-/// a region are visited before any blocks in a successor region when doing a
-/// reverse post-order traversal of the graph.
-template <>
-struct GraphTraits<VPBlockRecursiveTraversalWrapper<VPBlockBase *>> {
-  using NodeRef = VPBlockBase *;
-  using ChildIteratorType = VPAllSuccessorsIterator<VPBlockBase *>;
-
-  static NodeRef
-  getEntryNode(VPBlockRecursiveTraversalWrapper<VPBlockBase *> N) {
-    return N.getEntry();
-  }
-
-  static inline ChildIteratorType child_begin(NodeRef N) {
-    return ChildIteratorType(N);
-  }
-
-  static inline ChildIteratorType child_end(NodeRef N) {
-    return ChildIteratorType::end(N);
-  }
-};
-
-template <>
-struct GraphTraits<VPBlockRecursiveTraversalWrapper<const VPBlockBase *>> {
-  using NodeRef = const VPBlockBase *;
-  using ChildIteratorType = VPAllSuccessorsIterator<const VPBlockBase *>;
-
-  static NodeRef
-  getEntryNode(VPBlockRecursiveTraversalWrapper<const VPBlockBase *> N) {
-    return N.getEntry();
-  }
-
-  static inline ChildIteratorType child_begin(NodeRef N) {
-    return ChildIteratorType(N);
-  }
-
-  static inline ChildIteratorType child_end(NodeRef N) {
-    return ChildIteratorType::end(N);
-  }
 };
 
 /// VPlan models a candidate for vectorization, encoding various decisions take
@@ -2278,15 +2167,16 @@ class VPlan {
   /// Holds the VFs applicable to this VPlan.
   SmallSetVector<ElementCount, 2> VFs;
 
+  /// Holds the UFs applicable to this VPlan. If empty, the VPlan is valid for
+  /// any UF.
+  SmallSetVector<unsigned, 2> UFs;
+
   /// Holds the name of the VPlan, for printing.
   std::string Name;
 
-  /// Holds all the external definitions created for this VPlan.
-  // TODO: Introduce a specific representation for external definitions in
-  // VPlan. External definitions must be immutable and hold a pointer to its
-  // underlying IR that will be used to implement its structural comparison
-  // (operators '==' and '<').
-  SetVector<VPValue *> VPExternalDefs;
+  /// Holds all the external definitions created for this VPlan. External
+  /// definitions must be immutable and hold a pointer to their underlying IR.
+  DenseMap<Value *, VPValue *> VPExternalDefs;
 
   /// Represents the trip count of the original loop, for folding
   /// the tail.
@@ -2307,12 +2197,12 @@ class VPlan {
   /// to be free when the plan's destructor is called.
   SmallVector<VPValue *, 16> VPValuesToFree;
 
-  /// Holds the VPLoopInfo analysis for this VPlan.
-  VPLoopInfo VPLInfo;
-
   /// Indicates whether it is safe use the Value2VPValue mapping or if the
   /// mapping cannot be used any longer, because it is stale.
   bool Value2VPValueEnabled = true;
+
+  /// Values used outside the plan.
+  MapVector<PHINode *, VPLiveOut *> LiveOuts;
 
 public:
   VPlan(VPBlockBase *Entry = nullptr) : Entry(Entry) {
@@ -2320,30 +2210,15 @@ public:
       Entry->setPlan(this);
   }
 
-  ~VPlan() {
-    if (Entry) {
-      VPValue DummyValue;
-      for (VPBlockBase *Block : depth_first(Entry))
-        Block->dropAllReferences(&DummyValue);
-
-      VPBlockBase::deleteCFG(Entry);
-    }
-    for (VPValue *VPV : VPValuesToFree)
-      delete VPV;
-    if (TripCount)
-      delete TripCount;
-    if (BackedgeTakenCount)
-      delete BackedgeTakenCount;
-    for (VPValue *Def : VPExternalDefs)
-      delete Def;
-  }
+  ~VPlan();
 
   /// Prepare the plan for execution, setting up the required live-in values.
   void prepareToExecute(Value *TripCount, Value *VectorTripCount,
-                        Value *CanonicalIVStartValue, VPTransformState &State);
+                        Value *CanonicalIVStartValue, VPTransformState &State,
+                        bool IsEpilogueVectorization);
 
   /// Generate the IR code for this VPlan.
-  void execute(struct VPTransformState *State);
+  void execute(VPTransformState *State);
 
   VPBlockBase *getEntry() { return Entry; }
   const VPBlockBase *getEntry() const { return Entry; }
@@ -2377,15 +2252,36 @@ public:
 
   void addVF(ElementCount VF) { VFs.insert(VF); }
 
+  void setVF(ElementCount VF) {
+    assert(hasVF(VF) && "Cannot set VF not already in plan");
+    VFs.clear();
+    VFs.insert(VF);
+  }
+
   bool hasVF(ElementCount VF) { return VFs.count(VF); }
 
-  const std::string &getName() const { return Name; }
+  bool hasScalarVFOnly() const { return VFs.size() == 1 && VFs[0].isScalar(); }
+
+  bool hasUF(unsigned UF) const { return UFs.empty() || UFs.contains(UF); }
+
+  void setUF(unsigned UF) {
+    assert(hasUF(UF) && "Cannot set the UF not already in plan");
+    UFs.clear();
+    UFs.insert(UF);
+  }
+
+  /// Return a string with the name of the plan and the applicable VFs and UFs.
+  std::string getName() const;
 
   void setName(const Twine &newName) { Name = newName.str(); }
 
-  /// Add \p VPVal to the pool of external definitions if it's not already
-  /// in the pool.
-  void addExternalDef(VPValue *VPVal) { VPExternalDefs.insert(VPVal); }
+  /// Get the existing or add a new external definition for \p V.
+  VPValue *getOrAddExternalDef(Value *V) {
+    auto I = VPExternalDefs.insert({V, nullptr});
+    if (I.second)
+      I.first->second = new VPValue(V);
+    return I.first->second;
+  }
 
   void addVPValue(Value *V) {
     assert(Value2VPValueEnabled &&
@@ -2432,10 +2328,6 @@ public:
     Value2VPValue.erase(V);
   }
 
-  /// Return the VPLoopInfo analysis for this VPlan.
-  VPLoopInfo &getVPLoopInfo() { return VPLInfo; }
-  const VPLoopInfo &getVPLoopInfo() const { return VPLInfo; }
-
 #if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
   /// Print this VPlan to \p O.
   void print(raw_ostream &O) const;
@@ -2457,15 +2349,12 @@ public:
     return map_range(Operands, Fn);
   }
 
-  /// Returns true if \p VPV is uniform after vectorization.
-  bool isUniformAfterVectorization(VPValue *VPV) const {
-    auto RepR = dyn_cast_or_null<VPReplicateRecipe>(VPV->getDef());
-    return !VPV->getDef() || (RepR && RepR->isUniform());
-  }
-
   /// Returns the VPRegionBlock of the vector loop.
   VPRegionBlock *getVectorLoopRegion() {
-    return cast<VPRegionBlock>(getEntry());
+    return cast<VPRegionBlock>(getEntry()->getSingleSuccessor());
+  }
+  const VPRegionBlock *getVectorLoopRegion() const {
+    return cast<VPRegionBlock>(getEntry()->getSingleSuccessor());
   }
 
   /// Returns the canonical induction recipe of the vector loop.
@@ -2476,6 +2365,27 @@ public:
       EntryVPBB = cast<VPBasicBlock>(EntryVPBB->getSingleSuccessor());
     }
     return cast<VPCanonicalIVPHIRecipe>(&*EntryVPBB->begin());
+  }
+
+  /// Find and return the VPActiveLaneMaskPHIRecipe from the header - there
+  /// be only one at most. If there isn't one, then return nullptr.
+  VPActiveLaneMaskPHIRecipe *getActiveLaneMaskPhi();
+
+  void addLiveOut(PHINode *PN, VPValue *V);
+
+  void clearLiveOuts() {
+    for (auto &KV : LiveOuts)
+      delete KV.second;
+    LiveOuts.clear();
+  }
+
+  void removeLiveOut(PHINode *PN) {
+    delete LiveOuts[PN];
+    LiveOuts.erase(PN);
+  }
+
+  const MapVector<PHINode *, VPLiveOut *> &getLiveOuts() const {
+    return LiveOuts;
   }
 
 private:
@@ -2567,9 +2477,8 @@ public:
   /// Insert disconnected VPBlockBase \p NewBlock after \p BlockPtr. Add \p
   /// NewBlock as successor of \p BlockPtr and \p BlockPtr as predecessor of \p
   /// NewBlock, and propagate \p BlockPtr parent to \p NewBlock. \p BlockPtr's
-  /// successors are moved from \p BlockPtr to \p NewBlock and \p BlockPtr's
-  /// conditional bit is propagated to \p NewBlock. \p NewBlock must have
-  /// neither successors nor predecessors.
+  /// successors are moved from \p BlockPtr to \p NewBlock. \p NewBlock must
+  /// have neither successors nor predecessors.
   static void insertBlockAfter(VPBlockBase *NewBlock, VPBlockBase *BlockPtr) {
     assert(NewBlock->getSuccessors().empty() &&
            NewBlock->getPredecessors().empty() &&
@@ -2580,24 +2489,22 @@ public:
       disconnectBlocks(BlockPtr, Succ);
       connectBlocks(NewBlock, Succ);
     }
-    NewBlock->setCondBit(BlockPtr->getCondBit());
-    BlockPtr->setCondBit(nullptr);
     connectBlocks(BlockPtr, NewBlock);
   }
 
   /// Insert disconnected VPBlockBases \p IfTrue and \p IfFalse after \p
   /// BlockPtr. Add \p IfTrue and \p IfFalse as succesors of \p BlockPtr and \p
   /// BlockPtr as predecessor of \p IfTrue and \p IfFalse. Propagate \p BlockPtr
-  /// parent to \p IfTrue and \p IfFalse. \p Condition is set as the successor
-  /// selector. \p BlockPtr must have no successors and \p IfTrue and \p IfFalse
-  /// must have neither successors nor predecessors.
+  /// parent to \p IfTrue and \p IfFalse. \p BlockPtr must have no successors
+  /// and \p IfTrue and \p IfFalse must have neither successors nor
+  /// predecessors.
   static void insertTwoBlocksAfter(VPBlockBase *IfTrue, VPBlockBase *IfFalse,
-                                   VPValue *Condition, VPBlockBase *BlockPtr) {
+                                   VPBlockBase *BlockPtr) {
     assert(IfTrue->getSuccessors().empty() &&
            "Can't insert IfTrue with successors.");
     assert(IfFalse->getSuccessors().empty() &&
            "Can't insert IfFalse with successors.");
-    BlockPtr->setTwoSuccessors(IfTrue, IfFalse, Condition);
+    BlockPtr->setTwoSuccessors(IfTrue, IfFalse);
     IfTrue->setPredecessors({BlockPtr});
     IfFalse->setPredecessors({BlockPtr});
     IfTrue->setParent(BlockPtr->getParent());
@@ -2625,74 +2532,13 @@ public:
     To->removePredecessor(From);
   }
 
-  /// Try to merge \p Block into its single predecessor, if \p Block is a
-  /// VPBasicBlock and its predecessor has a single successor. Returns a pointer
-  /// to the predecessor \p Block was merged into or nullptr otherwise.
-  static VPBasicBlock *tryToMergeBlockIntoPredecessor(VPBlockBase *Block) {
-    auto *VPBB = dyn_cast<VPBasicBlock>(Block);
-    auto *PredVPBB =
-        dyn_cast_or_null<VPBasicBlock>(Block->getSinglePredecessor());
-    if (!VPBB || !PredVPBB || PredVPBB->getNumSuccessors() != 1)
-      return nullptr;
-
-    for (VPRecipeBase &R : make_early_inc_range(*VPBB))
-      R.moveBefore(*PredVPBB, PredVPBB->end());
-    VPBlockUtils::disconnectBlocks(PredVPBB, VPBB);
-    auto *ParentRegion = cast<VPRegionBlock>(Block->getParent());
-    if (ParentRegion->getExit() == Block)
-      ParentRegion->setExit(PredVPBB);
-    SmallVector<VPBlockBase *> Successors(Block->successors());
-    for (auto *Succ : Successors) {
-      VPBlockUtils::disconnectBlocks(Block, Succ);
-      VPBlockUtils::connectBlocks(PredVPBB, Succ);
-    }
-    delete Block;
-    return PredVPBB;
-  }
-
-  /// Returns true if the edge \p FromBlock -> \p ToBlock is a back-edge.
-  static bool isBackEdge(const VPBlockBase *FromBlock,
-                         const VPBlockBase *ToBlock, const VPLoopInfo *VPLI) {
-    assert(FromBlock->getParent() == ToBlock->getParent() &&
-           FromBlock->getParent() && "Must be in same region");
-    const VPLoop *FromLoop = VPLI->getLoopFor(FromBlock);
-    const VPLoop *ToLoop = VPLI->getLoopFor(ToBlock);
-    if (!FromLoop || !ToLoop || FromLoop != ToLoop)
-      return false;
-
-    // A back-edge is a branch from the loop latch to its header.
-    return ToLoop->isLoopLatch(FromBlock) && ToBlock == ToLoop->getHeader();
-  }
-
-  /// Returns true if \p Block is a loop latch
-  static bool blockIsLoopLatch(const VPBlockBase *Block,
-                               const VPLoopInfo *VPLInfo) {
-    if (const VPLoop *ParentVPL = VPLInfo->getLoopFor(Block))
-      return ParentVPL->isLoopLatch(Block);
-
-    return false;
-  }
-
-  /// Count and return the number of succesors of \p PredBlock excluding any
-  /// backedges.
-  static unsigned countSuccessorsNoBE(VPBlockBase *PredBlock,
-                                      VPLoopInfo *VPLI) {
-    unsigned Count = 0;
-    for (VPBlockBase *SuccBlock : PredBlock->getSuccessors()) {
-      if (!VPBlockUtils::isBackEdge(PredBlock, SuccBlock, VPLI))
-        Count++;
-    }
-    return Count;
-  }
-
   /// Return an iterator range over \p Range which only includes \p BlockTy
   /// blocks. The accesses are casted to \p BlockTy.
   template <typename BlockTy, typename T>
   static auto blocksOnly(const T &Range) {
     // Create BaseTy with correct const-ness based on BlockTy.
-    using BaseTy =
-        typename std::conditional<std::is_const<BlockTy>::value,
-                                  const VPBlockBase, VPBlockBase>::type;
+    using BaseTy = std::conditional_t<std::is_const<BlockTy>::value,
+                                      const VPBlockBase, VPBlockBase>;
 
     // We need to first create an iterator range over (const) BlocktTy & instead
     // of (const) BlockTy * for filter_range to work properly.
@@ -2845,6 +2691,26 @@ namespace vputils {
 /// Returns true if only the first lane of \p Def is used.
 bool onlyFirstLaneUsed(VPValue *Def);
 
+/// Get or create a VPValue that corresponds to the expansion of \p Expr. If \p
+/// Expr is a SCEVConstant or SCEVUnknown, return a VPValue wrapping the live-in
+/// value. Otherwise return a VPExpandSCEVRecipe to expand \p Expr. If \p Plan's
+/// pre-header already contains a recipe expanding \p Expr, return it. If not,
+/// create a new one.
+VPValue *getOrCreateVPValueForSCEVExpr(VPlan &Plan, const SCEV *Expr,
+                                       ScalarEvolution &SE);
+
+/// Returns true if \p VPV is uniform after vectorization.
+inline bool isUniformAfterVectorization(VPValue *VPV) {
+  // A value defined outside the vector region must be uniform after
+  // vectorization inside a vector region.
+  if (VPV->isDefinedOutsideVectorRegions())
+    return true;
+  VPRecipeBase *Def = VPV->getDefiningRecipe();
+  assert(Def && "Must have definition for value defined inside vector region");
+  if (auto Rep = dyn_cast<VPReplicateRecipe>(Def))
+    return Rep->isUniform();
+  return false;
+}
 } // end namespace vputils
 
 } // end namespace llvm

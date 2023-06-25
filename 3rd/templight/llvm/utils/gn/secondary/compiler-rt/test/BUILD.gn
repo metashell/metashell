@@ -38,6 +38,7 @@ write_cmake_config("lit_common_configured") {
     # We don't currently support the multiarch runtime layout.
     "LLVM_ENABLE_PER_TARGET_RUNTIME_DIR_PYBOOL=False",
 
+    "LLVM_LIT_TOOLS_DIR=",  # Intentionally empty, matches cmake build.
     "LLVM_TOOLS_DIR=" + rebase_path("$root_build_dir/bin"),
     "LLVM_LIBRARY_OUTPUT_INTDIR=" + rebase_path("$root_build_dir/lib"),
 
@@ -76,6 +77,8 @@ write_cmake_config("lit_common_configured") {
 
   if (host_cpu == "x64") {
     values += [ "HOST_ARCH=x86_64" ]
+  } else if (host_cpu == "arm64") {
+    values += [ "HOST_ARCH=aarch64" ]
   } else {
     assert(false, "unimplemented host_cpu " + host_cpu)
   }

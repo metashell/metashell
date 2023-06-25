@@ -160,7 +160,7 @@ class TargetRegisterClass;
       Ins,
       CIns,
 
-      // EXTR.W instrinsic nodes.
+      // EXTR.W intrinsic nodes.
       EXTP,
       EXTPDP,
       EXTR_S_H,
@@ -283,8 +283,9 @@ class TargetRegisterClass;
     EVT getTypeForExtReturn(LLVMContext &Context, EVT VT,
                             ISD::NodeType) const override;
 
-    bool isCheapToSpeculateCttz() const override;
-    bool isCheapToSpeculateCtlz() const override;
+    bool isCheapToSpeculateCttz(Type *Ty) const override;
+    bool isCheapToSpeculateCtlz(Type *Ty) const override;
+    bool hasBitTest(SDValue X, SDValue Y) const override;
     bool shouldFoldConstantShiftPairToMask(const SDNode *N,
                                            CombineLevel Level) const override;
 

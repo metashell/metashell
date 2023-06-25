@@ -18,6 +18,7 @@
 #include <metashell/data/type_or_code_or_error.hpp>
 
 #include <cassert>
+#include <variant>
 
 namespace metashell
 {
@@ -55,43 +56,43 @@ namespace metashell
 
     bool type_or_code_or_error::is_none() const
     {
-      return mpark::get_if<blank>(&data) != nullptr;
+      return std::get_if<blank>(&data) != nullptr;
     }
 
     bool type_or_code_or_error::is_type() const
     {
-      return mpark::get_if<type_type>(&data) != nullptr;
+      return std::get_if<type_type>(&data) != nullptr;
     }
 
     bool type_or_code_or_error::is_code() const
     {
-      return mpark::get_if<code_type>(&data) != nullptr;
+      return std::get_if<code_type>(&data) != nullptr;
     }
 
     bool type_or_code_or_error::is_error() const
     {
-      return mpark::get_if<error_type>(&data) != nullptr;
+      return std::get_if<error_type>(&data) != nullptr;
     }
 
     const type_or_code_or_error::type_type&
     type_or_code_or_error::get_type() const
     {
       assert(is_type());
-      return mpark::get<type_type>(data);
+      return std::get<type_type>(data);
     }
 
     const type_or_code_or_error::code_type&
     type_or_code_or_error::get_code() const
     {
       assert(is_code());
-      return mpark::get<code_type>(data);
+      return std::get<code_type>(data);
     }
 
     const type_or_code_or_error::error_type&
     type_or_code_or_error::get_error() const
     {
       assert(is_error());
-      return mpark::get<error_type>(data);
+      return std::get<error_type>(data);
     }
 
     bool

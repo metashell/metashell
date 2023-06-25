@@ -25,7 +25,6 @@
 #include "llvm/PassRegistry.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 
 #include <cassert>
@@ -354,6 +353,24 @@ bool DominatorTree::dominates(const BasicBlockEdge &BBE1,
   if (BBE1.getStart() == BBE2.getStart() && BBE1.getEnd() == BBE2.getEnd())
     return true;
   return dominates(BBE1, BBE2.getStart());
+}
+
+Instruction *DominatorTree::findNearestCommonDominator(Instruction *I1,
+                                                       Instruction *I2) const {
+  BasicBlock *BB1 = I1->getParent();
+  BasicBlock *BB2 = I2->getParent();
+  if (BB1 == BB2)
+    return I1->comesBefore(I2) ? I1 : I2;
+  if (!isReachableFromEntry(BB2))
+    return I1;
+  if (!isReachableFromEntry(BB1))
+    return I2;
+  BasicBlock *DomBB = findNearestCommonDominator(BB1, BB2);
+  if (BB1 == DomBB)
+    return I1;
+  if (BB2 == DomBB)
+    return I2;
+  return DomBB->getTerminator();
 }
 
 //===----------------------------------------------------------------------===//

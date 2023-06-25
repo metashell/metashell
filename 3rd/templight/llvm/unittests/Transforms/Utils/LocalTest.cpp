@@ -596,9 +596,9 @@ TEST(Local, SimplifyVScaleWithRange) {
   Function *VScale = Intrinsic::getDeclaration(&M, Intrinsic::vscale, {Ty});
   auto *CI = CallInst::Create(VScale, {}, "vscale");
 
-  // Test that SimplifyCall won't try to query it's parent function for
+  // Test that simplifyCall won't try to query it's parent function for
   // vscale_range attributes in order to simplify llvm.vscale -> constant.
-  EXPECT_EQ(SimplifyCall(CI, SimplifyQuery(M.getDataLayout())), nullptr);
+  EXPECT_EQ(simplifyCall(CI, SimplifyQuery(M.getDataLayout())), nullptr);
   delete CI;
 }
 
@@ -786,7 +786,7 @@ TEST(Local, ReplaceAllDbgUsesWith) {
 
   auto *FDbgVal = cast<DbgValueInst>(F_.getNextNode());
   EXPECT_EQ(FDbgVal->getNumVariableLocationOps(), 1u);
-  EXPECT_TRUE(FDbgVal->isUndef());
+  EXPECT_TRUE(FDbgVal->isKillLocation());
 
   SmallVector<DbgValueInst *, 1> FDbgVals;
   findDbgValues(FDbgVals, &F_);

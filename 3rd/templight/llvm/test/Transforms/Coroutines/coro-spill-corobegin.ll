@@ -1,5 +1,5 @@
 ; Check that we can spills coro.begin from an inlined inner coroutine.
-; RUN: opt < %s -passes='cgscc(coro-split),simplifycfg,early-cse' -S | FileCheck %s
+; RUN: opt -opaque-pointers=0 < %s -passes='cgscc(coro-split),simplifycfg,early-cse' -S | FileCheck %s
 
 %g.Frame = type { void (%g.Frame*)*, void (%g.Frame*)*, i32, i1, i32 }
 
@@ -9,7 +9,7 @@ declare void @g.dummy(%g.Frame*)
 
 declare i8* @g()
 
-define i8* @f() "coroutine.presplit"="1" {
+define i8* @f() presplitcoroutine {
 entry:
   %id = call token @llvm.coro.id(i32 0, i8* null, i8* null, i8* null)
   %size = call i32 @llvm.coro.size.i32()

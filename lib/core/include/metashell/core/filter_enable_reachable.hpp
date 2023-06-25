@@ -23,6 +23,7 @@
 #include <metashell/data/metaprogram_mode.hpp>
 
 #include <optional>
+#include <variant>
 #include <vector>
 
 namespace metashell
@@ -53,7 +54,7 @@ namespace metashell
                 (_depth_enabled.back() ||
                  (from_here(*event) && !is_remove_ptr(*event) &&
                   (kind != data::event_kind::memoization ||
-                   !trim_wrap_type(mpark::get<data::event_details<
+                   !trim_wrap_type(std::get<data::event_details<
                                        data::event_kind::memoization>>(*event)
                                        .what.full_name)))));
             if (_depth_enabled.back())

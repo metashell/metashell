@@ -3561,6 +3561,7 @@ let hasNoSchedulingInfo = 1 in
 def t2TSB : T2I<(outs), (ins tsb_opt:$opt), NoItinerary,
                 "tsb", "\t$opt", []>, Requires<[IsThumb, HasV8_4a]> {
   let Inst{31-0} = 0xf3af8012;
+  let DecoderMethod = "DecodeTSBInstruction";
 }
 }
 
@@ -3895,7 +3896,7 @@ def t2TBH_JT : t2PseudoInst<(outs),
         (ins GPR:$base, GPR:$index, i32imm:$jt, i32imm:$pclbl), 0, IIC_Br, []>,
         Sched<[WriteBr]>;
 
-def t2TBB : T2I<(outs), (ins addrmode_tbb:$addr), IIC_Br,
+def t2TBB : T2I<(outs), (ins (addrmode_tbb $Rn, $Rm):$addr), IIC_Br,
                     "tbb", "\t$addr", []>, Sched<[WriteBrTbl]> {
   bits<4> Rn;
   bits<4> Rm;
@@ -3908,7 +3909,7 @@ def t2TBB : T2I<(outs), (ins addrmode_tbb:$addr), IIC_Br,
   let DecoderMethod = "DecodeThumbTableBranch";
 }
 
-def t2TBH : T2I<(outs), (ins addrmode_tbh:$addr), IIC_Br,
+def t2TBH : T2I<(outs), (ins (addrmode_tbh $Rn, $Rm):$addr), IIC_Br,
                    "tbh", "\t$addr", []>, Sched<[WriteBrTbl]> {
   bits<4> Rn;
   bits<4> Rm;
@@ -3950,6 +3951,7 @@ def t2Bcc : T2I<(outs), (ins brtarget:$target), IIC_Br,
 
 // Tail calls. The MachO version of thumb tail calls uses a t2 branch, so
 // it goes here.
+// Windows SEH unwinding also needs a strict t2 branch for tail calls.
 let isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1 in {
   // IOS version.
   let Uses = [SP] in
@@ -3957,15 +3959,14 @@ let isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1 in {
                    (ins thumb_br_target:$dst, pred:$p),
                    4, IIC_Br, [],
                    (t2B thumb_br_target:$dst, pred:$p)>,
-                 Requires<[IsThumb2, IsMachO]>, Sched<[WriteBr]>;
+                 Requires<[IsThumb2]>, Sched<[WriteBr]>;
 }
 
 // IT block
 let Defs = [ITSTATE] in
 def t2IT : Thumb2XI<(outs), (ins it_pred:$cc, it_mask:$mask),
                     AddrModeNone, 2,  IIC_iALUx,
-                    "it$mask\t$cc", "", []>,
-           ComplexDeprecationPredicate<"IT"> {
+                    "it$mask\t$cc", "", []> {
   // 16-bit instruction.
   let Inst{31-16} = 0x0000;
   let Inst{15-8} = 0b10111111;
@@ -4087,6 +4088,10 @@ def : t2InstAlias<"pacbti$p r12,lr,sp", (t2HINT 13, pred:$p), 1>;
 def : t2InstAlias<"bti$p", (t2HINT 15, pred:$p), 1>;
 def : t2InstAlias<"pac$p r12,lr,sp", (t2HINT 29, pred:$p), 1>;
 def : t2InstAlias<"aut$p r12,lr,sp", (t2HINT 45, pred:$p), 1>;
+
+// Clear BHB instruction
+def : InstAlias<"clrbhb$p", (t2HINT 22, pred:$p), 0>, Requires<[IsThumb2, HasV8]>;
+def : InstAlias<"clrbhb$p", (t2HINT 22, pred:$p), 1>, Requires<[IsThumb2, HasV8, HasCLRBHB]>;
 
 def t2DBG : T2I<(outs), (ins imm0_15:$opt), NoItinerary, "dbg", "\t$opt",
                 [(int_arm_dbg imm0_15:$opt)]> {
@@ -5616,6 +5621,10 @@ def t2CSINC : CS<"csinc", 0b1001>;
 def t2CSINV : CS<"csinv", 0b1010>;
 def t2CSNEG : CS<"csneg", 0b1011>;
 
+def ARMcsinc_su : PatFrag<(ops node:$lhs, node:$rhs, node:$cond),
+                          (ARMcsinc node:$lhs, node:$rhs, node:$cond), [{
+  return N->hasOneUse();
+}]>;
 
 let Predicates = [HasV8_1MMainline] in {
   multiclass CSPats<SDNode Node, Instruction Insn> {
@@ -5652,6 +5661,11 @@ let Predicates = [HasV8_1MMainline] in {
   defm : ModifiedV8_1CSEL<t2CSINC, (add rGPR:$fval, 1)>;
   defm : ModifiedV8_1CSEL<t2CSINV, (xor rGPR:$fval, -1)>;
   defm : ModifiedV8_1CSEL<t2CSNEG, (sub 0, rGPR:$fval)>;
+
+  def : T2Pat<(ARMcmov (topbitsallzero32:$Rn), (i32 1), cmovpred:$imm),
+              (t2CSINC $Rn, ZR, (inv_cond_XFORM imm:$imm))>;
+  def : T2Pat<(and (topbitsallzero32:$Rn), (ARMcsinc_su (i32 0), (i32 0), cmovpred:$imm)),
+              (t2CSEL ZR, $Rn, $imm)>;
 }
 
 // CS aliases.
@@ -5716,7 +5730,8 @@ let isBranch = 1, isTerminator = 1, isIndirectBranch = 1 in {
 
 
 class PACBTIHintSpaceInst<string asm, string ops, bits<8> imm>
-  : V8_1MI<(outs), (ins), AddrModeNone, NoItinerary, asm, ops, "", []> {
+  : Thumb2XI<(outs), (ins), AddrModeNone, 4, NoItinerary, !strconcat(asm, "\t", ops), "", []>,
+    Requires<[HasV7, IsMClass]> {
   let Inst{31-8} = 0b111100111010111110000000;
   let Inst{7-0}  = imm;
 

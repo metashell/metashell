@@ -17,6 +17,8 @@
 #include <metashell/data/kind_of_mp.hpp>
 #include <metashell/data/timeless_event_data.hpp>
 
+#include <variant>
+
 namespace metashell
 {
   namespace data
@@ -29,9 +31,9 @@ namespace metashell
     bool operator==(const timeless_event_data& a, const timeless_event_data& b)
     {
       return kind_of(a) == kind_of(b) &&
-             mpark::visit(
+             std::visit(
                  [&b](const auto& da) -> bool {
-                   return da == mpark::get<timeless_event_details<
+                   return da == std::get<timeless_event_details<
                                     kind_of_mp<decltype(da)>::value>>(b);
                  },
                  a);

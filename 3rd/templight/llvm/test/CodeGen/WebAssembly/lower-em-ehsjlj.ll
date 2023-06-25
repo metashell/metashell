@@ -1,5 +1,5 @@
-; RUN: opt < %s -wasm-lower-em-ehsjlj -enable-emscripten-cxx-exceptions -enable-emscripten-sjlj -S | FileCheck %s
-; RUN: llc < %s -enable-emscripten-cxx-exceptions -enable-emscripten-sjlj -verify-machineinstrs
+; RUN: opt -opaque-pointers=0 < %s -wasm-lower-em-ehsjlj -enable-emscripten-cxx-exceptions -enable-emscripten-sjlj -S | FileCheck %s
+; RUN: llc -opaque-pointers=0 < %s -enable-emscripten-cxx-exceptions -enable-emscripten-sjlj -verify-machineinstrs
 
 ; Tests for cases when exception handling and setjmp/longjmp handling are mixed.
 
@@ -213,7 +213,6 @@ return:                                           ; preds = %entry, %if.end
   ret void
 
 ; CHECK:    rethrow.exn:
-; CHECK-NEXT: %setjmpTable{{.*}} = phi i32* [ %setjmpTable{{.*}}, %if.end.split ], [ %setjmpTable{{.*}}, %if.end ]
 ; CHECK-NEXT: %exn = call i8* @__cxa_find_matching_catch_2()
 ; CHECK-NEXT: %{{.*}} = bitcast i32* %setjmpTable{{.*}} to i8*
 ; CHECK-NEXT: tail call void @free(i8* %{{.*}})

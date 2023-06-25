@@ -10,8 +10,8 @@
 #include "llvm/ADT/Statistic.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/ValueTracking.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/InstIterator.h"
+#include "llvm/IR/Instruction.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/PatternMatch.h"
 #include "llvm/Support/DebugCounter.h"
@@ -162,7 +162,7 @@ llvm::getKnowledgeForValue(const Value *V,
     return RetainedKnowledge::none();
   if (AC) {
     for (AssumptionCache::ResultElem &Elem : AC->assumptionsFor(V)) {
-      auto *II = cast_or_null<AssumeInst>(Elem.Assume);
+      auto *II = dyn_cast_or_null<AssumeInst>(Elem.Assume);
       if (!II || Elem.Index == AssumptionCache::ExprResultIdx)
         continue;
       if (RetainedKnowledge RK = getKnowledgeFromBundle(

@@ -202,6 +202,12 @@ TEST(mdb_backtrace, on_error)
 
     ASSERT_EQ(
         any_of<backtrace>(
+            backtrace{{frame{fib<3>{}, _, _, event_kind::memoization},
+                       frame{fib<4>::value{}, _, _,
+                             event_kind::template_instantiation},
+                       frame{fib<5>::value{}, _, _,
+                             event_kind::template_instantiation},
+                       frame{type{"int_<fib<5>::value>"}}}},
             backtrace{
                 {frame{fib<0>{}, _, _, event_kind::memoization},
                  frame{fib<2>{}, _, _, event_kind::template_instantiation},

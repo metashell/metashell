@@ -17,6 +17,7 @@
 #include <metashell/data/event_data.hpp>
 
 #include <sstream>
+#include <variant>
 
 namespace metashell
 {
@@ -134,7 +135,7 @@ namespace metashell
 
     event_name name(const event_data& data)
     {
-      return mpark::visit(
+      return std::visit(
           [](const auto& details) -> event_name {
             using metashell::data::impl::name;
             return name(details.what);
@@ -144,7 +145,7 @@ namespace metashell
 
     std::optional<file_location> point_of_event(const event_data& data)
     {
-      return mpark::visit(
+      return std::visit(
           [](const auto& details) -> std::optional<file_location> {
             using metashell::data::impl::point_of_event;
             return point_of_event(details.what);
@@ -154,7 +155,7 @@ namespace metashell
 
     std::optional<file_location> source_location(const event_data& data)
     {
-      return mpark::visit(
+      return std::visit(
           [](const auto& details) -> std::optional<file_location> {
             using metashell::data::impl::source_location;
             return source_location(details.what);
@@ -164,26 +165,26 @@ namespace metashell
 
     std::optional<double> timestamp(const event_data& data)
     {
-      return mpark::visit(
+      return std::visit(
           [](const auto& details) { return timestamp(details); }, data);
     }
 
     std::optional<data::type> type_of(const event_data& data)
     {
-      return mpark::visit(
+      return std::visit(
           [](const auto& details) { return type_of(details.what); }, data);
     }
 
     void set_type(event_data& data, type t)
     {
-      mpark::visit(
+      std::visit(
           [&t](auto& details) { return set_type(details.what, std::move(t)); },
           data);
     }
 
     timeless_event_data what(const event_data& data)
     {
-      return mpark::visit(
+      return std::visit(
           [](const auto& detail) -> data::timeless_event_data {
             return detail.what;
           },
@@ -192,7 +193,7 @@ namespace metashell
 
     std::optional<type_or_code_or_error> result_of(const event_data& data)
     {
-      return mpark::visit(
+      return std::visit(
           [](const auto& detail) -> std::optional<type_or_code_or_error> {
             using metashell::data::impl::result_of;
             return result_of(detail.what);
@@ -208,7 +209,7 @@ namespace metashell
 
     std::ostream& operator<<(std::ostream& out, const event_data& data)
     {
-      mpark::visit([&out](const auto& detail) { out << detail; }, data);
+      std::visit([&out](const auto& detail) { out << detail; }, data);
       return out;
     }
 

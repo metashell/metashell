@@ -17,6 +17,7 @@
 #include <metashell/data/status.hpp>
 
 #include <iostream>
+#include <variant>
 
 namespace metashell
 {
@@ -24,7 +25,7 @@ namespace metashell
   {
     bool exit_success(const status& s_)
     {
-      if (auto e = mpark::get_if<proc_exit>(&s_))
+      if (auto e = std::get_if<proc_exit>(&s_))
       {
         return exit_success(*e);
       }
@@ -36,7 +37,7 @@ namespace metashell
 
     std::string to_string(const status& s_)
     {
-      return mpark::visit([](const auto& x_) { return to_string(x_); }, s_);
+      return std::visit([](const auto& x_) { return to_string(x_); }, s_);
     }
 
     std::ostream& operator<<(std::ostream& out_, const status& s_)

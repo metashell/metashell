@@ -16,6 +16,8 @@
 
 #include <metashell/data/pragma_name.hpp>
 
+#include <variant>
+
 namespace metashell
 {
   namespace data
@@ -25,7 +27,7 @@ namespace metashell
     {
       for (; begin_ != end_; begin_ = skip_whitespace(skip(begin_), end_))
       {
-        if (auto id = mpark::get_if<identifier>(&*begin_))
+        if (auto id = std::get_if<identifier>(&*begin_))
         {
           _tokens.push_back(*id);
         }

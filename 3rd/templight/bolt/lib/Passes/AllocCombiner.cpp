@@ -29,26 +29,24 @@ namespace {
 
 bool getStackAdjustmentSize(const BinaryContext &BC, const MCInst &Inst,
                             int64_t &Adjustment) {
-  return BC.MIB->evaluateSimple(Inst, Adjustment,
-                                std::make_pair(BC.MIB->getStackPointer(), 0LL),
-                                std::make_pair(0, 0LL));
+  return BC.MIB->evaluateStackOffsetExpr(
+      Inst, Adjustment, std::make_pair(BC.MIB->getStackPointer(), 0LL),
+      std::make_pair(0, 0LL));
 }
 
 bool isIndifferentToSP(const MCInst &Inst, const BinaryContext &BC) {
   if (BC.MIB->isCFI(Inst))
     return true;
 
-  const MCInstrDesc II = BC.MII->get(Inst.getOpcode());
+  const MCInstrDesc &II = BC.MII->get(Inst.getOpcode());
   if (BC.MIB->isTerminator(Inst) ||
       II.hasImplicitDefOfPhysReg(BC.MIB->getStackPointer(), BC.MRI.get()) ||
       II.hasImplicitUseOfPhysReg(BC.MIB->getStackPointer()))
     return false;
 
-  for (int I = 0, E = MCPlus::getNumPrimeOperands(Inst); I != E; ++I) {
-    const MCOperand &Operand = Inst.getOperand(I);
+  for (const MCOperand &Operand : MCPlus::primeOperands(Inst))
     if (Operand.isReg() && Operand.getReg() == BC.MIB->getStackPointer())
       return false;
-  }
   return true;
 }
 
@@ -71,8 +69,7 @@ void AllocCombinerPass::combineAdjustments(BinaryFunction &BF) {
   BinaryContext &BC = BF.getBinaryContext();
   for (BinaryBasicBlock &BB : BF) {
     MCInst *Prev = nullptr;
-    for (auto I = BB.rbegin(), E = BB.rend(); I != E; ++I) {
-      MCInst &Inst = *I;
+    for (MCInst &Inst : llvm::reverse(BB)) {
       if (isIndifferentToSP(Inst, BC))
         continue; // Skip updating Prev
 
@@ -103,6 +100,7 @@ void AllocCombinerPass::combineAdjustments(BinaryFunction &BF) {
 
       BB.eraseInstruction(BB.findInstruction(Prev));
       ++NumCombined;
+      DynamicCountCombined += BB.getKnownExecutionCount();
       FuncsChanged.insert(&BF);
       Prev = &Inst;
     }
@@ -118,7 +116,8 @@ void AllocCombinerPass::runOnFunctions(BinaryContext &BC) {
   });
 
   outs() << "BOLT-INFO: Allocation combiner: " << NumCombined
-         << " empty spaces coalesced.\n";
+         << " empty spaces coalesced (dyn count: " << DynamicCountCombined
+         << ").\n";
 }
 
 } // end namespace bolt

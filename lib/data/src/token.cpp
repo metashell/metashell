@@ -17,6 +17,7 @@
 #include <metashell/data/token.hpp>
 
 #include <cassert>
+#include <variant>
 
 namespace metashell
 {
@@ -55,18 +56,18 @@ namespace metashell
 
     token_type type_of(const token& t_)
     {
-      return mpark::visit([](const auto& tok_) { return tok_.type(); }, t_);
+      return std::visit([](const auto& tok_) { return tok_.type(); }, t_);
     }
 
     const cpp_code& value(const token& t_)
     {
-      return mpark::visit(
+      return std::visit(
           [](const auto& tok_) -> const cpp_code& { return tok_.value(); }, t_);
     }
 
     token_category category(const token& t_)
     {
-      return mpark::visit(category_visitor(), t_);
+      return std::visit(category_visitor(), t_);
     }
 
     std::string string_literal_value(const token& token_)

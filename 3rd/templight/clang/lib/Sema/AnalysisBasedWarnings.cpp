@@ -16,8 +16,10 @@
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/DeclObjC.h"
 #include "clang/AST/EvaluatedExprVisitor.h"
+#include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/ExprObjC.h"
+#include "clang/AST/OperationKinds.h"
 #include "clang/AST/ParentMap.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/AST/StmtCXX.h"
@@ -29,6 +31,7 @@
 #include "clang/Analysis/Analyses/ReachableCode.h"
 #include "clang/Analysis/Analyses/ThreadSafety.h"
 #include "clang/Analysis/Analyses/UninitializedValues.h"
+#include "clang/Analysis/Analyses/UnsafeBufferUsage.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
 #include "clang/Analysis/CFG.h"
 #include "clang/Analysis/CFGStmtMap.h"
@@ -47,6 +50,7 @@
 #include <algorithm>
 #include <deque>
 #include <iterator>
+#include <optional>
 
 using namespace clang;
 
@@ -326,7 +330,7 @@ static void visitReachableThrows(
     if (!Reachable[B->getBlockID()])
       continue;
     for (CFGElement &E : *B) {
-      Optional<CFGStmt> S = E.getAs<CFGStmt>();
+      std::optional<CFGStmt> S = E.getAs<CFGStmt>();
       if (!S)
         continue;
       if (auto *Throw = dyn_cast<CXXThrowExpr>(S->getStmt()))
@@ -1113,19 +1117,19 @@ namespace {
 
         if (!ReachableBlocks.count(P)) {
           for (const CFGElement &Elem : llvm::reverse(*P)) {
-            if (Optional<CFGStmt> CS = Elem.getAs<CFGStmt>()) {
-              if (const AttributedStmt *AS = asFallThroughAttr(CS->getStmt())) {
-                // Don't issue a warning for an unreachable fallthrough
-                // attribute in template instantiations as it may not be
-                // unreachable in all instantiations of the template.
-                if (!IsTemplateInstantiation)
-                  S.Diag(AS->getBeginLoc(),
-                         diag::warn_unreachable_fallthrough_attr);
-                markFallthroughVisited(AS);
-                ++AnnotatedCnt;
-                break;
-              }
-              // Don't care about other unreachable statements.
+            if (std::optional<CFGStmt> CS = Elem.getAs<CFGStmt>()) {
+            if (const AttributedStmt *AS = asFallThroughAttr(CS->getStmt())) {
+              // Don't issue a warning for an unreachable fallthrough
+              // attribute in template instantiations as it may not be
+              // unreachable in all instantiations of the template.
+              if (!IsTemplateInstantiation)
+                S.Diag(AS->getBeginLoc(),
+                       diag::warn_unreachable_fallthrough_attr);
+              markFallthroughVisited(AS);
+              ++AnnotatedCnt;
+              break;
+            }
+            // Don't care about other unreachable statements.
             }
           }
           // If there are no unreachable statements, this may be a special
@@ -1198,7 +1202,7 @@ namespace {
       if (const Stmt *Term = B.getTerminatorStmt())
         return Term;
       for (const CFGElement &Elem : llvm::reverse(B))
-        if (Optional<CFGStmt> CS = Elem.getAs<CFGStmt>())
+        if (std::optional<CFGStmt> CS = Elem.getAs<CFGStmt>())
           return CS->getStmt();
       // Workaround to detect a statement thrown out by CFGBuilder:
       //   case X: {} case Y:
@@ -1272,7 +1276,7 @@ static void DiagnoseSwitchLabelsFallthrough(Sema &S, AnalysisDeclContext &AC,
   for (const CFGBlock *B : llvm::reverse(*Cfg)) {
     const Stmt *Label = B->getLabel();
 
-    if (!Label || !isa<SwitchCase>(Label))
+    if (!isa_and_nonnull<SwitchCase>(Label))
       continue;
 
     int AnnotatedCnt;
@@ -1575,8 +1579,7 @@ public:
         // Sort the uses by their SourceLocations.  While not strictly
         // guaranteed to produce them in line/column order, this will provide
         // a stable ordering.
-        llvm::sort(vec->begin(), vec->end(),
-                   [](const UninitUse &a, const UninitUse &b) {
+        llvm::sort(*vec, [](const UninitUse &a, const UninitUse &b) {
           // Prefer a more confident report over a less confident one.
           if (a.getKind() != b.getKind())
             return a.getKind() > b.getKind();
@@ -1844,7 +1847,7 @@ class ThreadSafetyReporter : public clang::threadSafety::ThreadSafetyHandler {
     }
   }
 
-  void handleInvalidLockExp(StringRef Kind, SourceLocation Loc) override {
+  void handleInvalidLockExp(SourceLocation Loc) override {
     PartialDiagnosticAt Warning(Loc, S.PDiag(diag::warn_cannot_resolve_lock)
                                          << Loc);
     Warnings.emplace_back(std::move(Warning), getNotes());
@@ -1922,9 +1925,8 @@ class ThreadSafetyReporter : public clang::threadSafety::ThreadSafetyHandler {
     Warnings.emplace_back(std::move(Warning), getNotes(Note));
   }
 
-  void handleNoMutexHeld(StringRef Kind, const NamedDecl *D,
-                         ProtectedOperationKind POK, AccessKind AK,
-                         SourceLocation Loc) override {
+  void handleNoMutexHeld(const NamedDecl *D, ProtectedOperationKind POK,
+                         AccessKind AK, SourceLocation Loc) override {
     assert((POK == POK_VarAccess || POK == POK_VarDereference) &&
            "Only works for variables");
     unsigned DiagID = POK == POK_VarAccess?
@@ -2141,6 +2143,71 @@ public:
 } // namespace clang
 
 //===----------------------------------------------------------------------===//
+// Unsafe buffer usage analysis.
+//===----------------------------------------------------------------------===//
+
+namespace {
+class UnsafeBufferUsageReporter : public UnsafeBufferUsageHandler {
+  Sema &S;
+
+public:
+  UnsafeBufferUsageReporter(Sema &S) : S(S) {}
+
+  void handleUnsafeOperation(const Stmt *Operation,
+                             bool IsRelatedToDecl) override {
+    SourceLocation Loc;
+    SourceRange Range;
+    unsigned MsgParam = 0;
+    if (const auto *ASE = dyn_cast<ArraySubscriptExpr>(Operation)) {
+      Loc = ASE->getBase()->getExprLoc();
+      Range = ASE->getBase()->getSourceRange();
+      MsgParam = 2;
+    } else if (const auto *BO = dyn_cast<BinaryOperator>(Operation)) {
+      BinaryOperator::Opcode Op = BO->getOpcode();
+      if (Op == BO_Add || Op == BO_AddAssign || Op == BO_Sub ||
+          Op == BO_SubAssign) {
+        if (BO->getRHS()->getType()->isIntegerType()) {
+          Loc = BO->getLHS()->getExprLoc();
+          Range = BO->getLHS()->getSourceRange();
+        } else {
+          Loc = BO->getRHS()->getExprLoc();
+          Range = BO->getRHS()->getSourceRange();
+        }
+        MsgParam = 1;
+      }
+    } else if (const auto *UO = dyn_cast<UnaryOperator>(Operation)) {
+      UnaryOperator::Opcode Op = UO->getOpcode();
+      if (Op == UO_PreInc || Op == UO_PreDec || Op == UO_PostInc ||
+          Op == UO_PostDec) {
+        Loc = UO->getSubExpr()->getExprLoc();
+        Range = UO->getSubExpr()->getSourceRange();
+        MsgParam = 1;
+      }
+    } else {
+      Loc = Operation->getBeginLoc();
+      Range = Operation->getSourceRange();
+    }
+    if (IsRelatedToDecl)
+      S.Diag(Loc, diag::note_unsafe_buffer_operation) << MsgParam << Range;
+    else
+      S.Diag(Loc, diag::warn_unsafe_buffer_operation) << MsgParam << Range;
+  }
+
+  // FIXME: rename to handleUnsafeVariable
+  void handleFixableVariable(const VarDecl *Variable,
+                             FixItList &&Fixes) override {
+    const auto &D =
+        S.Diag(Variable->getLocation(), diag::warn_unsafe_buffer_variable);
+    D << Variable;
+    D << (Variable->getType()->isPointerType() ? 0 : 1);
+    D << Variable->getSourceRange();
+    for (const auto &F : Fixes)
+      D << F;
+  }
+};
+} // namespace
+
+//===----------------------------------------------------------------------===//
 // AnalysisBasedWarnings - Worker object used by Sema to execute analysis-based
 //  warnings on a function, method, or block.
 //===----------------------------------------------------------------------===//
@@ -2271,7 +2338,7 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
   }
 
   // Install the logical handler.
-  llvm::Optional<LogicalErrorHandler> LEH;
+  std::optional<LogicalErrorHandler> LEH;
   if (LogicalErrorHandler::hasActiveDiagnostics(Diags, D->getBeginLoc())) {
     LEH.emplace(S);
     AC.getCFGBuildOptions().Observer = &*LEH;
@@ -2431,6 +2498,13 @@ void clang::sema::AnalysisBasedWarnings::IssueWarnings(
     if (const FunctionDecl *FD = dyn_cast<FunctionDecl>(D))
       if (S.getLangOpts().CPlusPlus && isNoexcept(FD))
         checkThrowInNonThrowingFunc(S, FD, AC);
+
+  // Emit unsafe buffer usage warnings and fixits.
+  if (!Diags.isIgnored(diag::warn_unsafe_buffer_operation, D->getBeginLoc()) ||
+      !Diags.isIgnored(diag::warn_unsafe_buffer_variable, D->getBeginLoc())) {
+    UnsafeBufferUsageReporter R(S);
+    checkUnsafeBufferUsage(D, R);
+  }
 
   // If none of the previous checks caused a CFG build, trigger one here
   // for the logical error handler.

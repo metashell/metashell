@@ -58,7 +58,7 @@ bool WebAssembly::isChild(const MachineInstr &MI,
   if (!MO.isReg() || MO.isImplicit() || !MO.isDef())
     return false;
   Register Reg = MO.getReg();
-  return Register::isVirtualRegister(Reg) && MFI.isVRegStackified(Reg);
+  return Reg.isVirtual() && MFI.isVRegStackified(Reg);
 }
 
 bool WebAssembly::mayThrow(const MachineInstr &MI) {
@@ -178,4 +178,26 @@ MachineInstr *WebAssembly::findCatch(MachineBasicBlock *EHPad) {
   if (Pos != EHPad->end() && WebAssembly::isCatch(Pos->getOpcode()))
     return &*Pos;
   return nullptr;
+}
+
+unsigned WebAssembly::getCopyOpcodeForRegClass(const TargetRegisterClass *RC) {
+  assert(RC != nullptr);
+  switch (RC->getID()) {
+  case WebAssembly::I32RegClassID:
+    return WebAssembly::COPY_I32;
+  case WebAssembly::I64RegClassID:
+    return WebAssembly::COPY_I64;
+  case WebAssembly::F32RegClassID:
+    return WebAssembly::COPY_F32;
+  case WebAssembly::F64RegClassID:
+    return WebAssembly::COPY_F64;
+  case WebAssembly::V128RegClassID:
+    return WebAssembly::COPY_V128;
+  case WebAssembly::FUNCREFRegClassID:
+    return WebAssembly::COPY_FUNCREF;
+  case WebAssembly::EXTERNREFRegClassID:
+    return WebAssembly::COPY_EXTERNREF;
+  default:
+    llvm_unreachable("Unexpected register class");
+  }
 }

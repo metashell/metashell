@@ -19,6 +19,7 @@
 #include <cassert>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -87,8 +88,8 @@ enum ActionKind {
   /// Generate pre-compiled module from a C++ module interface file.
   GenerateModuleInterface,
 
-  /// Generate pre-compiled module from a set of header files.
-  GenerateHeaderModule,
+  /// Generate a C++20 header unit module from a header file.
+  GenerateHeaderUnit,
 
   /// Generate pre-compiled header.
   GeneratePCH,
@@ -150,6 +151,8 @@ private:
   Language Lang;
   unsigned Fmt : 3;
   unsigned Preprocessed : 1;
+  unsigned HeaderUnit : 3;
+  unsigned IsHeader : 1;
 
 public:
   /// The input file format.
@@ -159,13 +162,29 @@ public:
     Precompiled
   };
 
+  // If we are building a header unit, what kind it is; this affects whether
+  // we look for the file in the user or system include search paths before
+  // flagging a missing input.
+  enum HeaderUnitKind {
+    HeaderUnit_None,
+    HeaderUnit_User,
+    HeaderUnit_System,
+    HeaderUnit_Abs
+  };
+
   constexpr InputKind(Language L = Language::Unknown, Format F = Source,
-                      bool PP = false)
-      : Lang(L), Fmt(F), Preprocessed(PP) {}
+                      bool PP = false, HeaderUnitKind HU = HeaderUnit_None,
+                      bool HD = false)
+      : Lang(L), Fmt(F), Preprocessed(PP), HeaderUnit(HU), IsHeader(HD) {}
 
   Language getLanguage() const { return static_cast<Language>(Lang); }
   Format getFormat() const { return static_cast<Format>(Fmt); }
+  HeaderUnitKind getHeaderUnitKind() const {
+    return static_cast<HeaderUnitKind>(HeaderUnit);
+  }
   bool isPreprocessed() const { return Preprocessed; }
+  bool isHeader() const { return IsHeader; }
+  bool isHeaderUnit() const { return HeaderUnit != HeaderUnit_None; }
 
   /// Is the input kind fully-unknown?
   bool isUnknown() const { return Lang == Language::Unknown && Fmt == Source; }
@@ -176,11 +195,23 @@ public:
   }
 
   InputKind getPreprocessed() const {
-    return InputKind(getLanguage(), getFormat(), true);
+    return InputKind(getLanguage(), getFormat(), true, getHeaderUnitKind(),
+                     isHeader());
+  }
+
+  InputKind getHeader() const {
+    return InputKind(getLanguage(), getFormat(), isPreprocessed(),
+                     getHeaderUnitKind(), true);
+  }
+
+  InputKind withHeaderUnit(HeaderUnitKind HU) const {
+    return InputKind(getLanguage(), getFormat(), isPreprocessed(), HU,
+                     isHeader());
   }
 
   InputKind withFormat(Format F) const {
-    return InputKind(getLanguage(), F, isPreprocessed());
+    return InputKind(getLanguage(), F, isPreprocessed(), getHeaderUnitKind(),
+                     isHeader());
   }
 };
 
@@ -192,7 +223,7 @@ class FrontendInputFile {
   /// The input, if it comes from a buffer rather than a file. This object
   /// does not own the buffer, and the caller is responsible for ensuring
   /// that it outlives any users.
-  llvm::Optional<llvm::MemoryBufferRef> Buffer;
+  std::optional<llvm::MemoryBufferRef> Buffer;
 
   /// The kind of input, e.g., C source, AST file, LLVM IR.
   InputKind Kind;
@@ -211,10 +242,14 @@ public:
   InputKind getKind() const { return Kind; }
   bool isSystem() const { return IsSystem; }
 
-  bool isEmpty() const { return File.empty() && Buffer == None; }
+  bool isEmpty() const { return File.empty() && Buffer == std::nullopt; }
   bool isFile() const { return !isBuffer(); }
-  bool isBuffer() const { return Buffer != None; }
+  bool isBuffer() const { return Buffer != std::nullopt; }
   bool isPreprocessed() const { return Kind.isPreprocessed(); }
+  bool isHeader() const { return Kind.isHeader(); }
+  InputKind::HeaderUnitKind getHeaderUnitKind() const {
+    return Kind.getHeaderUnitKind();
+  }
 
   StringRef getFile() const {
     assert(isFile());
@@ -309,6 +344,9 @@ public:
 
   /// Output (and read) PCM files regardless of compiler errors.
   unsigned AllowPCMWithCompilerErrors : 1;
+
+  /// Whether to share the FileManager when building modules.
+  unsigned ModulesShareFileManager : 1;
 
   CodeCompleteOptions CodeCompleteOpts;
 
@@ -410,6 +448,14 @@ public:
   /// The name of the action to run when using a plugin action.
   std::string ActionName;
 
+  // Currently this is only used as part of the `-extract-api` action.
+  /// The name of the product the input files belong too.
+  std::string ProductName;
+
+  // Currently this is only used as part of the `-extract-api` action.
+  /// The file providing a list of APIs to ignore when extracting documentation
+  std::string ExtractAPIIgnoresFile;
+
   /// Args to pass to the plugins
   std::map<std::string, std::vector<std::string>> PluginArgs;
 
@@ -447,16 +493,19 @@ public:
   std::string AuxTriple;
 
   /// Auxiliary target CPU for CUDA/HIP compilation.
-  Optional<std::string> AuxTargetCPU;
+  std::optional<std::string> AuxTargetCPU;
 
   /// Auxiliary target features for CUDA/HIP compilation.
-  Optional<std::vector<std::string>> AuxTargetFeatures;
+  std::optional<std::vector<std::string>> AuxTargetFeatures;
 
   /// Filename to write statistics to.
   std::string StatsFile;
 
   /// Minimum time granularity (in microseconds) traced by time profiler.
   unsigned TimeTraceGranularity;
+
+  /// Path which stores the output files for -ftime-trace
+  std::string TimeTracePath;
 
 public:
   FrontendOptions()
@@ -469,7 +518,8 @@ public:
         ASTDumpLookups(false), BuildingImplicitModule(false),
         BuildingImplicitModuleUsesLock(true), ModulesEmbedAllFiles(false),
         IncludeTimestamps(true), UseTemporary(true),
-        AllowPCMWithCompilerErrors(false), TimeTraceGranularity(500) {}
+        AllowPCMWithCompilerErrors(false), ModulesShareFileManager(true),
+        TimeTraceGranularity(500) {}
 
   /// getInputKindForExtension - Return the appropriate input kind for a file
   /// extension. For example, "c" would return Language::C.

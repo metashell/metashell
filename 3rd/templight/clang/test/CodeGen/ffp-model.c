@@ -20,29 +20,29 @@ float mymuladd(float x, float y, float z) {
   return x * y + z;
 
   // CHECK-FAST: fmul fast float
-  // CHECK-FAST: load float, float*
+  // CHECK-FAST: load float, ptr
   // CHECK-FAST: fadd fast float
 
-  // CHECK-PRECISE: load float, float*
-  // CHECK-PRECISE: load float, float*
-  // CHECK-PRECISE: load float, float*
+  // CHECK-PRECISE: load float, ptr
+  // CHECK-PRECISE: load float, ptr
+  // CHECK-PRECISE: load float, ptr
   // CHECK-PRECISE: call float @llvm.fmuladd.f32(float {{.*}}, float {{.*}}, float {{.*}})
 
-  // CHECK-STRICT: load float, float*
-  // CHECK-STRICT: load float, float*
+  // CHECK-STRICT: load float, ptr
+  // CHECK-STRICT: load float, ptr
   // CHECK-STRICT: call float @llvm.experimental.constrained.fmul.f32(float {{.*}}, float {{.*}}, {{.*}})
-  // CHECK-STRICT: load float, float*
+  // CHECK-STRICT: load float, ptr
   // CHECK-STRICT: call float @llvm.experimental.constrained.fadd.f32(float {{.*}}, float {{.*}}, {{.*}})
 
-  // CHECK-STRICT-FAST: load float, float*
-  // CHECK-STRICT-FAST: load float, float*
-  // CHECK-STRICT-FAST: call fast float @llvm.experimental.constrained.fmul.f32(float {{.*}}, float {{.*}}, {{.*}})
-  // CHECK-STRICT-FAST: load float, float*
-  // CHECK-STRICT-FAST: call fast float @llvm.experimental.constrained.fadd.f32(float {{.*}}, float {{.*}}, {{.*}}
+  // CHECK-STRICT-FAST: load float, ptr
+  // CHECK-STRICT-FAST: load float, ptr
+  // CHECK-STRICT-FAST: fmul fast float {{.*}}, {{.*}}
+  // CHECK-STRICT-FAST: load float, ptr
+  // CHECK-STRICT-FAST: fadd fast float {{.*}}, {{.*}}
 
-  // CHECK-FAST1: load float, float*
-  // CHECK-FAST1: load float, float*
+  // CHECK-FAST1: load float, ptr
+  // CHECK-FAST1: load float, ptr
   // CHECK-FAST1: fmul fast float {{.*}}, {{.*}}
-  // CHECK-FAST1: load float, float* {{.*}}
+  // CHECK-FAST1: load float, ptr {{.*}}
   // CHECK-FAST1: fadd fast float {{.*}}, {{.*}}
 }

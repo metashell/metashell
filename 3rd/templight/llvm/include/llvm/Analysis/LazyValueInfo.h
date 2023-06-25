@@ -95,6 +95,10 @@ public:
   ConstantRange getConstantRange(Value *V, Instruction *CxtI,
                                  bool UndefAllowed = true);
 
+  /// Return the ConstantRange constraint that is known to hold for the value
+  /// at a specific use-site.
+  ConstantRange getConstantRangeAtUse(const Use &U, bool UndefAllowed = true);
+
   /// Determine whether the specified value is known to be a
   /// constant on the specified edge.  Return null if not.
   Constant *getConstantOnEdge(Value *V, BasicBlock *FromBB, BasicBlock *ToBB,
@@ -113,6 +117,9 @@ public:
 
   /// Inform the analysis cache that we have erased a block.
   void eraseBlock(BasicBlock *BB);
+
+  /// Complete flush all previously computed values
+  void clear(const Module *M);
 
   /// Print the \LazyValueInfo Analysis.
   /// We pass in the DTree that is required for identifying which basic blocks

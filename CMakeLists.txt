@@ -261,7 +261,6 @@ add_subdirectory(3rd/just/lines)
 add_subdirectory(3rd/just/temp)
 
 add_subdirectory(3rd/mindent)
-add_subdirectory(3rd/mpark_variant)
 add_subdirectory(3rd/protobuf)
 add_subdirectory(3rd/rapidjson)
 add_subdirectory(3rd/yaml-cpp)

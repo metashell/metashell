@@ -20,11 +20,10 @@
 #include <pattern/basic_regex.hpp>
 #include <pattern/placeholder.hpp>
 
-#include <variant.hpp>
-
 #include <optional>
 #include <regex>
 #include <string>
+#include <variant>
 
 namespace pattern
 {
@@ -59,12 +58,12 @@ namespace pattern
     bool match(T value_) const
     {
       if (const std::basic_string<CharT>* p =
-              mpark::get_if<std::basic_string<CharT>>(&_pattern))
+              std::get_if<std::basic_string<CharT>>(&_pattern))
       {
         return *p == value_;
       }
       else if (const basic_regex<CharT>* re =
-                   mpark::get_if<basic_regex<CharT>>(&_pattern))
+                   std::get_if<basic_regex<CharT>>(&_pattern))
       {
         return std::regex_search(std::basic_string<CharT>(value_),
                                  std::basic_regex<CharT>(re->value()));
@@ -78,12 +77,12 @@ namespace pattern
     std::optional<std::basic_string<CharT>> value() const
     {
       if (const std::basic_string<CharT>* p =
-              mpark::get_if<std::basic_string<CharT>>(&_pattern))
+              std::get_if<std::basic_string<CharT>>(&_pattern))
       {
         return *p;
       }
       else if (const basic_regex<CharT>* re =
-                   mpark::get_if<basic_regex<CharT>>(&_pattern))
+                   std::get_if<basic_regex<CharT>>(&_pattern))
       {
         if (re->value().empty())
         {
@@ -101,7 +100,7 @@ namespace pattern
     }
 
   private:
-    mpark::variant<std::basic_string<CharT>, basic_regex<CharT>> _pattern;
+    std::variant<std::basic_string<CharT>, basic_regex<CharT>> _pattern;
   };
 } // namespace pattern
 

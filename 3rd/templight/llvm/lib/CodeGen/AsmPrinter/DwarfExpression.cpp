@@ -99,7 +99,7 @@ void DwarfExpression::addAnd(unsigned Mask) {
 bool DwarfExpression::addMachineReg(const TargetRegisterInfo &TRI,
                                     llvm::Register MachineReg,
                                     unsigned MaxSize) {
-  if (!llvm::Register::isPhysicalRegister(MachineReg)) {
+  if (!MachineReg.isPhysical()) {
     if (isFrameRegister(TRI, MachineReg)) {
       DwarfRegs.push_back(Register::createRegister(-1, nullptr));
       return true;
@@ -329,7 +329,16 @@ bool DwarfExpression::addMachineRegExpression(const TargetRegisterInfo &TRI,
       return false;
     }
 
-  assert(DwarfRegs.size() == 1);
+  // TODO: We should not give up here but the following code needs to be changed
+  //       to deal with multiple (sub)registers first.
+  if (DwarfRegs.size() > 1) {
+    LLVM_DEBUG(dbgs() << "TODO: giving up on debug information due to "
+                         "multi-register usage.\n");
+    DwarfRegs.clear();
+    LocationKind = Unknown;
+    return false;
+  }
+
   auto Reg = DwarfRegs[0];
   bool FBReg = isFrameRegister(TRI, MachineReg);
   int SignedOffset = 0;
@@ -485,7 +494,7 @@ bool DwarfExpression::addExpression(
   // and not any other parts of the following DWARF expression.
   assert(!IsEmittingEntryValue && "Can't emit entry value around expression");
 
-  Optional<DIExpression::ExprOperand> PrevConvertOp = None;
+  std::optional<DIExpression::ExprOperand> PrevConvertOp;
 
   while (ExprCursor) {
     auto Op = ExprCursor.take();
@@ -595,7 +604,7 @@ bool DwarfExpression::addExpression(
             emitLegacySExt(PrevConvertOp->getArg(0));
           else if (Encoding == dwarf::DW_ATE_unsigned)
             emitLegacyZExt(PrevConvertOp->getArg(0));
-          PrevConvertOp = None;
+          PrevConvertOp = std::nullopt;
         } else {
           PrevConvertOp = Op;
         }

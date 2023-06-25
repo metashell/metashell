@@ -26,6 +26,8 @@ extern cl::opt<bool> PrintRelocations;
 extern cl::opt<bool> HotData;
 } // namespace opts
 
+uint64_t BinarySection::Count = 0;
+
 bool BinarySection::isELF() const { return BC.isELF(); }
 
 bool BinarySection::isMachO() const { return BC.isMachO(); }
@@ -65,14 +67,14 @@ BinarySection::hash(const BinaryData &BD,
   return Hash;
 }
 
-void BinarySection::emitAsData(MCStreamer &Streamer, StringRef NewName) const {
-  StringRef SectionName = !NewName.empty() ? NewName : getName();
+void BinarySection::emitAsData(MCStreamer &Streamer,
+                               const Twine &SectionName) const {
   StringRef SectionContents = getContents();
   MCSectionELF *ELFSection =
       BC.Ctx->getELFSection(SectionName, getELFType(), getELFFlags());
 
-  Streamer.SwitchSection(ELFSection);
-  Streamer.emitValueToAlignment(getAlignment());
+  Streamer.switchSection(ELFSection);
+  Streamer.emitValueToAlignment(getAlign());
 
   if (BC.HasRelocations && opts::HotData && isReordered())
     Streamer.emitLabel(BC.Ctx->getOrCreateSymbol("__hot_data_start"));
@@ -167,7 +169,7 @@ BinarySection::~BinarySection() {
     return;
   }
 
-  if (!isAllocatable() &&
+  if (!isAllocatable() && !hasValidSectionID() &&
       (!hasSectionRef() ||
        OutputContents.data() != getContents(Section).data())) {
     delete[] getOutputData();
@@ -250,7 +252,7 @@ void BinarySection::reorderContents(const std::vector<BinaryData *> &Order,
     // of the reordered segment to force LLVM to recognize and map this
     // section.
     MCSymbol *ZeroSym = BC.registerNameAtAddress("Zero", 0, 0, 0);
-    addRelocation(OS.tell(), ZeroSym, ELF::R_X86_64_64, 0xdeadbeef);
+    addRelocation(OS.tell(), ZeroSym, Relocation::getAbs64(), 0xdeadbeef);
 
     uint64_t Zero = 0;
     OS.write(reinterpret_cast<const char *>(&Zero), sizeof(Zero));

@@ -17,6 +17,7 @@
 #include <metashell/data/frame_stack.hpp>
 
 #include <cassert>
+#include <variant>
 
 namespace metashell
 {
@@ -29,7 +30,7 @@ namespace metashell
       assert(!_stack.empty());
       assert(_stack.back() < events_.size());
 
-      frame* f = mpark::get_if<frame>(&events_[_stack.back()]);
+      frame* f = std::get_if<frame>(&events_[_stack.back()]);
       assert(f);
       return *f;
     }
@@ -51,7 +52,7 @@ namespace metashell
       for (auto i : _stack)
       {
         assert(i < events_.size());
-        frame* f = mpark::get_if<frame>(&events_[i]);
+        frame* f = std::get_if<frame>(&events_[i]);
         assert(f);
         f->running_at(timestamp_);
       }

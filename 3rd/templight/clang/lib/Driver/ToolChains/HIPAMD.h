@@ -36,6 +36,10 @@ private:
   void constructLldCommand(Compilation &C, const JobAction &JA,
                            const InputInfoList &Inputs, const InputInfo &Output,
                            const llvm::opt::ArgList &Args) const;
+  void constructLlvmLinkCommand(Compilation &C, const JobAction &JA,
+                                const InputInfoList &Inputs,
+                                const InputInfo &Output,
+                                const llvm::opt::ArgList &Args) const;
 };
 
 } // end namespace AMDGCN
@@ -72,7 +76,7 @@ public:
   void AddHIPIncludeArgs(const llvm::opt::ArgList &DriverArgs,
                          llvm::opt::ArgStringList &CC1Args) const override;
   llvm::SmallVector<BitCodeLibraryInfo, 12>
-  getHIPDeviceLibs(const llvm::opt::ArgList &Args) const override;
+  getDeviceLibs(const llvm::opt::ArgList &Args) const override;
 
   SanitizerMask getSupportedSanitizers() const override;
 

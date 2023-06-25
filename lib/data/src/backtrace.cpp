@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <variant>
 
 namespace metashell
 {
@@ -145,7 +146,7 @@ namespace metashell
 
     void update(backtrace& bt_, const debugger_event& event_)
     {
-      mpark::visit([&bt_](const auto& e) { bt_.update(e); }, event_);
+      std::visit([&bt_](const auto& e) { bt_.update(e); }, event_);
     }
   } // namespace data
 } // namespace metashell

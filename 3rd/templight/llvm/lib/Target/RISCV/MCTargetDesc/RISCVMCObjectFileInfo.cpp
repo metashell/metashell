@@ -13,10 +13,14 @@
 #include "RISCVMCObjectFileInfo.h"
 #include "RISCVMCTargetDesc.h"
 #include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCSubtargetInfo.h"
 
 using namespace llvm;
 
 unsigned RISCVMCObjectFileInfo::getTextSectionAlignment() const {
   const MCSubtargetInfo *STI = getContext().getSubtargetInfo();
-  return STI->hasFeature(RISCV::FeatureStdExtC) ? 2 : 4;
+  return (STI->hasFeature(RISCV::FeatureStdExtC) ||
+          STI->hasFeature(RISCV::FeatureExtZca))
+             ? 2
+             : 4;
 }

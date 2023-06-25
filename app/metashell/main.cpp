@@ -44,6 +44,7 @@
 #include <map>
 #include <stdexcept>
 #include <string>
+#include <variant>
 
 namespace
 {
@@ -89,13 +90,12 @@ int main(int argc_, const char* argv_[])
     const parse_config_result r =
         parse_config(argc_, argv_, engines, det, &std::cout, &std::cerr);
 
-    if (const metashell::core::exit* e =
-            mpark::get_if<metashell::core::exit>(&r))
+    if (const metashell::core::exit* e = std::get_if<metashell::core::exit>(&r))
     {
       return e->with_error ? 1 : 0;
     }
 
-    const metashell::data::config cfg = mpark::get<metashell::data::config>(r);
+    const metashell::data::config cfg = std::get<metashell::data::config>(r);
 
     metashell::console_config ccfg(
         cfg.con_type, cfg.indent, cfg.syntax_highlight);

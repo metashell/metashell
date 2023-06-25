@@ -38,30 +38,34 @@ public:
     SEA_ISLANDS = 6,
     VOLCANIC_ISLANDS = 7,
     GFX9 = 8,
-    GFX10 = 9
+    GFX10 = 9,
+    GFX11 = 10
   };
 
 private:
   Triple TargetTriple;
 
 protected:
-  bool GCN3Encoding;
-  bool Has16BitInsts;
-  bool HasMadMixInsts;
-  bool HasMadMacF32Insts;
-  bool HasDsSrc2Insts;
-  bool HasSDWA;
-  bool HasVOP3PInsts;
-  bool HasMulI24;
-  bool HasMulU24;
-  bool HasSMulHi;
-  bool HasInv2PiInlineImm;
-  bool HasFminFmaxLegacy;
-  bool EnablePromoteAlloca;
-  bool HasTrigReducedRange;
-  unsigned MaxWavesPerEU;
-  unsigned LocalMemorySize;
-  char WavefrontSizeLog2;
+  bool GCN3Encoding = false;
+  bool Has16BitInsts = false;
+  bool HasTrue16BitInsts = false;
+  bool HasMadMixInsts = false;
+  bool HasMadMacF32Insts = false;
+  bool HasDsSrc2Insts = false;
+  bool HasSDWA = false;
+  bool HasVOP3PInsts = false;
+  bool HasMulI24 = true;
+  bool HasMulU24 = true;
+  bool HasSMulHi = false;
+  bool HasInv2PiInlineImm = false;
+  bool HasFminFmaxLegacy = true;
+  bool EnablePromoteAlloca = false;
+  bool HasTrigReducedRange = false;
+  unsigned EUsPerCU = 4;
+  unsigned MaxWavesPerEU = 10;
+  unsigned LocalMemorySize = 0;
+  unsigned AddressableLocalMemorySize = 0;
+  char WavefrontSizeLog2 = 0;
 
 public:
   AMDGPUSubtarget(const Triple &TT);
@@ -145,6 +149,8 @@ public:
     return Has16BitInsts;
   }
 
+  bool hasTrue16BitInsts() const { return HasTrue16BitInsts; }
+
   bool hasMadMixInsts() const {
     return HasMadMixInsts;
   }
@@ -204,6 +210,15 @@ public:
   unsigned getLocalMemorySize() const {
     return LocalMemorySize;
   }
+
+  unsigned getAddressableLocalMemorySize() const {
+    return AddressableLocalMemorySize;
+  }
+
+  /// Number of SIMDs/EUs (execution units) per "CU" ("compute unit"), where the
+  /// "CU" is the unit onto which workgroups are mapped. This takes WGP mode vs.
+  /// CU mode into account.
+  unsigned getEUsPerCU() const { return EUsPerCU; }
 
   Align getAlignmentForImplicitArgPtr() const {
     return isAmdHsaOS() ? Align(8) : Align(4);
@@ -267,7 +282,7 @@ public:
   /// \p WavefrontSize.
   AMDGPUDwarfFlavour getAMDGPUDwarfFlavour() const;
 
-  virtual ~AMDGPUSubtarget() {}
+  virtual ~AMDGPUSubtarget() = default;
 };
 
 } // end namespace llvm

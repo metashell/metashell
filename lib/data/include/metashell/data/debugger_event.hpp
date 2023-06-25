@@ -22,17 +22,16 @@
 #include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/data/pop_frame.hpp>
 
-#include <variant.hpp>
-
 #include <iosfwd>
 #include <optional>
 #include <string>
+#include <variant>
 
 namespace metashell
 {
   namespace data
   {
-    typedef mpark::variant<pop_frame, frame> debugger_event;
+    using debugger_event = std::variant<pop_frame, frame>;
 
     debugger_event to_debugger_event(event_data event_, metaprogram_mode mode_);
 

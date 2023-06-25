@@ -17,6 +17,7 @@
 #include <metashell/data/macro_def_or_undef.hpp>
 
 #include <iostream>
+#include <variant>
 
 namespace metashell
 {
@@ -24,13 +25,12 @@ namespace metashell
   {
     command_line_argument clang_argument(const macro_def_or_undef& m_)
     {
-      return mpark::visit(
-          [](const auto& d_) { return clang_argument(d_); }, m_);
+      return std::visit([](const auto& d_) { return clang_argument(d_); }, m_);
     }
 
     std::string to_string(const macro_def_or_undef& m_)
     {
-      return mpark::visit([](const auto& d_) { return to_string(d_); }, m_);
+      return std::visit([](const auto& d_) { return to_string(d_); }, m_);
     }
 
     std::ostream& operator<<(std::ostream& out_, const macro_def_or_undef& m_)

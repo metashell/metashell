@@ -22,6 +22,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <variant>
 #include <vector>
 
 using namespace metashell;
@@ -53,7 +54,7 @@ namespace
     std::ostringstream err;
     const core::parse_config_result r = parse_config(args_, nullptr, &err);
 
-    if (const core::exit* e = mpark::get_if<core::exit>(&r))
+    if (const core::exit* e = std::get_if<core::exit>(&r))
     {
       return e->with_error && !err.str().empty();
     }
@@ -65,7 +66,7 @@ namespace
 
   data::config parse_valid_config(std::initializer_list<const char*> args_)
   {
-    return mpark::get<data::config>(parse_config(args_));
+    return std::get<data::config>(parse_config(args_));
   }
 } // namespace
 
@@ -81,7 +82,7 @@ TEST(argument_parsing, recognising_engine_args)
 TEST(argument_parsing, engine_args_are_not_parsed)
 {
   auto r = parse_config({"--", "foo"});
-  ASSERT_TRUE(mpark::get_if<data::config>(&r));
+  ASSERT_TRUE(std::get_if<data::config>(&r));
 }
 
 TEST(argument_parsing, saving_is_enabled_by_default_during_parsing)
@@ -167,7 +168,7 @@ TEST(argument_parsing, it_is_an_error_to_specify_log_twice)
   const core::parse_config_result r =
       parse_config({"--log", "-", "--log", "-"});
 
-  const core::exit* const e = mpark::get_if<core::exit>(&r);
+  const core::exit* const e = std::get_if<core::exit>(&r);
 
   ASSERT_TRUE(e);
   ASSERT_TRUE(e->with_error);

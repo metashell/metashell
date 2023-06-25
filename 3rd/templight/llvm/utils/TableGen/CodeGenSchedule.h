@@ -17,11 +17,8 @@
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/STLExtras.h"
-#include "llvm/ADT/StringMap.h"
-#include "llvm/Support/ErrorHandling.h"
 #include "llvm/TableGen/Record.h"
 #include "llvm/TableGen/SetTheory.h"
-#include <map>
 
 namespace llvm {
 
@@ -148,8 +145,7 @@ struct CodeGenSchedClass {
 
   bool isKeyEqual(Record *IC, ArrayRef<unsigned> W,
                   ArrayRef<unsigned> R) const {
-    return ItinClassDef == IC && makeArrayRef(Writes) == W &&
-           makeArrayRef(Reads) == R;
+    return ItinClassDef == IC && ArrayRef(Writes) == W && ArrayRef(Reads) == R;
   }
 
   // Is this class generated from a variants if existing classes? Instructions

@@ -18,6 +18,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <variant>
 
 namespace metashell
 {
@@ -60,18 +61,18 @@ namespace metashell
 
     std::string to_string(const debugger_event& event_)
     {
-      return mpark::visit([](const auto& e) { return to_string(e); }, event_);
+      return std::visit([](const auto& e) { return to_string(e); }, event_);
     }
 
     std::ostream& operator<<(std::ostream& out_, const debugger_event& event_)
     {
-      mpark::visit([&out_](const auto& e) { out_ << e; }, event_);
+      std::visit([&out_](const auto& e) { out_ << e; }, event_);
       return out_;
     }
 
     std::optional<double> time_taken(const debugger_event& event_)
     {
-      return mpark::visit(
+      return std::visit(
           [](const auto& f) -> std::optional<double> {
             return impl::time_taken(f);
           },
@@ -80,7 +81,7 @@ namespace metashell
 
     void full_time_taken(debugger_event& event_, double full_time_)
     {
-      mpark::visit(
+      std::visit(
           [full_time_](auto& f) { impl::full_time_taken(f, full_time_); },
           event_);
     }

@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <sstream>
+#include <variant>
 
 namespace metashell
 {
@@ -253,12 +254,12 @@ namespace metashell
 
     data::status execution::wait()
     {
-      if (auto* proc = mpark::get_if<running_process>(&_process))
+      if (auto* proc = std::get_if<running_process>(&_process))
       {
         _process = wait_process(*proc);
       }
 
-      return mpark::get<data::status>(_process);
+      return std::get<data::status>(_process);
     }
   } // namespace process
 } // namespace metashell

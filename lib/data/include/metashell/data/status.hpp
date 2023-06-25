@@ -21,16 +21,15 @@
 #include <metashell/data/proc_stopsig.hpp>
 #include <metashell/data/proc_termsig.hpp>
 
-#include <variant.hpp>
-
 #include <iosfwd>
 #include <string>
+#include <variant>
 
 namespace metashell
 {
   namespace data
   {
-    using status = mpark::variant<proc_exit, proc_termsig, proc_stopsig>;
+    using status = std::variant<proc_exit, proc_termsig, proc_stopsig>;
 
     bool exit_success(const status&);
 

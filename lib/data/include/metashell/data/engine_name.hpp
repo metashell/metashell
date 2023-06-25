@@ -20,17 +20,16 @@
 #include <metashell/data/auto_engine_name.hpp>
 #include <metashell/data/real_engine_name.hpp>
 
-#include <variant.hpp>
-
 #include <iosfwd>
 #include <string>
 #include <string_view>
+#include <variant>
 
 namespace metashell
 {
   namespace data
   {
-    using engine_name = mpark::variant<auto_engine_name, real_engine_name>;
+    using engine_name = std::variant<auto_engine_name, real_engine_name>;
 
     std::string operator+(const std::string&, engine_name);
     std::string operator+(engine_name, const std::string&);

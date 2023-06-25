@@ -39,6 +39,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <variant>
 
 namespace metashell
 {
@@ -71,7 +72,7 @@ namespace metashell
           std::ostream* out_,
           const std::string& app_name_)
       {
-        if (auto engine = mpark::get_if<data::real_engine_name>(&engine_))
+        if (auto engine = std::get_if<data::real_engine_name>(&engine_))
         {
           const auto e = engines_.find(*engine);
           if (e == engines_.end())

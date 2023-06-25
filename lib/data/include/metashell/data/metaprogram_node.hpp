@@ -24,10 +24,9 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/operators.hpp>
 
-#include <variant.hpp>
-
 #include <iosfwd>
 #include <string>
+#include <variant>
 
 namespace metashell
 {
@@ -42,11 +41,11 @@ namespace metashell
       metaprogram_node(cpp_code);
       metaprogram_node(boost::filesystem::path);
 
-      const mpark::variant<type, token, cpp_code, boost::filesystem::path>&
+      const std::variant<type, token, cpp_code, boost::filesystem::path>&
       variant() const;
 
     private:
-      mpark::variant<type, token, cpp_code, boost::filesystem::path> _value;
+      std::variant<type, token, cpp_code, boost::filesystem::path> _value;
     };
 
     std::string to_string(const metaprogram_node&);
@@ -57,7 +56,7 @@ namespace metashell
     template <class Visitor>
     void visit(Visitor&& visitor_, const metaprogram_node& n_)
     {
-      mpark::visit(std::forward<Visitor>(visitor_), n_.variant());
+      std::visit(std::forward<Visitor>(visitor_), n_.variant());
     }
   } // namespace data
 } // namespace metashell
