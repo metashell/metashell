@@ -93,8 +93,4 @@ namespace boost {
     }
 }
 
-#ifdef BOOST_GRAPH_USE_MPI
-#include <boost/property_map/parallel/vector_property_map.hpp>
-#endif
-
 #endif

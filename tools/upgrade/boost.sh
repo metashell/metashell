@@ -74,10 +74,12 @@ cd tmp
   get_lib conversion
   get_lib core
   get_lib date_time
+  get_lib describe
   get_lib detail
   get_lib exception
   get_lib filesystem
   get_lib foreach
+  get_lib format
   get_lib function
   get_lib functional
   get_lib function_types
@@ -92,6 +94,7 @@ cd tmp
   get_lib math
   get_lib move
   get_lib mpl
+  get_lib mp11
   get_lib multi_index
   get_lib numeric_conversion
   get_lib optional
@@ -123,8 +126,8 @@ cd tmp
   get_lib winapi
 
  # These warnings can not be disabled
- sed -i 's/^[ \t]*#[ \t]*pragma[ \t]*message.*//' \
-   $(find "${BOOST_DIR}" -name '*.hpp')
+ find "${BOOST_DIR}" -name '*.hpp' \
+   -exec sed -i 's/^[ \t]*#[ \t]*pragma[ \t]*message.*//'\;
 
  rm \
    "${BOOST_DIR}/atomic/src/wait_ops_windows.cpp" \

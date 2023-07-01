@@ -28,6 +28,7 @@ target_link_libraries(
   ${PROJECT_NAME}
   
   INTERFACE
+    boost::describe
     boost::detail
     boost::integer
 )

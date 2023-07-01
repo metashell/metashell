@@ -24,7 +24,7 @@
 #        ifdef BOOST_REGEX_BUILD_DLL
 #           error _RWSTD_COMPILE_INSTANTIATE must not be defined when building regex++ as a DLL
 #        else
-
+#           pragma message("Defining _RWSTD_COMPILE_INSTANTIATE when linking to the DLL version of the RTL may produce memory corruption problems in std::basic_string, as a result of separate versions of basic_string's static data in the RTL and you're exe/dll: be warned!!")
 #        endif
 #     endif
 #     ifndef _RTLDLL

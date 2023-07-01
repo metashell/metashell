@@ -21,8 +21,11 @@ if (WIN32)
   set(LIB_TYPE INTERFACE)
 else()
   aux_source_directory(src SOURCES)
+  list(REMOVE_ITEM SOURCES "src/wait_on_address.cpp")
   add_library(${PROJECT_NAME} STATIC ${SOURCES})
   set(LIB_TYPE PUBLIC)
+
+  target_compile_options(${PROJECT_NAME} PUBLIC "-msse4.1")
 endif()
 
 add_library(boost::atomic ALIAS ${PROJECT_NAME})

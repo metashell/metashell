@@ -166,7 +166,7 @@ struct chlit_grammar :
 
             // the rule for a character literal
             ch_lit
-                =   eps_p[self.value = phx::val(0), self.long_lit = phx::val(false)]
+                =   eps_p[(self.value = phx::val(0), self.long_lit = phx::val(false))]
                     >> !ch_p('L')[self.long_lit = phx::val(true)]
                     >>  ch_p('\'')
                     >> +(   (
@@ -195,6 +195,11 @@ struct chlit_grammar :
                                     [
                                         impl::compose(self.value, self.long_lit,
                                             phx::var(self.overflow), phx::val(0x0b))
+                                    ]
+                                |   (ch_p('e') | ch_p('E'))   // ESC
+                                    [
+                                        impl::compose(self.value, self.long_lit,
+                                            phx::var(self.overflow), phx::val(0x1b))
                                     ]
                                 |   ch_p('f')    // FF
                                     [

@@ -17,6 +17,10 @@
 
 namespace boost { namespace spirit { namespace detail
 {
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4512) // assignment operator could not be generated.
+#endif
     template <typename Context>
     struct what_function
     {
@@ -30,7 +34,7 @@ namespace boost { namespace spirit { namespace detail
         void operator()(Component const& component) const
         {
 #if BOOST_WORKAROUND(BOOST_MSVC, BOOST_TESTED_AT(1600))
-            component; // suppresses warning: C4100: 'component' : unreferenced formal parameter
+            (void)component; // suppresses warning: C4100: 'component' : unreferenced formal parameter
 #endif
             boost::get<std::list<info> >(what.value).
                 push_back(component.what(context));
@@ -38,10 +42,10 @@ namespace boost { namespace spirit { namespace detail
 
         info& what;
         Context& context;
-
-        // silence MSVC warning C4512: assignment operator could not be generated
-        BOOST_DELETED_FUNCTION(what_function& operator= (what_function const&))
     };
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 }}}
 
 #endif
