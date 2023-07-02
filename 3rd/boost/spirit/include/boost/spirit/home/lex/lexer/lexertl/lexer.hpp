@@ -25,8 +25,6 @@
 #include <boost/spirit/home/support/detail/lexer/debug.hpp>
 #endif
 
-#include <boost/foreach.hpp>
-
 #include <iterator> // for std::iterator_traits
 
 namespace boost { namespace spirit { namespace lex { namespace lexertl
@@ -172,6 +170,10 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
         typedef iterator<Functor> iterator_type;
 
     private:
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4512) // assignment operator could not be generated.
+#endif
         // this type is purely used for the iterator_type construction below
         struct iterator_data_type
         {
@@ -187,10 +189,10 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
             boost::lexer::basic_state_machine<char_type> const& state_machine_;
             boost::lexer::basic_rules<char_type> const& rules_;
             semantic_actions_type const& actions_;
-
-            // silence MSVC warning C4512: assignment operator could not be generated
-            BOOST_DELETED_FUNCTION(iterator_data_type& operator= (iterator_data_type const&))
         };
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
     public:
         //  Return the start iterator usable for iterating over the generated
@@ -302,13 +304,14 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
             if (state == all_states_id) {
                 // add the action to all known states
                 typedef typename
-                    basic_rules_type::string_size_t_map::value_type
-                state_type;
+                    basic_rules_type::string_size_t_map::const_iterator
+                state_iterator;
 
                 std::size_t states = rules_.statemap().size();
-                BOOST_FOREACH(state_type const& s, rules_.statemap()) {
+                for (state_iterator it = rules_.statemap().begin(),
+                                    end = rules_.statemap().end(); it != end; ++it) {
                     for (std::size_t j = 0; j < states; ++j)
-                        actions_.add_action(unique_id + j, s.second, wrapper_type::call(act));
+                        actions_.add_action(unique_id + j, it->second, wrapper_type::call(act));
                 }
             }
             else {

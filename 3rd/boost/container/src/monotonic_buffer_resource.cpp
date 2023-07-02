@@ -18,6 +18,7 @@
 #include <boost/container/detail/min_max.hpp>
 #include <boost/intrusive/detail/math.hpp>
 #include <boost/container/throw_exception.hpp>
+#include <new>
 
 
 #include <cstddef>
@@ -135,8 +136,14 @@ void *monotonic_buffer_resource::allocate_from_current(std::size_t aligner, std:
 
 void* monotonic_buffer_resource::do_allocate(std::size_t bytes, std::size_t alignment)
 {
-   if(alignment > memory_resource::max_align)
+   if(alignment > memory_resource::max_align){
+     (void)bytes; (void)alignment;
+      #if defined(BOOST_CONTAINER_USER_DEFINED_THROW_CALLBACKS) || defined(BOOST_NO_EXCEPTIONS)
       throw_bad_alloc();
+      #else
+      throw std::bad_alloc();
+      #endif
+   }
 
    //See if there is room in current buffer
    std::size_t aligner = 0u;
@@ -159,7 +166,7 @@ void monotonic_buffer_resource::do_deallocate(void* p, std::size_t bytes, std::s
 {  (void)p; (void)bytes;  (void)alignment;  }
 
 bool monotonic_buffer_resource::do_is_equal(const memory_resource& other) const BOOST_NOEXCEPT
-{  return this == dynamic_cast<const monotonic_buffer_resource*>(&other);  }
+{  return this == &other;  }
 
 }  //namespace pmr {
 }  //namespace container {

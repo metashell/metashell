@@ -36,11 +36,11 @@
 #         ifndef BOOST_FT_CC_IMPLICIT_THISCALL
 #         define BOOST_FT_CC_IMPLICIT_THISCALL non_variadic|member|callable_builtin
 #         ifndef BOOST_FT_CONFIG_OK
-
-
-
-
-
+#           pragma message("INFO| /Gd /Gr /Gz will compiler options will cause")
+#           pragma message("INFO| a compile error.")
+#           pragma message("INFO| Reconfigure Boost.FunctionTypes in this case.")
+#           pragma message("INFO| This message can be suppressed by defining")
+#           pragma message("INFO| BOOST_FT_CONFIG_OK.")
 #         endif
 #         endif
 #       else 
@@ -96,7 +96,7 @@
 #   if BOOST_BORLANDC < 0x550
 #     error "unsupported compiler version"
 #   elif BOOST_BORLANDC > 0x565
-
+#     pragma message("WARNING: library untested with this compiler version")
 #   endif
 
 #   ifdef BOOST_FT_AUTODETECT_CALLING_CONVENTIONS

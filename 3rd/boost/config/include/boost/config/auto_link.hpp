@@ -117,8 +117,8 @@ BOOST_LIB_SUFFIX:     Static/import libraries extension (".lib", ".a") for the c
 // error check:
 //
 #if defined(__MSVC_RUNTIME_CHECKS) && !defined(_DEBUG)
-
-
+#  pragma message("Using the /RTC option without specifying a debug runtime will lead to linker errors")
+#  pragma message("Hint: go to the code generation options and switch to one of the debugging runtimes")
 #  error "Incompatible build options"
 #endif
 //
@@ -182,19 +182,20 @@ BOOST_LIB_SUFFIX:     Static/import libraries extension (".lib", ".a") for the c
      // vc14.1:
 #    define BOOST_LIB_TOOLSET "vc141"
 
-#  elif defined(BOOST_MSVC)
+#  elif defined(BOOST_MSVC) && (BOOST_MSVC < 1930)
 
      // vc14.2:
 #    define BOOST_LIB_TOOLSET "vc142"
 
+#  elif defined(BOOST_MSVC)
+
+     // vc14.3:
+#    define BOOST_LIB_TOOLSET "vc143"
+
 #  elif defined(BOOST_EMBTC_WINDOWS)
 
      // Embarcadero Clang based compilers:
-#    if defined(BOOST_EMBTC_WIN32C)
-#      define BOOST_LIB_TOOLSET "bcb32"
-#    elif defined(BOOST_EMBTC_WIN64)
-#      define BOOST_LIB_TOOLSET "bcb64"
-#    endif
+#    define BOOST_LIB_TOOLSET "embtc"
 
 #  elif defined(BOOST_BORLANDC)
 
@@ -247,11 +248,11 @@ BOOST_LIB_SUFFIX:     Static/import libraries extension (".lib", ".a") for the c
 #        elif defined(_DEBUG)\
                && defined(BOOST_DEBUG_PYTHON) && defined(BOOST_LINKING_PYTHON)
 #            define BOOST_LIB_RT_OPT "-gydp"
-
+#            pragma message("warning: STLport debug versions are built with /D_STLP_DEBUG=1")
 #            error "Build options aren't compatible with pre-built libraries"
 #        elif defined(_DEBUG)
 #            define BOOST_LIB_RT_OPT "-gdp"
-
+#            pragma message("warning: STLport debug versions are built with /D_STLP_DEBUG=1")
 #            error "Build options aren't compatible with pre-built libraries"
 #        else
 #            define BOOST_LIB_RT_OPT "-p"
@@ -267,11 +268,11 @@ BOOST_LIB_SUFFIX:     Static/import libraries extension (".lib", ".a") for the c
 #        elif defined(_DEBUG)\
                && defined(BOOST_DEBUG_PYTHON) && defined(BOOST_LINKING_PYTHON)
 #            define BOOST_LIB_RT_OPT "-gydpn"
-
+#            pragma message("warning: STLport debug versions are built with /D_STLP_DEBUG=1")
 #            error "Build options aren't compatible with pre-built libraries"
 #        elif defined(_DEBUG)
 #            define BOOST_LIB_RT_OPT "-gdpn"
-
+#            pragma message("warning: STLport debug versions are built with /D_STLP_DEBUG=1")
 #            error "Build options aren't compatible with pre-built libraries"
 #        else
 #            define BOOST_LIB_RT_OPT "-pn"
@@ -301,11 +302,11 @@ BOOST_LIB_SUFFIX:     Static/import libraries extension (".lib", ".a") for the c
 #        elif defined(_DEBUG)\
                && defined(BOOST_DEBUG_PYTHON) && defined(BOOST_LINKING_PYTHON)
 #             define BOOST_LIB_RT_OPT "-sgydp"
-
+#            pragma message("warning: STLport debug versions are built with /D_STLP_DEBUG=1")
 #            error "Build options aren't compatible with pre-built libraries"
 #        elif defined(_DEBUG)
 #             define BOOST_LIB_RT_OPT "-sgdp"
-
+#            pragma message("warning: STLport debug versions are built with /D_STLP_DEBUG=1")
 #            error "Build options aren't compatible with pre-built libraries"
 #        else
 #            define BOOST_LIB_RT_OPT "-sp"
@@ -321,11 +322,11 @@ BOOST_LIB_SUFFIX:     Static/import libraries extension (".lib", ".a") for the c
 #        elif defined(_DEBUG)\
                && defined(BOOST_DEBUG_PYTHON) && defined(BOOST_LINKING_PYTHON)
 #             define BOOST_LIB_RT_OPT "-sgydpn"
-
+#            pragma message("warning: STLport debug versions are built with /D_STLP_DEBUG=1")
 #            error "Build options aren't compatible with pre-built libraries"
 #        elif defined(_DEBUG)
 #             define BOOST_LIB_RT_OPT "-sgdpn"
-
+#            pragma message("warning: STLport debug versions are built with /D_STLP_DEBUG=1")
 #            error "Build options aren't compatible with pre-built libraries"
 #        else
 #            define BOOST_LIB_RT_OPT "-spn"
@@ -456,27 +457,27 @@ BOOST_LIB_SUFFIX:     Static/import libraries extension (".lib", ".a") for the c
 #ifdef BOOST_AUTO_LINK_NOMANGLE
 #  pragma comment(lib, BOOST_STRINGIZE(BOOST_LIB_NAME) BOOST_LIB_SUFFIX)
 #  ifdef BOOST_LIB_DIAGNOSTIC
-
+#     pragma message ("Linking to lib file: " BOOST_STRINGIZE(BOOST_LIB_NAME) BOOST_LIB_SUFFIX)
 #  endif
 #elif defined(BOOST_AUTO_LINK_TAGGED)
 #  pragma comment(lib, BOOST_LIB_PREFIX BOOST_STRINGIZE(BOOST_LIB_NAME) BOOST_LIB_THREAD_OPT BOOST_LIB_RT_OPT BOOST_LIB_ARCH_AND_MODEL_OPT BOOST_LIB_SUFFIX)
 #  ifdef BOOST_LIB_DIAGNOSTIC
-
+#     pragma message ("Linking to lib file: " BOOST_LIB_PREFIX BOOST_STRINGIZE(BOOST_LIB_NAME) BOOST_LIB_THREAD_OPT BOOST_LIB_RT_OPT BOOST_LIB_ARCH_AND_MODEL_OPT BOOST_LIB_SUFFIX)
 #  endif
 #elif defined(BOOST_AUTO_LINK_SYSTEM)
 #  pragma comment(lib, BOOST_LIB_PREFIX BOOST_STRINGIZE(BOOST_LIB_NAME) BOOST_LIB_SUFFIX)
 #  ifdef BOOST_LIB_DIAGNOSTIC
-
+#     pragma message ("Linking to lib file: " BOOST_LIB_PREFIX BOOST_STRINGIZE(BOOST_LIB_NAME) BOOST_LIB_SUFFIX)
 #  endif
 #elif defined(BOOST_LIB_BUILDID)
 #  pragma comment(lib, BOOST_LIB_PREFIX BOOST_STRINGIZE(BOOST_LIB_NAME) "-" BOOST_LIB_TOOLSET BOOST_LIB_THREAD_OPT BOOST_LIB_RT_OPT BOOST_LIB_ARCH_AND_MODEL_OPT "-" BOOST_LIB_VERSION "-" BOOST_STRINGIZE(BOOST_LIB_BUILDID) BOOST_LIB_SUFFIX)
 #  ifdef BOOST_LIB_DIAGNOSTIC
-
+#     pragma message ("Linking to lib file: " BOOST_LIB_PREFIX BOOST_STRINGIZE(BOOST_LIB_NAME) "-" BOOST_LIB_TOOLSET BOOST_LIB_THREAD_OPT BOOST_LIB_RT_OPT BOOST_LIB_ARCH_AND_MODEL_OPT "-" BOOST_LIB_VERSION "-" BOOST_STRINGIZE(BOOST_LIB_BUILDID) BOOST_LIB_SUFFIX)
 #  endif
 #else
 #  pragma comment(lib, BOOST_LIB_PREFIX BOOST_STRINGIZE(BOOST_LIB_NAME) "-" BOOST_LIB_TOOLSET BOOST_LIB_THREAD_OPT BOOST_LIB_RT_OPT BOOST_LIB_ARCH_AND_MODEL_OPT "-" BOOST_LIB_VERSION BOOST_LIB_SUFFIX)
 #  ifdef BOOST_LIB_DIAGNOSTIC
-
+#     pragma message ("Linking to lib file: " BOOST_LIB_PREFIX BOOST_STRINGIZE(BOOST_LIB_NAME) "-" BOOST_LIB_TOOLSET BOOST_LIB_THREAD_OPT BOOST_LIB_RT_OPT BOOST_LIB_ARCH_AND_MODEL_OPT "-" BOOST_LIB_VERSION BOOST_LIB_SUFFIX)
 #  endif
 #endif
 

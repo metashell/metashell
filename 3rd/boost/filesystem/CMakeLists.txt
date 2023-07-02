@@ -27,9 +27,14 @@ target_include_directories(
   PUBLIC ${PROJECT_SOURCE_DIR}/include
 )
 
+target_compile_definitions(
+  ${PROJECT_NAME} PUBLIC BOOST_FILESYSTEM_NO_CXX20_ATOMIC_REF
+)
+
 target_link_libraries(
   ${PROJECT_NAME}
 
+  boost::atomic
   boost::container_hash
   boost::io
   boost::iterator

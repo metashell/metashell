@@ -33,19 +33,18 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/detail/workaround.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
+#include <cstdlib>
 #include <algorithm>
 #include <exception> // for std::exception
+#include <iostream>
+#include <map>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 #include <utility>
-#include <map>
-#include <iostream>
-#include <cstdlib>
 #include <boost/throw_exception.hpp>
 #include <boost/regex.hpp>
 #include <boost/function.hpp>
-#include <boost/bind.hpp>
 #include <boost/graph/dll_import_export.hpp>
 #include <boost/graph/graphviz.hpp>
 
@@ -334,6 +333,8 @@ namespace read_graphviz_detail
                         BOOST_ASSERT(!"Definition of punctuation_token does "
                                       "not match switch statement");
                     }
+                    // Prevent static analyzers complaining about fallthrough:
+                    break;
                 }
                 default:
                     BOOST_ASSERT(!"Definition of punctuation_token does not "
@@ -827,7 +828,7 @@ namespace read_graphviz_detail
                 get();
                 if (peek().type != token::identifier)
                     error("Wanted identifier as port angle");
-                if (id.angle != "")
+                if (!id.angle.empty())
                     error("Duplicate port angle");
                 id.angle = get().normalized_value;
                 goto parse_more;

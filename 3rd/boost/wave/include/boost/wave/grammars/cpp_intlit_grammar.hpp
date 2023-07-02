@@ -101,16 +101,16 @@ struct intlit_grammar :
                             (ch_p('X') | ch_p('x'))
                         >>  uint_parser<uint_literal_type, 16>()
                             [
-                                self.val = phx::arg1,
-                                phx::var(self.is_unsigned) = true
+                                (self.val = phx::arg1,
+                                 phx::var(self.is_unsigned) = true)
                             ]
                     ,
 
                     oct_lit =
                        !uint_parser<uint_literal_type, 8>()
                         [
-                            self.val = phx::arg1,
-                            phx::var(self.is_unsigned) = true
+                            (self.val = phx::arg1,
+                             phx::var(self.is_unsigned) = true)
                         ]
                     ,
 

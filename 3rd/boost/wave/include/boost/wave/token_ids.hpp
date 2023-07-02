@@ -14,6 +14,7 @@
 #define BOOST_TOKEN_IDS_HPP_414E9A58_F079_4789_8AFF_513815CE475B_INCLUDED
 
 #include <string>
+#include <cstdint>
 
 #include <boost/wave/wave_config.hpp>
 
@@ -43,7 +44,7 @@ namespace wave {
 
 ///////////////////////////////////////////////////////////////////////////////
 //  the token_category helps to classify the different token types
-enum token_category {
+enum token_category : std::uint32_t {
     IdentifierTokenType         = 0x08040000,
     ParameterTokenType          = 0x08840000,
     ExtParameterTokenType       = 0x088C0000,
@@ -78,7 +79,7 @@ enum token_category {
 
 ///////////////////////////////////////////////////////////////////////////////
 //  the token_id assigns unique numbers to the different C++ lexemes
-enum token_id {
+enum token_id : std::uint32_t {
     T_UNKNOWN      = 0,
     T_FIRST_TOKEN  = 256,
     T_AND          = TOKEN_FROM_ID(T_FIRST_TOKEN, OperatorTokenType),
@@ -328,6 +329,26 @@ enum token_id {
     T_EXTPARAMETERBASE = TOKEN_FROM_ID(T_LAST_TOKEN+4, ExtParameterTokenType),
     T_OPTPARAMETERBASE = TOKEN_FROM_ID(T_LAST_TOKEN+4, OptParameterTokenType)
 };
+
+///////////////////////////////////////////////////////////////////////////////
+//  token_category and token_id may be used together
+constexpr token_id operator&(token_id a, token_category b)
+{
+    return static_cast<token_id>(
+        static_cast<std::uint32_t>(a) & static_cast<std::uint32_t>(b));
+}
+
+constexpr token_id operator|(token_id a, token_category b)
+{
+    return static_cast<token_id>(
+        static_cast<std::uint32_t>(a) | static_cast<std::uint32_t>(b));
+}
+
+constexpr bool operator==(token_category a, token_id b)
+{
+    return static_cast<std::uint32_t>(a) == static_cast<std::uint32_t>(b);
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //  redefine the TOKEN_FROM_ID macro to be more type safe

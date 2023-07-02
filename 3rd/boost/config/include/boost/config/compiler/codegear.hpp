@@ -16,7 +16,7 @@
 #  if defined(BOOST_ASSERT_CONFIG)
 #     error "boost: Unknown compiler version - please run the configure tests and report the results"
 #  else
-
+#     pragma message( "boost: Unknown compiler version - please run the configure tests and report the results")
 #  endif
 #endif
 
@@ -260,6 +260,7 @@
 #define BOOST_NO_CXX11_UNIFIED_INITIALIZATION_SYNTAX
 #define BOOST_NO_CXX11_USER_DEFINED_LITERALS
 #define BOOST_NO_CXX11_ALIGNAS
+#define BOOST_NO_CXX11_ALIGNOF
 #define BOOST_NO_CXX11_TRAILING_RESULT_TYPES
 #define BOOST_NO_CXX11_INLINE_NAMESPACES
 #define BOOST_NO_CXX11_REF_QUALIFIERS

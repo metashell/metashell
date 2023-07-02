@@ -34,6 +34,7 @@ target_link_libraries(
   boost::assert
   boost::config
   boost::filesystem
+  boost::format
   boost::iterator
   boost::multi_index
   boost::pool

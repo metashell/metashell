@@ -37,7 +37,7 @@ namespace metashell
 
       bool cpp_source(const boost::filesystem::path& path_)
       {
-        const std::string ext = extension(path_);
+        const std::string ext = path_.extension().string();
         const auto len = ext.size();
         if (len > 1 && ext[0] == '.')
         {

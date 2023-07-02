@@ -464,11 +464,7 @@ template <typename ContextT>
 void call_skipped_token_hook(ContextT& ctx,
     typename ContextT::token_type const& skipped)
 {
-#if BOOST_WAVE_USE_DEPRECIATED_PREPROCESSING_HOOKS != 0
-    ctx.get_hooks().skipped_token(skipped);
-#else
     ctx.get_hooks().skipped_token(ctx.derived(), skipped);
-#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////

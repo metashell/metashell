@@ -26,8 +26,6 @@
 #include <boost/range/iterator_range_core.hpp>
 #include <boost/fusion/include/deduce_sequence.hpp>
 
-#include <boost/mpl/print.hpp>
-
 namespace boost { namespace spirit { namespace karma { namespace detail
 {
     // Helper meta-function allowing to evaluate weak substitutability and
@@ -273,6 +271,10 @@ namespace boost { namespace spirit { namespace karma { namespace detail
         mutable Iterator end;
     };
 
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4512) // assignment operator could not be generated.
+#endif
     template <typename Iterator>
     struct pass_container_base<Iterator&>
     {
@@ -382,10 +384,10 @@ namespace boost { namespace spirit { namespace karma { namespace detail
         }
 
         F f;
-
-        // silence MSVC warning C4512: assignment operator could not be generated
-        BOOST_DELETED_FUNCTION(pass_container& operator= (pass_container const&))
     };
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 }}}}
 
 #endif

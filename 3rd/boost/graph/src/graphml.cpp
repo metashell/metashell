@@ -18,6 +18,9 @@
 #include <boost/graph/dll_import_export.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <map>
+#include <string>
+#include <vector>
 
 using namespace boost;
 
@@ -162,8 +165,8 @@ public:
                 std::string local_directed
                     = edge.second.get(path("<xmlattr>/directed"), "");
                 bool is_directed
-                    = (local_directed == "" ? default_directed
-                                            : local_directed == "true");
+                    = (local_directed.empty() ? default_directed
+                                              : local_directed == "true");
                 if (is_directed != m_g.is_directed())
                 {
                     if (is_directed)
