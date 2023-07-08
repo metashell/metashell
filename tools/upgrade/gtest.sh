@@ -31,7 +31,7 @@ then
 fi
 
 GTEST_VERSION="$1"
-GTEST_ARCHIVE="release-${GTEST_VERSION}.tar.gz"
+GTEST_ARCHIVE="v${GTEST_VERSION}.tar.gz"
 
 DIRS="googletest/include googletest/src googlemock/include googlemock/src"
 
@@ -41,7 +41,7 @@ cd 3rd
   for DIR in ${DIRS}
   do
     tar -xvzf "${GTEST_ARCHIVE}" \
-      "googletest-release-${GTEST_VERSION}/${DIR}" \
+      "googletest-${GTEST_VERSION}/${DIR}" \
       --transform 's/^[^\/]*\///'
   done
   rm "${GTEST_ARCHIVE}"
