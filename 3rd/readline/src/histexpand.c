@@ -1,6 +1,6 @@
 /* histexpand.c -- history expansion. */
 
-/* Copyright (C) 1989-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1989-2021 Free Software Foundation, Inc.
 
    This file contains the GNU History Library (History), a set of
    routines for managing the text of previously typed lines.
@@ -57,7 +57,7 @@
 
 #define fielddelim(c)	(whitespace(c) || (c) == '\n')
 
-typedef int _hist_search_func_t PARAMS((const char *, int));
+typedef int _hist_search_func_t (const char *, int);
 
 static char error_pointer;
 
@@ -70,14 +70,14 @@ static int subst_rhs_len;
    specifications from word designators.  Static for now */
 static char *history_event_delimiter_chars = HISTORY_EVENT_DELIMITERS;
 
-static char *get_history_word_specifier PARAMS((char *, char *, int *));
-static int history_tokenize_word PARAMS((const char *, int));
-static char **history_tokenize_internal PARAMS((const char *, int, int *));
-static char *history_substring PARAMS((const char *, int, int));
-static void freewords PARAMS((char **, int));
-static char *history_find_word PARAMS((char *, int));
+static char *get_history_word_specifier (char *, char *, int *);
+static int history_tokenize_word (const char *, int);
+static char **history_tokenize_internal (const char *, int, int *);
+static char *history_substring (const char *, int, int);
+static void freewords (char **, int);
+static char *history_find_word (char *, int);
 
-static char *quote_breaks PARAMS((char *));
+static char *quote_breaks (char *);
 
 /* Variables exported by this file. */
 /* The character that represents the start of a history expansion
@@ -89,7 +89,7 @@ char history_expansion_char = '!';
 char history_subst_char = '^';
 
 /* During tokenization, if this character is seen as the first character
-   of a word, then it, and all subsequent characters upto a newline are
+   of a word, then it, and all subsequent characters up to a newline are
    ignored.  For a Bourne shell, this should be '#'.  Bash special cases
    the interactive comment character to not be a comment delimiter. */
 char history_comment_char = '\0';
@@ -180,7 +180,7 @@ get_history_event (const char *string, int *caller_index, int delimiting_quote)
     }
 
   /* Hack case of numeric line specification. */
-  if (string[i] == '-')
+  if (string[i] == '-' && _rl_digit_p (string[i+1]))
     {
       sign = -1;
       i++;
@@ -230,10 +230,12 @@ get_history_event (const char *string, int *caller_index, int delimiting_quote)
         }
 
 #endif /* HANDLE_MULTIBYTE */
-      if ((!substring_okay && (whitespace (c) || c == ':' ||
-          (history_event_delimiter_chars && member (c, history_event_delimiter_chars)) ||
-	  (history_search_delimiter_chars && member (c, history_search_delimiter_chars)) ||
-	  string[i] == delimiting_quote)) ||
+      if ((!substring_okay &&
+	    (whitespace (c) || c == ':' ||
+	    (i > local_index && history_event_delimiter_chars && c == '-') ||
+	    (c != '-' && history_event_delimiter_chars && member (c, history_event_delimiter_chars)) ||
+	    (history_search_delimiter_chars && member (c, history_search_delimiter_chars)) ||
+	    string[i] == delimiting_quote)) ||
 	  string[i] == '\n' ||
 	  (substring_okay && string[i] == '?'))
 	break;
@@ -409,7 +411,10 @@ hist_error(char *s, int start, int current, int errtype)
     }
 
   temp = (char *)xmalloc (ll + elen + 3);
-  strncpy (temp, s + start, ll);
+  if (s[start])
+    strncpy (temp, s + start, ll);
+  else
+    ll = 0;
   temp[ll] = ':';
   temp[ll + 1] = ' ';
   strcpy (temp + ll + 2, emsg);
@@ -624,7 +629,7 @@ history_expand_internal (char *string, int start, int qc, int *end_index_ptr, ch
 	     return an error state after adding this line to the
 	     history. */
 	case 'p':
-	  print_only++;
+	  print_only = 1;
 	  break;
 
 	  /* :t discards all but the last part of the pathname. */
@@ -1202,11 +1207,34 @@ history_expand (char *hstring, char **output)
 	     characters in history_no_expand_chars, then it is not a
 	     candidate for expansion of any kind. */
 	  if (cc == 0 || member (cc, history_no_expand_chars) ||
-			 (dquote && cc == '"') ||
-	  		 (history_inhibit_expansion_function && (*history_inhibit_expansion_function) (string, i)))
+			 (dquote && cc == '"'))
 	    {
 	      ADD_CHAR (string[i]);
 	      break;
+	    }
+
+	  /* If the application has defined a function to determine whether
+	     or not a history expansion should be performed, call it here. */
+	  /* We check against what we've expanded so far, with the current
+	     expansion appended, because that seems to be what csh does. We
+	     decide to expand based on what we have to this point, not what
+	     we started with. */
+	  if (history_inhibit_expansion_function)
+	    {
+	      int save_j, temp;
+
+	      save_j = j;
+	      ADD_CHAR (string[i]);
+	      ADD_CHAR (cc);
+
+	      temp = (*history_inhibit_expansion_function) (result, save_j);
+	      if (temp)
+		{
+		  result[--j] = '\0';	/* `unadd' cc, leaving ADD_CHAR(string[i]) */
+		  break;
+		}
+	      else
+	        result[j = save_j] = '\0';
 	    }
 
 #if defined (NO_BANG_HASH_MODIFIERS)
@@ -1355,6 +1383,11 @@ get_history_word_specifier (char *spec, char *from, int *caller_index)
 	{
 	  i++;
 	  last = '$';
+	}
+      else if (spec[i] == '^')
+	{
+	  i++;
+	  last = 1;
 	}
 #if 0
       else if (!spec[i] || spec[i] == ':')
