@@ -26,3 +26,4 @@ target_include_directories(
   PUBLIC ${PROJECT_SOURCE_DIR}/include
 )
 
+target_compile_definitions(${PROJECT_NAME} PUBLIC YAML_CPP_STATIC_DEFINE)
