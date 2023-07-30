@@ -1,6 +1,6 @@
 /* funmap.c -- attach names to functions. */
 
-/* Copyright (C) 1987-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1987-2021 Free Software Foundation, Inc.
 
    This file is part of the GNU Readline Library (Readline), a library
    for reading lines of text with interactive input and history editing.      
@@ -46,7 +46,7 @@ typedef int QSFUNC (const void *, const void *);
 typedef int QSFUNC ();
 #endif
 
-extern int _rl_qsort_string_compare PARAMS((char **, char **));
+extern int _rl_qsort_string_compare (char **, char **);
 
 FUNMAP **funmap;
 static int funmap_size;
@@ -73,6 +73,7 @@ static const FUNMAP default_funmap[] = {
   { "capitalize-word", rl_capitalize_word },
   { "character-search", rl_char_search },
   { "character-search-backward", rl_backward_char_search },
+  { "clear-display", rl_clear_display },
   { "clear-screen", rl_clear_screen },
   { "complete", rl_complete },
   { "copy-backward-word", rl_copy_backward_word },
@@ -92,6 +93,7 @@ static const FUNMAP default_funmap[] = {
   { "end-of-history", rl_end_of_history },
   { "end-of-line", rl_end_of_line },
   { "exchange-point-and-mark", rl_exchange_point_and_mark },
+  { "fetch-history", rl_fetch_history },
   { "forward-backward-delete-char", rl_rubout_or_delete },
   { "forward-byte", rl_forward_byte },
   { "forward-char", rl_forward_char },
@@ -116,6 +118,7 @@ static const FUNMAP default_funmap[] = {
   { "non-incremental-forward-search-history-again", rl_noninc_forward_search_again },
   { "non-incremental-reverse-search-history-again", rl_noninc_reverse_search_again },
   { "old-menu-complete", rl_old_menu_complete },
+  { "operate-and-get-next", rl_operate_and_get_next },
   { "overwrite-mode", rl_overwrite_mode },
 #if defined (_WIN32)
   { "paste-from-clipboard", rl_paste_from_clipboard },
@@ -157,7 +160,7 @@ static const FUNMAP default_funmap[] = {
   { "vi-backward-bigword", rl_vi_bWord },
   { "vi-backward-word", rl_vi_bword },
   { "vi-bWord", rl_vi_bWord },
-  { "vi-bword", rl_vi_bword },
+  { "vi-bword", rl_vi_bword },	/* BEWARE: name matching is case insensitive */
   { "vi-change-case", rl_vi_change_case },
   { "vi-change-char", rl_vi_change_char },
   { "vi-change-to", rl_vi_change_to },
@@ -171,13 +174,13 @@ static const FUNMAP default_funmap[] = {
   { "vi-end-bigword", rl_vi_eWord },
   { "vi-end-word", rl_vi_end_word },
   { "vi-eof-maybe", rl_vi_eof_maybe },
-  { "vi-eword", rl_vi_eword },
+  { "vi-eword", rl_vi_eword },	/* BEWARE: name matching is case insensitive */
   { "vi-fWord", rl_vi_fWord },
   { "vi-fetch-history", rl_vi_fetch_history },
   { "vi-first-print", rl_vi_first_print },
   { "vi-forward-bigword", rl_vi_fWord },
   { "vi-forward-word", rl_vi_fword },
-  { "vi-fword", rl_vi_fword },
+  { "vi-fword", rl_vi_fword },	/* BEWARE: name matching is case insensitive */
   { "vi-goto-mark", rl_vi_goto_mark },
   { "vi-insert-beg", rl_vi_insert_beg },
   { "vi-insertion-mode", rl_vi_insert_mode },
@@ -196,6 +199,7 @@ static const FUNMAP default_funmap[] = {
   { "vi-set-mark", rl_vi_set_mark },
   { "vi-subst", rl_vi_subst },
   { "vi-tilde-expand", rl_vi_tilde_expand },
+  { "vi-undo", rl_vi_undo },
   { "vi-unix-word-rubout", rl_vi_unix_word_rubout },
   { "vi-yank-arg", rl_vi_yank_arg },
   { "vi-yank-pop", rl_vi_yank_pop },

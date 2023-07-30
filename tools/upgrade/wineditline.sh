@@ -1,6 +1,6 @@
 #!/bin/bash
 # Metashell - Interactive C++ template metaprogramming shell
-# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+# Copyright (C) 2023, Abel Sinkovics (abel@sinkovics.hu)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,23 +25,26 @@ fi
 
 if [ $# -ne 1 ]
 then
-  echo "Usage: $0 <gtest version>"
-  echo "Example: $0 1.8.0"
+  echo "Usage: $0 <wineditline version>"
+  echo "Example: $0 2.206"
   exit 1
 fi
 
-GTEST_VERSION="$1"
-GTEST_ARCHIVE="v${GTEST_VERSION}.tar.gz"
-
-DIRS="googletest/include googletest/src googlemock/include googlemock/src"
+VERSION="$1"
+ZIP_NAME="WinEditLine-${VERSION}.zip"
+BASE="wineditline-WinEditLine-${VERSION}"
 
 cd 3rd
-  rm -rf ${DIRS}
-  wget "https://github.com/google/googletest/archive/${GTEST_ARCHIVE}"
-  for DIR in ${DIRS}
-  do
-    tar -xvzf "${GTEST_ARCHIVE}" \
-      "googletest-${GTEST_VERSION}/${DIR}" \
-      --transform 's/^[^\/]*\///'
-  done
-  rm "${GTEST_ARCHIVE}"
+  mv wineditline/CMakeLists.txt backup.txt
+  rm -rf wineditline
+
+  wget "https://github.com/winlibs/wineditline/archive/refs/tags/${ZIP_NAME}"
+  unzip "${ZIP_NAME}" "${BASE}/src/*"
+  unzip "${ZIP_NAME}" "${BASE}/COPYING"
+  mv "${BASE}/src" wineditline
+  mv "${BASE}/COPYING" wineditline
+  rmdir "${BASE}"
+  rm "${ZIP_NAME}"
+
+  mv backup.txt wineditline/CMakeLists.txt
+cd ..

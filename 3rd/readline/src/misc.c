@@ -1,6 +1,6 @@
 /* misc.c -- miscellaneous bindable readline functions. */
 
-/* Copyright (C) 1987-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1987-2022 Free Software Foundation, Inc.
 
    This file is part of the GNU Readline Library (Readline), a library
    for reading lines of text with interactive input and history editing.      
@@ -50,14 +50,12 @@
 #include "history.h"
 
 #include "rlprivate.h"
+#include "histlib.h"
 #include "rlshell.h"
 #include "xmalloc.h"
 
-static int rl_digit_loop PARAMS((void));
-static void _rl_history_set_point PARAMS((void));
-
-/* Forward declarations used in this file */
-void _rl_free_history_entry PARAMS((HIST_ENTRY *));
+static int rl_digit_loop (void);
+static void _rl_history_set_point (void);
 
 /* If non-zero, rl_get_previous_history and rl_get_next_history attempt
    to preserve the value of rl_point from line to line. */
@@ -138,9 +136,7 @@ _rl_arg_dispatch (_rl_arg_cxt cxt, int c)
         }
       else
 	{
-	  RL_SETSTATE(RL_STATE_MOREINPUT);
-	  key = rl_read_key ();
-	  RL_UNSETSTATE(RL_STATE_MOREINPUT);
+	  key = _rl_bracketed_read_key ();
 	  rl_restore_prompt ();
 	  rl_clear_message ();
 	  RL_UNSETSTATE(RL_STATE_NUMERICARG);
@@ -311,9 +307,9 @@ _rl_start_using_history (void)
 {
   using_history ();
   if (_rl_saved_line_for_history)
-    _rl_free_history_entry (_rl_saved_line_for_history);
-
+    _rl_free_saved_history_line ();
   _rl_saved_line_for_history = (HIST_ENTRY *)NULL;
+  _rl_history_search_pos = -99;		/* some random invalid history position */
 }
 
 /* Free the contents (and containing structure) of a HIST_ENTRY. */
@@ -357,6 +353,8 @@ rl_maybe_unsave_line (void)
 	 list from a history entry, as in rl_replace_from_history() below. */
       rl_replace_line (_rl_saved_line_for_history->line, 0);
       rl_undo_list = (UNDO_LIST *)_rl_saved_line_for_history->data;
+
+      /* Doesn't free `data'. */
       _rl_free_history_entry (_rl_saved_line_for_history);
       _rl_saved_line_for_history = (HIST_ENTRY *)NULL;
       rl_point = rl_end;	/* rl_replace_line sets rl_end */
@@ -384,8 +382,18 @@ rl_maybe_save_line (void)
 int
 _rl_free_saved_history_line (void)
 {
+  UNDO_LIST *orig;
+
   if (_rl_saved_line_for_history)
     {
+      if (rl_undo_list && rl_undo_list == (UNDO_LIST *)_rl_saved_line_for_history->data)
+	rl_undo_list = 0;
+      /* Have to free this separately because _rl_free_history entry can't:
+	 it doesn't know whether or not this has application data. Only the
+	 callers that know this is _rl_saved_line_for_history can know that
+	 it's an undo list. */
+      if (_rl_saved_line_for_history->data)
+	_rl_free_undo_list ((UNDO_LIST *)_rl_saved_line_for_history->data);
       _rl_free_history_entry (_rl_saved_line_for_history);
       _rl_saved_line_for_history = (HIST_ENTRY *)NULL;
     }
@@ -435,7 +443,7 @@ rl_replace_from_history (HIST_ENTRY *entry, int flags)
    intended to be called while actively editing, and the current line is
    not assumed to have been added to the history list. */
 void
-_rl_revert_all_lines (void)
+_rl_revert_previous_lines (void)
 {
   int hpos;
   HIST_ENTRY *entry;
@@ -478,6 +486,19 @@ _rl_revert_all_lines (void)
   /* and clean up */
   xfree (lbuf);
 }  
+
+/* Revert all lines in the history by making sure we are at the end of the
+   history before calling _rl_revert_previous_lines() */
+void
+_rl_revert_all_lines (void)
+{
+  int pos;
+
+  pos = where_history ();
+  using_history ();
+  _rl_revert_previous_lines ();
+  history_set_pos (pos);
+}
 
 /* Free the history list, including private readline data and take care
    of pointer aliases to history data.  Resets rl_undo_list if it points
@@ -576,6 +597,7 @@ int
 rl_get_previous_history (int count, int key)
 {
   HIST_ENTRY *old_temp, *temp;
+  int had_saved_line;
 
   if (count < 0)
     return (rl_get_next_history (-count, key));
@@ -588,6 +610,7 @@ rl_get_previous_history (int count, int key)
     _rl_history_saved_point = (rl_point == rl_end) ? -1 : rl_point;
 
   /* If we don't have a line saved, then save this one. */
+  had_saved_line = _rl_saved_line_for_history != 0;
   rl_maybe_save_line ();
 
   /* If the current line has changed, save the changes. */
@@ -611,7 +634,8 @@ rl_get_previous_history (int count, int key)
 
   if (temp == 0)
     {
-      rl_maybe_unsave_line ();
+      if (had_saved_line == 0)
+	_rl_free_saved_history_line ();
       rl_ding ();
     }
   else
@@ -619,6 +643,82 @@ rl_get_previous_history (int count, int key)
       rl_replace_from_history (temp, 0);
       _rl_history_set_point ();
     }
+
+  return 0;
+}
+
+/* With an argument, move back that many history lines, else move to the
+   beginning of history. */
+int
+rl_fetch_history (int count, int c)
+{
+  int wanted, nhist;
+
+  /* Giving an argument of n means we want the nth command in the history
+     file.  The command number is interpreted the same way that the bash
+     `history' command does it -- that is, giving an argument count of 450
+     to this command would get the command listed as number 450 in the
+     output of `history'. */
+  if (rl_explicit_arg)
+    {
+      nhist = history_base + where_history ();
+      /* Negative arguments count back from the end of the history list. */
+      wanted = (count >= 0) ? nhist - count : -count;
+
+      if (wanted <= 0 || wanted >= nhist)
+	{
+	  /* In vi mode, we don't change the line with an out-of-range
+	     argument, as for the `G' command. */
+	  if (rl_editing_mode == vi_mode)
+	    rl_ding ();
+	  else
+	    rl_beginning_of_history (0, 0);
+	}
+      else
+        rl_get_previous_history (wanted, c);
+    }
+  else
+    rl_beginning_of_history (count, 0);
+
+  return (0);
+}
+
+/* The equivalent of the Korn shell C-o operate-and-get-next-history-line
+   editing command. */
+
+/* This could stand to be global to the readline library */
+static rl_hook_func_t *_rl_saved_internal_startup_hook = 0;
+static int saved_history_logical_offset = -1;
+
+#define HISTORY_FULL() (history_is_stifled () && history_length >= history_max_entries)
+
+static int
+set_saved_history ()
+{
+  int absolute_offset, count;
+
+  if (saved_history_logical_offset >= 0)
+    {
+      absolute_offset = saved_history_logical_offset - history_base;
+      count = where_history () - absolute_offset;
+      rl_get_previous_history (count, 0);
+    }
+  saved_history_logical_offset = -1;
+  _rl_internal_startup_hook = _rl_saved_internal_startup_hook;
+
+  return (0);
+}
+
+int
+rl_operate_and_get_next (int count, int c)
+{
+  /* Accept the current line. */
+  rl_newline (1, c);
+
+  saved_history_logical_offset = rl_explicit_arg ? count : where_history () + history_base + 1;
+
+  _rl_saved_internal_startup_hook = _rl_internal_startup_hook;
+  _rl_internal_startup_hook = set_saved_history;
 
   return 0;
 }

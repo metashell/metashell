@@ -27,3 +27,5 @@ previous_history
 next_history
 read_history
 write_history
+append_history
+history_truncate_file

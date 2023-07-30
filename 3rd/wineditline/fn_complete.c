@@ -5,7 +5,7 @@ fn_complete.c
 is part of:
 
 WinEditLine (formerly MinGWEditLine)
-Copyright 2010-2014 Paolo Tosco <paolo.tosco@unito.it>
+Copyright 2010-2020 Paolo Tosco <paolo.tosco.mail@gmail.com>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -40,13 +40,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define UNICODE
 
 #include <editline/readline.h>
+#include <editline/wineditline.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <wctype.h>
 #include <tchar.h>
-
+#if defined __GNUC__ && defined __MINGW32__
+#ifdef __CRT__NO_INLINE
+#undef __CRT__NO_INLINE
+#define NEED_REDEFINE__CRT__NO_INLINE
+#endif
+#endif
+#include <Strsafe.h>
+#ifdef NEED_REDEFINE__CRT__NO_INLINE
+#define __CRT__NO_INLINE
+#endif
 
 //#define FN_COMPLETE_DEBUG 1
 
@@ -235,6 +245,7 @@ char *rl_filename_completion_function(const char *text, int state)
   int j;
   int len;
   int dir_name_len;
+  size_t buf_size;
   int nearest_quote = 0;
   int last_char_quote = 0;
   int open_quote;
@@ -441,18 +452,22 @@ char *rl_filename_completion_function(const char *text, int state)
       /*
       check if a final slash or backslash is included
       */
+      buf_size = len + 4;
       n = (!wcschr(_T("/\\"),
         _el_old_arg[len - close_quote - 1])) ? _T('\\') : _T('\0');
       if (!(_el_dir_name = (wchar_t *)realloc
-        (_el_dir_name, (len + 4) * sizeof(wchar_t)))) {
+        (_el_dir_name, buf_size * sizeof(wchar_t)))) {
         return NULL;
       }
-      memset(_el_dir_name, 0, (len + 4) * sizeof(wchar_t));
+      memset(_el_dir_name, 0, buf_size * sizeof(wchar_t));
       /*
       if the slash or backslash was not included,
       then add it to the directory name
       */
-      wsprintf(_el_dir_name, _T("%s%c"), &_el_old_arg[open_quote], n);
+      if (FAILED(StringCchPrintf(_el_dir_name, buf_size,
+        _T("%s%c"), &_el_old_arg[open_quote], n))) {
+        return NULL;
+      }
     }
     if (dHandle != INVALID_HANDLE_VALUE) {
       FindClose(dHandle);
@@ -466,11 +481,15 @@ char *rl_filename_completion_function(const char *text, int state)
     if the directory does not open,
     no completion is possible
     */
+    buf_size = wcslen(_el_dir_name) + 3;
     if (!(_el_wide = (wchar_t *)realloc(_el_wide,
-      (wcslen(_el_dir_name) + 3) * sizeof(wchar_t)))) {
+      buf_size * sizeof(wchar_t)))) {
       return NULL;
     }
-    wsprintf(_el_wide, _T("%s\\*"), _el_dir_name);
+    if (FAILED(StringCchPrintf(_el_wide,
+      buf_size, _T("%s\\*"), _el_dir_name))) {
+      return NULL;
+    }
     dHandle = FindFirstFile(_el_wide, &filedata);
     if (dHandle == INVALID_HANDLE_VALUE) {
       return NULL;
@@ -534,15 +553,18 @@ char *rl_filename_completion_function(const char *text, int state)
         continue;
       }
       len = (int)wcslen(filedata.cFileName);
+      buf_size = dir_name_len + len + 3;
       if (!(_el_compl_array[_el_n_compl] = (wchar_t *)
-        malloc((dir_name_len + len + 3) * sizeof(wchar_t)))) {
+        malloc(buf_size * sizeof(wchar_t)))) {
         return NULL;
       }
       /*
       prepend the directory path to the current filename
       */
-      wsprintf(_el_compl_array[_el_n_compl], _T("%s%s"),
-        _el_dir_name, filedata.cFileName);
+      if (FAILED(StringCchPrintf(_el_compl_array[_el_n_compl], buf_size,
+        _T("%s%s"), _el_dir_name, filedata.cFileName))) {
+        return NULL;
+      }
       /*
       if the filename contains spaces or other special
       characters, then enclose it between quotes

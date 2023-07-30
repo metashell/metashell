@@ -5,7 +5,7 @@ libedit_test_dll.c
 is part of:
 
 WinEditLine (formerly MinGWEditLine)
-Copyright 2010-2014 Paolo Tosco <paolo.tosco@unito.it>
+Copyright 2010-2020 Paolo Tosco <paolo.tosco.mail@gmail.com>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -91,11 +91,7 @@ editline support if it is unavailable
  *       editable command line we want to offer here
  */
 #ifdef WIN32
-#ifdef _MSC_VER
 #define DO_EDIT_DEFAULT_LIB  "edit.dll"
-#else
-#define DO_EDIT_DEFAULT_LIB  "libedit.dll"
-#endif
 #else
 #define DO_EDIT_DEFAULT_LIB  "libedit.so"
 #endif
@@ -109,6 +105,7 @@ typedef struct func_t_st {
 static FUNC_T do_edit_extern_funcs[] = {
 /* [0] */  { "readline", NULL },
 /* [1] */  { "add_history", NULL },
+/* [2] */  { "rl_free", NULL },
 };
 #define N_do_edit_extern_funcs \
   (sizeof(do_edit_extern_funcs)/sizeof(do_edit_extern_funcs[0]))
@@ -132,16 +129,16 @@ int DO_EDIT_load(char *libname)
     if (do_edit_dl_handle!=NULL) {
       for(i=0;i<N_do_edit_extern_funcs;i++) {
 #ifdef WIN32
-  u.fp=(void (*)(void))dlsym(do_edit_dl_handle,
-        do_edit_extern_funcs[i].name);
+        u.fp=(void (*)(void))dlsym(do_edit_dl_handle,
+              do_edit_extern_funcs[i].name);
 #else /* !WIN32 */
-  u.p=dlsym(do_edit_dl_handle,do_edit_extern_funcs[i].name);
+        u.p=dlsym(do_edit_dl_handle,do_edit_extern_funcs[i].name);
 #endif /* WIN32 */
-  if (u.p==NULL) {
-    kret=DO_EDIT_ERROR_FAILED;
-  } else {
-    do_edit_extern_funcs[i].func=u.fp;
-  }
+        if (u.p==NULL) {
+          kret=DO_EDIT_ERROR_FAILED;
+        } else {
+          do_edit_extern_funcs[i].func=u.fp;
+        }
       }
     } else {
       kret=DO_EDIT_ERROR_FAILED;
@@ -153,7 +150,7 @@ int DO_EDIT_load(char *libname)
     } else {
       if (do_edit_dl_handle!=NULL) {
         dlclose(do_edit_dl_handle);
-  do_edit_dl_handle=NULL;
+        do_edit_dl_handle=NULL;
       }
     }
   }
@@ -179,8 +176,9 @@ int DO_EDIT_unload(char *name)
 /* prototypes for the function pointers so we can safely cast and ensure
  * that we are using things the expected way
  */
-typedef char *(*f_readline_t)(char *prompt);
-typedef int (*f_add_history_t)(char *line);
+typedef char *(*f_readline_t)(char *);
+typedef int (*f_add_history_t)(char *);
+typedef void (*f_rl_free_t)(void *);
 
 /* wrapper on readline */
 static char *l_do_edit_readline(char *prompt)
@@ -197,15 +195,24 @@ static int l_do_edit_add_history(char *line)
 {
   int ret=0;
 
-  if (do_edit_extern_funcs[1].func!=NULL)
+  if (do_edit_extern_funcs[1].func!=NULL) {
     ret=((f_add_history_t)(*do_edit_extern_funcs[1].func))(line);
+  }
   return ret;
+}
+
+/* wrapper on rl_free */
+static void l_do_edit_rl_free(void *mem)
+{
+  if (do_edit_extern_funcs[2].func!=NULL)
+    ((f_rl_free_t)(*do_edit_extern_funcs[2].func))(mem);
 }
 
 /* the simple function to provide a prompt and read a line of input */
 char *DO_EDIT_read(char *prompt)
 {
   char *ret=NULL;
+  char *retdup=NULL;
   char buf[BUFSIZ];
   size_t len;
 
@@ -222,9 +229,12 @@ char *DO_EDIT_read(char *prompt)
    * we implement a simple non-editing interface
    */
   if (do_edit_extern_funcs_loaded) {
-    ret=l_do_edit_readline(prompt);
-    if (ret!=NULL)
+    retdup=l_do_edit_readline(prompt);
+    if (retdup!=NULL) {
+      ret=strdup(retdup);
       l_do_edit_add_history(ret);
+      l_do_edit_rl_free(retdup);
+    }
   } else {
     printf("%s",prompt);
     fflush(stdout);
@@ -255,8 +265,8 @@ int main(int argc, char *argv[])
   printf("\nType exit to quit the test\n\n");
   while ((line = DO_EDIT_read("prompt>"))
     && (strncmp(line, "exit", 4))) {
-    printf("string=%s\n", line);
-    //free(line);
+    printf("string='%s'\n", line);
+    free(line);
   }
   
   return 0;

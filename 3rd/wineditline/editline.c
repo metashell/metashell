@@ -5,7 +5,7 @@ editline.c
 is part of:
 
 WinEditLine (formerly MinGWEditLine)
-Copyright 2010-2014 Paolo Tosco <paolo.tosco@unito.it>
+Copyright 2010-2020 Paolo Tosco <paolo.tosco.mail@gmail.com>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define UNICODE
 
 #include <editline/readline.h>
+#include <editline/wineditline.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,6 +47,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <wctype.h>
 #include <el_globals.h>
 #include <tchar.h>
+#include <io.h>
+#include <fcntl.h>
 
 
 int _el_display_prev_hist()
@@ -55,7 +58,7 @@ int _el_display_prev_hist()
       return -1;
     }
     replace_history_entry(where_history(), rl_line_buffer, NULL);
-    previous_history();
+    _el_previous_history();
     _el_display_history();
   }
   
@@ -65,12 +68,12 @@ int _el_display_prev_hist()
 
 int _el_display_next_hist()
 {
-  if (where_history() < (history_length() - 1)) {
+  if (where_history() < history_length()) {
     if (!_el_w2mb(_el_line_buffer, &rl_line_buffer)) {
       return -1;
     }
     replace_history_entry(where_history(), rl_line_buffer, NULL);
-    next_history();
+    _el_next_history();
     _el_display_history();
   }
   
@@ -85,7 +88,7 @@ int _el_display_first_hist()
       return -1;
     }
     replace_history_entry(where_history(), rl_line_buffer, NULL);
-    while (previous_history());
+    _el_history_set_pos(1);
     _el_display_history();
   }
   
@@ -95,12 +98,12 @@ int _el_display_first_hist()
 
 int _el_display_last_hist()
 {
-  if (where_history() < (history_length() - 1)) {
+  if (where_history() < history_length()) {
     if (!_el_w2mb(_el_line_buffer, &rl_line_buffer)) {
       return -1;
     }
     replace_history_entry(where_history(), rl_line_buffer, NULL);
-    history_set_pos(history_length() - 1);
+    _el_history_set_pos(history_length() + 1);
     _el_display_history();
   }
   
@@ -200,66 +203,36 @@ free memory buffers before exit
 */
 void _el_clean_exit()
 {
-  if (rl_line_buffer) {
-    free(rl_line_buffer);
-    rl_line_buffer = NULL;
-  }
-  if (_el_line_buffer) {
-    free(_el_line_buffer);
-    _el_line_buffer = NULL;
-  }
-  if (_el_compl_array) {
-    _el_free_array(_el_compl_array);
-    _el_compl_array = NULL;
-  }
-  if (_el_print) {
-    free(_el_print);
-    _el_print = NULL;
-  }
-  if (_el_temp_print) {
-    free(_el_temp_print);
-    _el_temp_print = NULL;
-  }
-  if (_el_next_compl) {
-    free(_el_next_compl);
-    _el_next_compl = NULL;
-  }
-  if (_el_completer_word_break_characters) {
-    free(_el_completer_word_break_characters);
-    _el_completer_word_break_characters = NULL;
-  }
-  if (_el_basic_word_break_characters) {
-    free(_el_basic_word_break_characters);
-    _el_basic_word_break_characters = NULL;
-  }
-  if (rl_prompt) {
-    free(rl_prompt);
-    rl_prompt = NULL;
-  }
-  if (_el_old_arg) {
-    free(_el_old_arg);
-    _el_old_arg = NULL;
-  }
-  if (_el_wide) {
-    free(_el_wide);
-    _el_wide = NULL;
-  }
-  if (_el_text) {
-    free(_el_text);
-    _el_text = NULL;
-  }
-  if (_el_text_mb) {
-    free(_el_text_mb);
-    _el_text_mb = NULL;
-  }
-  if (_el_file_name) {
-    free(_el_file_name);
-    _el_file_name = NULL;
-  }
-  if (_el_dir_name) {
-    free(_el_dir_name);
-    _el_dir_name = NULL;
-  }
+  free(rl_line_buffer);
+  rl_line_buffer = NULL;
+  free(_el_line_buffer);
+  _el_line_buffer = NULL;
+  _el_free_array(_el_compl_array);
+  _el_compl_array = NULL;
+  free(_el_print);
+  _el_print = NULL;
+  free(_el_temp_print);
+  _el_temp_print = NULL;
+  free(_el_next_compl);
+  _el_next_compl = NULL;
+  free(_el_completer_word_break_characters);
+  _el_completer_word_break_characters = NULL;
+  free(_el_basic_word_break_characters);
+  _el_basic_word_break_characters = NULL;
+  free(rl_prompt);
+  rl_prompt = NULL;
+  free(_el_old_arg);
+  _el_old_arg = NULL;
+  free(_el_wide);
+  _el_wide = NULL;
+  free(_el_text);
+  _el_text = NULL;
+  free(_el_text_mb);
+  _el_text_mb = NULL;
+  free(_el_file_name);
+  _el_file_name = NULL;
+  free(_el_dir_name);
+  _el_dir_name = NULL;
   if (_el_prev_in_cm_saved) {
     SetConsoleMode(_el_h_in,
     _el_prev_in_cm | ENABLE_EXTENDED_FLAGS);
@@ -278,7 +251,6 @@ insert character(s) on the command line
 int _el_insert_char(wchar_t *buf, int n)
 {
   int c;
-  int eff_n;
   int line_len;
   
   
@@ -289,31 +261,27 @@ int _el_insert_char(wchar_t *buf, int n)
   to the end, including the terminal '\0'
   */
   c = (int)wcslen(&(_el_line_buffer[rl_point])) + 1;
-  eff_n = n;
   /*
-  if the buffer is not large enough, cut down
-  the number of inserted chars
+  make sure the buffer is large enough
   */
-  if ((line_len + n) >= _EL_BUF_LEN) {
-    eff_n = _EL_BUF_LEN - line_len - 1;
-  }
+  _el_grow_buffers(line_len + n);
   /*
   make the insertion
   */
-  memmove(&_el_line_buffer[rl_point + eff_n],
+  memmove(&_el_line_buffer[rl_point + n],
     &_el_line_buffer[rl_point], c * sizeof(wchar_t));
-  memcpy(&_el_line_buffer[rl_point], buf, eff_n * sizeof(wchar_t));
+  memcpy(&_el_line_buffer[rl_point], buf, n * sizeof(wchar_t));
   /*
   copy the inserted chars into the string
   for subsequent printing
   */
   memcpy(_el_print, &_el_line_buffer[rl_point],
-    (c + eff_n) * sizeof(wchar_t));
-  _el_print[c + eff_n] = _T('\0');
+    (c + n) * sizeof(wchar_t));
+  _el_print[c + n] = _T('\0');
   /*
   set the new logical cursor position
   */
-  rl_point += eff_n;
+  rl_point += n;
   /*
   print the insertion
   */
@@ -323,7 +291,7 @@ int _el_insert_char(wchar_t *buf, int n)
   /*
   set the new cursor position
   */
-  if (_el_set_cursor(eff_n)) {
+  if (_el_set_cursor(n)) {
     return -1;
   }
   if (!_el_w2mb(_el_line_buffer, &rl_line_buffer)) {
@@ -881,6 +849,31 @@ int _el_check_root_identity(wchar_t *root, wchar_t *entry_name)
 
 
 /*
+function to grow buffers as needed
+size is the final number of bytes that need to fit in the buffer
+*/
+int _el_grow_buffers(size_t size)
+{
+  size_t prev_size = _el_line_buffer_size;
+  if (_el_line_buffer_size && (size < (_el_line_buffer_size - 1))) {
+    return 1;
+  }
+  if (!size) {
+    size = 1;
+  }
+  _el_line_buffer_size = (size / _EL_BUF_LEN + 1) * _EL_BUF_LEN;
+  _el_line_buffer = (wchar_t *)realloc(_el_line_buffer, _el_line_buffer_size * sizeof(wchar_t));
+  if (_el_line_buffer) {
+    memset(&_el_line_buffer[prev_size], 0, (_el_line_buffer_size - prev_size) * sizeof(wchar_t));
+  }
+  _el_print = (wchar_t *)realloc(_el_print, _el_line_buffer_size * sizeof(wchar_t));
+  if (_el_print) {
+    memset(&_el_print[prev_size], 0, (_el_line_buffer_size - prev_size) * sizeof(wchar_t));
+  }
+  return (_el_line_buffer && _el_print ? 1 : 0);
+}
+
+/*
 compare function for qsort
 */
 int _el_fn_qsort_string_compare(const void *i1, const void *i2)
@@ -914,6 +907,8 @@ char *readline(const char *prompt)
   wchar_t buf[_EL_CONSOLE_BUF_LEN];
   char **array = NULL;
   char *ret_string = NULL;
+  char readfile_buf;
+  char have_cursor_x_start = 0;
   int start = 0;
   int end = 0;
   int compl_pos = -1;
@@ -926,7 +921,11 @@ char *readline(const char *prompt)
   UINT32 ctrl = 0;
   UINT32 special = 0;
   COORD coord;
+  SHORT cursor_x_start = 0;
   DWORD count = 0;
+  BOOL read_ok;
+  DWORD file_type;
+  DWORD actually_read;
   INPUT_RECORD irBuffer;
   CONSOLE_SCREEN_BUFFER_INFO sbInfo;
 
@@ -950,6 +949,7 @@ char *readline(const char *prompt)
   _el_n_compl = 0;
   _el_h_in = NULL;
   _el_h_out = NULL;
+  _el_line_buffer_size = 0;
   wcscpy_s(_el_basic_file_break_characters,
     _EL_MAX_FILE_BREAK_CHARACTERS, _EL_BASIC_FILE_BREAK_CHARACTERS);
   memset(&coord, 0, sizeof(COORD));
@@ -958,8 +958,10 @@ char *readline(const char *prompt)
   /*
   allocate buffers
   */
-  _el_line_buffer_size = _EL_BUF_LEN + 1;
-  _el_line_buffer = (wchar_t *)malloc(_el_line_buffer_size * sizeof(wchar_t));
+  if (!_el_grow_buffers(0)) {
+    _el_clean_exit();
+    return NULL;
+  }
   if (!_el_mb2w((char *)rl_basic_word_break_characters,
     &_el_basic_word_break_characters)) {
     _el_clean_exit();
@@ -972,24 +974,13 @@ char *readline(const char *prompt)
       return NULL;
     }
   }
-  if (!(_el_line_buffer)) {
-    _el_clean_exit();
-    return NULL;
-  }
-  memset(_el_line_buffer, 0, _el_line_buffer_size * sizeof(wchar_t));
   rl_attempted_completion_over = 0;
-  _el_print = (wchar_t *)malloc(_el_line_buffer_size * sizeof(wchar_t));
-  if (!(_el_print)) {
+  rl_prompt = (prompt ? _strdup(prompt) : _strdup(""));
+  if (!rl_prompt) {
     _el_clean_exit();
     return NULL;
   }
-  memset(_el_print, 0, _el_line_buffer_size * sizeof(wchar_t));
-  rl_prompt = _strdup(prompt);
-  if (!(rl_prompt)) {
-    _el_clean_exit();
-    return NULL;
-  }
-  if (!_el_mb2w((char *)prompt, &_el_prompt)) {
+  if (!_el_mb2w(rl_prompt, &_el_prompt)) {
     _el_clean_exit();
     return NULL;
   }
@@ -999,9 +990,43 @@ char *readline(const char *prompt)
   */
   _el_h_in = GetStdHandle(STD_INPUT_HANDLE);
   _el_h_out = GetStdHandle(STD_OUTPUT_HANDLE);
-  if ((!(_el_h_in)) || (!(_el_h_out))) {
+  if (!_el_h_in || !_el_h_out) {
     _el_clean_exit();
     return NULL;
+  }
+  file_type = GetFileType(_el_h_in);
+  /*
+  if we are reading from a file or a pipe, read one line and exit
+  */
+  if ((file_type == FILE_TYPE_DISK) || (file_type == FILE_TYPE_PIPE)) {
+    readfile_buf = 0;
+    len = 0;
+    line_len = 0;
+    while (readfile_buf != '\n') {
+      read_ok = ReadFile(_el_h_in, &readfile_buf, 1, &actually_read, NULL);
+      if (!(read_ok && actually_read)) {
+        break;
+      }
+      if ((len + 1) >= line_len) {
+        line_len += _EL_BUF_LEN;
+        rl_line_buffer = realloc(rl_line_buffer, line_len);
+        if (!rl_line_buffer) {
+          _el_clean_exit();
+          return NULL;
+        }
+      }
+      rl_line_buffer[len++] = readfile_buf;
+    }
+    if (rl_line_buffer) {
+      while (len && ((rl_line_buffer[len - 1] == '\n')
+        || (rl_line_buffer[len - 1] == '\r'))) {
+        --len;
+      }
+      rl_line_buffer[len] = '\0';
+      ret_string = _strdup(rl_line_buffer);
+    }
+    _el_clean_exit();
+    return ret_string;
   }
   /*
   set console modes
@@ -1024,6 +1049,10 @@ char *readline(const char *prompt)
       _el_clean_exit();
       return NULL;
     }
+    if (!have_cursor_x_start) {
+      have_cursor_x_start = 1;
+      cursor_x_start = sbInfo.dwCursorPosition.X;
+    }
     _el_temp_print_size = sbInfo.dwSize.X + 1;
     if (!(_el_temp_print = realloc(_el_temp_print,
       _el_temp_print_size * sizeof(wchar_t)))) {
@@ -1041,9 +1070,9 @@ char *readline(const char *prompt)
     */
     if (old_width != width) {
       line_len = (int)wcslen(_el_line_buffer);
-      sbInfo.dwCursorPosition.X = 0;
+      sbInfo.dwCursorPosition.X = cursor_x_start;
       if (old_width) {
-        n = (_el_prompt_len + line_len - 1) / old_width;
+        n = (cursor_x_start + line_len - 1) / old_width;
         sbInfo.dwCursorPosition.Y -= n;
         coord.Y = sbInfo.dwCursorPosition.Y;
       }
@@ -1070,7 +1099,7 @@ char *readline(const char *prompt)
       }
       if (old_width && (old_width < width)) {
         coord.X = 0;
-        coord.Y += (_el_prompt_len + line_len - 1) / width + 1;
+        coord.Y += (cursor_x_start + line_len - 1) / width + 1;
         FillConsoleOutputCharacter(_el_h_out, _T(' '),
           sbInfo.dwSize.X * (n + 2), coord, &count);
       }
@@ -1218,10 +1247,8 @@ char *readline(const char *prompt)
             if ((!array) || (rl_point != compl_pos)) {
               _el_free_array(array);
               index = 0;
-              if (_el_text) {
-                free(_el_text);
-                _el_text = NULL;
-              }
+              free(_el_text);
+              _el_text = NULL;
               if (!(_el_text = _el_get_compl_text(&start, &end))) {
                 _el_clean_exit();
                 return NULL;
@@ -1458,8 +1485,7 @@ char *readline(const char *prompt)
   }
   
   printf("\n");
-  while (next_history());
-  previous_history();
+  history_set_pos(history_length());
   /*
   if CTRL+C has been pressed, return an empty string
   */
@@ -1472,7 +1498,7 @@ char *readline(const char *prompt)
       _el_line_buffer[0] = _T('\0');
     }
     _el_w2mb(_el_line_buffer, &rl_line_buffer);
-    ret_string = _strdup(rl_line_buffer);
+    ret_string = (rl_line_buffer ? _strdup(rl_line_buffer) : NULL);
   }
   _el_clean_exit();
   

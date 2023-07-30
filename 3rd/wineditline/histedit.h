@@ -5,7 +5,7 @@ histedit.h
 is part of:
 
 WinEditLine (formerly MinGWEditLine)
-Copyright 2010-2014 Paolo Tosco <paolo.tosco@unito.it>
+Copyright 2010-2020 Paolo Tosco <paolo.tosco.mail@gmail.com>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

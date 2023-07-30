@@ -5,7 +5,7 @@ libedit_test.c
 is part of:
 
 WinEditLine (formerly MinGWEditLine)
-Copyright 2010-2014 Paolo Tosco <paolo.tosco@unito.it>
+Copyright 2010-2020 Paolo Tosco <paolo.tosco.mail@gmail.com>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
   printf("\nType exit to quit the test\n\n");
   while ((line = readline("prompt>"))
     && (strncmp(line, "exit", 4))) {
-    printf("string=%s\n", line);
+    printf("string='%s'\n", line);
     add_history(line);
     free(line);
   }

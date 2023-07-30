@@ -20,6 +20,7 @@
 
 #ifdef USE_EDITLINE
 #include <editline/readline.h>
+#include <editline/wineditline.h>
 #else
 #include <readline/history.h>
 #include <readline/readline.h>

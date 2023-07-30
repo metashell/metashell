@@ -1,6 +1,6 @@
 /* text.c -- text handling commands for readline. */
 
-/* Copyright (C) 1987-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1987-2021 Free Software Foundation, Inc.
 
    This file is part of the GNU Readline Library (Readline), a library
    for reading lines of text with interactive input and history editing.      
@@ -59,12 +59,12 @@
 #include "xmalloc.h"
 
 /* Forward declarations. */
-static int rl_change_case PARAMS((int, int));
-static int _rl_char_search PARAMS((int, int, int));
+static int rl_change_case (int, int);
+static int _rl_char_search (int, int, int);
 
 #if defined (READLINE_CALLBACKS)
-static int _rl_insert_next_callback PARAMS((_rl_callback_generic_arg *));
-static int _rl_char_search_callback PARAMS((_rl_callback_generic_arg *));
+static int _rl_insert_next_callback (_rl_callback_generic_arg *);
+static int _rl_char_search_callback (_rl_callback_generic_arg *);
 #endif
 
 /* The largest chunk of text that can be inserted in one call to
@@ -96,6 +96,7 @@ rl_insert_text (const char *string)
 
   for (i = rl_end; i >= rl_point; i--)
     rl_line_buffer[i + l] = rl_line_buffer[i];
+
   strncpy (rl_line_buffer + rl_point, string, l);
 
   /* Remember how to undo this if we aren't undoing something. */
@@ -154,6 +155,7 @@ rl_delete_text (int from, int to)
 
   rl_end -= diff;
   rl_line_buffer[rl_end] = '\0';
+  _rl_fix_mark ();
   return (diff);
 }
 
@@ -175,6 +177,12 @@ _rl_fix_point (int fix_mark_too)
   _RL_FIX_POINT (rl_point);
   if (fix_mark_too)
     _RL_FIX_POINT (rl_mark);
+}
+
+void
+_rl_fix_mark (void)
+{
+  _RL_FIX_POINT (rl_mark);
 }
 #undef _RL_FIX_POINT
 
@@ -479,6 +487,8 @@ rl_forward_word (int count, int key)
 
   while (count)
     {
+      if (rl_point > rl_end)
+	rl_point = rl_end;
       if (rl_point == rl_end)
 	return 0;
 
@@ -498,6 +508,8 @@ rl_forward_word (int count, int key)
 	    }
 	}
 
+      if (rl_point > rl_end)
+	rl_point = rl_end;
       if (rl_point == rl_end)
 	return 0;
 
@@ -569,18 +581,8 @@ rl_backward_word (int count, int key)
 int
 rl_refresh_line (int ignore1, int ignore2)
 {
-  int curr_line;
-
-  curr_line = _rl_current_display_line ();
-
-  _rl_move_vert (curr_line);
-  _rl_move_cursor_relative (0, rl_line_buffer);   /* XXX is this right */
-
-  _rl_clear_to_eol (0);		/* arg of 0 means to not use spaces */
-
-  rl_redraw_prompt_last_line ();
+  _rl_refresh_line ();
   rl_display_fixed = 1;
-
   return 0;
 }
 
@@ -596,7 +598,18 @@ rl_clear_screen (int count, int key)
       return 0;
     }
 
-  _rl_clear_screen ();		/* calls termcap function to clear screen */
+  _rl_clear_screen (0);		/* calls termcap function to clear screen */
+  rl_keep_mark_active ();
+  rl_forced_update_display ();
+  rl_display_fixed = 1;
+
+  return 0;
+}
+
+int
+rl_clear_display (int count, int key)
+{
+  _rl_clear_screen (1);		/* calls termcap function to clear screen and scrollback buffer */
   rl_forced_update_display ();
   rl_display_fixed = 1;
 
@@ -723,7 +736,7 @@ _rl_insert_char (int count, int c)
     }
   else
     {
-      wchar_t wc;
+      WCHAR_T wc;
       size_t ret;
 
       if (stored_count <= 0)
@@ -733,7 +746,7 @@ _rl_insert_char (int count, int c)
 
       ps_back = ps;
       pending_bytes[pending_bytes_length++] = c;
-      ret = mbrtowc (&wc, pending_bytes, pending_bytes_length, &ps);
+      ret = MBRTOWC (&wc, pending_bytes, pending_bytes_length, &ps);
 
       if (ret == (size_t)-2)
 	{
@@ -907,8 +920,11 @@ _rl_overwrite_char (int count, int c)
   int k;
 
   /* Read an entire multibyte character sequence to insert COUNT times. */
+  k = 1;
   if (count > 0 && MB_CUR_MAX > 1 && rl_byte_oriented == 0)
     k = _rl_read_mbstring (c, mbkey, MB_LEN_MAX);
+  if (k < 0)
+    return 1;
 #endif
 
   rl_begin_undo_group ();
@@ -1080,6 +1096,13 @@ rl_tab_insert (int count, int key)
 int
 rl_newline (int count, int key)
 {
+  if (rl_mark_active_p ())
+    {
+      rl_deactivate_mark ();
+      (*rl_redisplay_function) ();
+      _rl_want_redisplay = 0;
+    }
+
   rl_done = 1;
 
   if (_rl_history_preserve_point)
@@ -1113,7 +1136,7 @@ rl_newline (int count, int key)
 int
 rl_do_lowercase_version (int ignore1, int ignore2)
 {
-  return 0;
+  return 99999;		/* prevent from being combined with _rl_null_function */
 }
 
 /* This is different from what vi does, so the code's not shared.  Emacs
@@ -1382,9 +1405,9 @@ rl_change_case (int count, int op)
 {
   int start, next, end;
   int inword, nc, nop;
-  wchar_t c;
+  WCHAR_T c;
 #if defined (HANDLE_MULTIBYTE)
-  wchar_t wc, nwc;
+  WCHAR_T wc, nwc;
   char mb[MB_LEN_MAX+1];
   int mlen;
   size_t m;
@@ -1443,16 +1466,27 @@ rl_change_case (int count, int op)
 #if defined (HANDLE_MULTIBYTE)
       else
 	{
-	  m = mbrtowc (&wc, rl_line_buffer + start, end - start, &mps);
+	  m = MBRTOWC (&wc, rl_line_buffer + start, end - start, &mps);
 	  if (MB_INVALIDCH (m))
-	    wc = (wchar_t)rl_line_buffer[start];
+	    wc = (WCHAR_T)rl_line_buffer[start];
 	  else if (MB_NULLWCH (m))
 	    wc = L'\0';
 	  nwc = (nop == UpCase) ? _rl_to_wupper (wc) : _rl_to_wlower (wc);
 	  if  (nwc != wc)	/*  just skip unchanged characters */
 	    {
 	      char *s, *e;
-	      mlen = wcrtomb (mb, nwc, &mps);
+	      mbstate_t ts;
+
+	      memset (&ts, 0, sizeof (mbstate_t));
+	      mlen = WCRTOMB (mb, nwc, &ts);
+	      if (mlen < 0)
+		{
+		  nwc = wc;
+		  memset (&ts, 0, sizeof (mbstate_t));
+		  mlen = WCRTOMB (mb, nwc, &ts);
+		  if (mlen < 0)		/* should not happen */
+		    strncpy (mb, rl_line_buffer + start, mlen = m);
+		}
 	      if (mlen > 0)
 		mb[mlen] = '\0';
 	      /* what to do if m != mlen? adjust below */
@@ -1472,7 +1506,9 @@ rl_change_case (int count, int op)
 		}
 	      else if (m < mlen)
 		{
-		  rl_extend_line_buffer (mlen - m + 1);
+		  rl_extend_line_buffer (rl_end + mlen + (e - s) - m + 2);
+		  s = rl_line_buffer + start;	/* have to redo this */
+		  e = rl_line_buffer + rl_end;
 		  memmove (s + mlen, s + m, (e - s) - m);
 		  memcpy (s, mb, mlen);
 		  next += mlen - m;	/* next char changes */
@@ -1504,7 +1540,10 @@ rl_transpose_words (int count, int key)
 {
   char *word1, *word2;
   int w1_beg, w1_end, w2_beg, w2_end;
-  int orig_point = rl_point;
+  int orig_point, orig_end;
+
+  orig_point = rl_point;
+  orig_end = rl_end;
 
   if (!count)
     return 0;
@@ -1548,6 +1587,7 @@ rl_transpose_words (int count, int key)
   /* This is exactly correct since the text before this point has not
      changed in length. */
   rl_point = w2_end;
+  rl_end = orig_end;		/* just make sure */
 
   /* I think that does it. */
   rl_end_undo_group ();
@@ -1711,10 +1751,7 @@ _rl_char_search (int count, int fdir, int bdir)
 {
   int c;
 
-  RL_SETSTATE(RL_STATE_MOREINPUT);
-  c = rl_read_key ();
-  RL_UNSETSTATE(RL_STATE_MOREINPUT);
-
+  c = _rl_bracketed_read_key ();
   if (c < 0)
     return 1;
 
@@ -1809,7 +1846,43 @@ rl_exchange_point_and_mark (int count, int key)
       return 1;
     }
   else
-    SWAP (rl_point, rl_mark);
+    {
+      SWAP (rl_point, rl_mark);
+      rl_activate_mark ();
+    }
 
   return 0;
+}
+
+/* Active mark support */
+
+/* Is the region active? */
+static int mark_active = 0;
+
+/* Does the current command want the mark to remain active when it completes? */
+int _rl_keep_mark_active;
+
+void
+rl_keep_mark_active (void)
+{
+  _rl_keep_mark_active++;
+}
+
+void
+rl_activate_mark (void)
+{
+  mark_active = 1;
+  rl_keep_mark_active ();
+}
+
+void
+rl_deactivate_mark (void)
+{
+  mark_active = 0;
+}
+
+int
+rl_mark_active_p (void)
+{
+  return (mark_active);
 }

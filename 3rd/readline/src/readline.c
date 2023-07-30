@@ -1,7 +1,7 @@
 /* readline.c -- a general facility for reading lines of input
    with emacs style editing and completion. */
 
-/* Copyright (C) 1987-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1987-2022 Free Software Foundation, Inc.
 
    This file is part of the GNU Readline Library (Readline), a library
    for reading lines of text with interactive input and history editing.      
@@ -72,35 +72,34 @@ extern int errno;
 #include "rlshell.h"
 #include "xmalloc.h"
 
+#if defined (COLOR_SUPPORT)
+#  include "parse-colors.h"
+#endif
+
 #ifndef RL_LIBRARY_VERSION
-#  define RL_LIBRARY_VERSION "5.1"
+#  define RL_LIBRARY_VERSION "8.1"
 #endif
 
 #ifndef RL_READLINE_VERSION
-#  define RL_READLINE_VERSION	0x0501
+#  define RL_READLINE_VERSION	0x0801
 #endif
-
-extern void _rl_free_history_entry PARAMS((HIST_ENTRY *));
-
-#if defined (COLOR_SUPPORT)
-extern void _rl_parse_colors PARAMS((void));		/* XXX */
-#endif
-
 
 /* Forward declarations used in this file. */
-static char *readline_internal PARAMS((void));
-static void readline_initialize_everything PARAMS((void));
+static char *readline_internal (void);
+static void readline_initialize_everything (void);
 
-static void bind_arrow_keys_internal PARAMS((Keymap));
-static void bind_arrow_keys PARAMS((void));
+static void run_startup_hooks (void);
 
-static void bind_bracketed_paste_prefix PARAMS((void));
+static void bind_arrow_keys_internal (Keymap);
+static void bind_arrow_keys (void);
 
-static void readline_default_bindings PARAMS((void));
-static void reset_default_bindings PARAMS((void));
+static void bind_bracketed_paste_prefix (void);
 
-static int _rl_subseq_result PARAMS((int, Keymap, int, int));
-static int _rl_subseq_getchar PARAMS((int));
+static void readline_default_bindings (void);
+static void reset_default_bindings (void);
+
+static int _rl_subseq_result (int, Keymap, int, int);
+static int _rl_subseq_getchar (int);
 
 /* **************************************************************** */
 /*								    */
@@ -165,6 +164,9 @@ int rl_end;
 /* Make this non-zero to return the current input_line. */
 int rl_done;
 
+/* If non-zero when readline_internal returns, it means we found EOF */
+int rl_eof_found = 0;
+
 /* The last function executed by readline. */
 rl_command_func_t *rl_last_func = (rl_command_func_t *)NULL;
 
@@ -199,6 +201,10 @@ int rl_key_sequence_length = 0;
    before readline_internal_setup () prints the first prompt. */
 rl_hook_func_t *rl_startup_hook = (rl_hook_func_t *)NULL;
 
+/* Any readline function can set this and have it run just before the user's
+   rl_startup_hook. */
+rl_hook_func_t *_rl_internal_startup_hook = (rl_hook_func_t *)NULL;
+
 /* If non-zero, this is the address of a function to call just before
    readline_internal_setup () returns and readline_internal starts
    reading input characters. */
@@ -213,9 +219,6 @@ int _rl_eof_char = CTRL ('D');
 
 /* Non-zero makes this the next keystroke to read. */
 int rl_pending_input = 0;
-
-/* If non-zero when readline_internal returns, it means we found EOF */
-int _rl_eof_found = 0;
 
 /* Pointer to a useful terminal name. */
 const char *rl_terminal_name = (const char *)NULL;
@@ -237,6 +240,9 @@ char *_rl_comment_begin;
 /* Keymap holding the function currently being executed. */
 Keymap rl_executing_keymap;
 
+/* The function currently being executed. */
+rl_command_func_t *_rl_executing_func;
+
 /* Keymap we're currently using to dispatch. */
 Keymap _rl_dispatching_keymap;
 
@@ -257,6 +263,9 @@ _rl_keyseq_cxt *_rl_kscxt = 0;
 int rl_executing_key;
 char *rl_executing_keyseq = 0;
 int _rl_executing_keyseq_size = 0;
+
+struct _rl_cmd _rl_pending_command;
+struct _rl_cmd *_rl_command_to_execute = (struct _rl_cmd *)NULL;
 
 /* Timeout (specified in milliseconds) when reading characters making up an
    ambiguous multiple-key sequence */
@@ -314,7 +323,8 @@ int _rl_show_mode_in_prompt = 0;
 /* Non-zero means to attempt to put the terminal in `bracketed paste mode',
    where it will prefix pasted text with an escape sequence and send
    another to mark the end of the paste. */
-int _rl_enable_bracketed_paste = 0;
+int _rl_enable_bracketed_paste = BRACKETED_PASTE_DEFAULT;
+int _rl_enable_active_region = BRACKETED_PASTE_DEFAULT;
 
 /* **************************************************************** */
 /*								    */
@@ -395,6 +405,16 @@ readline (const char *prompt)
   return (value);
 }
 
+static void
+run_startup_hooks (void)
+{
+  if (rl_startup_hook)
+    (*rl_startup_hook) ();
+
+  if (_rl_internal_startup_hook)
+    (*_rl_internal_startup_hook) ();
+}
+
 #if defined (READLINE_CALLBACKS)
 #  define STATIC_CALLBACK
 #else
@@ -414,8 +434,9 @@ readline_internal_setup (void)
   if (_rl_enable_meta & RL_ISSTATE (RL_STATE_TERMPREPPED))
     _rl_enable_meta_key ();
 
-  if (rl_startup_hook)
-    (*rl_startup_hook) ();
+  run_startup_hooks ();
+
+  rl_deactivate_mark ();
 
 #if defined (VI_MODE)
   if (rl_editing_mode == vi_mode)
@@ -461,12 +482,18 @@ readline_internal_teardown (int eof)
 
   RL_CHECK_SIGNALS ();
 
+  if (eof)
+    RL_SETSTATE (RL_STATE_EOF);		/* XXX */
+
   /* Restore the original of this history line, iff the line that we
      are editing was originally in the history, AND the line has changed. */
   entry = current_history ();
 
+  /* We don't want to do this if we executed functions that call
+     history_set_pos to set the history offset to the line containing the
+     non-incremental search string. */
   if (entry && rl_undo_list)
-    {
+   {
       temp = savestring (the_line);
       rl_revert_line (1, 0);
       entry = replace_history_entry (where_history (), the_line, (histdata_t)NULL);
@@ -498,6 +525,11 @@ readline_internal_teardown (int eof)
 void
 _rl_internal_char_cleanup (void)
 {
+  if (_rl_keep_mark_active)
+    _rl_keep_mark_active = 0;
+  else if (rl_mark_active_p ())
+    rl_deactivate_mark ();
+
 #if defined (VI_MODE)
   /* In vi mode, when you exit insert mode, the cursor moves back
      over the previous character.  We explicitly check for that here. */
@@ -554,6 +586,15 @@ readline_internal_charloop (void)
 	{
 	  (*rl_redisplay_function) ();
 	  _rl_want_redisplay = 0;
+
+	  /* If we longjmped because of a timeout, handle it here. */
+	  if (RL_ISSTATE (RL_STATE_TIMEOUT))
+	    {
+	      RL_SETSTATE (RL_STATE_DONE);
+	      rl_done = 1;
+	      return 1;
+	    }
+
 	  /* If we get here, we're not being called from something dispatched
 	     from _rl_callback_read_char(), which sets up its own value of
 	     _rl_top_level (saving and restoring the old, of course), so
@@ -583,6 +624,7 @@ readline_internal_charloop (void)
 	  RL_SETSTATE(RL_STATE_DONE);
 	  return (rl_done = 1);
 #else
+	  RL_SETSTATE(RL_STATE_EOF);
 	  eof_found = 1;
 	  break;
 #endif
@@ -623,6 +665,7 @@ readline_internal_charloop (void)
 	  RL_SETSTATE(RL_STATE_DONE);
 	  return (rl_done = 1);
 #else
+	  RL_SETSTATE(RL_STATE_EOF);
 	  eof_found = 1;
 	  break;
 #endif
@@ -631,6 +674,25 @@ readline_internal_charloop (void)
       lastc = c;
       r = _rl_dispatch ((unsigned char)c, _rl_keymap);
       RL_CHECK_SIGNALS ();
+
+      if (_rl_command_to_execute)
+	{
+	  (*rl_redisplay_function) ();
+
+	  rl_executing_keymap = _rl_command_to_execute->map;
+	  rl_executing_key = _rl_command_to_execute->key;
+
+	  _rl_executing_func = _rl_command_to_execute->func;
+
+	  rl_dispatching = 1;
+	  RL_SETSTATE(RL_STATE_DISPATCHING);
+	  r = (*(_rl_command_to_execute->func)) (_rl_command_to_execute->count, _rl_command_to_execute->key);
+	  _rl_command_to_execute = 0;
+	  RL_UNSETSTATE(RL_STATE_DISPATCHING);
+	  rl_dispatching = 0;
+
+	  RL_CHECK_SIGNALS ();
+	}
 
       /* If there was no change in _rl_last_command_was_kill, then no kill
 	 has taken place.  Note that if input is pending we are reading
@@ -668,8 +730,8 @@ static char *
 readline_internal (void)
 {
   readline_internal_setup ();
-  _rl_eof_found = readline_internal_charloop ();
-  return (readline_internal_teardown (_rl_eof_found));
+  rl_eof_found = readline_internal_charloop ();
+  return (readline_internal_teardown (rl_eof_found));
 }
 
 void
@@ -843,6 +905,8 @@ _rl_dispatch_subseq (register int key, Keymap map, int got_subseq)
 	  rl_executing_keymap = map;
 	  rl_executing_key = key;
 
+	  _rl_executing_func = func;
+
 	  RESIZE_KEYSEQ_BUFFER();
 	  rl_executing_keyseq[rl_key_sequence_length++] = key;
 	  rl_executing_keyseq[rl_key_sequence_length] = '\0';
@@ -856,7 +920,11 @@ _rl_dispatch_subseq (register int key, Keymap map, int got_subseq)
 	  /* If we have input pending, then the last command was a prefix
 	     command.  Don't change the state of rl_last_func.  Otherwise,
 	     remember the last command executed in this variable. */
+#if defined (VI_MODE)
+	  if (rl_pending_input == 0 && map[key].function != rl_digit_argument && map[key].function != rl_vi_arg_digit)
+#else
 	  if (rl_pending_input == 0 && map[key].function != rl_digit_argument)
+#endif
 	    rl_last_func = map[key].function;
 
 	  RL_CHECK_SIGNALS ();
@@ -870,6 +938,8 @@ _rl_dispatch_subseq (register int key, Keymap map, int got_subseq)
 	    _rl_prev_macro_key ();
 	  else
 	    _rl_unget_char  (key);
+	  if (rl_key_sequence_length > 0)
+	    rl_executing_keyseq[--rl_key_sequence_length] = '\0';
 	  return -2;
 	}
       else if (got_subseq)
@@ -882,6 +952,8 @@ _rl_dispatch_subseq (register int key, Keymap map, int got_subseq)
 	    _rl_prev_macro_key ();
 	  else
 	    _rl_unget_char (key);
+	  if (rl_key_sequence_length > 0)
+	    rl_executing_keyseq[--rl_key_sequence_length] = '\0';
 	  return -1;
 	}
       else
@@ -974,7 +1046,11 @@ _rl_dispatch_subseq (register int key, Keymap map, int got_subseq)
 	  	_rl_pushed_input_available () == 0 &&
 		_rl_dispatching_keymap[ANYOTHERKEY].function &&
 		_rl_input_queued (_rl_keyseq_timeout*1000) == 0)
-	    return (_rl_subseq_result (-2, map, key, got_subseq));
+	    {
+	      if (rl_key_sequence_length > 0)
+		rl_executing_keyseq[--rl_key_sequence_length] = '\0';
+	      return (_rl_subseq_result (-2, map, key, got_subseq));
+	    }
 
 	  newkey = _rl_subseq_getchar (key);
 	  if (newkey < 0)
@@ -1065,6 +1141,8 @@ _rl_subseq_result (int r, Keymap map, int key, int got_subseq)
 	_rl_prev_macro_key ();
       else
 	_rl_unget_char (key);
+      if (rl_key_sequence_length > 0)
+	rl_executing_keyseq[--rl_key_sequence_length] = '\0';
       _rl_dispatching_keymap = map;
       return -2;
     }
@@ -1075,6 +1153,8 @@ _rl_subseq_result (int r, Keymap map, int key, int got_subseq)
 	_rl_prev_macro_key ();
       else
 	_rl_unget_char (key);
+      if (rl_key_sequence_length > 0)
+	rl_executing_keyseq[--rl_key_sequence_length] = '\0';
       _rl_dispatching_keymap = map;
       return -1;
     }
@@ -1092,6 +1172,9 @@ _rl_subseq_result (int r, Keymap map, int key, int got_subseq)
 int
 rl_initialize (void)
 {
+  /* Initialize the timeout first to get the precise start time. */
+  _rl_timeout_init ();
+
   /* If we have never been called before, initialize the
      terminal and data structures. */
   if (rl_initialized == 0)
@@ -1103,14 +1186,14 @@ rl_initialize (void)
       RL_SETSTATE(RL_STATE_INITIALIZED);
     }
   else
-    (void)_rl_init_locale ();	/* check current locale */
+    _rl_reset_locale ();	/* check current locale and set locale variables */
 
   /* Initialize the current line information. */
   _rl_init_line_state ();
 
   /* We aren't done yet.  We haven't even gotten started yet! */
   rl_done = 0;
-  RL_UNSETSTATE(RL_STATE_DONE);
+  RL_UNSETSTATE(RL_STATE_DONE|RL_STATE_TIMEOUT|RL_STATE_EOF);
 
   /* Tell the history routines what is going on. */
   _rl_start_using_history ();
@@ -1231,8 +1314,8 @@ readline_initialize_everything (void)
 
   /* If the completion parser's default word break characters haven't
      been set yet, then do so now. */
-  if (rl_completer_word_break_characters == (char *)NULL)
-    rl_completer_word_break_characters = (char *)rl_basic_word_break_characters;
+  if (rl_completer_word_break_characters == 0)
+    rl_completer_word_break_characters = rl_basic_word_break_characters;
 
 #if defined (COLOR_SUPPORT)
   if (_rl_colored_stats || _rl_colored_completion_prefix)
@@ -1241,7 +1324,7 @@ readline_initialize_everything (void)
 
   rl_executing_keyseq = malloc (_rl_executing_keyseq_size = 16);
   if (rl_executing_keyseq)
-    rl_executing_keyseq[0] = '\0';
+    rl_executing_keyseq[rl_key_sequence_length = 0] = '\0';
 }
 
 /* If this system allows us to look at the values of the regular
@@ -1356,9 +1439,12 @@ bind_bracketed_paste_prefix (void)
 
   _rl_keymap = emacs_standard_keymap;
   rl_bind_keyseq_if_unbound (BRACK_PASTE_PREF, rl_bracketed_paste_begin);
-  
+
+#if defined (VI_MODE)
   _rl_keymap = vi_insertion_keymap;
   rl_bind_keyseq_if_unbound (BRACK_PASTE_PREF, rl_bracketed_paste_begin);
+  /* XXX - is there a reason to do this in the vi command keymap? */
+#endif
 
   _rl_keymap = xkeymap;
 }
@@ -1446,5 +1532,44 @@ rl_restore_state (struct readline_state *sp)
   rl_attempted_completion_function = sp->attemptfunc;
   rl_completer_word_break_characters = sp->wordbreakchars;
 
+  rl_deactivate_mark ();
+
   return (0);
+}
+
+/* Functions to manage the string that is the current key sequence. */
+
+void
+_rl_init_executing_keyseq (void)
+{
+  rl_executing_keyseq[rl_key_sequence_length = 0] = '\0';
+}
+
+void
+_rl_term_executing_keyseq (void)
+{
+  rl_executing_keyseq[rl_key_sequence_length] = '\0';
+}
+
+void
+_rl_end_executing_keyseq (void)
+{
+  if (rl_key_sequence_length > 0)
+    rl_executing_keyseq[--rl_key_sequence_length] = '\0';
+}
+
+void
+_rl_add_executing_keyseq (int key)
+{
+  RESIZE_KEYSEQ_BUFFER ();
+ rl_executing_keyseq[rl_key_sequence_length++] = key;
+}
+
+/* `delete' the last character added to the executing key sequence. Use this
+   before calling rl_execute_next to avoid keys being added twice. */
+void
+_rl_del_executing_keyseq (void)
+{
+  if (rl_key_sequence_length > 0)
+    rl_key_sequence_length--;
 }
