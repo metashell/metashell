@@ -1,6 +1,6 @@
 # Changelog
 
-## Not in any release yet
+## Version 5.0.0
 
 * New features
     * New engine: `auto`. It chooses the engine to use based on the compiler
