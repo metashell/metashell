@@ -48,8 +48,6 @@ namespace metashell
         template <data::include_type... Types, class ForwardIt>
         ForwardIt beginning_of_includes(ForwardIt begin_, ForwardIt end_)
         {
-          using boost::algorithm::starts_with;
-
           const std::vector<std::string> prefixes{
               data::include_dotdotdot<Types>()...};
 
@@ -57,7 +55,8 @@ namespace metashell
               begin_, end_, [&prefixes](const std::string& line_) {
                 return std::find_if(prefixes.begin(), prefixes.end(),
                                     [&line_](const std::string& prefix_) {
-                                      return starts_with(line_, prefix_);
+                                      return line_.find(prefix_) !=
+                                             std::string::npos;
                                     }) != end(prefixes);
               });
         }
