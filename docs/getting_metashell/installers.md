@@ -3,6 +3,24 @@
 You can get binary installers for a number of platforms. If you can't or don't
 want to install them, you can build Metashell yourself.
 
+## Version 5.0.0
+
+### Linux
+
+* Ubuntu
+    * Ubuntu 22.04 and 23.04:
+      [64 bit](https://github.com/metashell/metashell/releases/download/v5.0.0/metashell_5.0.0_amd64.deb)
+* Debian
+    * Debian 12.1:
+      [64 bit](https://github.com/metashell/metashell/releases/download/v5.0.0/metashell_5.0.0_amd64.deb)
+* OpenSuSE
+    * OpenSuSE Leap 15.5:
+      [64 bit](https://github.com/metashell/metashell/releases/download/v5.0.0/metashell-5.0.0-1.x86_64.rpm)
+
+### Windows
+
+* [Windows installer](https://github.com/metashell/metashell/releases/download/v5.0.0/metashell-5.0.0-win64.exe)
+
 ## Version 4.0.0
 
 ### Linux
