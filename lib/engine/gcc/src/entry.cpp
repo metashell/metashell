@@ -58,7 +58,7 @@ namespace metashell
               return regex_search(
                   process::run(data::command_line(exe, {"-v"}), "")
                       .standard_error,
-                  std::regex("[\\n\\r]gcc version "));
+                  std::regex("[\\n\\r]gcc( version|-Version) "));
             }
             catch (const process::exception&)
             {
