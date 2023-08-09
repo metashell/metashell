@@ -112,7 +112,7 @@ if [ "${NO_INSTALLER}" = "" ]
 then
   cd "bin/${PLATFORM_ID}/metashell"
     cpack -G DEB
-    cpack -G RPM
+    QA_RPATHS=0x0010 cpack -G RPM
     make system_test_zip
   cd ../../..
 
