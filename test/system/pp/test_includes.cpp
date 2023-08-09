@@ -36,6 +36,16 @@ using pattern::_;
 
 namespace
 {
+  boost::filesystem::path remove_slash_suffix(boost::filesystem::path path_)
+  {
+    while (!path_.empty() &&
+           (path_.filename().empty() || path_.filename() == "."))
+    {
+      path_ = path_.parent_path();
+    }
+    return path_;
+  }
+
   bool metashell_standard_header_path(const boost::filesystem::path& path_)
   {
     const auto ends_with = [&path_](std::vector<std::string> suffix_) {
@@ -66,7 +76,8 @@ namespace
                end,
                [&path_](const metashell::data::command_line_argument& arg) {
                  const auto path = include_path_addition(arg);
-                 return path && *path == path_;
+                 return path && remove_slash_suffix(*path) ==
+                                    remove_slash_suffix(path_);
                }) != end;
   }
 
