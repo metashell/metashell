@@ -1,5 +1,10 @@
 # Changelog
 
+## Not in any release yet
+
+* New features
+    * Support gcc 13
+
 ## Version 5.0.0
 
 * New features

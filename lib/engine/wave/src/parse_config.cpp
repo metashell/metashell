@@ -119,7 +119,8 @@ namespace metashell
               data::macro_definition(
                   "__metashell_has_feature_impl__cxx_decltype=1"),
               data::macro_definition(
-                  "__has_feature(x)=__metashell_has_feature_impl__ ## x")};
+                  "__has_feature(x)=__metashell_has_feature_impl__ ## x"),
+              data::macro_definition("_GLIBCXX_HOSTED=1")};
 
           empty_environment env(internal_dir_);
           const data::cpp_code defines =

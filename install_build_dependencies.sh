@@ -58,6 +58,7 @@ fedora)
     cmake \
     rpm-build \
     python \
+    dpkg-dev \
     make
   ;;
 gentoo)
