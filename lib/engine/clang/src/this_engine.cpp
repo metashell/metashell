@@ -31,11 +31,13 @@ namespace metashell
       {
         try
         {
-          return regex_search(
+          const std::string ver =
               process::run(data::command_line(clang_, {"-v"}), "")
-                  .standard_error,
-              std::regex("(^|\\n)(clang version |Apple LLVM version |Apple "
-                         "clang version )"));
+                  .standard_error;
+          return regex_search(
+                     ver, std::regex{"clang version |Apple LLVM version |Apple "
+                                     "clang version "}) &&
+                 regex_search(ver, std::regex{"(^|\\n)Target: "});
         }
         catch (const process::exception&)
         {
