@@ -80,7 +80,7 @@ ubuntu)
     ${SUDO} apt-add-repository universe
   fi
   ${SUDO} apt-get -y install \
-      git g++ cmake zip python3-pip libtinfo5 \
+      git g++ cmake zip python3-pip $(apt-cache search libtinfo | egrep -o '^libtinfo[0-9]+') \
       libtool automake autoconf libltdl-dev pkg-config bison flex rpm
   PLATFORM_VERSION="$($SRC_ROOT/tools/detect_platform.sh --version)"
   if [ "${PLATFORM_VERSION}" = "22.04" ]
