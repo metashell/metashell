@@ -87,7 +87,8 @@ ubuntu)
   then
     ${SUDO} apt -y install g++-12
   fi
-  ${SUDO} -H pip3 install pycodestyle pylint gitpython daemonize mkdocs cheetah3
+  ${SUDO} -H pip3 install pycodestyle pylint gitpython daemonize mkdocs cheetah3 \
+  || ${SUDO} apt -y install python3-git python3-cheetah
   PLATFORM_ID="$($SRC_ROOT/tools/detect_platform.sh --id)"
   CLANG_ARCHIVE="clang+llvm-${CLANG_VERSION}-x86_64-linux-gnu-ubuntu-16.04"
   mkdir -p "bin/${PLATFORM_ID}"
