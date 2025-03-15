@@ -167,6 +167,7 @@ namespace metashell
         apply(ctx_, cfg_.config.includes, system_includes_);
 
         ctx_.set_language(language_support(cfg_));
+        ctx_.add_macro_definition("__has_attribute(_)=0");
 
         for (const auto& macro : cfg_.config.macros)
         {
