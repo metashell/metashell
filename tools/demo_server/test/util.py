@@ -18,7 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import errno
-import imp
+import importlib.util
 import inspect
 import json
 import os
@@ -46,13 +46,16 @@ def load_from_bin(name):
     module_path = bin_path(name)
     # Loading the code into a string and compiling that to avoid the automatic
     # bytecode file (ending with c) generation as a side-effect of testing.
+
     with open(module_path) as modulefile:
         code = modulefile.read()
-    module = imp.new_module(name)
+    module = importlib.util.module_from_spec(importlib.util.spec_from_loader(name, loader=None))
     module.__file__ = module_path
     # pylint: disable=exec-used
     exec(code, module.__dict__)
     # pylint: enable=exec-used
+
+    sys.modules[name] = module
     return module
 
 

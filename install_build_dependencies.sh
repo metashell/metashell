@@ -80,14 +80,15 @@ ubuntu)
     ${SUDO} apt-add-repository universe
   fi
   ${SUDO} apt-get -y install \
-      git g++ cmake zip python3-pip libtinfo5 \
+      git g++ cmake zip python3-pip $(apt-cache search libtinfo | egrep -o '^libtinfo[0-9]+') \
       libtool automake autoconf libltdl-dev pkg-config bison flex rpm
   PLATFORM_VERSION="$($SRC_ROOT/tools/detect_platform.sh --version)"
   if [ "${PLATFORM_VERSION}" = "22.04" ]
   then
     ${SUDO} apt -y install g++-12
   fi
-  ${SUDO} -H pip3 install pycodestyle pylint gitpython daemonize mkdocs cheetah3
+  ${SUDO} -H pip3 install pycodestyle pylint gitpython daemonize mkdocs cheetah3 \
+  || ${SUDO} apt -y install python3-git python3-cheetah
   PLATFORM_ID="$($SRC_ROOT/tools/detect_platform.sh --id)"
   CLANG_ARCHIVE="clang+llvm-${CLANG_VERSION}-x86_64-linux-gnu-ubuntu-16.04"
   mkdir -p "bin/${PLATFORM_ID}"
